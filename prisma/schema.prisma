@@ -1,0 +1,282 @@
+// ─────────────────────────────────────────────────────────────
+//  VibeWorks – Datenmodell (PostgreSQL)
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ───────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+/// SINGLE: genau ein Konto. MULTI: beliebig viele, strikt getrennte Konten.
+enum InstanceMode {
+  SINGLE
+  MULTI
+}
+
+enum ProjectStatus {
+  IDEA
+  PLANNING
+  OPEN
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  DOING
+  BLOCKED
+  DONE
+}
+
+enum Recurrence {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum ActivityKind {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  STATUS_CHANGED
+  NOTE_ADDED
+  NOTE_UPDATED
+  NOTE_DELETED
+  TASK_ADDED
+  TASK_MOVED
+  TASK_DELETED
+}
+
+// ── Instanz ─────────────────────────────────────────────────
+
+/// Genau eine Zeile (id = "instance").
+model Settings {
+  id                String       @id @default("instance")
+  mode              InstanceMode @default(SINGLE)
+  allowRegistration Boolean      @default(false)
+  /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
+  taskColumnLimit   Int          @default(15)
+  setupDoneAt       DateTime?
+  updatedAt         DateTime     @updatedAt
+}
+
+// ── Konten und Anmeldung ────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  /// Immer kleingeschrieben.
+  username     String   @unique
+  displayName  String?
+  email        String?  @unique
+  /// scrypt$N$r$p$salt$hash – null bei reinen Passkey-Konten.
+  passwordHash String?
+  role         UserRole @default(USER)
+  active       Boolean  @default(true)
+
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  lastLoginAt  DateTime?
+
+  /// TOTP-Schlüssel (verschlüsselt). Scharf erst mit totpEnabledAt.
+  totpSecret     String?
+  totpEnabledAt  DateTime?
+  totpLastStep   Int?
+
+  /// Persönliches Design (Hintergrund, Farben, Modus, Glas) – siehe src/lib/theme.
+  theme Json?
+
+  sessions      Session[]
+  passkeys      Passkey[]
+  recoveryCodes RecoveryCode[]
+  mfaPending    MfaPending[]
+  projects      Project[]
+  activities    Activity[]
+  uploads       Upload[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Serverseitige Sitzung; gespeichert wird nur der SHA-256 des Cookie-Tokens.
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Passwort war richtig, der zweite Faktor steht noch aus.
+model MfaPending {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// base64url-Credential-ID
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      Int       @default(0)
+  transports   String[]  @default([])
+  name         String?
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Einmal verwendbare WebAuthn-Challenge.
+model WebAuthnChallenge {
+  id        String   @id @default(cuid())
+  challenge String   @unique
+  userId    String?
+  purpose   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// ── Projekte ────────────────────────────────────────────────
+
+model Project {
+  id          String        @id @default(cuid())
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  summary     String?
+  description String?
+  status      ProjectStatus @default(IDEA)
+  /// 1 niedrig · 2 normal · 3 hoch · 4 kritisch
+  priority    Int           @default(2)
+  progress    Int           @default(0)
+  /// Name eines Akzentverlaufs (siehe src/lib/accents.ts)
+  accent      String        @default("violet")
+  tags        String[]      @default([])
+  favorite    Boolean       @default(false)
+  /// Rang innerhalb der Kanban-Spalte
+  position    Int           @default(0)
+  progressFromTasks Boolean @default(false)
+  repoUrl     String?
+
+  notes      Note[]
+  tasks      Task[]
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ownerId, slug])
+  @@index([ownerId, status, position])
+  @@index([ownerId, updatedAt])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String?
+  content   String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      TaskStatus  @default(TODO)
+  position    Int         @default(0)
+  dueDate     DateTime?
+  labels      String[]    @default([])
+  doneAt      DateTime?
+  recurrence  Recurrence?
+  /// Vorgängerin bei wiederkehrenden Aufgaben (bewusst ohne Fremdschlüssel)
+  recurredFrom String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([projectId, status, position])
+  @@index([dueDate])
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kind      ActivityKind
+  summary   String
+  meta      Json?
+  createdAt DateTime     @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([createdAt, id])
+}
+
+// ── Dateien ─────────────────────────────────────────────────
+
+/// Hochgeladene Datei (z. B. eigenes Hintergrundbild). Die Datei selbst
+/// liegt unter DATA_DIR/uploads/<id>.<ext>.
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String   @default("background")
+  mime      String
+  ext       String
+  size      Int
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

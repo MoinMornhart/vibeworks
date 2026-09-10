@@ -1,0 +1,22 @@
+# Abhängigkeiten und Build
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Umgebung – enthält Geheimnisse
+.env
+.env.*
+!.env.example
+
+# Laufzeitdaten (Uploads, Backups) – niemals committen
+data/
+backups/
+
+# Sonstiges
+.DS_Store
+Thumbs.db
+*.log
+coverage/
+.vscode/

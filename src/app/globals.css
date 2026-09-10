@@ -1,0 +1,486 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   VibeWorks – Designsystem
+   Alle Farben kommen aus CSS-Variablen (--vw-*), die das persönliche
+   Design jedes Kontos setzt (src/lib/theme/css.ts). Tailwind-Klassen wie
+   bg-surface, text-muted oder border-line greifen darauf zu.
+   ───────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --color-bg: var(--vw-bg);
+  --color-surface: var(--vw-surface);
+  --color-elevated: var(--vw-elevated);
+  --color-fg: var(--vw-text);
+  --color-muted: var(--vw-muted);
+  --color-line: var(--vw-border);
+  --color-accent: var(--vw-accent);
+  --color-accent-ink: var(--vw-accent-ink);
+  --color-on-accent: var(--vw-accent-contrast);
+
+  --color-st-idea: var(--vw-status-idea);
+  --color-st-planning: var(--vw-status-planning);
+  --color-st-open: var(--vw-status-open);
+  --color-st-in-progress: var(--vw-status-in-progress);
+  --color-st-done: var(--vw-status-done);
+  --color-st-archived: var(--vw-status-archived);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --breakpoint-xs: 24rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--vw-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    background: var(--vw-bg);
+    color: var(--vw-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: rgb(var(--vw-accent-rgb) / 0.35);
+  }
+  :focus-visible {
+    outline: 2px solid var(--vw-accent);
+    outline-offset: 2px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--vw-muted) 35%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--vw-accent-rgb) / 0.6);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Glasfläche – Deckkraft und Unschärfe stellt jeder selbst ein. */
+  .glass {
+    background: rgb(var(--vw-surface-rgb) / var(--vw-glass-opacity));
+    -webkit-backdrop-filter: blur(var(--vw-glass-blur)) saturate(140%);
+    backdrop-filter: blur(var(--vw-glass-blur)) saturate(140%);
+    border: 1px solid color-mix(in srgb, var(--vw-border) 85%, transparent);
+    border-radius: 1.25rem;
+    box-shadow: var(--vw-shadow);
+  }
+  .glass-strong {
+    background: var(--vw-elevated);
+    border: 1px solid var(--vw-border);
+    border-radius: 1rem;
+    box-shadow: var(--vw-shadow);
+  }
+  .lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+    border-color: rgb(var(--vw-accent-rgb) / 0.45);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    border: 1px solid var(--vw-border);
+    background: color-mix(in srgb, var(--vw-surface) 70%, transparent);
+    color: var(--vw-text);
+    transition: background 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .btn:hover {
+    border-color: rgb(var(--vw-accent-rgb) / 0.55);
+    background: color-mix(in srgb, var(--vw-elevated) 85%, var(--vw-accent) 15%);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-primary {
+    border-color: transparent;
+    color: var(--vw-accent-contrast);
+    background: linear-gradient(135deg, var(--vw-accent), color-mix(in srgb, var(--vw-accent) 70%, var(--vw-bg-2)));
+    box-shadow: 0 6px 22px -8px rgb(var(--vw-accent-rgb) / 0.75);
+  }
+  .btn-primary:hover {
+    border-color: transparent;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--vw-accent) 88%, white), var(--vw-accent));
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+  .btn-ghost:hover {
+    background: color-mix(in srgb, var(--vw-text) 8%, transparent);
+    border-color: transparent;
+  }
+  .btn-danger:hover {
+    border-color: #ef4444;
+    background: rgb(239 68 68 / 0.15);
+    color: #f87171;
+  }
+  .btn-sm {
+    min-height: 2rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8125rem;
+    border-radius: 0.6rem;
+  }
+  .btn-icon {
+    min-height: 2.25rem;
+    width: 2.25rem;
+    padding: 0;
+  }
+
+  .field {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.7rem;
+    border: 1px solid var(--vw-border);
+    background: color-mix(in srgb, var(--vw-bg) 55%, transparent);
+    color: var(--vw-text);
+    font-size: 0.875rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field::placeholder {
+    color: color-mix(in srgb, var(--vw-muted) 80%, transparent);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--vw-accent);
+    box-shadow: 0 0 0 3px rgb(var(--vw-accent-rgb) / 0.2);
+  }
+  textarea.field {
+    min-height: 6rem;
+    resize: vertical;
+  }
+  select.field {
+    appearance: none;
+    padding-right: 2rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--vw-muted) 50%), linear-gradient(135deg, var(--vw-muted) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--vw-muted);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    border: 1px solid var(--vw-border);
+    background: color-mix(in srgb, var(--vw-surface) 60%, transparent);
+    color: var(--vw-muted);
+  }
+  .chip-active {
+    border-color: rgb(var(--vw-accent-rgb) / 0.6);
+    background: rgb(var(--vw-accent-rgb) / 0.16);
+    color: var(--vw-text);
+  }
+
+  .gradient-text {
+    background: linear-gradient(120deg, var(--vw-text), var(--vw-accent) 55%, var(--vw-bg-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .fade-in {
+    animation: vw-fade-in 0.45s ease both;
+  }
+}
+
+@keyframes vw-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Hintergrund ───────────────────────────────────────────── */
+
+.vw-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--vw-bg);
+}
+.vw-bg > * {
+  position: absolute;
+  inset: 0;
+}
+.vw-bg canvas {
+  width: 100%;
+  height: 100%;
+}
+.vw-grain {
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.55'/></svg>");
+}
+
+/* Nebel: drei weichgezeichnete Wolken, die langsam driften */
+.vw-nebula span {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  will-change: transform;
+  animation-duration: calc(28s / var(--vw-speed, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.vw-nebula span:nth-child(1) {
+  width: 55vmax;
+  height: 55vmax;
+  left: -15vmax;
+  top: -20vmax;
+  background: radial-gradient(circle, var(--vw-bg-1), transparent 65%);
+  animation-name: vw-drift-a;
+}
+.vw-nebula span:nth-child(2) {
+  width: 48vmax;
+  height: 48vmax;
+  right: -14vmax;
+  top: 10vmax;
+  background: radial-gradient(circle, var(--vw-bg-2), transparent 65%);
+  animation-name: vw-drift-b;
+  animation-duration: calc(34s / var(--vw-speed, 1));
+}
+.vw-nebula span:nth-child(3) {
+  width: 42vmax;
+  height: 42vmax;
+  left: 20vmax;
+  bottom: -22vmax;
+  background: radial-gradient(circle, var(--vw-bg-3), transparent 65%);
+  animation-name: vw-drift-c;
+  animation-duration: calc(40s / var(--vw-speed, 1));
+}
+.vw-nebula::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(color-mix(in srgb, var(--vw-text) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--vw-text) 5%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black, transparent 75%);
+}
+@keyframes vw-drift-a {
+  to {
+    transform: translate(18vw, 14vh) scale(1.15);
+  }
+}
+@keyframes vw-drift-b {
+  to {
+    transform: translate(-16vw, 18vh) scale(0.9);
+  }
+}
+@keyframes vw-drift-c {
+  to {
+    transform: translate(10vw, -20vh) scale(1.2);
+  }
+}
+
+/* Polarlicht: gestreckte, verschwommene Bänder, die sich wiegen */
+.vw-aurora span {
+  position: absolute;
+  left: -20%;
+  width: 140%;
+  height: 38vh;
+  filter: blur(60px);
+  mix-blend-mode: screen;
+  transform-origin: center;
+  animation: vw-sway calc(22s / var(--vw-speed, 1)) ease-in-out infinite alternate;
+}
+.vw-aurora span:nth-child(1) {
+  top: 4vh;
+  background: linear-gradient(90deg, transparent, var(--vw-bg-1) 30%, var(--vw-bg-2) 60%, transparent);
+}
+.vw-aurora span:nth-child(2) {
+  top: 18vh;
+  opacity: 0.8;
+  background: linear-gradient(90deg, transparent 10%, var(--vw-bg-2) 40%, var(--vw-bg-3) 75%, transparent);
+  animation-duration: calc(30s / var(--vw-speed, 1));
+  animation-delay: -8s;
+}
+.vw-aurora span:nth-child(3) {
+  top: 30vh;
+  opacity: 0.6;
+  background: linear-gradient(90deg, transparent, var(--vw-bg-3) 35%, var(--vw-bg-1) 70%, transparent);
+  animation-duration: calc(38s / var(--vw-speed, 1));
+  animation-delay: -15s;
+}
+@keyframes vw-sway {
+  0% {
+    transform: translateX(-6%) skewY(-6deg) scaleY(0.8);
+  }
+  50% {
+    transform: translateX(4%) skewY(4deg) scaleY(1.2);
+  }
+  100% {
+    transform: translateX(8%) skewY(-3deg) scaleY(0.9);
+  }
+}
+
+/* Mesh: mehrere Farbflecken, deren Lage sich langsam verschiebt */
+.vw-mesh {
+  background: radial-gradient(at 12% 18%, var(--vw-bg-1) 0, transparent 45%), radial-gradient(at 85% 12%, var(--vw-bg-2) 0, transparent 45%),
+    radial-gradient(at 78% 85%, var(--vw-bg-3) 0, transparent 50%), radial-gradient(at 18% 88%, var(--vw-bg-2) 0, transparent 45%);
+  background-size: 180% 180%;
+  animation: vw-mesh-move calc(30s / var(--vw-speed, 1)) ease-in-out infinite alternate;
+  filter: saturate(120%);
+}
+@keyframes vw-mesh-move {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 40%;
+  }
+  100% {
+    background-position: 30% 100%;
+  }
+}
+
+/* Synthwave: Sonne und ein Raster, das auf den Betrachter zuläuft */
+.vw-synthwave .sun {
+  inset: auto;
+  left: 50%;
+  top: 22%;
+  width: 34vmin;
+  height: 34vmin;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--vw-bg-2), var(--vw-bg-1));
+  box-shadow: 0 0 120px 20px rgb(var(--vw-accent-rgb) / 0.35);
+  mask-image: repeating-linear-gradient(180deg, black 0 12px, transparent 12px 16px);
+}
+.vw-synthwave .grid {
+  inset: auto 0 0 0;
+  height: 55%;
+  perspective: 320px;
+  overflow: hidden;
+}
+.vw-synthwave .grid::before {
+  content: "";
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  top: 0;
+  height: 200%;
+  transform-origin: top center;
+  transform: rotateX(62deg);
+  background-image: linear-gradient(var(--vw-bg-3) 2px, transparent 2px), linear-gradient(90deg, var(--vw-bg-3) 2px, transparent 2px);
+  background-size: 60px 60px;
+  animation: vw-grid-run calc(3s / var(--vw-speed, 1)) linear infinite;
+  mask-image: linear-gradient(to bottom, transparent, black 25%);
+  opacity: 0.7;
+}
+@keyframes vw-grid-run {
+  to {
+    background-position: 0 60px;
+  }
+}
+
+/* Eigener Farbverlauf */
+.vw-gradient {
+  animation-duration: calc(24s / var(--vw-speed, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.vw-gradient.is-linear.is-animated {
+  background-size: 250% 250%;
+  animation-name: vw-gradient-pan;
+}
+.vw-gradient.is-radial.is-animated {
+  animation-name: vw-gradient-breathe;
+}
+.vw-gradient.is-conic {
+  inset: -50%;
+}
+.vw-gradient.is-conic.is-animated {
+  animation-name: vw-gradient-spin;
+  animation-timing-function: linear;
+  animation-direction: normal;
+  animation-duration: calc(60s / var(--vw-speed, 1));
+}
+@keyframes vw-gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes vw-gradient-breathe {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.35);
+  }
+}
+@keyframes vw-gradient-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vw-paused * ,
+.vw-paused,
+.vw-paused *::before {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
