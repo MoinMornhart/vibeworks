@@ -295,7 +295,7 @@ export function AdminManager({
         <SettingsForm initial={initialSettings} userCount={users.length} />
       </AccountSection>
 
-      <AccountSection icon={<Users size={18} />} title="Konten" description={`${users.length} Konto${users.length === 1 ? "" : "en"}`}>
+      <AccountSection icon={<Users size={18} />} title="Konten" description={`${users.length} ${users.length === 1 ? "Konto" : "Konten"}`}>
         <div className="space-y-4">
           <ul className="space-y-2">
             {users.map((u) => (

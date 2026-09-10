@@ -16,6 +16,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.4",
+    date: "2026-09-10",
+    title: "Kleine Korrektur",
+    changes: [{ type: "fix", text: "Admin-Seite: „3 Konten“ statt „3 Kontoen“" }],
+  },
+  {
     version: "0.1.3",
     date: "2026-09-10",
     title: "Administration",
