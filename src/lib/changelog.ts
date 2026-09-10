@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.6",
+    date: "2026-09-10",
+    title: "Kanban und Mehrfachauswahl",
+    changes: [
+      { type: "neu", text: "Kanban-Ansicht: Spalten je Status, Karten am Griff ziehen – mit Maus, per Touch nach kurzem Halten oder mit der Tastatur" },
+      { type: "neu", text: "Freie Reihenfolge innerhalb einer Spalte wird gespeichert; reines Umsortieren ändert das Änderungsdatum nicht" },
+      { type: "neu", text: "Mehrfachauswahl: Status setzen, Tags ergänzen oder entfernen, Favoriten markieren, löschen" },
+      { type: "besser", text: "Was der Filter ausblendet, fällt aus der Auswahl – Massenänderungen treffen nur Sichtbares" },
+    ],
+  },
+  {
     version: "0.0.5",
     date: "2026-09-10",
     title: "Projekte und Dashboard",

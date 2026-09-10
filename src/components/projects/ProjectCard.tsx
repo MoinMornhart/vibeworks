@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowDown, ArrowUp, Flame, GitBranch, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Flame, GitBranch, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { cn, timeAgo } from "@/lib/utils";
@@ -43,17 +43,42 @@ interface CardProps {
   onStatus: (p: ProjectListItem, status: ProjectStatus) => void;
   onFavorite: (p: ProjectListItem) => void;
   onEdit: (p: ProjectListItem) => void;
+  onSelect?: (p: ProjectListItem) => void;
+  selected?: boolean;
+  /** Ist schon etwas ausgewählt, stehen die Kästchen dauerhaft da. */
+  selecting?: boolean;
   index?: number;
 }
 
-export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, index = 0 }: CardProps) {
+function SelectBox({ project, selected, selecting, onSelect }: Pick<CardProps, "project" | "selected" | "selecting" | "onSelect">) {
+  if (!onSelect) return null;
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={Boolean(selected)}
+      aria-label={`${project.name} auswählen`}
+      onClick={() => onSelect(project)}
+      className={cn(
+        "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition",
+        selected ? "border-accent bg-accent text-on-accent" : "bg-bg/40 hover:border-accent",
+        !selected && !selecting && "opacity-0 group-hover:opacity-100 focus:opacity-100",
+      )}
+    >
+      {selected && <Check size={13} strokeWidth={3} />}
+    </button>
+  );
+}
+
+export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect, selected, selecting, index = 0 }: CardProps) {
   return (
     <article
-      className="glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20"
+      className={cn("glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20", selected && "ring-2 ring-accent/60")}
       style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
     >
       <div className="absolute inset-x-0 top-0 h-1 rounded-t-[1.25rem]" style={{ background: accentGradient(p.accent) }} />
-      <div className="flex items-start gap-1">
+      <div className="flex items-start gap-1.5">
+        <SelectBox project={p} selected={selected} selecting={selecting} onSelect={onSelect} />
         <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 text-lg font-semibold leading-snug hover:text-accent-ink">
           <span className="line-clamp-2 break-words">{p.name}</span>
         </Link>
@@ -115,9 +140,10 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, index = 
   );
 }
 
-export function ProjectRow({ project: p, onStatus, onFavorite, onEdit }: CardProps) {
+export function ProjectRow({ project: p, onStatus, onFavorite, onEdit, onSelect, selected, selecting }: CardProps) {
   return (
-    <div className="glass group relative flex items-center gap-3 !rounded-xl px-3 py-2.5 hover:z-10 focus-within:z-20 sm:px-4">
+    <div className={cn("glass group relative flex items-center gap-3 !rounded-xl px-3 py-2.5 hover:z-10 focus-within:z-20 sm:px-4", selected && "ring-2 ring-accent/60")}>
+      <SelectBox project={p} selected={selected} selecting={selecting} onSelect={onSelect} />
       <span className="h-9 w-1 shrink-0 rounded-full" style={{ background: `var(${PROJECT_STATUS_MAP[p.status].cssVar})` }} aria-hidden />
       <Link href={`/projects/${p.id}`} className="min-w-0 flex-1">
         <span className="block truncate font-medium hover:text-accent-ink">{p.name}</span>

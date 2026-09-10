@@ -2,15 +2,31 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ProjectStatus } from "@prisma/client";
-import { Archive, FolderPlus, GitBranch, Hammer, LayoutGrid, Lightbulb, List, Plus, Rows3, Search, CircleCheck, Layers } from "lucide-react";
+import {
+  Archive,
+  CircleCheck,
+  Columns3,
+  FolderPlus,
+  GitBranch,
+  Hammer,
+  Layers,
+  LayoutGrid,
+  Lightbulb,
+  List,
+  Plus,
+  Rows3,
+  Search,
+} from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { ProjectCard, ProjectRow } from "./ProjectCard";
 import { ProjectDialog } from "./ProjectDialog";
+import { KanbanBoard } from "./KanbanBoard";
+import { BulkBar, type BulkAction } from "./BulkBar";
 
-type View = "grid" | "list" | "grouped";
+type View = "grid" | "list" | "grouped" | "kanban";
 type Sort = "updated" | "created" | "name" | "progress" | "priority";
 
 const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: ProjectListItem) => number }> = [
@@ -25,6 +41,7 @@ const VIEWS: Array<{ value: View; label: string; icon: typeof LayoutGrid }> = [
   { value: "grid", label: "Raster", icon: LayoutGrid },
   { value: "list", label: "Liste", icon: List },
   { value: "grouped", label: "Nach Status", icon: Rows3 },
+  { value: "kanban", label: "Kanban", icon: Columns3 },
 ];
 
 const STORAGE_KEY = "vw.board";
@@ -51,6 +68,7 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
   const [view, setView] = useState<View>("grid");
   const [showArchived, setShowArchived] = useState(false);
   const [dialog, setDialog] = useState<{ project: ProjectListItem | null } | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   // Ansicht, Sortierung und Archiv-Schalter überdauern das Neuladen – der
@@ -89,6 +107,18 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
       .sort((a, b) => Number(b.favorite) - Number(a.favorite) || cmp(a, b));
   }, [base, statuses, sort]);
 
+  const kanbanColumns = useMemo(
+    () => PROJECT_STATUSES.map((s) => s.value).filter((s) => (showArchived || s !== "ARCHIVED") && (!statuses.length || statuses.includes(s))),
+    [showArchived, statuses],
+  );
+
+  // Was der Filter ausblendet, fällt aus der Auswahl – eine Massenänderung
+  // soll nur treffen, was man gerade vor Augen hat.
+  const selectedVisible = useMemo(
+    () => (view === "kanban" ? [] : visible.filter((p) => selected.has(p.id)).map((p) => p.id)),
+    [visible, selected, view],
+  );
+
   const counts = useMemo(() => {
     const c: Partial<Record<ProjectStatus, number>> = {};
     for (const p of base) c[p.status] = (c[p.status] ?? 0) + 1;
@@ -112,6 +142,11 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
     setProjects((list) => (list.some((x) => x.id === p.id) ? list.map((x) => (x.id === p.id ? { ...x, ...p } : x)) : [p, ...list]));
   }, []);
 
+  async function refresh() {
+    const res = await api<{ projects: ProjectListItem[] }>("/api/projects?archived=1");
+    setProjects(res.projects);
+  }
+
   async function patch(p: ProjectListItem, data: Partial<ProjectListItem>) {
     const before = projects;
     setProjects((list) => list.map((x) => (x.id === p.id ? { ...x, ...data } : x)));
@@ -125,24 +160,66 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
     }
   }
 
-  const cardProps = {
+  function reorder(status: ProjectStatus, visibleIds: string[]) {
+    // Durch die Suche ausgeblendete Karten derselben Spalte hinten anhängen,
+    // damit der Server die vollständige Spalte bekommt.
+    const hidden = projects
+      .filter((p) => p.status === status && !visibleIds.includes(p.id))
+      .sort((a, b) => a.position - b.position)
+      .map((p) => p.id);
+    const ids = [...visibleIds, ...hidden];
+    const before = projects;
+    setProjects((list) =>
+      list.map((p) => {
+        const i = ids.indexOf(p.id);
+        return i >= 0 ? { ...p, status, position: i } : p;
+      }),
+    );
+    setError(null);
+    api("/api/projects/reorder", { method: "PATCH", body: { status, ids } }).catch((e) => {
+      setProjects(before);
+      setError(errorMessage(e));
+    });
+  }
+
+  async function bulk(action: BulkAction) {
+    setError(null);
+    try {
+      await api("/api/projects/bulk", { body: { ...action, ids: selectedVisible } });
+      if (action.action === "delete") setSelected(new Set());
+      await refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  const toggleSelect = (p: ProjectListItem) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(p.id)) next.delete(p.id);
+      else next.add(p.id);
+      return next;
+    });
+
+  const handlers = {
     onStatus: (p: ProjectListItem, status: ProjectStatus) => void patch(p, { status }),
     onFavorite: (p: ProjectListItem) => void patch(p, { favorite: !p.favorite }),
     onEdit: (p: ProjectListItem) => setDialog({ project: p }),
   };
+  const selection = (p: ProjectListItem) => ({ selected: selected.has(p.id), selecting: selectedVisible.length > 0, onSelect: toggleSelect });
 
   const toggleStatus = (s: ProjectStatus) => setStatuses((list) => (list.includes(s) ? list.filter((x) => x !== s) : [...list, s]));
 
   const grid = (list: ProjectListItem[]) => (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {list.map((p, i) => (
-        <ProjectCard key={p.id} project={p} index={i} {...cardProps} />
+        <ProjectCard key={p.id} project={p} index={i} {...handlers} {...selection(p)} />
       ))}
     </div>
   );
 
   return (
-    <div>
+    <div className={cn(selectedVisible.length > 0 && "pb-24")}>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -189,7 +266,14 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
                 aria-label="Projekte durchsuchen"
               />
             </div>
-            <select className="field !w-auto" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sortierung">
+            <select
+              className="field !w-auto"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as Sort)}
+              aria-label="Sortierung"
+              disabled={view === "kanban"}
+              title={view === "kanban" ? "Im Kanban bestimmt die Reihenfolge das Ziehen" : undefined}
+            >
               {SORTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -233,7 +317,9 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
 
           {error && <p role="alert" className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
 
-          {visible.length === 0 ? (
+          {view === "kanban" ? (
+            <KanbanBoard projects={base} statuses={kanbanColumns} onReorder={reorder} onFavorite={handlers.onFavorite} onEdit={handlers.onEdit} />
+          ) : visible.length === 0 ? (
             <div className="glass px-6 py-12 text-center">
               <p className="font-medium">Keine Treffer</p>
               <p className="mt-1 text-sm text-muted">Suche oder Filter lockern.</p>
@@ -244,7 +330,7 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
           ) : view === "list" ? (
             <div className="space-y-2">
               {visible.map((p) => (
-                <ProjectRow key={p.id} project={p} {...cardProps} />
+                <ProjectRow key={p.id} project={p} {...handlers} {...selection(p)} />
               ))}
             </div>
           ) : (
@@ -266,6 +352,14 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
           )}
         </>
       )}
+
+      <BulkBar
+        count={selectedVisible.length}
+        total={visible.length}
+        onAction={bulk}
+        onSelectAll={() => setSelected(new Set(visible.map((p) => p.id)))}
+        onClear={() => setSelected(new Set())}
+      />
 
       <ProjectDialog
         open={dialog !== null}
