@@ -217,7 +217,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 
 - [x] **Etappe 1** – Anmeldung (Passwort, Passkeys, Zwei-Faktor), Mehrbenutzerbetrieb, Projekte,
   Notizen, Aufgaben, Mini-Docs, persönliches Design, Proxmox-Installer und Auto-Update
-- [ ] **Etappe 2** – Git-Anbindung: ~~Commits~~ ✅, ~~Aufgaben ↔ Issues~~ ✅, Projekte teilen,
+- [ ] **Etappe 2** – Git-Anbindung: ~~Commits~~ ✅, ~~Aufgaben ↔ Issues~~ ✅, ~~Projekte teilen~~ ✅,
   CI-Status, Webhooks
 - [ ] **Etappe 3** – Wochenrückblick, Zeitleiste, Projektvorlagen, Import/Export,
   Benachrichtigungen (ntfy, Webhook, E-Mail)

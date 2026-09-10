@@ -120,6 +120,8 @@ model User {
   activities    Activity[]
   uploads       Upload[]
   docs          Doc[]
+  memberships    ProjectMember[]
+  accessRequests AccessRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -221,11 +223,15 @@ model Project {
   repoTokenHint   String?
   /// Aufgaben automatisch als Issues im Repository spiegeln (braucht ein Token)
   issueSync       Boolean @default(true)
+  /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
+  shareToken      String? @unique
 
   notes      Note[]
   tasks      Task[]
   activities Activity[]
   repoCache  RepoCache?
+  members        ProjectMember[]
+  accessRequests AccessRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -308,6 +314,49 @@ model RepoCache {
   commits       Json     @default("[]")
   fetchedAt     DateTime @default(now())
   error         String?
+}
+
+// ── Teilen ──────────────────────────────────────────────────
+
+enum ProjectRole {
+  VIEWER
+  EDITOR
+}
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+/// Mitglied eines geteilten Projekts. Der Besitzer steht nicht hier, sondern in Project.ownerId.
+model ProjectMember {
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectRole @default(VIEWER)
+  createdAt DateTime    @default(now())
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
+
+/// Anfrage auf Zugriff über einen geteilten Link – je Konto und Projekt höchstens eine.
+model AccessRequest {
+  id        String              @id @default(cuid())
+  projectId String
+  project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectRole         @default(VIEWER)
+  message   String?
+  status    AccessRequestStatus @default(PENDING)
+  createdAt DateTime            @default(now())
+  decidedAt DateTime?
+
+  @@unique([projectId, userId])
+  @@index([projectId, status])
 }
 
 // ── Dateien ─────────────────────────────────────────────────

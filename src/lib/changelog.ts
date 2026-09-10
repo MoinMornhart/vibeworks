@@ -16,6 +16,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.6",
+    date: "2026-09-10",
+    title: "Projekte teilen",
+    changes: [
+      { type: "neu", text: "Projekte teilen: öffentlicher Link, der auch ohne Konto funktioniert – Beschreibung, Aufgaben und Commits zum Lesen, Notizen bleiben privat" },
+      { type: "neu", text: "Angemeldete Besucher eines Links können Zugriff anfragen (Ansehen oder Bearbeiten, mit Nachricht)" },
+      { type: "neu", text: "Teilen-Dialog für Besitzer: Link erstellen, erneuern oder abschalten, Anfragen annehmen oder ablehnen, Mitglieder per Benutzername hinzufügen, Rollen ändern und entfernen" },
+      { type: "neu", text: "Rollen: Betrachter lesen nur, Bearbeiter ändern Aufgaben, Notizen, Status und Beschreibung – Repository, Token, Teilen und Löschen bleiben beim Besitzer" },
+      { type: "neu", text: "Dashboard: Bereich „Mit mir geteilt“ und Hinweis auf offene Zugriffsanfragen" },
+      { type: "neu", text: "Knopf „Token auf GitHub erstellen“ im Zugang-Feld – öffnet GitHub mit allem vorausgefüllt" },
+    ],
+  },
+  {
     version: "0.2.5",
     date: "2026-09-10",
     title: "Neue Projektseite auf GitHub",

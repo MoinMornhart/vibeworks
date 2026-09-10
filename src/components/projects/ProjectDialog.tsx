@@ -47,12 +47,15 @@ export function ProjectDialog({
   onClose,
   onSaved,
   onDeleted,
+  ownerControls = true,
 }: {
   open: boolean;
   project?: ProjectListItem | null;
   onClose: () => void;
   onSaved: (p: ProjectListItem) => void;
   onDeleted?: (id: string) => void;
+  /** Löschen, Repository und Favorit – nur für den Besitzer, nicht für Bearbeiter geteilter Projekte */
+  ownerControls?: boolean;
 }) {
   const editing = Boolean(project);
   const [form, setForm] = useState<Form>(() => toForm(project));
@@ -120,7 +123,7 @@ export function ProjectDialog({
       size="lg"
       footer={
         <>
-          {editing && (
+          {editing && ownerControls && (
             <button type="button" className="btn btn-danger btn-sm mr-auto" onClick={remove} disabled={busy}>
               <Trash2 size={14} /> Löschen
             </button>
@@ -210,16 +213,20 @@ export function ProjectDialog({
             <input id="p-tags" className="field" value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="nextjs, ki, spiel" />
             <p className="mt-1 text-xs text-muted">Kommagetrennt, bis zu 12</p>
           </div>
-          <div>
-            <label className="label" htmlFor="p-repo">Repository</label>
-            <input id="p-repo" className="field" value={form.repoUrl} onChange={(e) => set("repoUrl", e.target.value)} placeholder="https://github.com/…" />
-            {fieldErrors.repoUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.repoUrl}</p>}
-          </div>
+          {ownerControls && (
+            <div>
+              <label className="label" htmlFor="p-repo">Repository</label>
+              <input id="p-repo" className="field" value={form.repoUrl} onChange={(e) => set("repoUrl", e.target.value)} placeholder="https://github.com/…" />
+              {fieldErrors.repoUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.repoUrl}</p>}
+            </div>
+          )}
         </div>
 
-        <button type="button" onClick={() => set("favorite", !form.favorite)} aria-pressed={form.favorite} className="btn btn-sm">
-          <Star size={15} className={form.favorite ? "fill-amber-400 text-amber-400" : ""} /> {form.favorite ? "Favorit" : "Als Favorit markieren"}
-        </button>
+        {ownerControls && (
+          <button type="button" onClick={() => set("favorite", !form.favorite)} aria-pressed={form.favorite} className="btn btn-sm">
+            <Star size={15} className={form.favorite ? "fill-amber-400 text-amber-400" : ""} /> {form.favorite ? "Favorit" : "Als Favorit markieren"}
+          </button>
+        )}
 
         <FormError message={error} />
       </form>

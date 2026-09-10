@@ -2,10 +2,11 @@ import type { Prisma } from "@prisma/client";
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { closeIssueOfDeletedTask, pushTaskIssues } from "@/lib/git/issues";
-import { json, notFound, readBody, route } from "@/lib/api";
+import { json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { requireTask } from "@/lib/access";
 import { taskUpdateSchema } from "@/lib/validation";
-import { findOwnTask, nextTaskPosition, serializeTask, syncProjectProgress, transitionTask } from "@/lib/tasks";
+import { nextTaskPosition, serializeTask, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { dayKeyToDate } from "@/lib/taskDates";
 import { touchProject } from "@/lib/notes";
 import { logActivity } from "@/lib/activity";
@@ -16,8 +17,7 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const current = await findOwnTask(user.id, id);
-  if (!current) throw notFound("Aufgabe nicht gefunden");
+  const { task: current } = await requireTask(user.id, id, "EDITOR");
   const input = await readBody(req, taskUpdateSchema);
 
   const data: Prisma.TaskUncheckedUpdateInput = {};
@@ -46,8 +46,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const task = await findOwnTask(user.id, id);
-  if (!task) throw notFound("Aufgabe nicht gefunden");
+  const { task } = await requireTask(user.id, id, "EDITOR");
   await db.task.delete({ where: { id } });
   await logActivity({ projectId: task.projectId, userId: user.id, kind: "TASK_DELETED", summary: `Aufgabe „${truncate(task.title, 60)}“ gelöscht` });
   const progress = await syncProjectProgress(task.projectId);

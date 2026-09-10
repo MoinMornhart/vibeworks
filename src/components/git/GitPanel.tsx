@@ -182,7 +182,7 @@ function Stat({ icon: Icon, label, value, hint }: { icon: typeof Star; label: st
 }
 
 const TOKEN_HELP: Record<GitProvider, string> = {
-  github: "GitHub: Fine-grained Token nur für dieses Repository – „Contents: Read“ und „Issues: Read and write“.",
+  github: "GitHub: Token mit dem Recht „public_repo“ (bei privaten Repositories „repo“).",
   gitlab: "GitLab: Projekt- oder Personal-Access-Token mit dem Scope „api“.",
   gitea: "Gitea/Forgejo: Token mit „repository: read“ und „issue: write“.",
 };
@@ -229,8 +229,26 @@ function AccessPanel({
             <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onSave({ token: null })}>Entfernen</button>
           )}
         </div>
+        {(provider === "github" || !provider) && (
+          <a
+            href="https://github.com/settings/tokens/new?scopes=public_repo&description=VibeWorks"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm w-full justify-center sm:w-auto"
+          >
+            <ExternalLink size={14} /> Token auf GitHub erstellen
+          </a>
+        )}
         <p className="text-xs text-muted">
-          {(provider && TOKEN_HELP[provider]) ?? Object.values(TOKEN_HELP).join(" ")} Das Token wird verschlüsselt gespeichert und nie wieder angezeigt.
+          {provider === "github" || !provider ? (
+            <>
+              Der Knopf öffnet GitHub mit allem vorausgefüllt: bei „Expiration“ eine Laufzeit wählen, unten auf <b>Generate token</b> klicken und den Token
+              (beginnt mit <code>ghp_</code>) hier einfügen. Für private Repositories zusätzlich den Haken bei „repo“ setzen.{" "}
+            </>
+          ) : (
+            <>{TOKEN_HELP[provider]} </>
+          )}
+          Das Token wird verschlüsselt gespeichert und nie wieder angezeigt.
         </p>
       </form>
 
@@ -261,13 +279,18 @@ export function GitPanel({
   initialCache,
   initialAccess,
   linkedIssues,
+  mode = "owner",
 }: {
   projectId: string;
   repoUrl: string | null;
   initialCache: RepoCacheView | null;
   initialAccess: Access;
   linkedIssues: number;
+  /** owner: alles · member: abgleichen, kein Token · public: nur der gespeicherte Stand */
+  mode?: "owner" | "member" | "public";
 }) {
+  const canSync = mode !== "public";
+  const canManage = mode === "owner";
   const router = useRouter();
   const [cache, setCache] = useState(initialCache);
   const [access, setAccess] = useState(initialAccess);
@@ -291,7 +314,7 @@ export function GitPanel({
   const provider = (cache?.provider || guessProvider(parseRepoUrl(repoUrl)?.host ?? "")) as GitProvider | "" | null;
 
   const sync = useCallback(async () => {
-    if (!repoUrl || busyRef.current) return;
+    if (!repoUrl || !canSync || busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     setError(null);
@@ -308,12 +331,12 @@ export function GitPanel({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [projectId, repoUrl, router]);
+  }, [projectId, repoUrl, router, canSync]);
 
   // Beim Öffnen abgleichen, wenn der Stand älter als 5 Minuten ist, und
   // danach alle 5 Minuten, solange der Tab sichtbar ist.
   useEffect(() => {
-    if (!repoUrl) return;
+    if (!repoUrl || !canSync) return;
     if (!initialCache || Date.now() - Date.parse(initialCache.fetchedAt) > STALE_MS) void sync();
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void sync();
@@ -350,8 +373,15 @@ export function GitPanel({
   }, [commits, shown]);
   const issueBase = cache ? issueBaseOf(cache) : null;
 
-  const issueStat = !access.tokenHint ? "aus" : !access.issueSync ? "pausiert" : String(linked);
-  const issueHint = !access.tokenHint ? "Für Issues ein Zugangstoken hinterlegen" : !access.issueSync ? "Spiegelung ist abgeschaltet" : `${linked} Aufgaben mit Issue`;
+  // Den Token-Zustand kennt nur der Besitzer – alle anderen sehen die Zahl verknüpfter Issues.
+  const issueStat = !canManage ? (linked ? String(linked) : "–") : !access.tokenHint ? "aus" : !access.issueSync ? "pausiert" : String(linked);
+  const issueHint = !canManage
+    ? `${linked} Aufgaben mit Issue`
+    : !access.tokenHint
+      ? "Für Issues ein Zugangstoken hinterlegen"
+      : !access.issueSync
+        ? "Spiegelung ist abgeschaltet"
+        : `${linked} Aufgaben mit Issue`;
 
   return (
     <section className="glass p-6 sm:p-8" aria-labelledby="git-heading">
@@ -385,12 +415,16 @@ export function GitPanel({
                 {busy ? "gleicht ab …" : `Stand ${timeAgo(cache.fetchedAt)}`}
               </span>
             )}
-            <button type="button" className={cn("btn btn-sm", showAccess && "chip-active")} onClick={() => setShowAccess((s) => !s)} aria-expanded={showAccess}>
-              <KeyRound size={14} /> Zugang
-            </button>
-            <button type="button" className="btn btn-sm" onClick={() => void sync()} disabled={busy} aria-label="Jetzt abgleichen">
-              <RefreshCw size={14} className={cn(busy && "animate-spin")} /> <span className="hidden sm:inline">Abgleichen</span>
-            </button>
+            {canManage && (
+              <button type="button" className={cn("btn btn-sm", showAccess && "chip-active")} onClick={() => setShowAccess((s) => !s)} aria-expanded={showAccess}>
+                <KeyRound size={14} /> Zugang
+              </button>
+            )}
+            {canSync && (
+              <button type="button" className="btn btn-sm" onClick={() => void sync()} disabled={busy} aria-label="Jetzt abgleichen">
+                <RefreshCw size={14} className={cn(busy && "animate-spin")} /> <span className="hidden sm:inline">Abgleichen</span>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -406,7 +440,7 @@ export function GitPanel({
         </div>
       ) : (
         <>
-          {showAccess && <AccessPanel provider={provider || null} access={access} busy={accessBusy || busy} error={accessError} onSave={(b) => void saveAccess(b)} />}
+          {showAccess && canManage && <AccessPanel provider={provider || null} access={access} busy={accessBusy || busy} error={accessError} onSave={(b) => void saveAccess(b)} />}
 
           {(error || cache?.error) && (
             <p role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">

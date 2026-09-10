@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import { json, notFound, readBody, route } from "@/lib/api";
+import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { requireProject, visibleTo } from "@/lib/access";
 import { projectUpdateSchema } from "@/lib/validation";
-import { findOwnProject, nextPosition, projectListSelect, serializeProject, uniqueSlug } from "@/lib/projects";
+import { nextPosition, projectListSelect, serializeProject, uniqueSlug } from "@/lib/projects";
 import { syncProjectProgress } from "@/lib/tasks";
 import { logActivity } from "@/lib/activity";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
@@ -11,7 +12,7 @@ import { parseRepoUrl } from "@/lib/git/parse";
 type Params = { id: string };
 
 async function loadDetail(ownerId: string, id: string) {
-  const project = await db.project.findFirst({ where: { id, ownerId }, select: { ...projectListSelect, description: true } });
+  const project = await db.project.findFirst({ where: { id, ...visibleTo(ownerId) }, select: { ...projectListSelect, description: true } });
   if (!project) return null;
   const done = await db.task.count({ where: { projectId: id, status: "DONE" } });
   return serializeProject(project, done);
@@ -27,14 +28,18 @@ export const GET = route<Params>(async (_req, { params }) => {
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const current = await findOwnProject(user.id, id);
-  if (!current) throw notFound("Projekt nicht gefunden");
+  const { project: current, access } = await requireProject(user.id, id, "EDITOR");
   const input = await readBody(req, projectUpdateSchema);
+  // Repository (samt Token) und Favorit gehören dem Besitzer.
+  const ownerOnly =
+    (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) || (input.favorite !== undefined && input.favorite !== current.favorite);
+  if (ownerOnly && access !== "OWNER") throw new ApiError(403, "Repository und Favorit ändert nur der Besitzer des Projekts.");
 
   const data: Record<string, unknown> = { ...input };
-  if (input.name && input.name !== current.name) data.slug = await uniqueSlug(user.id, input.name, id);
+  // Slug und Spaltenposition beziehen sich auf das Board des Besitzers.
+  if (input.name && input.name !== current.name) data.slug = await uniqueSlug(current.ownerId, input.name, id);
   const statusChanged = input.status !== undefined && input.status !== current.status;
-  if (statusChanged) data.position = await nextPosition(user.id, input.status!);
+  if (statusChanged) data.position = await nextPosition(current.ownerId, input.status!);
 
   const updated = await db.project.update({ where: { id }, data, select: { status: true, progressFromTasks: true } });
   // Anderes Repository: zwischengespeicherte Commits und Issue-Nummern gehören zum alten.

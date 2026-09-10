@@ -81,6 +81,29 @@ export const repoAccessSchema = z.object({
   issueSync: z.boolean().optional(),
 });
 
+// ── Teilen ──────────────────────────────────────────────────
+
+export const projectRoleSchema = z.enum(["VIEWER", "EDITOR"]);
+
+export const shareLinkSchema = z.object({ link: z.enum(["on", "off", "renew"]) });
+
+export const memberAddSchema = z.object({
+  username: z.string().trim().toLowerCase().min(1, "Benutzername fehlt").max(64),
+  role: projectRoleSchema.default("VIEWER"),
+});
+
+export const memberUpdateSchema = z.object({ role: projectRoleSchema });
+
+export const accessRequestSchema = z.object({
+  role: projectRoleSchema.default("VIEWER"),
+  message: optionalText(500),
+});
+
+export const accessDecisionSchema = z.object({
+  decision: z.enum(["approve", "deny"]),
+  role: projectRoleSchema.optional(),
+});
+
 export const projectReorderSchema = z.object({
   status: projectStatusSchema,
   ids: z.array(z.string().max(40)).max(1000),

@@ -42,6 +42,7 @@ function TaskCard({
   today,
   onOpen,
   onToggle,
+  readOnly = false,
 }: {
   task: TaskItem;
   handle?: ReactNode;
@@ -49,6 +50,7 @@ function TaskCard({
   today: string;
   onOpen: (t: TaskItem) => void;
   onToggle: (t: TaskItem) => void;
+  readOnly?: boolean;
 }) {
   const done = t.status === "DONE";
   return (
@@ -61,6 +63,7 @@ function TaskCard({
           aria-checked={done}
           aria-label={done ? `${t.title} wieder öffnen` : `${t.title} erledigen`}
           onClick={() => onToggle(t)}
+          disabled={readOnly}
           className={cn(
             "mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition",
             done ? "border-emerald-400 bg-emerald-400 text-black" : "hover:border-emerald-400",
@@ -68,7 +71,7 @@ function TaskCard({
         >
           {done && <Check size={12} strokeWidth={3} />}
         </button>
-        <button type="button" onClick={() => onOpen(t)} className="min-w-0 flex-1 px-1.5 pt-0.5 text-left text-sm leading-snug">
+        <button type="button" onClick={() => onOpen(t)} disabled={readOnly} className="min-w-0 flex-1 px-1.5 pt-0.5 text-left text-sm leading-snug disabled:cursor-default">
           <span className={cn("break-words", done && "text-muted line-through")}>{t.title}</span>
         </button>
       </div>
@@ -113,11 +116,14 @@ export function TaskBoard({
   initial,
   limit,
   progressFromTasks,
+  readOnly = false,
 }: {
   projectId: string;
   initial: TaskItem[];
   limit: number;
   progressFromTasks: boolean;
+  /** Betrachter: kein Anlegen, Ziehen oder Abhaken */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initial);
@@ -252,6 +258,7 @@ export function TaskBoard({
             </button>
           )}
         </div>
+        {!readOnly && (
         <form onSubmit={quickAdd} className="flex w-full gap-2 sm:w-auto">
           <input className="field sm:w-72" placeholder="Neue Aufgabe … (Enter)" value={quick} onChange={(e) => setQuick(e.target.value)} maxLength={200} aria-label="Neue Aufgabe" />
           <button type="submit" className="btn btn-icon shrink-0" aria-label="Aufgabe anlegen" disabled={!quick.trim()}><Plus size={16} /></button>
@@ -259,6 +266,7 @@ export function TaskBoard({
             <SlidersHorizontal size={15} />
           </button>
         </form>
+        )}
       </div>
 
       {error && <p role="alert" className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
@@ -272,8 +280,8 @@ export function TaskBoard({
         onReorder={reorder}
         limit={limit}
         emptyText="Keine Aufgaben"
-        renderCard={(t, handle) => <TaskCard task={t} handle={handle} today={today} onOpen={open} onToggle={toggle} />}
-        renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} />}
+        renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
+        renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderColumn={(status, count, body) => {
           const meta = TASK_STATUSES.find((s) => s.value === status)!;
           return (
@@ -290,6 +298,7 @@ export function TaskBoard({
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
       />
 
+      {!readOnly && (
       <TaskDialog
         open={dialog !== null}
         task={dialog?.task ?? null}
@@ -298,6 +307,7 @@ export function TaskBoard({
         onSave={save}
         onDelete={remove}
       />
+      )}
     </section>
   );
 }

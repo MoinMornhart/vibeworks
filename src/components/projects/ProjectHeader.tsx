@@ -4,21 +4,44 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowLeft, CalendarPlus, ExternalLink, GitBranch, History, Pencil, Star } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ExternalLink, GitBranch, History, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
+import type { ProjectAccess } from "@/lib/access";
+import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { formatDate, timeAgo } from "@/lib/utils";
 import { accentGradient, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
+import { ShareDialog } from "@/components/share/ShareDialog";
 
-export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
+const ROLE_LABEL: Record<ProjectAccess, string> = { OWNER: "Besitzer", EDITOR: "Bearbeiten", VIEWER: "Ansehen" };
+
+export function ProjectHeader({
+  initial,
+  access = "OWNER",
+  ownerName,
+  pendingRequests = 0,
+  openShare = false,
+}: {
+  initial: ProjectDetail;
+  access?: ProjectAccess;
+  ownerName?: string;
+  pendingRequests?: number;
+  /** Teilen-Dialog gleich öffnen (Link aus dem Hinweis auf dem Dashboard) */
+  openShare?: boolean;
+}) {
   const router = useRouter();
+  const isOwner = access === "OWNER";
+  const canEdit = access !== "VIEWER";
   const [p, setP] = useState<ProjectDetail>(initial);
   // Nach router.refresh() (z. B. neuer Fortschritt aus Aufgaben) neue Daten übernehmen.
   useEffect(() => setP(initial), [initial]);
   const [editOpen, setEditOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(openShare && isOwner);
+  const [pending, setPending] = useState(pendingRequests);
+  useEffect(() => setPending(pendingRequests), [pendingRequests]);
   const [error, setError] = useState<string | null>(null);
 
   async function patch(data: Partial<ProjectListItem>) {
@@ -34,6 +57,19 @@ export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
     }
   }
 
+  async function leave() {
+    if (!window.confirm(`„${p.name}“ verlassen? Du brauchst danach eine neue Einladung.`)) return;
+    try {
+      await api(`/api/projects/${p.id}/members/me`, { method: "DELETE" });
+      router.push("/");
+      router.refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  const status = PROJECT_STATUS_MAP[p.status];
+
   return (
     <div className="fade-in space-y-6">
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg">
@@ -47,19 +83,47 @@ export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
             <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{p.name}</h1>
             {p.summary && <p className="mt-2 text-lg text-muted">{p.summary}</p>}
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => void patch({ favorite: !p.favorite })} aria-pressed={p.favorite} aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"} className="btn btn-ghost btn-icon">
-              <Star size={18} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
-            </button>
-            <button className="btn btn-sm" onClick={() => setEditOpen(true)}>
-              <Pencil size={14} /> Bearbeiten
-            </button>
+          <div className="flex flex-wrap items-center gap-1">
+            {isOwner && (
+              <button onClick={() => void patch({ favorite: !p.favorite })} aria-pressed={p.favorite} aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"} className="btn btn-ghost btn-icon">
+                <Star size={18} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
+              </button>
+            )}
+            {isOwner && (
+              <button className="btn btn-sm" onClick={() => setShareOpen(true)}>
+                <Share2 size={14} /> Teilen
+                {pending > 0 && (
+                  <span className="ml-0.5 rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent" aria-label={`${pending} offene Anfragen`}>{pending}</span>
+                )}
+              </button>
+            )}
+            {canEdit && (
+              <button className="btn btn-sm" onClick={() => setEditOpen(true)}>
+                <Pencil size={14} /> Bearbeiten
+              </button>
+            )}
+            {!isOwner && (
+              <button className="btn btn-sm" onClick={() => void leave()} title="Projekt verlassen">
+                <LogOut size={14} /> Verlassen
+              </button>
+            )}
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-          <StatusSelect value={p.status} onChange={(status: ProjectStatus) => void patch({ status })} align="left" />
+          {canEdit ? (
+            <StatusSelect value={p.status} onChange={(s: ProjectStatus) => void patch({ status: s })} align="left" />
+          ) : (
+            <span className="chip !py-0.5" style={{ color: `var(${status.cssVar})` }}>
+              <span className="h-2 w-2 rounded-full" style={{ background: `var(${status.cssVar})` }} /> {status.label}
+            </span>
+          )}
           <PriorityBadge priority={p.priority} />
+          {!isOwner && (
+            <span className="inline-flex items-center gap-1.5 text-muted">
+              <Users size={14} /> geteilt von {ownerName ?? "–"} · {ROLE_LABEL[access]}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5 text-muted"><CalendarPlus size={14} /> angelegt {formatDate(p.createdAt)}</span>
           <span className="inline-flex items-center gap-1.5 text-muted" suppressHydrationWarning><History size={14} /> geändert {timeAgo(p.updatedAt)}</span>
           {p.repoUrl && (
@@ -93,25 +157,38 @@ export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
           <Markdown>{p.description}</Markdown>
         ) : (
           <p className="text-muted">
-            Noch keine Beschreibung.{" "}
-            <button className="text-accent-ink hover:underline" onClick={() => setEditOpen(true)}>Jetzt ergänzen</button>
+            Noch keine Beschreibung.
+            {canEdit && (
+              <>
+                {" "}
+                <button className="text-accent-ink hover:underline" onClick={() => setEditOpen(true)}>Jetzt ergänzen</button>
+              </>
+            )}
           </p>
         )}
       </section>
 
-      <ProjectDialog
-        open={editOpen}
-        project={p}
-        onClose={() => setEditOpen(false)}
-        onSaved={(saved) => {
-          setP((cur) => ({ ...cur, ...saved, description: saved.description ?? cur.description }));
-          router.refresh();
-        }}
-        onDeleted={() => {
-          router.push("/");
-          router.refresh();
-        }}
-      />
+      {canEdit && (
+        <ProjectDialog
+          open={editOpen}
+          project={p}
+          ownerControls={isOwner}
+          onClose={() => setEditOpen(false)}
+          onSaved={(saved) => {
+            setP((cur) => ({ ...cur, ...saved, description: saved.description ?? cur.description }));
+            router.refresh();
+          }}
+          onDeleted={
+            isOwner
+              ? () => {
+                  router.push("/");
+                  router.refresh();
+                }
+              : undefined
+          }
+        />
+      )}
+      {isOwner && <ShareDialog projectId={p.id} open={shareOpen} onClose={() => setShareOpen(false)} onPendingChange={setPending} />}
     </div>
   );
 }

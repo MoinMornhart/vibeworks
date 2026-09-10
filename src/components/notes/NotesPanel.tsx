@@ -79,7 +79,7 @@ function NoteEditor({
   );
 }
 
-export function NotesPanel({ projectId, initial }: { projectId: string; initial: NoteItem[] }) {
+export function NotesPanel({ projectId, initial, readOnly = false }: { projectId: string; initial: NoteItem[]; readOnly?: boolean }) {
   const [notes, setNotes] = useState(() => sortNotes(initial));
   const [composing, setComposing] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -134,7 +134,7 @@ export function NotesPanel({ projectId, initial }: { projectId: string; initial:
           <StickyNote size={18} className="text-accent-ink" /> Notizen
           <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{notes.length}</span>
         </h2>
-        {!composing && (
+        {!composing && !readOnly && (
           <button className="btn btn-sm" onClick={() => { setComposing(true); setEditing(null); }}>
             <Plus size={15} /> Neue Notiz
           </button>
@@ -153,7 +153,7 @@ export function NotesPanel({ projectId, initial }: { projectId: string; initial:
         <div className="rounded-2xl border border-dashed px-6 py-10 text-center">
           <p className="font-medium">Noch keine Notizen</p>
           <p className="mt-1 text-sm text-muted">Ideen, Links, Befehle, Checklisten – alles, was sonst in einer Textdatei verschwindet.</p>
-          <button className="btn btn-sm mt-4" onClick={() => setComposing(true)}><Plus size={15} /> Erste Notiz</button>
+          {!readOnly && <button className="btn btn-sm mt-4" onClick={() => setComposing(true)}><Plus size={15} /> Erste Notiz</button>}
         </div>
       ) : (
         <ul className="space-y-4">
@@ -175,6 +175,7 @@ export function NotesPanel({ projectId, initial }: { projectId: string; initial:
                     <div className="min-w-0 flex-1">
                       {n.title && <h3 className="font-semibold">{n.title}</h3>}
                     </div>
+                    {!readOnly && (
                     <div className="flex shrink-0 gap-0.5 opacity-60 transition group-hover:opacity-100 focus-within:opacity-100">
                       <button className="btn btn-ghost btn-icon btn-sm" onClick={() => void update(n.id, { pinned: !n.pinned })} aria-label={n.pinned ? "Lösen" : "Anpinnen"} title={n.pinned ? "Lösen" : "Anpinnen"}>
                         {n.pinned ? <PinOff size={15} /> : <Pin size={15} />}
@@ -186,6 +187,7 @@ export function NotesPanel({ projectId, initial }: { projectId: string; initial:
                         <Trash2 size={15} />
                       </button>
                     </div>
+                    )}
                   </div>
                   <Markdown className={cn(n.title && "mt-2")}>{n.content}</Markdown>
                   <p className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted">

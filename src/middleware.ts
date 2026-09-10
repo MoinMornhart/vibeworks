@@ -6,7 +6,8 @@ import { NextResponse, type NextRequest } from "next/server";
 // entscheidet erst der Server in jeder Seite und jedem Endpunkt.
 
 const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
-const PUBLIC_PATHS = ["/login", "/setup", "/register", "/api/auth", "/api/health", "/manifest.webmanifest"];
+// /s/<token>: geteilte Projekte, auch ohne Anmeldung lesbar
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/s", "/api/auth", "/api/health", "/manifest.webmanifest"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

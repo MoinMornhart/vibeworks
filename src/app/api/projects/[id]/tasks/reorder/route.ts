@@ -2,9 +2,9 @@ import type { Task } from "@prisma/client";
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { pushTaskIssues } from "@/lib/git/issues";
-import { json, notFound, readBody, route } from "@/lib/api";
+import { json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
-import { findOwnProject } from "@/lib/projects";
+import { requireProject } from "@/lib/access";
 import { taskReorderSchema } from "@/lib/validation";
 import { serializeTask, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { touchProject } from "@/lib/notes";
@@ -18,7 +18,7 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  if (!(await findOwnProject(user.id, id))) throw notFound("Projekt nicht gefunden");
+  await requireProject(user.id, id, "EDITOR");
   const { status, ids } = await readBody(req, taskReorderSchema);
 
   const tasks = await db.task.findMany({ where: { projectId: id, id: { in: ids } } });

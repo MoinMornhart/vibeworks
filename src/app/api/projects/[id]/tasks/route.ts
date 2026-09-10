@@ -1,9 +1,9 @@
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { pushTaskIssue } from "@/lib/git/issues";
-import { json, notFound, readBody, route } from "@/lib/api";
+import { json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
-import { findOwnProject } from "@/lib/projects";
+import { requireProject } from "@/lib/access";
 import { taskCreateSchema } from "@/lib/validation";
 import { nextTaskPosition, serializeTask, syncProjectProgress, TASK_ORDER } from "@/lib/tasks";
 import { dayKeyToDate } from "@/lib/taskDates";
@@ -16,7 +16,7 @@ type Params = { id: string };
 export const GET = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  if (!(await findOwnProject(user.id, id))) throw notFound("Projekt nicht gefunden");
+  await requireProject(user.id, id);
   const tasks = await db.task.findMany({ where: { projectId: id }, orderBy: TASK_ORDER });
   return json({ tasks: tasks.map(serializeTask) });
 });
@@ -24,7 +24,7 @@ export const GET = route<Params>(async (_req, { params }) => {
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  if (!(await findOwnProject(user.id, id))) throw notFound("Projekt nicht gefunden");
+  await requireProject(user.id, id, "EDITOR");
   const input = await readBody(req, taskCreateSchema);
 
   const task = await db.task.create({
