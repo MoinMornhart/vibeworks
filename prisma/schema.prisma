@@ -60,6 +60,20 @@ enum ActivityKind {
   TASK_DELETED
 }
 
+/// Art einer Seite in den Mini-Docs
+enum DocKind {
+  PAGE
+  WEB
+  HTML
+}
+
+/// Wer eine Seite sehen darf
+enum DocShare {
+  PRIVATE
+  ACCOUNTS
+  PUBLIC
+}
+
 // ── Instanz ─────────────────────────────────────────────────
 
 /// Genau eine Zeile (id = "instance").
@@ -105,6 +119,7 @@ model User {
   projects      Project[]
   activities    Activity[]
   uploads       Upload[]
+  docs          Doc[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -279,4 +294,36 @@ model Upload {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// ── Mini-Docs ───────────────────────────────────────────────
+
+/// Eine Seite in den Mini-Docs: Markdown-Seite, gespeicherte Webseite oder
+/// eigene HTML-Seite. Seiten bilden einen Baum; privat, optional teilbar.
+model Doc {
+  id         String    @id @default(cuid())
+  ownerId    String
+  owner      User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Doc?      @relation("DocTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Doc[]     @relation("DocTree")
+  kind       DocKind   @default(PAGE)
+  title      String
+  /// Emoji vor dem Titel
+  icon       String?
+  /// Markdown (Seite, Notizen zu einer Webseite) bzw. HTML-Quelltext
+  content    String    @default("")
+  /// Gespeicherte Webseite: Adresse und archivierter, lesbarer Inhalt
+  sourceUrl  String?
+  archive    String?
+  archivedAt DateTime?
+  /// Rang unter den Geschwistern im Baum
+  position   Int       @default(0)
+  pinned     Boolean   @default(false)
+  share      DocShare  @default(PRIVATE)
+  shareToken String?   @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([ownerId, parentId, position])
 }

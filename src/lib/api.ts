@@ -44,13 +44,13 @@ export function assertSameOrigin(req: NextRequest) {
 }
 
 /** Liefert den Ausgabetyp des Schemas – also nach Defaults und Transformationen. */
-export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S): Promise<z.output<S>> {
+export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S, opts: { maxBytes?: number } = {}): Promise<z.output<S>> {
   const type = req.headers.get("content-type") ?? "";
   if (!type.toLowerCase().startsWith("application/json")) {
     throw new ApiError(415, "Erwartet Content-Type: application/json");
   }
   const text = await req.text();
-  if (text.length > MAX_BODY) throw new ApiError(413, "Anfrage zu groß");
+  if (text.length > (opts.maxBytes ?? MAX_BODY)) throw new ApiError(413, "Anfrage zu groß");
   let raw: unknown;
   try {
     raw = text ? JSON.parse(text) : {};

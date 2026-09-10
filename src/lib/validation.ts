@@ -233,6 +233,38 @@ export const adminUserUpdateSchema = z.object({
   unlock: z.boolean().optional(),
 });
 
+// ── Mini-Docs ───────────────────────────────────────────────
+
+export const docCreateSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .transform((v) => v || "Neue Seite"),
+  parentId: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => v || null),
+});
+
+// Außen .optional(): Fehlendes heißt „nicht ändern“.
+export const docUpdateSchema = z.object({
+  title: z.string().trim().min(1, "Titel fehlt").max(200, "Titel: höchstens 200 Zeichen").optional(),
+  icon: z
+    .string()
+    .trim()
+    .max(16)
+    .nullish()
+    .transform((v) => v || null)
+    .optional(),
+  content: z.string().max(1_000_000, "Höchstens eine Million Zeichen").optional(),
+  parentId: z.string().max(40).nullable().optional(),
+  move: z.enum(["up", "down"]).optional(),
+  pinned: z.boolean().optional(),
+});
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

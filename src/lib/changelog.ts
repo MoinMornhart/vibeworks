@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.2",
+    date: "2026-09-10",
+    title: "Mini-Docs",
+    changes: [
+      { type: "neu", text: "Neuer Reiter „Docs“: eigene Seiten mit beliebig tiefen Unterseiten im Seitenbaum" },
+      { type: "neu", text: "Markdown-Editor mit Schreiben, Geteilt und Vorschau, Werkzeugleiste (fett, kursiv, Überschrift, Listen, Checklisten, Zitat, Code, Link) und Emoji-Symbol je Seite" },
+      { type: "neu", text: "Speichert automatisch beim Tippen, Strg+S sofort; Brotkrumen, Unterseiten-Übersicht und „Zuletzt bearbeitet“" },
+      { type: "neu", text: "Seiten verschieben, nach oben/unten sortieren und samt Unterseiten löschen – Kreise im Baum sind ausgeschlossen" },
+      { type: "neu", text: "Docs sind in der Volltextsuche und in der Schnellsuche (Strg+K) enthalten" },
+    ],
+  },
+  {
     version: "0.2.1",
     date: "2026-09-10",
     title: "„update“ auf dem Proxmox-Host",

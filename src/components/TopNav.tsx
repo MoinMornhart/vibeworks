@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, UserRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { Logo } from "@/components/Logo";
@@ -26,6 +26,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Aufgaben", icon: ListChecks },
+  { href: "/docs", label: "Docs", icon: BookOpen },
   { href: "/design", label: "Design", icon: Palette },
   { href: "/admin", label: "Admin", icon: Shield, admin: true },
 ];

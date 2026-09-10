@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shield, StickyNote, UserRound } from "lucide-react";
+import { BookOpen, FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shield, StickyNote, UserRound } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import type { SearchResult } from "@/lib/search";
 import { api } from "@/lib/client/api";
@@ -121,9 +121,20 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
         href: `/projects/${t.projectId}`,
       });
     }
+    for (const d of result?.docs ?? []) {
+      list.push({
+        key: `d-${d.id}`,
+        group: "Docs",
+        label: <>{d.icon ? `${d.icon} ` : ""}{d.title}</>,
+        hint: <Highlight text={d.snippet} />,
+        icon: <BookOpen size={16} />,
+        href: `/docs/${d.id}`,
+      });
+    }
     const areas = [
       { label: "Dashboard", href: "/", icon: <LayoutDashboard size={16} /> },
       { label: "Aufgaben", href: "/tasks", icon: <ListChecks size={16} /> },
+      { label: "Docs", href: "/docs", icon: <BookOpen size={16} /> },
       { label: "Design", href: "/design", icon: <Palette size={16} /> },
       { label: "Mein Konto", href: "/account", icon: <UserRound size={16} /> },
       ...(isAdmin ? [{ label: "Administration", href: "/admin", icon: <Shield size={16} /> }] : []),
@@ -173,7 +184,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Projekte, Notizen, Aufgaben …"
+            placeholder="Projekte, Notizen, Aufgaben, Docs …"
             className="h-14 w-full bg-transparent text-base outline-none placeholder:text-muted"
             role="combobox"
             aria-expanded="true"

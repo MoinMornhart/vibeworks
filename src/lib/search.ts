@@ -22,9 +22,17 @@ export interface TaskHit {
   projectName: string;
 }
 
+export interface DocHit {
+  id: string;
+  title: string;
+  icon: string | null;
+  snippet: string;
+}
+
 export interface SearchResult {
   notes: NoteHit[];
   tasks: TaskHit[];
+  docs: DocHit[];
 }
 
 /**
