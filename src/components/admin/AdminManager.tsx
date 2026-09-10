@@ -22,7 +22,8 @@ import { Segmented, Toggle } from "@/components/theme/controls";
 import { AccountSection } from "@/components/account/AccountManager";
 import type { AdminUser } from "@/lib/admin";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
-import { cn, formatDate, timeAgo } from "@/lib/utils";
+import { cn, formatDate, formatDateTime, timeAgo } from "@/lib/utils";
+import type { PublicBuildInfo } from "@/lib/buildInfo";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -273,13 +274,13 @@ export function AdminManager({
   meId,
   initialSettings,
   initialUsers,
-  version,
+  build,
   appUrl,
 }: {
   meId: string;
   initialSettings: Settings;
   initialUsers: AdminUser[];
-  version: string;
+  build: PublicBuildInfo & { builtAt: string | null; source: string };
   appUrl: string;
 }) {
   const [users, setUsers] = useState(initialUsers);
@@ -313,7 +314,26 @@ export function AdminManager({
       <AccountSection icon={<Server size={18} />} title="Instanz">
         <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
           <dt className="text-muted">Version</dt>
-          <dd className="font-mono">{version}</dd>
+          <dd>
+            <span className="font-mono">{build.version}</span>
+            {build.count !== null && <span className="text-muted"> · Update Nr. {build.count}</span>}
+          </dd>
+          <dt className="text-muted">Commit</dt>
+          <dd className="font-mono">
+            {build.shortCommit ? (
+              build.commitUrl ? (
+                <a href={build.commitUrl} target="_blank" rel="noopener noreferrer" className="text-accent-ink hover:underline">{build.shortCommit}</a>
+              ) : (
+                build.shortCommit
+              )
+            ) : (
+              "unbekannt"
+            )}
+            {build.dirty && <span className="font-sans text-muted"> (mit lokalen Änderungen)</span>}
+            {build.commitDate && <span className="font-sans text-muted"> · {formatDateTime(build.commitDate)}</span>}
+          </dd>
+          <dt className="text-muted">Gebaut</dt>
+          <dd>{build.builtAt ? formatDateTime(build.builtAt) : "–"} <span className="text-muted">(Quelle: {build.source === "env" ? "update-Befehl" : build.source === "git" ? "Git" : "package.json"})</span></dd>
           <dt className="text-muted">Adresse (APP_URL)</dt>
           <dd className="break-all font-mono">{appUrl}</dd>
           <dt className="text-muted">Aktualisieren</dt>

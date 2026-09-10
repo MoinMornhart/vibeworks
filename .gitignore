@@ -4,6 +4,7 @@ node_modules/
 out/
 *.tsbuildinfo
 next-env.d.ts
+.vibeworks-build.json
 
 # Umgebung – enthält Geheimnisse
 .env

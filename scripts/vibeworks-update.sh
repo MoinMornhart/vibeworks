@@ -205,17 +205,32 @@ tracked_branch() {
   printf '%s' "${b:-main}"
 }
 
-# Liest "version" aus einer package.json per sed (ohne Node)
-pkg_version() {
-  local file="$1"
-  [[ -r "$file" ]] || { printf '?'; return 0; }
-  sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$file" | head -n 1
+# Die Version eines Stands ergibt sich aus der Zahl seiner Commits: jedes
+# Update zählt eine Stufe weiter, mit Übertrag bei 9 (16 → 0.1.6,
+# 100 → 1.0.0) – dieselbe Rechnung wie in scripts/build-info.mjs.
+count_version() {
+  local n="$1"
+  printf '%d.%d.%d' $(( n / 100 )) $(( n / 10 % 10 )) $(( n % 10 ))
 }
 
-# Version aus einem Git-Stand (ohne Checkout)
+# Version eines Git-Stands (Branch, Tag oder Commit)
 pkg_version_at() {
-  g show "$1:package.json" 2>/dev/null \
-    | sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
+  local n
+  n="$(g rev-list --count "$1" 2>/dev/null)" || { printf '?'; return 0; }
+  count_version "$n"
+}
+
+# Version eines gebauten Releases – Argument: <release>/package.json.
+# Maßgeblich ist der gespeicherte Commit, package.json nur als Notlösung.
+pkg_version() {
+  local file="$1" sha
+  sha="$(release_sha "$(dirname "$file")")"
+  if [[ -n "$sha" ]]; then
+    pkg_version_at "$sha"
+    return 0
+  fi
+  [[ -r "$file" ]] || { printf '?'; return 0; }
+  sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$file" | head -n 1
 }
 
 # Aufgelöster Pfad eines Release-Symlinks (leer, wenn nicht vorhanden)
@@ -403,7 +418,15 @@ build_release() {
 
   step "Baue die App (npm run build) – das kann einige Minuten dauern"
   load_env_args
-  if ! (cd "$dir" && run_as_app env "${ENV_ARGS[@]}" "${npm_env[@]}" \
+  # Im Release-Ordner gibt es kein .git – die App erfährt Commit und
+  # Update-Nummer daher von hier (ausgewertet von scripts/build-info.mjs).
+  local build_env=(
+    VIBEWORKS_SHA="$sha"
+    VIBEWORKS_COMMIT_COUNT="$(g rev-list --count "$sha")"
+    VIBEWORKS_COMMIT_DATE="$(g show -s --format=%cI "$sha")"
+    VIBEWORKS_REPO_URL="$(g remote get-url origin 2>/dev/null || true)"
+  )
+  if ! (cd "$dir" && run_as_app env "${ENV_ARGS[@]}" "${npm_env[@]}" "${build_env[@]}" \
         NODE_ENV=production NODE_OPTIONS="$BUILD_NODE_OPTIONS" npm run build); then
     cleanup_failed_build "$dir"
     error "Der Build ist fehlgeschlagen. Die laufende Version bleibt unverändert aktiv."

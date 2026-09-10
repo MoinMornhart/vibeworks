@@ -6,6 +6,7 @@ import { QuickCapture } from "@/components/QuickCapture";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { isSetupDone } from "@/lib/settings";
 import { config } from "@/lib/config";
+import { publicBuildInfo } from "@/lib/buildInfo";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <TopNav appName={config.appName} user={{ name: displayNameOf(user), username: user.username, isAdmin }} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 sm:px-5 sm:py-8">{children}</main>
       <footer className="mx-auto w-full max-w-7xl px-5 pb-6 text-center text-xs text-muted">
-        {config.appName} · <ChangelogButton />
+        {config.appName} · <ChangelogButton build={publicBuildInfo()} />
       </footer>
       <CommandPalette isAdmin={isAdmin} />
       <QuickCapture />

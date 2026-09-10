@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.7",
+    date: "2026-09-10",
+    title: "Version aus den Commits",
+    changes: [
+      { type: "neu", text: "Die Version ergibt sich automatisch aus der Zahl der Commits – jeder Commit ist ein Update (16 → 0.1.6, 100 → 1.0.0)" },
+      { type: "neu", text: "Fußzeile, Änderungsverlauf und Admin-Bereich zeigen Version, Update-Nummer und Commit (verlinkt)" },
+      { type: "besser", text: "Der update-Befehl reicht Commit und Update-Nummer an den Build weiter und rechnet auch bei --status und --check so" },
+      { type: "besser", text: "Der Health-Endpunkt meldet Version, Commit und Update-Nummer" },
+    ],
+  },
+  {
     version: "0.1.6",
     date: "2026-09-10",
     title: "Fokus in Dialogen",
