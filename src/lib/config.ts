@@ -36,6 +36,14 @@ export const config = {
   get sessionIdleHours() {
     return num(process.env.SESSION_IDLE_HOURS, 8, 0);
   },
+  /** Update per Knopfdruck: hier legt die App Anfragen ab (setzt der update-Befehl). */
+  get updateControlDir(): string | null {
+    return process.env.VIBEWORKS_CONTROL_DIR?.trim() || null;
+  },
+  /** …und hier liest sie Status und Log (schreibt nur root). */
+  get updateStatusDir(): string | null {
+    return process.env.VIBEWORKS_STATUS_DIR?.trim() || null;
+  },
   get secureCookies() {
     return this.appUrl.startsWith("https://");
   },

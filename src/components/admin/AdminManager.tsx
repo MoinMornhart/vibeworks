@@ -24,6 +24,8 @@ import type { AdminUser } from "@/lib/admin";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { cn, formatDate, formatDateTime, timeAgo } from "@/lib/utils";
 import type { PublicBuildInfo } from "@/lib/buildInfo";
+import { CloudDownload } from "lucide-react";
+import { UpdatePanel } from "./UpdatePanel";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -276,12 +278,14 @@ export function AdminManager({
   initialUsers,
   build,
   appUrl,
+  update,
 }: {
   meId: string;
   initialSettings: Settings;
   initialUsers: AdminUser[];
   build: PublicBuildInfo & { builtAt: string | null; source: string };
   appUrl: string;
+  update: Parameters<typeof UpdatePanel>[0]["initial"];
 }) {
   const [users, setUsers] = useState(initialUsers);
 
@@ -336,9 +340,11 @@ export function AdminManager({
           <dd>{build.builtAt ? formatDateTime(build.builtAt) : "–"} <span className="text-muted">(Quelle: {build.source === "env" ? "update-Befehl" : build.source === "git" ? "Git" : "package.json"})</span></dd>
           <dt className="text-muted">Adresse (APP_URL)</dt>
           <dd className="break-all font-mono">{appUrl}</dd>
-          <dt className="text-muted">Aktualisieren</dt>
-          <dd>Auf dem Server <code className="rounded bg-fg/10 px-1.5 py-0.5 font-mono text-xs">update</code> ausführen – das Auto-Update prüft ohnehin alle 15 Minuten.</dd>
         </dl>
+      </AccountSection>
+
+      <AccountSection icon={<CloudDownload size={18} />} title="Updates" description="Das neueste Update direkt von hier aus holen und installieren.">
+        <UpdatePanel initial={update} />
       </AccountSection>
     </div>
   );

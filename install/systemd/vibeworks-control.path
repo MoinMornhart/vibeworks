@@ -1,0 +1,12 @@
+# VibeWorks – wartet auf Update-Anfragen aus der Admin-Oberfläche.
+# Die App (ohne Root-Rechte) legt eine Datei „request“ ab; dieser Wächter
+# startet daraufhin vibeworks-control.service als root.
+[Unit]
+Description=VibeWorks – Update-Anfragen aus der Admin-Oberfläche
+
+[Path]
+PathExists=/opt/vibeworks/shared/control/request
+Unit=vibeworks-control.service
+
+[Install]
+WantedBy=paths.target

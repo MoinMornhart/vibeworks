@@ -21,6 +21,11 @@ ENV_FILE="$SHARED_DIR/.env"
 DATA_DIR_DEFAULT="$SHARED_DIR/data"
 UPDATE_CONF="$SHARED_DIR/update.conf"
 AUTO_DISABLED_FILE="$SHARED_DIR/autoupdate.disabled"
+# Update per Knopfdruck aus der Admin-Oberfläche: Die App (ohne Root) legt
+# ihre Anfrage in CONTROL_DIR ab; Status und Log schreibt nur root nach
+# STATUS_DIR, die App darf dort lediglich lesen.
+CONTROL_DIR="$SHARED_DIR/control"
+STATUS_DIR="$SHARED_DIR/status"
 INSTALLED_SELF="/usr/local/lib/vibeworks/vibeworks-update.sh"
 LOCK_FILE="/run/vibeworks-update.lock"
 APP_USER="vibeworks"
@@ -72,6 +77,7 @@ Aufruf: update [OPTION]
   --auto-off         Automatische Updates abschalten.
   --status           Version, Releases, Auto-Update und Dienststatus anzeigen.
   --install          (intern) Ersten Release beim Installieren bauen.
+  --from-app         (intern) Anfrage aus der Admin-Oberfläche ausführen.
   --help, -h         Diese Hilfe.
 
 Optionen lassen sich kombinieren, z. B.: update --ref main --force --yes
@@ -102,6 +108,7 @@ while [[ $# -gt 0 ]]; do
     --auto-off)   ACTION="auto-off" ;;
     --status)     ACTION="status" ;;
     --install)    ACTION="install"; ASSUME_YES=1 ;;
+    --from-app)   ACTION="from-app"; ASSUME_YES=1 ;;
     -h|--help)    usage; exit 0 ;;
     *)            error "Unbekannte Option: $1"; usage >&2; exit 2 ;;
   esac
@@ -314,7 +321,7 @@ switch_link() {
 sync_units() {
   local release="$1" changed=0 f name
   [[ -d "$release/install/systemd" ]] || return 0
-  for f in "$release"/install/systemd/*.service "$release"/install/systemd/*.timer; do
+  for f in "$release"/install/systemd/*.service "$release"/install/systemd/*.timer "$release"/install/systemd/*.path; do
     [[ -f "$f" ]] || continue
     name="$(basename "$f")"
     if ! cmp -s "$f" "/etc/systemd/system/$name"; then
@@ -601,6 +608,7 @@ do_update() {
   fi
   migrate_database "$new_dir"
   sync_units "$new_dir"
+  ensure_control_setup
 
   step "Aktiviere Release $short"
   prev_dir="$cur_dir"
@@ -735,6 +743,144 @@ do_status() {
 }
 
 # ----------------------------------------------------------------------------
+# Update per Knopfdruck aus der Admin-Oberfläche
+# ----------------------------------------------------------------------------
+
+# Verzeichnisse, .env-Einträge und den systemd-Wächter einrichten. Läuft bei
+# jedem Update mit – so bekommen auch ältere Installationen die Funktion.
+ensure_control_setup() {
+  # Anfragen: root:vibeworks mit Sticky-Bit – die App darf Dateien anlegen,
+  # aber keine fremden umbenennen oder löschen.
+  install -d -o root -g "$APP_USER" -m 1770 "$CONTROL_DIR"
+  # Status und Log: nur root schreibt, die App liest.
+  install -d -o root -g root -m 0755 "$STATUS_DIR"
+  if [[ -f "$ENV_FILE" ]] && ! grep -qE '^[[:space:]]*VIBEWORKS_CONTROL_DIR=' "$ENV_FILE"; then
+    printf 'VIBEWORKS_CONTROL_DIR=%s\nVIBEWORKS_STATUS_DIR=%s\n' "$CONTROL_DIR" "$STATUS_DIR" >> "$ENV_FILE"
+    info ".env ergänzt: VIBEWORKS_CONTROL_DIR, VIBEWORKS_STATUS_DIR"
+  fi
+  if [[ -f /etc/systemd/system/vibeworks-control.path ]] && ! systemctl is-enabled --quiet vibeworks-control.path 2>/dev/null; then
+    systemctl daemon-reload
+    systemctl enable --now vibeworks-control.path >/dev/null 2>&1 || warn "vibeworks-control.path konnte nicht aktiviert werden."
+  fi
+}
+
+# Zeichenkette als JSON-String
+json_str() {
+  local s
+  s="$(printf '%s' "$1" | tr -d '\000-\010\013\014\016-\037')"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/}"
+  s="${s//$'\t'/\\t}"
+  printf '"%s"' "$s"
+}
+
+# {"sha":…,"version":…} eines Stands
+version_json() {
+  printf '{"sha":%s,"version":%s}' "$(json_str "$1")" "$(json_str "$(pkg_version_at "$1")")"
+}
+
+# write_status <aktion> <zustand> <meldung> <begonnen> [beendet] [weitere JSON-Felder]
+# Atomar über eine temporäre Datei – die App liest nie einen halben Stand.
+write_status() {
+  local action="$1" state="$2" msg="$3" started="$4" finished="${5:-}" extra="${6:-}" fin tmp
+  if [[ -n "$finished" ]]; then fin="$(json_str "$finished")"; else fin="null"; fi
+  install -d -o root -g root -m 0755 "$STATUS_DIR"
+  tmp="$(mktemp "$STATUS_DIR/.status.XXXXXX")"
+  printf '{"action":%s,"state":%s,"message":%s,"startedAt":%s,"finishedAt":%s%s}\n' \
+    "$(json_str "$action")" "$(json_str "$state")" "$(json_str "$msg")" "$(json_str "$started")" "$fin" "${extra:+,$extra}" > "$tmp"
+  chmod 0644 "$tmp"
+  mv -f "$tmp" "$STATUS_DIR/status.json"
+}
+
+app_check() {
+  local started sha cur behind commits="" first=1 csha subj latest current msg
+  started="$(date -Is)"
+  write_status check running "Suche nach Updates …" "$started"
+  if ! g fetch --prune --tags --force origin >/dev/null 2>&1; then
+    write_status check failed "Das Repository ist gerade nicht erreichbar (Netzwerk/GitHub?)." "$started" "$(date -Is)"
+    return 0
+  fi
+  if ! sha="$(resolve_ref "$(tracked_branch)")"; then
+    write_status check failed "Der Branch $(tracked_branch) wurde nicht gefunden." "$started" "$(date -Is)"
+    return 0
+  fi
+  cur="$(release_sha "$(link_target "$CURRENT_LINK")")"
+  if [[ -n "$cur" ]]; then
+    behind="$(g rev-list --count "$cur..$sha" 2>/dev/null || echo 0)"
+    current="$(version_json "$cur")"
+  else
+    behind="$(g rev-list --count "$sha")"
+    current="null"
+  fi
+  while IFS=$'\x1f' read -r csha subj; do
+    [[ -n "$csha" ]] || continue
+    if [[ $first -eq 0 ]]; then commits+=","; fi
+    first=0
+    commits+="{\"sha\":$(json_str "${csha:0:7}"),\"subject\":$(json_str "$subj")}"
+  done < <(if [[ -n "$cur" ]]; then g log --format='%H%x1f%s' -n 20 "$cur..$sha"; else g log --format='%H%x1f%s' -n 20 "$sha"; fi 2>/dev/null)
+  latest="{\"sha\":$(json_str "$sha"),\"version\":$(json_str "$(pkg_version_at "$sha")"),\"behind\":${behind:-0},\"commits\":[$commits]}"
+  if [[ "$sha" == "$cur" ]]; then msg="VibeWorks ist aktuell."; else msg="Update verfügbar: Version $(pkg_version_at "$sha")"; fi
+  write_status check "done" "$msg" "$started" "$(date -Is)" "\"current\":$current,\"latest\":$latest"
+}
+
+app_update() {
+  local started log before after rc msg current
+  started="$(date -Is)"
+  log="$STATUS_DIR/update.log"
+  install -d -o root -g root -m 0755 "$STATUS_DIR"
+  : > "$log"
+  chmod 0644 "$log"
+  before="$(release_sha "$(link_target "$CURRENT_LINK")")"
+  if [[ -n "$before" ]]; then current="$(version_json "$before")"; else current="null"; fi
+  write_status update running "Update läuft – die Seite lädt nach dem Neustart von selbst neu." "$started" "" "\"current\":$current"
+  # Als eigener Prozess: er darf sich selbst aktualisieren (exec) und startet
+  # den App-Dienst neu, ohne dass dieser Status verloren geht. Die Sperre
+  # (fd 9) erbt er.
+  set +e
+  VIBEWORKS_LOCK_HELD=1 "$INSTALLED_SELF" --yes >> "$log" 2>&1
+  rc=$?
+  set -e
+  after="$(release_sha "$(link_target "$CURRENT_LINK")")"
+  if [[ -n "$after" ]]; then current="$(version_json "$after")"; else current="null"; fi
+  case "$rc" in
+    0)
+      if [[ "$after" == "$before" ]]; then msg="VibeWorks war bereits aktuell."; else msg="Update installiert – VibeWorks läuft jetzt mit Version $(pkg_version_at "$after")."; fi
+      write_status update "done" "$msg" "$started" "$(date -Is)" "\"exitCode\":0,\"current\":$current"
+      ;;
+    *)
+      case "$rc" in
+        3) msg="Der Build ist fehlgeschlagen – die bisherige Version läuft unverändert weiter." ;;
+        4) msg="Die Datenbank-Migration ist fehlgeschlagen – die bisherige Version läuft weiter." ;;
+        5) msg="Die neue Version antwortete nicht – es wurde automatisch zurückgerollt." ;;
+        *) msg="Das Update ist fehlgeschlagen (Code $rc)." ;;
+      esac
+      write_status update failed "$msg" "$started" "$(date -Is)" "\"exitCode\":$rc,\"current\":$current"
+      ;;
+  esac
+}
+
+do_from_app() {
+  local req="$CONTROL_DIR/request" action=""
+  # Die Anfrage schreibt der App-Benutzer – sie ist nicht vertrauenswürdig:
+  # nur eine gewöhnliche Datei (kein Symlink, keine FIFO), nur zwei Wörter.
+  if [[ -f "$req" && ! -L "$req" ]]; then
+    action="$(head -c 16 -- "$req" 2>/dev/null | tr -cd 'a-z')"
+  fi
+  rm -f -- "$req"
+  [[ "$action" == "check" || "$action" == "update" ]] || exit 0
+
+  exec 9>"$LOCK_FILE"
+  if ! flock -n 9; then
+    write_status "$action" busy "Gerade läuft schon ein Update – bitte kurz warten." "$(date -Is)" "$(date -Is)"
+    exit 0
+  fi
+  export VIBEWORKS_LOCK_HELD=1
+  if [[ "$action" == "check" ]]; then app_check; else app_update; fi
+}
+
+# ----------------------------------------------------------------------------
 # Hauptprogramm
 # ----------------------------------------------------------------------------
 case "$ACTION" in
@@ -748,4 +894,5 @@ case "$ACTION" in
   auto-on)  do_auto_on ;;
   auto-off) do_auto_off ;;
   status)   do_status ;;
+  from-app) do_from_app ;;
 esac

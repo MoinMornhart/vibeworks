@@ -1,0 +1,14 @@
+# VibeWorks – führt eine Anfrage aus der Admin-Oberfläche aus
+# („check“ = nach Updates suchen, „update“ = installieren).
+[Unit]
+Description=VibeWorks – Update-Anfrage aus der Admin-Oberfläche
+Documentation=https://github.com/MoinMornhart/vibeworks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/update --from-app
+TimeoutStartSec=45min
+SyslogIdentifier=vibeworks-control
+Nice=10

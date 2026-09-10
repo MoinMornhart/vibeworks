@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.8",
+    date: "2026-09-10",
+    title: "Update per Knopfdruck",
+    changes: [
+      { type: "neu", text: "Admin-Bereich „Updates“: nach Updates suchen – mit Liste der neuen Änderungen – und das neueste Update per Knopf installieren" },
+      { type: "neu", text: "Fortschritt und Log live im Browser, nach dem Neustart lädt die Seite von selbst mit der neuen Version" },
+      { type: "besser", text: "Die App bekommt dafür keine Root-Rechte: ein systemd-Wächter führt nur „suchen“ oder „installieren“ aus, Status schreibt allein root" },
+      { type: "besser", text: "Bestehende Installationen richten die Funktion beim nächsten automatischen Update selbst ein" },
+    ],
+  },
+  {
     version: "0.1.7",
     date: "2026-09-10",
     title: "Version aus den Commits",

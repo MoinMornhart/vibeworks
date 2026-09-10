@@ -261,7 +261,7 @@ chmod 0755 /usr/local/bin/update
 ok "Befehl 'update' installiert."
 
 step "Installiere systemd-Units"
-for unit in vibeworks.service vibeworks-autoupdate.service vibeworks-autoupdate.timer; do
+for unit in vibeworks.service vibeworks-autoupdate.service vibeworks-autoupdate.timer vibeworks-control.service vibeworks-control.path; do
   g show "$REF_SHA:install/systemd/$unit" > "/etc/systemd/system/$unit" \
     || die "install/systemd/$unit fehlt im Repository."
   chmod 0644 "/etc/systemd/system/$unit"
@@ -281,6 +281,8 @@ if [[ -f "$SHARED_DIR/autoupdate.disabled" ]]; then
 else
   systemctl enable --now vibeworks-autoupdate.timer >/dev/null 2>&1 || warn "Auto-Update-Timer konnte nicht aktiviert werden."
 fi
+# Update per Knopfdruck aus der Admin-Oberfläche
+systemctl enable --now vibeworks-control.path >/dev/null 2>&1 || warn "vibeworks-control.path konnte nicht aktiviert werden."
 
 # ----------------------------------------------------------------------------
 # 9. MOTD-Hinweis
