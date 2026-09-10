@@ -1,7 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // Die Middleware läuft im Edge-Runtime ohne Datenbank. Sie setzt die
-// Content-Security-Policy mit einer Nonce je Anfrage.
+// Content-Security-Policy mit einer Nonce je Anfrage und leitet ohne
+// Sitzungscookie zur Anmeldung um. Ob die Sitzung wirklich gültig ist,
+// entscheidet erst der Server in jeder Seite und jedem Endpunkt.
+
+const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/api/auth", "/api/health", "/manifest.webmanifest"];
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 function csp(nonce: string): string {
   const dev = process.env.NODE_ENV !== "production";
@@ -21,6 +30,17 @@ function csp(nonce: string): string {
 }
 
 export function middleware(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+  if (!SESSION_COOKIES.some((n) => req.cookies.has(n)) && !isPublic(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = pathname !== "/" ? `?next=${encodeURIComponent(pathname + search)}` : "";
+    return NextResponse.redirect(url);
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const policy = csp(nonce);
   const headers = new Headers(req.headers);

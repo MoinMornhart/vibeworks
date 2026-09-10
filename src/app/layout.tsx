@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import { config } from "@/lib/config";
-import { DEFAULT_THEME, resolveTheme } from "@/lib/theme";
+import { resolveTheme } from "@/lib/theme";
 import { themeCss } from "@/lib/theme/css";
+import { currentUser } from "@/lib/auth/guard";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Background } from "@/components/background/Background";
 
@@ -22,8 +23,14 @@ export const viewport: Viewport = {
   themeColor: "#06061a",
 };
 
+/** Persönliches Design des angemeldeten Kontos, sonst die Vorgabe. */
 async function loadTheme() {
-  return resolveTheme(DEFAULT_THEME);
+  try {
+    return resolveTheme((await currentUser())?.theme);
+  } catch {
+    // Datenbank nicht erreichbar – die Seite soll trotzdem gestaltet erscheinen.
+    return resolveTheme(null);
+  }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.2",
+    date: "2026-09-10",
+    title: "Anmeldung",
+    changes: [
+      { type: "neu", text: "Einrichtungsassistent für das Administratorkonto mit Einzel- oder Mehrbenutzerbetrieb" },
+      { type: "neu", text: "Anmeldung mit Benutzername und Passwort (scrypt), serverseitige Sitzungen" },
+      { type: "neu", text: "Selbstregistrierung im Mehrbenutzerbetrieb (abschaltbar)" },
+      { type: "neu", text: "Schutz vor Passwortraten: Ratenbegrenzung und 15 Minuten Sperre nach 8 Fehlversuchen" },
+      { type: "neu", text: "Navigation, Benutzermenü und Änderungsverlauf hinter der Versionsnummer" },
+    ],
+  },
+  {
     version: "0.0.1",
     date: "2026-09-10",
     title: "Grundgerüst",
