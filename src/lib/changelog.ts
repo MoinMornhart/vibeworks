@@ -16,6 +16,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.1",
+    date: "2026-09-10",
+    title: "Zwei-Faktor-Anmeldung",
+    changes: [
+      { type: "neu", text: "Einmalcodes (TOTP) mit jeder gängigen Authenticator-App – Einrichtung per QR-Code oder Schlüssel" },
+      { type: "neu", text: "Scharf erst nach einem bestätigten Code – wer beim Scannen scheitert, sperrt sich nicht aus" },
+      { type: "neu", text: "Zehn Wiederherstellungscodes, nur einmal angezeigt, jeder genau einmal gültig; kopieren oder als Datei sichern" },
+      { type: "neu", text: "Anmeldung in zwei Schritten: erst Passwort, dann Code oder Wiederherstellungscode" },
+      { type: "neu", text: "Abschalten und neue Codes verlangen das Passwort – eine offene Sitzung allein reicht nicht" },
+      { type: "besser", text: "Ein Code gilt nur einmal: abgefangene Codes lassen sich nicht wiederverwenden" },
+    ],
+  },
+  {
     version: "0.1.0",
     date: "2026-09-10",
     title: "Mein Konto",

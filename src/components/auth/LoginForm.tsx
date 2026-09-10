@@ -2,22 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LogIn } from "lucide-react";
-import { api, errorMessage } from "@/lib/client/api";
+import { ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
+import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 
 export function LoginForm({ next, allowRegistration }: { next: string; allowRegistration: boolean }) {
+  const [step, setStep] = useState<"password" | "mfa">("password");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [useRecovery, setUseRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await api("/api/auth/login", { body: { username, password } });
+      const res = await api<{ ok?: boolean; mfa?: boolean }>("/api/auth/login", { body: { username, password } });
+      if (res.mfa) {
+        setStep("mfa");
+        setPassword("");
+        setBusy(false);
+        return;
+      }
       // Volles Neuladen, damit das persönliche Design des Kontos greift.
       window.location.assign(next);
     } catch (err) {
@@ -26,8 +35,63 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
     }
   }
 
+  async function submitCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/api/auth/mfa", { body: useRecovery ? { recoveryCode: code } : { code } });
+      window.location.assign(next);
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+      // Abgelaufen oder zu viele Versuche: zurück zum Passwort
+      if (err instanceof ApiClientError && err.status === 401 && /Passwort anmelden/.test(err.message)) {
+        setStep("password");
+        setCode("");
+      }
+    }
+  }
+
+  if (step === "mfa") {
+    return (
+      <form onSubmit={submitCode} className="space-y-4">
+        <p className="flex items-start gap-2 text-sm text-muted">
+          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-accent-ink" />
+          {useRecovery ? "Gib einen deiner Wiederherstellungscodes ein. Jeder gilt nur einmal." : "Gib den 6-stelligen Code aus deiner Authenticator-App ein."}
+        </p>
+        {useRecovery ? (
+          <input className="field text-center font-mono tracking-widest" placeholder="xxxxx-xxxxx" value={code} onChange={(e) => setCode(e.target.value)} autoFocus aria-label="Wiederherstellungscode" autoComplete="off" />
+        ) : (
+          <input
+            className="field text-center font-mono text-2xl tracking-[0.4em]"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            autoFocus
+            aria-label="Code aus der App"
+          />
+        )}
+        <FormError message={error} />
+        <button className="btn btn-primary w-full" disabled={busy || (!useRecovery && code.length !== 6) || (useRecovery && !code.trim())}>
+          <ShieldCheck size={16} /> {busy ? "Prüfe …" : "Bestätigen"}
+        </button>
+        <div className="flex flex-wrap justify-between gap-2 text-sm">
+          <button type="button" className="inline-flex items-center gap-1 text-muted hover:text-fg" onClick={() => { setStep("password"); setCode(""); setError(null); }}>
+            <ArrowLeft size={14} /> Zurück
+          </button>
+          <button type="button" className="text-accent-ink hover:underline" onClick={() => { setUseRecovery((v) => !v); setCode(""); setError(null); }}>
+            {useRecovery ? "Code aus der App verwenden" : "Wiederherstellungscode verwenden"}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submitPassword} className="space-y-4">
       <div>
         <label className="label" htmlFor="username">Benutzername</label>
         <input id="username" className="field" autoComplete="username" autoFocus value={username} onChange={(e) => setUsername(e.target.value)} required />

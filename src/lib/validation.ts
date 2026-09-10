@@ -165,6 +165,22 @@ export const passwordChangeSchema = z.object({
   newPassword: z.string().min(1, "Neues Passwort fehlt").max(256),
 });
 
+// ── Zwei-Faktor ─────────────────────────────────────────────
+
+export const totpCodeSchema = z.object({ code: z.string().trim().min(1, "Code fehlt").max(20) });
+
+export const confirmIdentitySchema = z.object({
+  password: z.string().max(256).optional(),
+  code: z.string().trim().max(20).optional(),
+});
+
+export const mfaLoginSchema = z
+  .object({
+    code: z.string().trim().max(20).optional(),
+    recoveryCode: z.string().trim().max(40).optional(),
+  })
+  .refine((v) => v.code || v.recoveryCode, "Code fehlt");
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

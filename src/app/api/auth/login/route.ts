@@ -3,6 +3,7 @@ import { ApiError, clientIp, json, readBody, route } from "@/lib/api";
 import { loginSchema } from "@/lib/validation";
 import { fakeVerify, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
+import { startMfa } from "@/lib/auth/mfa";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 const GENERIC = "Benutzername oder Passwort ist falsch.";
@@ -45,6 +46,13 @@ export const POST = route(async (req) => {
 
   if (needsRehash) {
     await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.password) } });
+  }
+
+  // Zwei-Faktor aktiv: noch keine Sitzung, nur der Zwischenschritt.
+  if (user.totpEnabledAt && user.totpSecret) {
+    await db.user.update({ where: { id: user.id }, data: { failedLogins: 0 } });
+    await startMfa(user.id);
+    return json({ mfa: true });
   }
 
   await startSession(user.id, req);
