@@ -25,6 +25,9 @@ import { ProjectCard, ProjectRow } from "./ProjectCard";
 import { ProjectDialog } from "./ProjectDialog";
 import { KanbanBoard } from "./KanbanBoard";
 import { BulkBar, type BulkAction } from "./BulkBar";
+import Link from "next/link";
+import { Highlight } from "@/components/Highlight";
+import type { SearchResult } from "@/lib/search";
 
 type View = "grid" | "list" | "grouped" | "kanban";
 type Sort = "updated" | "created" | "name" | "progress" | "priority";
@@ -70,6 +73,31 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
   const [dialog, setDialog] = useState<{ project: ProjectListItem | null } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [hits, setHits] = useState<SearchResult | null>(null);
+
+  // Neue Serverdaten (z. B. nach der Schnellerfassung) übernehmen.
+  useEffect(() => setProjects(initial), [initial]);
+
+  // Notizen und Aufgaben liegen im Board nicht vor – die sucht der Server
+  // im Volltext, entprellt ab zwei Zeichen.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setHits(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      api<SearchResult>(`/api/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        .then(setHits)
+        .catch(() => {});
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [query]);
+  const hitProjects = useMemo(() => new Set([...(hits?.notes ?? []), ...(hits?.tasks ?? [])].map((h) => h.projectId)), [hits]);
 
   // Ansicht, Sortierung und Archiv-Schalter überdauern das Neuladen – der
   // Suchbegriff bewusst nicht.
@@ -96,9 +124,9 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
     return projects.filter(
       (p) =>
         (showArchived || p.status !== "ARCHIVED") &&
-        (!q || [p.name, p.summary ?? "", p.repoUrl ?? "", ...p.tags].some((s) => s.toLowerCase().includes(q))),
+        (!q || hitProjects.has(p.id) || [p.name, p.summary ?? "", p.repoUrl ?? "", ...p.tags].some((s) => s.toLowerCase().includes(q))),
     );
-  }, [projects, query, showArchived]);
+  }, [projects, query, showArchived, hitProjects]);
 
   const visible = useMemo(() => {
     const cmp = SORTS.find((s) => s.value === sort)!.cmp;
@@ -316,6 +344,32 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
           </div>
 
           {error && <p role="alert" className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
+
+          {hits && (hits.notes.length > 0 || hits.tasks.length > 0) && (
+            <div className="glass mb-5 grid gap-4 p-4 md:grid-cols-2">
+              {([
+                ["Treffer in Notizen", hits.notes.map((n) => ({ id: n.id, title: n.title, snippet: n.snippet, projectId: n.projectId, projectName: n.projectName }))],
+                ["Treffer in Aufgaben", hits.tasks.map((t) => ({ id: t.id, title: t.title, snippet: t.snippet, projectId: t.projectId, projectName: t.projectName }))],
+              ] as const).map(([label, list]) =>
+                list.length === 0 ? null : (
+                  <section key={label} aria-label={label}>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{label} <span className="font-normal">{list.length}</span></h2>
+                    <ul className="space-y-1.5">
+                      {list.map((h) => (
+                        <li key={h.id}>
+                          <Link href={`/projects/${h.projectId}`} className="block rounded-lg px-2 py-1.5 text-sm hover:bg-accent/10">
+                            <span className="font-medium">{h.title ?? h.projectName}</span>
+                            <span className="text-muted"> · {h.projectName}</span>
+                            <span className="line-clamp-2 block text-xs text-muted"><Highlight text={h.snippet} /></span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ),
+              )}
+            </div>
+          )}
 
           {view === "kanban" ? (
             <KanbanBoard projects={base} statuses={kanbanColumns} onReorder={reorder} onFavorite={handlers.onFavorite} onEdit={handlers.onEdit} />

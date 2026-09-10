@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.5",
+    date: "2026-09-10",
+    title: "Schnellsuche und Schnellerfassung",
+    changes: [
+      { type: "neu", text: "Schnellsuche mit Strg+K (Mac: Cmd+K): Projekte, Notizen, Aufgaben und Bereiche – komplett per Tastatur" },
+      { type: "neu", text: "Schnellerfassung über das Blitz-Symbol: Idee oder Aufgabe mit einem Enter anlegen, der Dialog bleibt für die nächste offen" },
+      { type: "neu", text: "Volltextsuche über Notizen und Aufgaben mit deutschen Wortstämmen – „Webhook“ findet auch „Webhooks“" },
+      { type: "neu", text: "Die Suche im Dashboard zeigt Treffer in Notizen und Aufgaben und blendet die betroffenen Projekte ein" },
+      { type: "besser", text: "GIN-Indizes für die Volltextsuche, Fundstellen werden hervorgehoben (als Text, nie als HTML)" },
+    ],
+  },
+  {
     version: "0.1.4",
     date: "2026-09-10",
     title: "Kleine Korrektur",

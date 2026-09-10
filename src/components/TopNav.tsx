@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Shield, UserRound, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
+import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -80,6 +82,23 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
             </li>
           ))}
         </ul>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
+          aria-label="Schnellsuche öffnen"
+          title="Schnellsuche (Strg+K)"
+        >
+          <Search size={16} />
+          <kbd className="hidden rounded border px-1.5 text-[10px] text-muted lg:inline">Strg K</kbd>
+        </button>
+        <button
+          className="btn btn-ghost btn-icon btn-sm"
+          onClick={() => window.dispatchEvent(new Event(OPEN_CAPTURE_EVENT))}
+          aria-label="Schnell erfassen"
+          title="Schnell erfassen"
+        >
+          <Zap size={16} />
+        </button>
         <div className="relative" ref={menuRef}>
           <button className="btn btn-ghost btn-sm" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-on-accent">

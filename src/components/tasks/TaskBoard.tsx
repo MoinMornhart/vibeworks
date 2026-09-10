@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@prisma/client";
 import { AlignLeft, Check, ListChecks, Plus, Repeat, SlidersHorizontal } from "lucide-react";
@@ -105,6 +105,8 @@ export function TaskBoard({
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initial);
+  // Nach router.refresh() (Schnellerfassung, abgeleiteter Fortschritt) gilt der Serverstand.
+  useEffect(() => setTasks(initial), [initial]);
   const [dialog, setDialog] = useState<{ task: TaskItem | null; status: TaskStatus } | null>(null);
   const [quick, setQuick] = useState("");
   const [error, setError] = useState<string | null>(null);
