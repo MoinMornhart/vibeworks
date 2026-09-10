@@ -1,4 +1,4 @@
-import type { Recurrence } from "@prisma/client";
+import type { Recurrence, TaskStatus } from "@prisma/client";
 
 // Reine Datumslogik für Aufgaben – ohne Datenbank, also auch im Browser
 // nutzbar. Gerechnet wird auf Kalendertagen („YYYY-MM-DD“), nicht auf
@@ -102,4 +102,11 @@ export function bucketOf(dueKey: string | null, todayKey: string): Bucket {
 
 export function derivedProgress(total: number, done: number): number {
   return total ? Math.round((done / total) * 100) : 0;
+}
+
+/** Erledigtes und Blockiertes bleibt so lange auf dem Board, danach wird es ausgeblendet. */
+export const FADE_AFTER_DAYS = 2;
+
+export function isFaded(t: { status: TaskStatus; statusChangedAt: string }, now: number): boolean {
+  return (t.status === "DONE" || t.status === "BLOCKED") && now - Date.parse(t.statusChangedAt) > FADE_AFTER_DAYS * 86_400_000;
 }

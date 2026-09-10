@@ -215,10 +215,17 @@ model Project {
   position    Int           @default(0)
   progressFromTasks Boolean @default(false)
   repoUrl     String?
+  /// Zugangstoken für private Repositories, AES-256-GCM-verschlüsselt
+  repoTokenCipher String?
+  /// Gekürzte Anzeige des Tokens, z. B. "ghp_…9f3a"
+  repoTokenHint   String?
+  /// Aufgaben automatisch als Issues im Repository spiegeln (braucht ein Token)
+  issueSync       Boolean @default(true)
 
   notes      Note[]
   tasks      Task[]
   activities Activity[]
+  repoCache  RepoCache?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -252,9 +259,16 @@ model Task {
   dueDate     DateTime?
   labels      String[]    @default([])
   doneAt      DateTime?
+  /// Letzter Statuswechsel – Erledigtes und Blockiertes blendet das Board nach 2 Tagen aus
+  statusChangedAt DateTime @default(now())
   recurrence  Recurrence?
   /// Vorgängerin bei wiederkehrenden Aufgaben (bewusst ohne Fremdschlüssel)
   recurredFrom String?
+  /// Gespiegeltes Issue im verknüpften Repository
+  issueNumber Int?
+  issueUrl    String?
+  /// Letzter Fehler beim Spiegeln – wird beim nächsten Erfolg geleert
+  issueError  String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -275,6 +289,25 @@ model Activity {
 
   @@index([projectId, createdAt])
   @@index([createdAt, id])
+}
+
+/// Zwischengespeicherter Stand des verknüpften Repositories (Commits).
+/// Ein fehlgeschlagener Abgleich setzt nur `error` – die zuletzt geholten
+/// Commits bleiben stehen.
+model RepoCache {
+  projectId     String   @id
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// github | gitlab | gitea
+  provider      String
+  fullName      String
+  webUrl        String
+  defaultBranch String?
+  description   String?
+  stars         Int?
+  /// [{ sha, title, body, author, date, url }], neueste zuerst
+  commits       Json     @default("[]")
+  fetchedAt     DateTime @default(now())
+  error         String?
 }
 
 // ── Dateien ─────────────────────────────────────────────────

@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@prisma/client";
-import { AlignLeft, Check, ListChecks, Plus, Repeat, SlidersHorizontal } from "lucide-react";
+import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
-import { dueState, formatDue, recurrenceLabel, type DueState } from "@/lib/taskDates";
+import { dueState, FADE_AFTER_DAYS, formatDue, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { cn, dayKey } from "@/lib/utils";
@@ -72,8 +72,24 @@ function TaskCard({
           <span className={cn("break-words", done && "text-muted line-through")}>{t.title}</span>
         </button>
       </div>
-      {(t.dueDate || t.recurrence || t.description || t.labels.length > 0) && (
+      {(t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">
+          {t.issueNumber && t.issueUrl && (
+            <a
+              href={t.issueUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-px font-mono text-[11px] transition hover:border-accent/50 hover:text-fg"
+              title={`Issue #${t.issueNumber} öffnen`}
+            >
+              <CircleDot size={11} /> #{t.issueNumber}
+            </a>
+          )}
+          {t.issueError && (
+            <span className="text-amber-400" title={`Issue: ${t.issueError}`} aria-label={`Issue-Fehler: ${t.issueError}`}>
+              <TriangleAlert size={12} />
+            </span>
+          )}
           {t.dueDate && <DueBadge dueDate={t.dueDate} done={done} today={today} />}
           {t.recurrence && <Repeat size={12} aria-label={recurrenceLabel(t.recurrence)} />}
           {t.description && <AlignLeft size={12} aria-label="Hat eine Beschreibung" />}
@@ -112,6 +128,11 @@ export function TaskBoard({
   const [error, setError] = useState<string | null>(null);
   const today = dayKey(new Date());
   const done = useMemo(() => tasks.filter((t) => t.status === "DONE").length, [tasks]);
+  // Erledigtes und Blockiertes verschwindet nach zwei Tagen vom Board – auf Wunsch wieder einblendbar.
+  const [now] = useState(() => Date.now());
+  const [showFaded, setShowFaded] = useState(false);
+  const fadedCount = useMemo(() => tasks.filter((t) => isFaded(t, now)).length, [tasks, now]);
+  const boardTasks = useMemo(() => (showFaded ? tasks : tasks.filter((t) => !isFaded(t, now))), [tasks, now, showFaded]);
 
   // Mit abgeleitetem Fortschritt ändert jede Aufgabe auch den Projektkopf.
   const afterChange = () => {
@@ -145,7 +166,10 @@ export function TaskBoard({
 
   async function patch(t: TaskItem, data: TaskPatch) {
     const before = tasks;
-    if (data.status) setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, status: data.status!, position: 1e9 } : x)));
+    if (data.status && data.status !== t.status) {
+      const changedAt = new Date().toISOString();
+      setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, status: data.status!, position: 1e9, statusChangedAt: changedAt } : x)));
+    }
     setError(null);
     try {
       const res = await api<{ task: TaskItem; spawned: TaskItem | null }>(`/api/tasks/${t.id}`, { method: "PATCH", body: data });
@@ -162,7 +186,15 @@ export function TaskBoard({
     setTasks((ts) =>
       ts.map((t) => {
         const i = ids.indexOf(t.id);
-        return i >= 0 ? { ...t, status: status as TaskStatus, position: i, doneAt: status === "DONE" ? t.doneAt ?? new Date().toISOString() : null } : t;
+        if (i < 0) return t;
+        const moved = t.status !== status;
+        return {
+          ...t,
+          status: status as TaskStatus,
+          position: i,
+          doneAt: status === "DONE" ? t.doneAt ?? new Date().toISOString() : null,
+          statusChangedAt: moved ? new Date().toISOString() : t.statusChangedAt,
+        };
       }),
     );
     setError(null);
@@ -200,12 +232,26 @@ export function TaskBoard({
   return (
     <section className="glass p-6 sm:p-8" aria-labelledby="tasks-heading">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="tasks-heading" className="flex items-center gap-2 text-lg font-semibold">
-          <ListChecks size={18} className="text-accent-ink" /> Aufgaben
-          {tasks.length > 0 && (
-            <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{done}/{tasks.length} erledigt</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 id="tasks-heading" className="flex items-center gap-2 text-lg font-semibold">
+            <ListChecks size={18} className="text-accent-ink" /> Aufgaben
+            {tasks.length > 0 && (
+              <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{done}/{tasks.length} erledigt</span>
+            )}
+          </h2>
+          {fadedCount > 0 && (
+            <button
+              type="button"
+              className={cn("chip !py-0.5 text-xs", showFaded && "chip-active")}
+              onClick={() => setShowFaded((s) => !s)}
+              aria-pressed={showFaded}
+              title={`Erledigte und blockierte Aufgaben verschwinden nach ${FADE_AFTER_DAYS} Tagen vom Board`}
+            >
+              {showFaded ? <EyeOff size={12} /> : <Eye size={12} />}
+              {showFaded ? "Ältere ausblenden" : `${fadedCount} ältere ausgeblendet`}
+            </button>
           )}
-        </h2>
+        </div>
         <form onSubmit={quickAdd} className="flex w-full gap-2 sm:w-auto">
           <input className="field sm:w-72" placeholder="Neue Aufgabe … (Enter)" value={quick} onChange={(e) => setQuick(e.target.value)} maxLength={200} aria-label="Neue Aufgabe" />
           <button type="submit" className="btn btn-icon shrink-0" aria-label="Aufgabe anlegen" disabled={!quick.trim()}><Plus size={16} /></button>
@@ -218,7 +264,7 @@ export function TaskBoard({
       {error && <p role="alert" className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
 
       <SortableColumns
-        items={tasks}
+        items={boardTasks}
         columns={TASK_STATUSES.map((s) => s.value)}
         columnOf={statusOf}
         sort={byPosition}

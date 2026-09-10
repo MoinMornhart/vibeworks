@@ -18,7 +18,11 @@ export function serializeTask(t: Task) {
     labels: t.labels,
     recurrence: t.recurrence,
     doneAt: t.doneAt?.toISOString() ?? null,
+    statusChangedAt: t.statusChangedAt.toISOString(),
     createdAt: t.createdAt.toISOString(),
+    issueNumber: t.issueNumber,
+    issueUrl: t.issueUrl,
+    issueError: t.issueError,
   };
 }
 export type TaskItem = ReturnType<typeof serializeTask>;
@@ -51,6 +55,7 @@ export async function transitionTask(
 ): Promise<{ task: Task; spawned: Task | null }> {
   const from = task.status;
   const update: Prisma.TaskUncheckedUpdateInput = { ...data, status: to };
+  if (from !== to) update.statusChangedAt = new Date();
   if (to === "DONE" && from !== "DONE") update.doneAt = new Date();
   if (from === "DONE" && to !== "DONE") update.doneAt = null;
   const updated = await client.task.update({ where: { id: task.id }, data: update });

@@ -44,6 +44,14 @@ export const config = {
   get updateStatusDir(): string | null {
     return process.env.VIBEWORKS_STATUS_DIR?.trim() || null;
   },
+  /** Git-Instanz auf demselben Rechner erlauben (sonst ist Loopback gesperrt). */
+  get gitAllowLoopback(): boolean {
+    return process.env.GIT_ALLOW_LOOPBACK === "true";
+  },
+  /** Zugriff ins private LAN sperren (Standard: erlaubt – selbst gehostetes Gitea). */
+  get gitBlockPrivate(): boolean {
+    return process.env.GIT_BLOCK_PRIVATE === "true";
+  },
   get secureCookies() {
     return this.appUrl.startsWith("https://");
   },

@@ -68,6 +68,19 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+export const repoAccessSchema = z.object({
+  // null entfernt das Token, undefined lässt es stehen
+  token: z
+    .string()
+    .trim()
+    .min(8, "Das Token ist zu kurz")
+    .max(500, "Das Token ist zu lang")
+    .regex(/^[\x21-\x7e]+$/, "Das Token enthält ungültige Zeichen")
+    .nullable()
+    .optional(),
+  issueSync: z.boolean().optional(),
+});
+
 export const projectReorderSchema = z.object({
   status: projectStatusSchema,
   ids: z.array(z.string().max(40)).max(1000),

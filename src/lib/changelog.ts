@@ -16,6 +16,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.4",
+    date: "2026-09-10",
+    title: "Git & Updates, Aufgaben als Issues",
+    changes: [
+      { type: "neu", text: "Projektseite: neuer Bereich „Git & Updates“ unter den Notizen – Commits aus GitHub, GitLab oder Gitea als Zeitleiste nach Tagen, mit Aktivitätsdiagramm, Mitwirkenden, Versions-Plaketten und verlinkten Issue-Nummern" },
+      { type: "neu", text: "Commits gleichen sich beim Öffnen und alle 5 Minuten selbst ab; der letzte Stand bleibt bei Fehlern erhalten" },
+      { type: "neu", text: "Zugangstoken pro Projekt (verschlüsselt gespeichert) – für private Repositories und die Issue-Spiegelung" },
+      { type: "neu", text: "Aufgaben werden automatisch zu Issues: Titel, Text, Fälligkeit und Status wandern mit, gelöschte Aufgaben schließen ihr Issue als „nicht geplant“" },
+      { type: "neu", text: "Issues sortieren sich in die Spalten: Label „in Arbeit“ → In Arbeit, „blockiert“ → Blockiert, geschlossen → Erledigt – in beide Richtungen" },
+      { type: "neu", text: "Erledigte und blockierte Aufgaben verschwinden nach 2 Tagen vom Board und lassen sich per Klick wieder einblenden" },
+      { type: "besser", text: "Dashboard und Projektseite holen Änderungen selbst nach – beim Zurückkehren zum Tab und jede Minute" },
+      { type: "fix", text: "Sortierung „Status (Idee → Fertig)“: Favoriten stehen nur noch innerhalb ihres Status oben, statt die Reihenfolge zu durchbrechen" },
+      { type: "besser", text: "Schutz vor Server-Side Request Forgery für alle Abrufe von Repository-Adressen" },
+    ],
+  },
+  {
     version: "0.2.3",
     date: "2026-09-10",
     title: "Sortieren nach Status",

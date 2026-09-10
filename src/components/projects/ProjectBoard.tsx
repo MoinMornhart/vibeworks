@@ -20,6 +20,7 @@ import {
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
+import { useAutoRefresh } from "@/lib/client/useAutoRefresh";
 import { cn } from "@/lib/utils";
 import { ProjectCard, ProjectRow } from "./ProjectCard";
 import { ProjectDialog } from "./ProjectDialog";
@@ -84,6 +85,8 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
 
   // Neue Serverdaten (z. B. nach der Schnellerfassung) übernehmen.
   useEffect(() => setProjects(initial), [initial]);
+  // Statuswechsel auf der Projektseite, in anderen Tabs oder Geräten übernehmen
+  useAutoRefresh();
 
   // Notizen und Aufgaben liegen im Board nicht vor – die sucht der Server
   // im Volltext, entprellt ab zwei Zeichen.
@@ -137,9 +140,16 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
 
   const visible = useMemo(() => {
     const cmp = SORTS.find((s) => s.value === sort)!.cmp;
+    const fav = (a: ProjectListItem, b: ProjectListItem) => Number(b.favorite) - Number(a.favorite);
     return base
       .filter((p) => !statuses.length || statuses.includes(p.status))
-      .sort((a, b) => Number(b.favorite) - Number(a.favorite) || cmp(a, b));
+      // Favoriten stehen oben – bei der Status-Sortierung aber nur innerhalb
+      // ihres Status, sonst gerät die Reihenfolge Idee → Fertig durcheinander.
+      .sort((a, b) =>
+        sort === "status"
+          ? statusRank(a.status) - statusRank(b.status) || fav(a, b) || b.updatedAt.localeCompare(a.updatedAt)
+          : fav(a, b) || cmp(a, b),
+      );
   }, [base, statuses, sort]);
 
   const kanbanColumns = useMemo(

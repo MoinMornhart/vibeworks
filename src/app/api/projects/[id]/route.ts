@@ -6,6 +6,7 @@ import { findOwnProject, nextPosition, projectListSelect, serializeProject, uniq
 import { syncProjectProgress } from "@/lib/tasks";
 import { logActivity } from "@/lib/activity";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
+import { parseRepoUrl } from "@/lib/git/parse";
 
 type Params = { id: string };
 
@@ -36,6 +37,15 @@ export const PATCH = route<Params>(async (req, { params }) => {
   if (statusChanged) data.position = await nextPosition(user.id, input.status!);
 
   const updated = await db.project.update({ where: { id }, data, select: { status: true, progressFromTasks: true } });
+  // Anderes Repository: zwischengespeicherte Commits und Issue-Nummern gehören zum alten.
+  if (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) {
+    await db.repoCache.deleteMany({ where: { projectId: id } });
+    await db.$executeRaw`UPDATE "Task" SET "issueNumber" = NULL, "issueUrl" = NULL, "issueError" = NULL WHERE "projectId" = ${id}`;
+    // Ein Token gilt nur für seinen Server – nie an einen anderen Host schicken.
+    if (parseRepoUrl(input.repoUrl)?.host !== parseRepoUrl(current.repoUrl)?.host) {
+      await db.project.update({ where: { id }, data: { repoTokenCipher: null, repoTokenHint: null } });
+    }
+  }
   // Mit abgeleitetem Fortschritt gilt der Anteil erledigter Aufgaben, nicht der Regler.
   if (updated.progressFromTasks) await syncProjectProgress(id);
 

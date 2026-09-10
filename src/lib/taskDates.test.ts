@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { addStep, bucketOf, derivedProgress, dueState, formatDue, isDayKey, nextDueKey } from "./taskDates";
+import { addStep, bucketOf, derivedProgress, dueState, formatDue, isDayKey, isFaded, nextDueKey } from "./taskDates";
+
+describe("Ausblenden nach zwei Tagen", () => {
+  const now = Date.parse("2026-09-10T12:00:00Z");
+  const at = (h: number) => new Date(now - h * 3_600_000).toISOString();
+  it("blendet Erledigtes und Blockiertes nach 48 Stunden aus", () => {
+    expect(isFaded({ status: "DONE", statusChangedAt: at(49) }, now)).toBe(true);
+    expect(isFaded({ status: "BLOCKED", statusChangedAt: at(49) }, now)).toBe(true);
+    expect(isFaded({ status: "DONE", statusChangedAt: at(47) }, now)).toBe(false);
+  });
+  it("Offenes und laufende Arbeit bleiben immer", () => {
+    expect(isFaded({ status: "TODO", statusChangedAt: at(500) }, now)).toBe(false);
+    expect(isFaded({ status: "DOING", statusChangedAt: at(500) }, now)).toBe(false);
+  });
+});
 
 describe("Wiederholung", () => {
   it("monatlich behält den Tag und kappt am Monatsende", () => {

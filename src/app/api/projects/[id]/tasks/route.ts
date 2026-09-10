@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { db } from "@/lib/db";
+import { pushTaskIssue } from "@/lib/git/issues";
 import { json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { findOwnProject } from "@/lib/projects";
@@ -37,5 +39,6 @@ export const POST = route<Params>(async (req, { params }) => {
   await logActivity({ projectId: id, userId: user.id, kind: "TASK_ADDED", summary: `Aufgabe „${truncate(task.title, 60)}“ angelegt` });
   await touchProject(id);
   const progress = await syncProjectProgress(id);
+  after(() => pushTaskIssue(task.id));
   return json({ task: serializeTask(task), progress }, { status: 201 });
 });
