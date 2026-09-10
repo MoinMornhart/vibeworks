@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.2",
+    date: "2026-09-10",
+    title: "Passkeys",
+    changes: [
+      { type: "neu", text: "Passkeys: anmelden per Fingerabdruck, Gesichtserkennung oder Sicherheitsschlüssel – ohne Passwort und ohne Benutzernamen" },
+      { type: "neu", text: "Mehrere Passkeys je Konto, benennbar und einzeln entfernbar, mit „zuletzt benutzt“" },
+      { type: "neu", text: "Der Passkey ersetzt den zweiten Faktor – nach der Passkey-Anmeldung wird kein Code abgefragt" },
+      { type: "besser", text: "Einmal gültige Challenges aus der Datenbank, Signaturzähler gegen geklonte Schlüssel" },
+      { type: "besser", text: "Klarer Hinweis, wenn Passkeys mangels HTTPS nicht verfügbar sind" },
+    ],
+  },
+  {
     version: "0.1.1",
     date: "2026-09-10",
     title: "Zwei-Faktor-Anmeldung",

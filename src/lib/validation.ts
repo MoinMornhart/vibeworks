@@ -181,6 +181,29 @@ export const mfaLoginSchema = z
   })
   .refine((v) => v.code || v.recoveryCode, "Code fehlt");
 
+// ── Passkeys ────────────────────────────────────────────────
+
+// Die eigentliche Prüfung übernimmt SimpleWebAuthn; hier nur Form und Größe.
+const webauthnResponseSchema = z
+  .object({
+    id: z.string().min(1).max(1024),
+    rawId: z.string().max(1024),
+    type: z.literal("public-key"),
+    response: z.record(z.unknown()),
+    clientExtensionResults: z.record(z.unknown()).default({}),
+    authenticatorAttachment: z.string().max(40).optional(),
+  })
+  .passthrough();
+
+export const passkeyRegisterSchema = z.object({
+  response: webauthnResponseSchema,
+  name: z.string().trim().max(60).optional(),
+});
+
+export const passkeyLoginSchema = z.object({ response: webauthnResponseSchema });
+
+export const passkeyRenameSchema = z.object({ name: z.string().trim().min(1, "Name fehlt").max(60, "Höchstens 60 Zeichen") });
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

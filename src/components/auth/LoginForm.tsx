@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
+import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser";
+import { ArrowLeft, Fingerprint, LogIn, ShieldCheck } from "lucide-react";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 
@@ -14,6 +15,32 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
   const [useRecovery, setUseRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [passkeys, setPasskeys] = useState(false);
+
+  // Passkeys brauchen einen sicheren Kontext (HTTPS oder localhost).
+  useEffect(() => {
+    setPasskeys(browserSupportsWebAuthn() && window.isSecureContext);
+  }, []);
+
+  async function passkeyLogin() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { options } = await api<{ options: Parameters<typeof startAuthentication>[0]["optionsJSON"] }>("/api/auth/passkey/login/options", { body: {} });
+      const response = await startAuthentication({ optionsJSON: options });
+      await api("/api/auth/passkey/login/verify", { body: { response } });
+      window.location.assign(next);
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : err instanceof Error && err.name === "NotAllowedError"
+            ? "Abgebrochen – oder auf diesem Gerät gibt es keinen Passkey für diese Seite."
+            : errorMessage(err),
+      );
+      setBusy(false);
+    }
+  }
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +131,16 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
       <button className="btn btn-primary w-full" disabled={busy}>
         <LogIn size={16} /> {busy ? "Anmelden …" : "Anmelden"}
       </button>
+      {passkeys && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-muted" aria-hidden>
+            <span className="h-px flex-1 bg-fg/15" /> oder <span className="h-px flex-1 bg-fg/15" />
+          </div>
+          <button type="button" className="btn w-full" onClick={passkeyLogin} disabled={busy}>
+            <Fingerprint size={16} /> Mit Passkey anmelden
+          </button>
+        </>
+      )}
       {allowRegistration && (
         <p className="text-center text-sm text-muted">
           Noch kein Konto? <Link href="/register" className="text-accent-ink hover:underline">Registrieren</Link>
