@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.3",
+    date: "2026-09-10",
+    title: "Administration",
+    changes: [
+      { type: "neu", text: "Admin-Seite: Betriebsart (Einzel- oder Mehrbenutzer), Selbstregistrierung und Karten je Spalte im Aufgabenbrett" },
+      { type: "neu", text: "Konten anlegen, Rolle wechseln, deaktivieren, entsperren, Passwort neu setzen (beendet alle Sitzungen) und löschen" },
+      { type: "neu", text: "Übersicht je Konto: Projektzahl, Passkeys, Zwei-Faktor, letzte Anmeldung, Sperrstatus" },
+      { type: "besser", text: "Schutzregeln: Der letzte aktive Administrator bleibt, das eigene Konto lässt sich weder löschen noch deaktivieren" },
+      { type: "besser", text: "Wechsel in den Einzelbetrieb nur mit genau einem Konto – niemand wird ausgesperrt" },
+    ],
+  },
+  {
     version: "0.1.2",
     date: "2026-09-10",
     title: "Passkeys",

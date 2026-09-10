@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, UserRound, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Shield, UserRound, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Aufgaben", icon: ListChecks },
   { href: "/design", label: "Design", icon: Palette },
+  { href: "/admin", label: "Admin", icon: Shield, admin: true },
 ];
 
 function isActive(pathname: string, href: string) {

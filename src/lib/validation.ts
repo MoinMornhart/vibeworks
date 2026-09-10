@@ -204,6 +204,35 @@ export const passkeyLoginSchema = z.object({ response: webauthnResponseSchema })
 
 export const passkeyRenameSchema = z.object({ name: z.string().trim().min(1, "Name fehlt").max(60, "Höchstens 60 Zeichen") });
 
+// ── Administration ──────────────────────────────────────────
+
+export const adminSettingsSchema = z.object({
+  mode: z.enum(["SINGLE", "MULTI"]).optional(),
+  allowRegistration: z.boolean().optional(),
+  taskColumnLimit: z.number().int().min(0, "Mindestens 0").max(500, "Höchstens 500").optional(),
+});
+
+export const adminUserCreateSchema = z.object({
+  username: usernameSchema,
+  displayName,
+  password,
+  role: z.enum(["ADMIN", "USER"]).default("USER"),
+});
+
+export const adminUserUpdateSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .max(60)
+    .nullish()
+    .transform((v) => v || null)
+    .optional(),
+  role: z.enum(["ADMIN", "USER"]).optional(),
+  active: z.boolean().optional(),
+  password: z.string().max(256).optional(),
+  unlock: z.boolean().optional(),
+});
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
