@@ -61,7 +61,14 @@ export async function readBody<T>(req: NextRequest, schema: ZodType<T>): Promise
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path.join(".") || "_";
-      fieldErrors[key] ??= issue.message;
+      // Zods Standardtexte sind englisch – die häufigsten hier eindeutschen.
+      const message =
+        issue.code === "invalid_type" && issue.received === "undefined"
+          ? `Pflichtfeld fehlt: ${key}`
+          : issue.code === "invalid_type"
+            ? `Ungültiger Wert: ${key}`
+            : issue.message;
+      fieldErrors[key] ??= message;
     }
     const first = Object.values(fieldErrors)[0];
     throw new ApiError(400, first ?? "Ungültige Eingabe", fieldErrors);

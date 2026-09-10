@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.4",
+    date: "2026-09-10",
+    title: "Design-Editor",
+    changes: [
+      { type: "neu", text: "Eigene Seite „Design“ mit Live-Vorschau – jede Änderung ist sofort sichtbar, gespeichert wird erst auf Knopfdruck" },
+      { type: "neu", text: "Sieben Farbschemata, freie Akzentfarbe, komplette Palette für Hell und Dunkel mit Kontrastprüfung, eigene Statusfarben" },
+      { type: "neu", text: "Glas-Effekt: Deckkraft und Unschärfe der Karten stufenlos regelbar" },
+      { type: "neu", text: "Hintergrund: neun animierte Vorlagen mit Tempo, Intensität und eigenen Farben" },
+      { type: "neu", text: "Eigener Farbverlauf (linear, radial, konisch) mit bis zu sechs Farben, Animation und zehn Vorlagen" },
+      { type: "neu", text: "Eigene Hintergrundbilder hochladen (PNG, JPEG, WebP, GIF, AVIF) mit Unschärfe, Abdunkelung und Anordnung" },
+      { type: "neu", text: "Designs als JSON exportieren und importieren" },
+    ],
+  },
+  {
     version: "0.0.3",
     date: "2026-09-10",
     title: "Proxmox-Installer und Auto-Update",

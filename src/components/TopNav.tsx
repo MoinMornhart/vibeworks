@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, LogOut, ChevronDown, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, ChevronDown, Palette, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,10 @@ interface NavItem {
   admin?: boolean;
 }
 
-const NAV: NavItem[] = [{ href: "/", label: "Dashboard", icon: LayoutDashboard }];
+const NAV: NavItem[] = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/design", label: "Design", icon: Palette },
+];
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" || pathname.startsWith("/projects") : pathname.startsWith(href);
