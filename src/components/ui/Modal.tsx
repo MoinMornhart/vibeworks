@@ -76,7 +76,12 @@ export function Modal({
   const width = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onCloseRef.current()}>
+    // Auf dem Handy oben statt am unteren Rand: dort schiebt sich beim Tippen
+    // die Bildschirmtastatur über den Dialog.
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 pb-3 pt-[max(1rem,6dvh)] sm:items-center sm:p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onCloseRef.current()}
+    >
       <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" aria-hidden />
       <div
         ref={ref}
@@ -84,7 +89,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={cn("glass-strong fade-in relative flex max-h-[92dvh] w-full flex-col rounded-b-none sm:rounded-2xl", width)}
+        className={cn("glass-strong fade-in relative flex max-h-[88dvh] w-full flex-col rounded-2xl", width)}
       >
         <div className="flex items-center justify-between gap-4 border-b px-5 py-4">
           <h2 id={titleId} className="text-lg font-semibold">{title}</h2>

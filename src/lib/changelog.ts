@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.0",
+    date: "2026-09-10",
+    title: "Dialoge auf dem Handy oben",
+    changes: [
+      { type: "besser", text: "Dialoge – z. B. die Schnellerfassung über den Blitz – öffnen auf dem Handy im oberen Bereich statt ganz unten, die Tastatur verdeckt nichts mehr" },
+    ],
+  },
+  {
     version: "0.1.9",
     date: "2026-09-10",
     title: "Befehle direkt auf dem Proxmox-Host",
