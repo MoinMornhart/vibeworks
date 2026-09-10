@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.9",
+    date: "2026-09-10",
+    title: "Aufgaben über alle Projekte",
+    changes: [
+      { type: "neu", text: "Neue Seite „Aufgaben“: jede Aufgabe aus jedem Projekt, nach Fälligkeit geordnet – Überfällig, Heute, Diese Woche, Später, Ohne Termin" },
+      { type: "neu", text: "Filter nach Status und Projekt, Erledigtes einblendbar" },
+      { type: "neu", text: "Abhaken und Bearbeiten direkt aus der Liste – inklusive nächster Fassung bei wiederkehrenden Aufgaben" },
+      { type: "besser", text: "Den heutigen Tag bestimmt der Server in fester Zeitzone (Europe/Berlin) – abends kippt nichts in den falschen Tag" },
+    ],
+  },
+  {
     version: "0.0.8",
     date: "2026-09-10",
     title: "Aufgaben je Projekt",

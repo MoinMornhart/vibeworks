@@ -78,6 +78,28 @@ export function formatDue(dueKey: string, todayKey: string): string {
   return shortDate.format(dayKeyToDate(dueKey));
 }
 
+// ── Fächer für die projektübergreifende Aufgabenliste ───────
+// Projektübergreifend lautet die Frage „was ist fällig“, nicht „was steht
+// wo im Brett“ – deshalb wird dort nach Fälligkeit gebündelt.
+
+export type Bucket = "overdue" | "today" | "week" | "later" | "none";
+
+export const BUCKETS: Array<{ value: Bucket; label: string }> = [
+  { value: "overdue", label: "Überfällig" },
+  { value: "today", label: "Heute" },
+  { value: "week", label: "Diese Woche" },
+  { value: "later", label: "Später" },
+  { value: "none", label: "Ohne Termin" },
+];
+
+export function bucketOf(dueKey: string | null, todayKey: string): Bucket {
+  if (!dueKey) return "none";
+  const d = diffDays(todayKey, dueKey);
+  if (d < 0) return "overdue";
+  if (d === 0) return "today";
+  return d <= 7 ? "week" : "later";
+}
+
 export function derivedProgress(total: number, done: number): number {
   return total ? Math.round((done / total) * 100) : 0;
 }

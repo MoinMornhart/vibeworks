@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, LogOut, ChevronDown, Palette, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/tasks", label: "Aufgaben", icon: ListChecks },
   { href: "/design", label: "Design", icon: Palette },
 ];
 

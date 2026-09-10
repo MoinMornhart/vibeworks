@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addStep, derivedProgress, dueState, formatDue, isDayKey, nextDueKey } from "./taskDates";
+import { addStep, bucketOf, derivedProgress, dueState, formatDue, isDayKey, nextDueKey } from "./taskDates";
 
 describe("Wiederholung", () => {
   it("monatlich behält den Tag und kappt am Monatsende", () => {
@@ -50,6 +50,16 @@ describe("Fälligkeit", () => {
   it("erkennt gültige Tage", () => {
     expect(isDayKey("2026-09-10")).toBe(true);
     expect(isDayKey("10.09.2026")).toBe(false);
+  });
+});
+
+describe("Fächer der Aufgabenübersicht", () => {
+  it("bündelt nach Kalendertagen", () => {
+    expect(bucketOf("2026-09-01", "2026-09-10")).toBe("overdue");
+    expect(bucketOf("2026-09-10", "2026-09-10")).toBe("today");
+    expect(bucketOf("2026-09-17", "2026-09-10")).toBe("week");
+    expect(bucketOf("2026-09-18", "2026-09-10")).toBe("later");
+    expect(bucketOf(null, "2026-09-10")).toBe("none");
   });
 });
 
