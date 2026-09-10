@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.6",
+    date: "2026-09-10",
+    title: "Fokus in Dialogen",
+    changes: [
+      { type: "fix", text: "Dialoge rissen beim Tippen den Fokus aus dem Eingabefeld (Schnellerfassung, „Design teilen“, Passwort im Admin-Bereich)" },
+      { type: "fix", text: "Dialoge starten im ersten Eingabefeld statt auf dem Schließen-Knopf" },
+    ],
+  },
+  {
     version: "0.1.5",
     date: "2026-09-10",
     title: "Schnellsuche und Schnellerfassung",
