@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.3",
+    date: "2026-09-10",
+    title: "Proxmox-Installer und Auto-Update",
+    changes: [
+      { type: "neu", text: "Einzeiler für den Proxmox-Host: legt einen Debian-LXC an und installiert alles (Standard- und Erweitert-Modus)" },
+      { type: "neu", text: "update-Befehl im Container mit --status, --check, --rollback, --ref, --auto-on/--auto-off" },
+      { type: "neu", text: "Auto-Update alle 15 Minuten: eigener Release je Version, Datenbank-Backup vor der Migration, automatischer Rollback bei fehlgeschlagenem Health-Check" },
+      { type: "neu", text: "Installationsanleitung unter docs/INSTALLATION.md" },
+    ],
+  },
+  {
     version: "0.0.2",
     date: "2026-09-10",
     title: "Anmeldung",

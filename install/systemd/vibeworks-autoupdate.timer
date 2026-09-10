@@ -1,0 +1,13 @@
+# VibeWorks – prüft alle 15 Minuten auf neue Versionen
+[Unit]
+Description=VibeWorks – Auto-Update alle 15 Minuten
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+RandomizedDelaySec=60
+Persistent=true
+Unit=vibeworks-autoupdate.service
+
+[Install]
+WantedBy=timers.target

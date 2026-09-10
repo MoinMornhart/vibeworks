@@ -1,0 +1,14 @@
+# VibeWorks – automatisches Update (wird vom Timer ausgelöst)
+[Unit]
+Description=VibeWorks – automatisches Update
+Documentation=https://github.com/MoinMornhart/vibeworks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/update --auto
+# Ein Build kann auf kleinen Containern etwas dauern
+TimeoutStartSec=45min
+SyslogIdentifier=vibeworks-autoupdate
+Nice=10
