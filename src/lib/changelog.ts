@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.5",
+    date: "2026-09-10",
+    title: "Neue Projektseite auf GitHub",
+    changes: [
+      { type: "besser", text: "README neu gestaltet: Banner, Abzeichen, Funktionsübersicht, Screenshots und Anleitung für Aufgaben ↔ Issues mit Claude Code" },
+      { type: "besser", text: "Repository mit Beschreibung und Themen, damit es sich auf GitHub leichter finden lässt" },
+    ],
+  },
+  {
     version: "0.2.4",
     date: "2026-09-10",
     title: "Git & Updates, Aufgaben als Issues",
