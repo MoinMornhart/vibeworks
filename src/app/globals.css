@@ -602,3 +602,14 @@
   border: 0;
   border-top: 1px solid var(--vw-border);
 }
+
+/* Aufgeklappte Auswahllisten in den Farben des eigenen Designs statt im
+   grauen Standard des Betriebssystems. */
+select.field option,
+select.field optgroup {
+  background-color: var(--vw-elevated);
+  color: var(--vw-text);
+}
+select.field option:checked {
+  background-color: color-mix(in srgb, var(--vw-accent) 35%, var(--vw-elevated));
+}

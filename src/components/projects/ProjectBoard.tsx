@@ -30,7 +30,7 @@ import { Highlight } from "@/components/Highlight";
 import type { SearchResult } from "@/lib/search";
 
 type View = "grid" | "list" | "grouped" | "kanban";
-type Sort = "updated" | "created" | "name" | "progress" | "priority";
+type Sort = "updated" | "created" | "name" | "progress" | "priority" | "status";
 
 const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: ProjectListItem) => number }> = [
   { value: "updated", label: "Zuletzt geändert", cmp: (a, b) => b.updatedAt.localeCompare(a.updatedAt) },
@@ -38,7 +38,14 @@ const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: Pr
   { value: "name", label: "Name", cmp: (a, b) => a.name.localeCompare(b.name, "de") },
   { value: "progress", label: "Fortschritt", cmp: (a, b) => b.progress - a.progress },
   { value: "priority", label: "Priorität", cmp: (a, b) => b.priority - a.priority },
+  // Reihenfolge der Status von der Idee bis Fertig (Archiviert zuletzt),
+  // innerhalb eines Status die zuletzt geänderten zuerst.
+  { value: "status", label: "Status (Idee → Fertig)", cmp: (a, b) => statusRank(a.status) - statusRank(b.status) || b.updatedAt.localeCompare(a.updatedAt) },
 ];
+
+function statusRank(status: ProjectStatus): number {
+  return PROJECT_STATUSES.findIndex((s) => s.value === status);
+}
 
 const VIEWS: Array<{ value: View; label: string; icon: typeof LayoutGrid }> = [
   { value: "grid", label: "Raster", icon: LayoutGrid },

@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.3",
+    date: "2026-09-10",
+    title: "Sortieren nach Status",
+    changes: [
+      { type: "neu", text: "Dashboard: neue Sortierung „Status (Idee → Fertig)“ – Idee, In Planung, Offen, In Entwicklung, Fertig, Archiviert" },
+      { type: "besser", text: "Aufgeklappte Auswahllisten zeigen die Farben des eigenen Designs statt des grauen Standards" },
+    ],
+  },
+  {
     version: "0.2.2",
     date: "2026-09-10",
     title: "Mini-Docs",
