@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { ZodType } from "zod";
+import type { z, ZodTypeAny } from "zod";
 
 // Gemeinsamer Rahmen für alle API-Routen: CSRF-Prüfung bei schreibenden
 // Methoden, JSON-Body mit Größenlimit und Zod-Validierung, einheitliche
@@ -43,7 +43,8 @@ export function assertSameOrigin(req: NextRequest) {
   }
 }
 
-export async function readBody<T>(req: NextRequest, schema: ZodType<T>): Promise<T> {
+/** Liefert den Ausgabetyp des Schemas – also nach Defaults und Transformationen. */
+export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S): Promise<z.output<S>> {
   const type = req.headers.get("content-type") ?? "";
   if (!type.toLowerCase().startsWith("application/json")) {
     throw new ApiError(415, "Erwartet Content-Type: application/json");

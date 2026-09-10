@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { PROJECT_ACCENTS } from "./status";
+import { normalizeTags } from "./utils";
 
 export const usernameSchema = z
   .string()
@@ -29,6 +31,55 @@ export const registerSchema = z.object({
   displayName,
   password,
 });
+
+// ── Projekte ────────────────────────────────────────────────
+
+export const projectStatusSchema = z.enum(["IDEA", "PLANNING", "OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"]);
+const accentSchema = z.enum(Object.keys(PROJECT_ACCENTS) as [string, ...string[]]);
+const tagsSchema = z.union([z.array(z.string().max(64)).max(50), z.string().max(1000)]).transform((t) => normalizeTags(t));
+const optionalText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .nullish()
+    .transform((v) => (v?.trim() ? v : null));
+
+const repoUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .nullish()
+  .transform((v) => v || null)
+  .refine((v) => v === null || /^(https?:\/\/|git@)[^\s]+$/.test(v), "Bitte eine Repository-Adresse (https://… oder git@…)");
+
+export const projectCreateSchema = z.object({
+  name: z.string().trim().min(1, "Name fehlt").max(120, "Name: höchstens 120 Zeichen"),
+  summary: optionalText(240),
+  description: optionalText(20_000),
+  status: projectStatusSchema.default("IDEA"),
+  priority: z.number().int().min(1).max(4).default(2),
+  progress: z.number().int().min(0).max(100).default(0),
+  accent: accentSchema.default("violet"),
+  tags: tagsSchema.default([]),
+  favorite: z.boolean().default(false),
+  progressFromTasks: z.boolean().default(false),
+  repoUrl: repoUrlSchema,
+});
+
+export const projectUpdateSchema = projectCreateSchema.partial();
+
+export const projectReorderSchema = z.object({
+  status: projectStatusSchema,
+  ids: z.array(z.string().max(40)).max(1000),
+});
+
+export const projectBulkSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("status"), ids: z.array(z.string().max(40)).min(1).max(500), status: projectStatusSchema }),
+  z.object({ action: z.literal("addTags"), ids: z.array(z.string().max(40)).min(1).max(500), tags: tagsSchema }),
+  z.object({ action: z.literal("removeTags"), ids: z.array(z.string().max(40)).min(1).max(500), tags: tagsSchema }),
+  z.object({ action: z.literal("favorite"), ids: z.array(z.string().max(40)).min(1).max(500), favorite: z.boolean() }),
+  z.object({ action: z.literal("delete"), ids: z.array(z.string().max(40)).min(1).max(500) }),
+]);
 
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
