@@ -5,7 +5,7 @@ import type { ProjectStatus } from "@prisma/client";
 import { Save, Star, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
-import { Segmented, Slider } from "@/components/theme/controls";
+import { Segmented, Slider, Toggle } from "@/components/theme/controls";
 import type { ProjectListItem } from "@/lib/projects";
 import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
@@ -22,6 +22,7 @@ interface Form {
   tags: string;
   favorite: boolean;
   repoUrl: string;
+  progressFromTasks: boolean;
 }
 
 function toForm(p?: ProjectListItem | null): Form {
@@ -36,6 +37,7 @@ function toForm(p?: ProjectListItem | null): Form {
     tags: p?.tags.join(", ") ?? "",
     favorite: p?.favorite ?? false,
     repoUrl: p?.repoUrl ?? "",
+    progressFromTasks: p?.progressFromTasks ?? false,
   };
 }
 
@@ -165,7 +167,24 @@ export function ProjectDialog({
           </div>
         </div>
 
-        <Slider label="Fortschritt" value={form.progress} min={0} max={100} step={5} unit=" %" onChange={(v) => set("progress", v)} />
+        <div className="space-y-3">
+          <Slider
+            label={form.progressFromTasks ? "Fortschritt (aus Aufgaben)" : "Fortschritt"}
+            value={form.progress}
+            min={0}
+            max={100}
+            step={5}
+            unit=" %"
+            onChange={(v) => set("progress", v)}
+            disabled={form.progressFromTasks}
+          />
+          <Toggle
+            label="Fortschritt aus Aufgaben berechnen"
+            hint="Anteil erledigter Aufgaben – der Regler ist dann gesperrt"
+            checked={form.progressFromTasks}
+            onChange={(v) => set("progressFromTasks", v)}
+          />
+        </div>
 
         <div>
           <span className="label">Akzentfarbe</span>

@@ -27,7 +27,7 @@ export const projectListSelect = {
 export type ProjectListRow = Prisma.ProjectGetPayload<{ select: typeof projectListSelect }>;
 
 /** Für den Client: Datumsfelder als ISO-Strings, Zähler flach. */
-export function serializeProject<T extends ProjectListRow>(p: T) {
+export function serializeProject<T extends ProjectListRow>(p: T, tasksDone = 0) {
   const { _count, createdAt, updatedAt, ...rest } = p;
   return {
     ...rest,
@@ -35,7 +35,18 @@ export function serializeProject<T extends ProjectListRow>(p: T) {
     updatedAt: updatedAt.toISOString(),
     notes: _count.notes,
     tasks: _count.tasks,
+    tasksDone,
   };
+}
+
+/** Erledigte Aufgaben je Projekt – für „3/8“ auf den Karten. */
+export async function taskDoneCounts(ownerId: string): Promise<Map<string, number>> {
+  const rows = await db.task.groupBy({
+    by: ["projectId"],
+    where: { status: "DONE", project: { ownerId } },
+    _count: { _all: true },
+  });
+  return new Map(rows.map((r) => [r.projectId, r._count._all]));
 }
 export type ProjectListItem = ReturnType<typeof serializeProject<ProjectListRow>> & { description?: string | null };
 export type ProjectDetail = ProjectListItem & { description: string | null };

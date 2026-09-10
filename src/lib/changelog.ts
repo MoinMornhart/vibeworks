@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.8",
+    date: "2026-09-10",
+    title: "Aufgaben je Projekt",
+    changes: [
+      { type: "neu", text: "Aufgabenbrett mit Offen · In Arbeit · Blockiert · Erledigt – Ziehen zwischen und innerhalb der Spalten, die Reihenfolge wird gespeichert" },
+      { type: "neu", text: "Schnell anlegen per Enter, Details im Dialog: Beschreibung (Markdown), Fälligkeit, Labels, Wiederholung" },
+      { type: "neu", text: "Fälligkeiten färben sich: überfällig rot, heute gelb, bald im Akzent" },
+      { type: "neu", text: "Wiederkehrende Aufgaben (täglich bis monatlich): beim Erledigen entsteht die nächste Fassung – gerechnet vom Fälligkeitsdatum" },
+      { type: "neu", text: "Fortschritt aus Aufgaben: pro Projekt einschaltbar, auf der Karte steht „3/8“" },
+      { type: "neu", text: "Spalten zeigen höchstens 15 Karten, der Rest hinter „n weitere anzeigen“" },
+      { type: "besser", text: "Projekt-Kanban und Aufgabenbrett teilen sich dieselbe Drag-and-Drop-Grundlage" },
+    ],
+  },
+  {
     version: "0.0.7",
     date: "2026-09-10",
     title: "Notizen mit Markdown",

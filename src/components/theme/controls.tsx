@@ -49,6 +49,7 @@ export function Slider({
   step = 1,
   unit = "",
   onChange,
+  disabled = false,
 }: {
   label: string;
   value: number;
@@ -57,6 +58,7 @@ export function Slider({
   step?: number;
   unit?: string;
   onChange: (v: number) => void;
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
@@ -65,7 +67,17 @@ export function Slider({
         <label htmlFor={id} className="text-muted">{label}</label>
         <span className="font-mono tabular-nums">{value}{unit}</span>
       </div>
-      <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="vw-range w-full" />
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className={cn("vw-range w-full", disabled && "cursor-not-allowed opacity-50")}
+      />
     </div>
   );
 }

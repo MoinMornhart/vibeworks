@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@prisma/client";
@@ -16,6 +16,8 @@ import { Markdown } from "@/components/Markdown";
 export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
   const router = useRouter();
   const [p, setP] = useState<ProjectDetail>(initial);
+  // Nach router.refresh() (z. B. neuer Fortschritt aus Aufgaben) neue Daten übernehmen.
+  useEffect(() => setP(initial), [initial]);
   const [editOpen, setEditOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

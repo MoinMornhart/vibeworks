@@ -126,7 +126,7 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
         <div className="flex min-w-0 items-center gap-3 text-xs text-muted">
           <PriorityBadge priority={p.priority} compact />
           {p.tasks > 0 && (
-            <span className="inline-flex items-center gap-1" title="Aufgaben"><ListChecks size={13} />{p.tasks}</span>
+            <span className="inline-flex items-center gap-1" title="Aufgaben"><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
           )}
           {p.notes > 0 && (
             <span className="inline-flex items-center gap-1" title="Notizen"><StickyNote size={13} />{p.notes}</span>
@@ -153,7 +153,7 @@ export function ProjectRow({ project: p, onStatus, onFavorite, onEdit, onSelect,
         <ProgressBar value={p.progress} accent={p.accent} className="flex-1" />
         <span className="w-9 text-right text-xs tabular-nums text-muted">{p.progress}%</span>
       </div>
-      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title="Aufgaben"><ListChecks size={13} />{p.tasks}</span>
+      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title="Aufgaben"><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
       <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title="Notizen"><StickyNote size={13} />{p.notes}</span>
       <span className="hidden w-20 text-xs text-muted lg:inline"><PriorityBadge priority={p.priority} /></span>
       <span suppressHydrationWarning className="hidden w-28 truncate text-xs text-muted lg:inline">{timeAgo(p.updatedAt)}</span>

@@ -97,6 +97,48 @@ export const noteUpdateSchema = z.object({
   pinned: z.boolean().optional(),
 });
 
+// ── Aufgaben ────────────────────────────────────────────────
+
+export const taskStatusSchema = z.enum(["TODO", "DOING", "BLOCKED", "DONE"]);
+export const recurrenceSchema = z.enum(["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY"]);
+
+const dueDateSchema = z
+  .union([
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum als JJJJ-MM-TT")
+      .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), "Ungültiges Datum"),
+    z.literal(""),
+  ])
+  .nullish()
+  .transform((v) => v || null);
+
+const labelsSchema = z.union([z.array(z.string().max(40)).max(30), z.string().max(500)]).transform((t) => normalizeTags(t, 8));
+
+export const taskCreateSchema = z.object({
+  title: z.string().trim().min(1, "Titel fehlt").max(200, "Titel: höchstens 200 Zeichen"),
+  description: optionalText(20_000),
+  status: taskStatusSchema.default("TODO"),
+  dueDate: dueDateSchema,
+  labels: labelsSchema.default([]),
+  recurrence: recurrenceSchema.nullish().transform((v) => v ?? null),
+});
+
+// Alles außen .optional(): Fehlendes heißt „nicht ändern“, nicht „leeren“.
+export const taskUpdateSchema = z.object({
+  title: z.string().trim().min(1, "Titel fehlt").max(200).optional(),
+  description: optionalText(20_000).optional(),
+  status: taskStatusSchema.optional(),
+  dueDate: dueDateSchema.optional(),
+  labels: labelsSchema.optional(),
+  recurrence: recurrenceSchema.nullable().optional(),
+});
+
+export const taskReorderSchema = z.object({
+  status: taskStatusSchema,
+  ids: z.array(z.string().max(40)).max(2000),
+});
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

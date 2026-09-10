@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { projectCreateSchema } from "@/lib/validation";
-import { nextPosition, projectListSelect, serializeProject, uniqueSlug } from "@/lib/projects";
+import { nextPosition, projectListSelect, serializeProject, taskDoneCounts, uniqueSlug } from "@/lib/projects";
 import { logActivity } from "@/lib/activity";
 
 export const GET = route(async (req) => {
@@ -13,7 +13,8 @@ export const GET = route(async (req) => {
     select: projectListSelect,
     orderBy: [{ favorite: "desc" }, { updatedAt: "desc" }],
   });
-  return json({ projects: projects.map(serializeProject) });
+  const done = await taskDoneCounts(user.id);
+  return json({ projects: projects.map((p) => serializeProject(p, done.get(p.id))) });
 });
 
 export const POST = route(async (req) => {
