@@ -212,3 +212,16 @@ curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install
 
 Im Container selbst heißt der Befehl weiterhin `update` – dort gibt es zusätzlich
 `update --domain <adresse>`.
+
+### „update“ direkt auf dem Proxmox-Host
+
+Seit Version 0.2.1 gibt es auf dem Host zusätzlich den Befehl `update` (ein Verweis auf
+`vibeworks`). `update` allein holt das neueste Update; Optionen werden an den
+update-Befehl im Container durchgereicht (`update --status`, `update --rollback`, …).
+Fehlt im Container der update-Befehl, repariert der Aufruf die Installation automatisch.
+
+Nachrüsten und sofort aktualisieren – ein Befehl auf dem Host:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-host.sh -o /usr/local/bin/vibeworks && chmod +x /usr/local/bin/vibeworks && ln -sf /usr/local/bin/vibeworks /usr/local/bin/update && update
+```

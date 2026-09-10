@@ -38,11 +38,20 @@ ${C_BOLD}vibeworks${C_RESET} – VibeWorks vom Proxmox-Host aus steuern
   vibeworks repair              Installation im Container reparieren
   vibeworks self-update         Diesen Befehl selbst aktualisieren
 
+Abkürzung auf dem Host: ${C_BOLD}update${C_RESET} = vibeworks update
+  (update --status, update --check, update --rollback, update --domain …)
+
 Der Container wird automatisch gefunden (Name oder Tag „vibeworks“).
 Festlegen:  echo <CTID> > ${CTID_FILE}   oder   VIBEWORKS_CTID=<CTID> vibeworks …
-Im Container selbst heißt der Befehl „update“ (Hilfe: update --help).
+Im Container heißt der Befehl ebenfalls „update“ (Hilfe: update --help).
 EOF
 }
+
+# Als „update“ aufgerufen (Symlink auf dem Host): verhält sich wie der
+# update-Befehl im Container – „update“ allein holt das neueste Update.
+if [[ "$(basename "$0")" == "update" ]]; then
+  set -- __update "$@"
+fi
 
 case "${1:-help}" in
   help|-h|--help) usage; exit 0 ;;
@@ -96,14 +105,28 @@ fi
 
 in_ct() { pct exec "$CTID" -- "$@"; }
 
+repair() {
+  ok "Repariere die Installation im Container $CTID (Daten und .env bleiben erhalten) …"
+  in_ct bash -c "command -v curl >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null; }; curl -fsSL '$RAW/install/vibeworks-install.sh' | bash"
+}
+
+# Fehlt der update-Befehl im Container (unvollständige Installation), wird
+# sie automatisch repariert – dabei entsteht gleich die neueste Version.
 need_update() {
-  in_ct test -x "$UPDATE" || die "Im Container $CTID fehlt der update-Befehl – die Installation ist unvollständig. Reparieren mit: vibeworks repair"
+  if ! in_ct test -x "$UPDATE"; then
+    note "Im Container $CTID fehlt der update-Befehl – die Installation wird repariert."
+    repair
+    in_ct test -x "$UPDATE" || die "Die Reparatur hat nicht geklappt – bitte die Ausgabe oben prüfen."
+  fi
 }
 
 # ── Befehle ───────────────────────────────────────────────────
 cmd="$1"
 shift
 case "$cmd" in
+  # „update …“ auf dem Host: alles an den update-Befehl im Container durchreichen.
+  # --yes, weil pct exec kein Terminal für Rückfragen hat.
+  __update) need_update; in_ct "$UPDATE" --yes "$@" ;;
   status)   need_update; in_ct "$UPDATE" --status ;;
   check)    need_update; in_ct "$UPDATE" --check ;;
   update)   need_update; in_ct "$UPDATE" --yes "$@" ;;
@@ -130,15 +153,14 @@ case "$cmd" in
     fi
     ;;
   shell|enter) exec pct enter "$CTID" ;;
-  repair)
-    ok "Repariere die Installation im Container $CTID (Daten und .env bleiben erhalten) …"
-    in_ct bash -c "command -v curl >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null; }; curl -fsSL '$RAW/install/vibeworks-install.sh' | bash"
-    ;;
+  repair)   repair ;;
   self-update)
     tmp="$(mktemp)"
     curl -fsSL "$RAW/install/vibeworks-host.sh" -o "$tmp" || die "Download fehlgeschlagen."
     bash -n "$tmp" || die "Die neue Version hat Syntaxfehler – behalte die alte."
-    install -m 0755 "$tmp" "$(command -v vibeworks || echo /usr/local/bin/vibeworks)"
+    target="$(command -v vibeworks || echo /usr/local/bin/vibeworks)"
+    install -m 0755 "$tmp" "$target"
+    ln -sf "$target" /usr/local/bin/update
     rm -f "$tmp"
     ok "vibeworks ist aktuell."
     ;;

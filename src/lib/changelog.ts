@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.1",
+    date: "2026-09-10",
+    title: "„update“ auf dem Proxmox-Host",
+    changes: [
+      { type: "neu", text: "Auf dem Proxmox-Host gibt es jetzt den Befehl „update“: allein holt er das neueste Update, Optionen wie --status werden durchgereicht" },
+      { type: "besser", text: "Fehlt im Container der update-Befehl (unvollständige Installation), repariert „update“ bzw. „vibeworks …“ die Installation automatisch" },
+    ],
+  },
+  {
     version: "0.2.0",
     date: "2026-09-10",
     title: "Dialoge auf dem Handy oben",

@@ -42,10 +42,12 @@ vibeworks repair                         # Installation im Container reparieren
 vibeworks help                           # alle Befehle
 ```
 
-Nachrüsten auf einem bestehenden Host:
+Auf dem Host gibt es dazu die Abkürzung **`update`** (= `vibeworks update`, auch
+`update --status` usw.). Nachrüsten auf einem bestehenden Host – installiert die Befehle
+und holt sofort das neueste Update (eine unvollständige Installation wird dabei repariert):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-host.sh -o /usr/local/bin/vibeworks && chmod +x /usr/local/bin/vibeworks
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-host.sh -o /usr/local/bin/vibeworks && chmod +x /usr/local/bin/vibeworks && ln -sf /usr/local/bin/vibeworks /usr/local/bin/update && update
 ```
 
 Im **Container** heißt der Befehl `update` (`update --status`, `update --rollback`,
