@@ -351,12 +351,25 @@ Selbst gehostetes Projekt-Kontrollzentrum.
 - Quellcode: https://github.com/MoinMornhart/vibeworks
 " >/dev/null 2>&1 || warn "Container-Beschreibung konnte nicht gesetzt werden."
 
+# Befehl „vibeworks“ für den Host – steuert den Container von hier aus
+step "Installiere den Befehl „vibeworks“ auf dem Host"
+host_tmp="$(mktemp)"
+if curl -fsSL "${VIBEWORKS_RAW}/install/vibeworks-host.sh" -o "$host_tmp" && bash -n "$host_tmp"; then
+  install -m 0755 "$host_tmp" /usr/local/bin/vibeworks
+  install -d -m 0755 /etc/vibeworks
+  printf '%s\n' "$CTID" > /etc/vibeworks/ctid
+  ok "vibeworks installiert (Hilfe: vibeworks help)."
+else
+  warn "Der Befehl „vibeworks“ konnte nicht installiert werden – VibeWorks selbst läuft trotzdem."
+fi
+rm -f "$host_tmp"
+
 trap - EXIT
 printf '\n%s%s✔ VibeWorks ist bereit!%s\n\n' "$C_GREEN" "$C_BOLD" "$C_RESET"
 printf '  Container:   %s (%s)\n' "$CTID" "$CT_HOSTNAME"
 printf '  Adresse:     %s%s%s\n\n' "$C_BOLD" "$APP_URL" "$C_RESET"
-printf '  Aktualisieren:   pct exec %s -- update      (oder im Container: update)\n' "$CTID"
-printf '  Auto-Update:     alle 15 Minuten, abschalten mit: update --auto-off\n'
-printf '  Status:          pct exec %s -- update --status\n\n' "$CTID"
+printf '  Auf dem Host:    vibeworks status · vibeworks update · vibeworks domain <adresse> · vibeworks help\n'
+printf '  Im Container:    update   (hinein mit: vibeworks shell  bzw.  pct enter %s)\n' "$CTID"
+printf '  Auto-Update:     alle 15 Minuten, abschalten mit: vibeworks auto off\n\n'
 printf '%sHinweis:%s Passkeys funktionieren nur über HTTPS oder localhost – für Passkeys einen\n' "$C_YELLOW" "$C_RESET"
 printf 'Reverse Proxy mit Zertifikat davorsetzen und APP_URL anpassen (/opt/vibeworks/shared/.env).\n\n'

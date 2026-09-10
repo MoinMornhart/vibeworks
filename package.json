@@ -1,6 +1,6 @@
 {
   "name": "vibeworks",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "description": "VibeWorks – selbst gehostetes Kontrollzentrum für Vibe-Coding-Projekte",
   "scripts": {

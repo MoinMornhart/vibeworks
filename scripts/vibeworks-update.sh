@@ -77,6 +77,8 @@ Aufruf: update [OPTION]
   --auto-off         Automatische Updates abschalten.
   --status           Version, Releases, Auto-Update und Dienststatus anzeigen.
   --install          (intern) Ersten Release beim Installieren bauen.
+  --domain <ADRESSE> Adresse ändern (APP_URL), z. B. vibeworks.example.de –
+                     ohne http(s):// wird https:// angenommen.
   --from-app         (intern) Anfrage aus der Admin-Oberfläche ausführen.
   --help, -h         Diese Hilfe.
 
@@ -89,6 +91,7 @@ EOF
 # ----------------------------------------------------------------------------
 ORIG_ARGS=("$@")
 ACTION="update"
+DOMAIN_ARG=""
 ASSUME_YES=0
 FORCE=0
 REF_OVERRIDE=""
@@ -109,6 +112,9 @@ while [[ $# -gt 0 ]]; do
     --status)     ACTION="status" ;;
     --install)    ACTION="install"; ASSUME_YES=1 ;;
     --from-app)   ACTION="from-app"; ASSUME_YES=1 ;;
+    --domain)
+      [[ $# -ge 2 && -n "$2" ]] || die "--domain braucht eine Adresse, z. B. vibeworks.example.de"
+      ACTION="domain"; DOMAIN_ARG="$2"; shift ;;
     -h|--help)    usage; exit 0 ;;
     *)            error "Unbekannte Option: $1"; usage >&2; exit 2 ;;
   esac
@@ -881,6 +887,40 @@ do_from_app() {
 }
 
 # ----------------------------------------------------------------------------
+# Adresse ändern
+# ----------------------------------------------------------------------------
+do_domain() {
+  local value="${DOMAIN_ARG%/}" url
+  if [[ "$value" =~ ^https?:// ]]; then url="$value"; else url="https://$value"; fi
+  # Streng prüfen – der Wert landet per sed in der .env.
+  [[ "$url" =~ ^https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?$ ]] \
+    || die "Ungültige Adresse: $DOMAIN_ARG (Beispiele: vibeworks.example.de, http://192.168.1.50:3000)"
+  [[ -f "$ENV_FILE" ]] || die "$ENV_FILE fehlt."
+
+  local old
+  old="$(env_get APP_URL)"
+  if grep -qE '^[[:space:]]*APP_URL=' "$ENV_FILE"; then
+    sed -i "s|^[[:space:]]*APP_URL=.*|APP_URL=${url}|" "$ENV_FILE"
+  else
+    printf 'APP_URL=%s\n' "$url" >> "$ENV_FILE"
+  fi
+  ok "Adresse: ${old:-–} -> $url"
+
+  if service_exists; then
+    restart_service
+    if wait_for_health; then ok "VibeWorks läuft wieder."; else warn "VibeWorks antwortet nicht – Logs: journalctl -u vibeworks -n 100"; fi
+  fi
+
+  printf '\n%sBitte beachten:%s\n' "$C_BOLD" "$C_RESET"
+  if [[ "$url" == https://* ]]; then
+    printf '  • HTTPS kommt vom Reverse Proxy (z. B. Caddy, nginx, Nginx Proxy Manager) – er leitet auf Port %s dieses Containers weiter\n' "$(app_port)"
+    printf '    und muss den Host-Header durchreichen (Caddy: automatisch, nginx: proxy_set_header Host $host;).\n'
+  fi
+  printf '  • Passkeys hängen an der Adresse – nach einem Wechsel unter „Mein Konto“ neu anlegen.\n'
+  printf '  • Alle Benutzer werden einmal abgemeldet.\n'
+}
+
+# ----------------------------------------------------------------------------
 # Hauptprogramm
 # ----------------------------------------------------------------------------
 case "$ACTION" in
@@ -895,4 +935,5 @@ case "$ACTION" in
   auto-off) do_auto_off ;;
   status)   do_status ;;
   from-app) do_from_app ;;
+  domain)   do_domain ;;
 esac

@@ -30,15 +30,27 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/m
 Das Skript legt einen Debian-LXC-Container an, installiert Node.js, PostgreSQL und VibeWorks
 und richtet das automatische Update ein. Details stehen in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
-### Updates
+### Befehle
 
-Im Container:
+Auf dem **Proxmox-Host** (richtet der Installer ein):
 
 ```bash
-update            # prüft auf eine neue Version und aktualisiert
-update --status   # zeigt Version, Releases und Auto-Update-Status
-update --rollback # zurück auf den vorherigen Stand
+vibeworks status                         # Version, Releases, Auto-Update, Dienst
+vibeworks update                         # neueste Version installieren
+vibeworks domain vibeworks.example.de    # Adresse ändern
+vibeworks repair                         # Installation im Container reparieren
+vibeworks help                           # alle Befehle
 ```
+
+Nachrüsten auf einem bestehenden Host:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-host.sh -o /usr/local/bin/vibeworks && chmod +x /usr/local/bin/vibeworks
+```
+
+Im **Container** heißt der Befehl `update` (`update --status`, `update --rollback`,
+`update --domain …`, `update --help`). Außerdem gibt es im Admin-Bereich einen Knopf
+„Neuestes Update installieren“.
 
 Der Server prüft zusätzlich **alle 15 Minuten** selbst auf neue Versionen. Jede Version wird in
 einem eigenen Verzeichnis gebaut; erst wenn der Build klappt und die App danach gesund antwortet,

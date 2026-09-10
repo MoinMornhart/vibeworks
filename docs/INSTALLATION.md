@@ -182,3 +182,33 @@ userdel vibeworks
 ```
 
 Node.js und PostgreSQL bleiben installiert und lassen sich bei Bedarf mit `apt-get purge` entfernen.
+
+## Befehl „vibeworks“ auf dem Proxmox-Host
+
+Damit man nicht erst in den Container wechseln muss, installiert der Proxmox-Installer auf
+dem Host den Befehl `vibeworks`. Er findet den Container selbst (Name oder Tag „vibeworks“,
+gemerkt in `/etc/vibeworks/ctid`) und ruft darin den `update`-Befehl auf.
+
+| Befehl | Wirkung |
+| --- | --- |
+| `vibeworks status` | Version, Releases, Auto-Update, Dienst |
+| `vibeworks check` | Gibt es ein Update? |
+| `vibeworks update` | Neueste Version installieren (`--force`, `--ref <stand>` möglich) |
+| `vibeworks rollback` | Zurück auf den vorherigen Release |
+| `vibeworks auto on` / `off` | Automatische Updates ein- oder ausschalten |
+| `vibeworks domain vibeworks.example.de` | Adresse (`APP_URL`) ändern und neu starten |
+| `vibeworks url` | Aktuelle Adresse anzeigen |
+| `vibeworks logs` / `logs -f` | Protokoll anzeigen bzw. mitlesen |
+| `vibeworks shell` | In den Container wechseln |
+| `vibeworks repair` | Installation im Container reparieren (Daten und `.env` bleiben) |
+| `vibeworks self-update` | Den Host-Befehl selbst aktualisieren |
+
+Auf einem Host, der schon vor Version 0.1.9 installiert wurde, einmal nachrüsten:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-host.sh \
+  -o /usr/local/bin/vibeworks && chmod +x /usr/local/bin/vibeworks
+```
+
+Im Container selbst heißt der Befehl weiterhin `update` – dort gibt es zusätzlich
+`update --domain <adresse>`.

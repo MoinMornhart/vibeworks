@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.9",
+    date: "2026-09-10",
+    title: "Befehle direkt auf dem Proxmox-Host",
+    changes: [
+      { type: "neu", text: "Befehl „vibeworks“ auf dem Proxmox-Host: status, check, update, rollback, auto on/off, domain, url, logs, shell – ohne erst in den Container zu wechseln" },
+      { type: "neu", text: "„vibeworks repair“ repariert eine unvollständige Installation im Container, Daten und .env bleiben erhalten" },
+      { type: "neu", text: "Adresse ändern mit „vibeworks domain …“ bzw. im Container „update --domain …“ – inklusive Neustart und Hinweisen zu Proxy und Passkeys" },
+      { type: "besser", text: "Der Proxmox-Installer richtet den Host-Befehl automatisch ein und findet den Container später selbst wieder" },
+    ],
+  },
+  {
     version: "0.1.8",
     date: "2026-09-10",
     title: "Update per Knopfdruck",
