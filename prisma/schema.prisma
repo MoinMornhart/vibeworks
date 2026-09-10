@@ -122,6 +122,7 @@ model User {
   docs          Doc[]
   memberships    ProjectMember[]
   accessRequests AccessRequest[]
+  gitCredentials GitCredential[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -314,6 +315,30 @@ model RepoCache {
   commits       Json     @default("[]")
   fetchedAt     DateTime @default(now())
   error         String?
+}
+
+/// Git-Verbindung eines Kontos (GitHub, GitLab, Gitea/Forgejo, auch selbst
+/// gehostet). Gilt für alle eigenen Projekte auf diesem Server, sofern ein
+/// Projekt kein eigenes Token hat. Je Konto und Server höchstens eine.
+model GitCredential {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// github | gitlab | gitea
+  provider  String
+  /// host[:port], kleingeschrieben – Abgleich mit der Repository-Adresse
+  host      String
+  /// https://host[:port] – Basis für API-Aufrufe
+  baseUrl   String
+  /// Token, AES-256-GCM-verschlüsselt
+  cipher    String
+  /// Gekürzte Anzeige, z. B. "ghp_…9f3a"
+  hint      String
+  /// Anmeldename beim Anbieter, beim Speichern ermittelt
+  login     String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, host])
 }
 
 // ── Teilen ──────────────────────────────────────────────────

@@ -5,6 +5,8 @@ import { User, Users, Rocket } from "lucide-react";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { FormError } from "@/components/ui/FormError";
+import { GitTokenOptional } from "./GitTokenOptional";
+import { EMPTY_GIT_CONNECTION, type GitConnectionForm } from "@/components/git/GitProviderFields";
 
 export function SetupForm() {
   const [username, setUsername] = useState("");
@@ -13,6 +15,7 @@ export function SetupForm() {
   const [confirm, setConfirm] = useState("");
   const [mode, setMode] = useState<"SINGLE" | "MULTI">("SINGLE");
   const [allowRegistration, setAllowRegistration] = useState(false);
+  const [git, setGit] = useState<GitConnectionForm>(EMPTY_GIT_CONNECTION);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -27,7 +30,7 @@ export function SetupForm() {
     }
     setBusy(true);
     try {
-      await api("/api/auth/setup", { body: { username, displayName, password, mode, allowRegistration } });
+      await api("/api/auth/setup", { body: { username, displayName, password, mode, allowRegistration, gitToken: git.token, gitProvider: git.provider, gitServer: git.server } });
       window.location.assign("/");
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
@@ -93,6 +96,7 @@ export function SetupForm() {
         <p className="mt-2 text-xs text-muted">Lässt sich später jederzeit in den Admin-Einstellungen ändern.</p>
       </fieldset>
 
+      <GitTokenOptional value={git} onChange={setGit} error={fieldErrors.gitToken} />
       <FormError message={error} />
       <button className="btn btn-primary w-full" disabled={busy}>
         <Rocket size={16} /> {busy ? "Richte ein …" : "Einrichtung abschließen"}

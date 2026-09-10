@@ -6,6 +6,7 @@ import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
 import { registrationOpen } from "@/lib/settings";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { optionalCredential } from "@/lib/git/token";
 
 // Selbstregistrierung – nur im Mehrbenutzerbetrieb und nur, wenn der
 // Administrator sie freigeschaltet hat.
@@ -16,6 +17,7 @@ export const POST = route(async (req) => {
   const input = await readBody(req, registerSchema);
   const policy = checkPasswordPolicy(input.password, input.username);
   if (policy) throw new ApiError(400, policy, { password: policy });
+  const tokenData = await optionalCredential(input);
 
   try {
     const user = await db.user.create({
@@ -24,6 +26,7 @@ export const POST = route(async (req) => {
         displayName: input.displayName,
         passwordHash: await hashPassword(input.password),
         role: "USER",
+        ...tokenData,
       },
     });
     await startSession(user.id, req);

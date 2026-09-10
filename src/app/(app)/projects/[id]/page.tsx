@@ -7,6 +7,7 @@ import { projectListSelect, serializeProject } from "@/lib/projects";
 import { NOTE_ORDER, serializeNote } from "@/lib/notes";
 import { serializeTask, TASK_ORDER } from "@/lib/tasks";
 import { serializeRepoCache } from "@/lib/git/sync";
+import { accountTokenFor } from "@/lib/git/token";
 import { getSettings } from "@/lib/settings";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { NotesPanel } from "@/components/notes/NotesPanel";
@@ -52,6 +53,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const done = tasks.filter((t) => t.status === "DONE").length;
   const isOwner = access === "OWNER";
   const readOnly = access === "VIEWER";
+  const account = isOwner ? await accountTokenFor(project.ownerId, project.repoUrl) : null;
   return (
     <div className="space-y-6">
       <ProjectHeader
@@ -67,7 +69,11 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         projectId={project.id}
         repoUrl={project.repoUrl}
         initialCache={repoCache ? serializeRepoCache(repoCache) : null}
-        initialAccess={{ tokenHint: isOwner ? repoTokenHint : null, issueSync }}
+        initialAccess={{
+          tokenHint: isOwner ? repoTokenHint : null,
+          issueSync,
+          accountToken: account ? { hint: account.hint, login: account.login } : null,
+        }}
         linkedIssues={tasks.filter((t) => t.issueNumber !== null).length}
         mode={isOwner ? "owner" : "member"}
       />

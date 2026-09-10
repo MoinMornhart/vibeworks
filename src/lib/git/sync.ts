@@ -2,6 +2,7 @@ import type { Prisma, RepoCache } from "@prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { parseRepoUrl } from "./parse";
+import { tokenCipherFor } from "./token";
 import { fetchRepository, GitError, type CommitInfo } from "./providers";
 
 export function serializeRepoCache(c: RepoCache) {
@@ -23,7 +24,7 @@ export type RepoCacheView = ReturnType<typeof serializeRepoCache>;
  * Gleicht das Repository eines Projekts ab. Ein Fehlschlag überschreibt die
  * gespeicherten Commits nicht – er landet nur als `error` am Stand.
  */
-export async function syncProjectRepository(project: { id: string; repoUrl: string | null; repoTokenCipher: string | null }): Promise<RepoCache> {
+export async function syncProjectRepository(project: { id: string; ownerId: string; repoUrl: string | null; repoTokenCipher: string | null }): Promise<RepoCache> {
   const parsed = parseRepoUrl(project.repoUrl);
   const fail = (message: string) =>
     db.repoCache.upsert({
@@ -34,9 +35,10 @@ export async function syncProjectRepository(project: { id: string; repoUrl: stri
 
   if (!parsed) return fail("Die Repository-Adresse ist nicht lesbar – erwartet z. B. https://github.com/owner/name.");
   let token: string | null = null;
-  if (project.repoTokenCipher) {
+  const stored = await tokenCipherFor(project);
+  if (stored) {
     try {
-      token = decrypt(project.repoTokenCipher);
+      token = decrypt(stored.cipher);
     } catch {
       return fail("Das gespeicherte Token lässt sich nicht entschlüsseln (APP_SECRET geändert?) – bitte neu hinterlegen.");
     }

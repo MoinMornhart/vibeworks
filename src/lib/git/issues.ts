@@ -4,6 +4,7 @@ import { decrypt } from "@/lib/crypto";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
+import { tokenCipherFor } from "./token";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
 // Aufgaben ↔ Issues. Jede Aufgabe eines Projekts mit Repository und Token
@@ -58,15 +59,17 @@ interface IssueContext {
 export async function issueContext(projectId: string): Promise<IssueContext | null> {
   const project = await db.project.findUnique({
     where: { id: projectId },
-    select: { repoUrl: true, repoTokenCipher: true, issueSync: true, repoCache: { select: { provider: true } } },
+    select: { ownerId: true, repoUrl: true, repoTokenCipher: true, issueSync: true, repoCache: { select: { provider: true } } },
   });
-  if (!project?.repoUrl || !project.repoTokenCipher || !project.issueSync) return null;
+  if (!project?.repoUrl || !project.issueSync) return null;
+  const stored = await tokenCipherFor(project); // Projekt-Token oder Konto-Token
+  if (!stored) return null;
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
   if (!parsed || !provider) return null; // Anbieter erst nach dem ersten Abgleich bekannt
   let token: string;
   try {
-    token = decrypt(project.repoTokenCipher);
+    token = decrypt(stored.cipher);
   } catch {
     return null;
   }

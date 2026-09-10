@@ -18,10 +18,26 @@ export const loginSchema = z.object({
   password,
 });
 
+export const gitProviderSchema = z.enum(["github", "gitlab", "gitea"]);
+
+// Optionale Git-Verbindung beim Anlegen eines Kontos – leeres Token heißt „keine“.
+const optionalGitConnection = {
+  gitToken: z
+    .string()
+    .trim()
+    .max(500, "Das Token ist zu lang")
+    .regex(/^[\x21-\x7e]*$/, "Das Token enthält ungültige Zeichen")
+    .optional()
+    .transform((v) => v || null),
+  gitProvider: gitProviderSchema.default("github"),
+  gitServer: z.string().trim().max(300).default(""),
+};
+
 export const setupSchema = z.object({
   username: usernameSchema,
   displayName,
   password,
+  ...optionalGitConnection,
   mode: z.enum(["SINGLE", "MULTI"]),
   allowRegistration: z.boolean().default(false),
 });
@@ -30,6 +46,7 @@ export const registerSchema = z.object({
   username: usernameSchema,
   displayName,
   password,
+  ...optionalGitConnection,
 });
 
 // ── Projekte ────────────────────────────────────────────────
@@ -79,6 +96,18 @@ export const repoAccessSchema = z.object({
     .nullable()
     .optional(),
   issueSync: z.boolean().optional(),
+});
+
+export const gitCredentialSchema = z.object({
+  provider: gitProviderSchema,
+  // Leer = Standardserver des Anbieters (github.com, gitlab.com)
+  server: z.string().trim().max(300, "Adresse zu lang").default(""),
+  token: z
+    .string()
+    .trim()
+    .min(8, "Das Token ist zu kurz")
+    .max(500, "Das Token ist zu lang")
+    .regex(/^[\x21-\x7e]+$/, "Das Token enthält ungültige Zeichen"),
 });
 
 // ── Teilen ──────────────────────────────────────────────────

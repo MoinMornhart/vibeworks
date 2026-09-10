@@ -5,12 +5,15 @@ import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
+import { GitTokenOptional } from "./GitTokenOptional";
+import { EMPTY_GIT_CONNECTION, type GitConnectionForm } from "@/components/git/GitProviderFields";
 
 export function RegisterForm() {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [git, setGit] = useState<GitConnectionForm>(EMPTY_GIT_CONNECTION);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -25,7 +28,7 @@ export function RegisterForm() {
     }
     setBusy(true);
     try {
-      await api("/api/auth/register", { body: { username, displayName, password } });
+      await api("/api/auth/register", { body: { username, displayName, password, gitToken: git.token, gitProvider: git.provider, gitServer: git.server } });
       window.location.assign("/");
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
@@ -55,6 +58,7 @@ export function RegisterForm() {
         <input id="confirm" type="password" className="field" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
         {fieldErrors.confirm && <p className="mt-1 text-xs text-red-400">{fieldErrors.confirm}</p>}
       </div>
+      <GitTokenOptional value={git} onChange={setGit} error={fieldErrors.gitToken} />
       <FormError message={error} />
       <button className="btn btn-primary w-full" disabled={busy}>
         <UserPlus size={16} /> {busy ? "Lege an …" : "Konto anlegen"}

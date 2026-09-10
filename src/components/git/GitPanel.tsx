@@ -25,6 +25,8 @@ import { cn, timeAgo } from "@/lib/utils";
 interface Access {
   tokenHint: string | null;
   issueSync: boolean;
+  /** Konto-Token des Besitzers, das greift, wenn das Projekt kein eigenes hat */
+  accountToken?: { hint: string | null; login: string | null } | null;
 }
 
 const STALE_MS = 5 * 60_000;
@@ -203,6 +205,24 @@ function AccessPanel({
   const [token, setToken] = useState("");
   return (
     <div className="mb-5 space-y-4 rounded-2xl border bg-bg/30 p-4">
+      {access.accountToken && !access.tokenHint ? (
+        <p className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
+          <CircleDot size={16} className="mt-0.5 shrink-0 text-emerald-400" />
+          <span>
+            <b>Konto-Token aktiv</b>
+            {access.accountToken.login && <> (@{access.accountToken.login})</>} – gilt für dieses Projekt. Ein eigenes Token brauchst du nur, wenn es einen anderen
+            Zugang braucht.
+          </span>
+        </p>
+      ) : (
+        !access.tokenHint && (
+          <p className="text-sm text-muted">
+            Tipp: Ein Token unter{" "}
+            <a href="/account#git-zugang" className="text-accent-ink hover:underline">Mein Konto → Git-Verbindungen</a> gilt für alle deine Projekte auf dem Server –
+            GitHub, GitLab oder dein eigenes Gitea.
+          </p>
+        )
+      )}
       <form
         className="space-y-2"
         onSubmit={(e) => {
@@ -374,11 +394,12 @@ export function GitPanel({
   const issueBase = cache ? issueBaseOf(cache) : null;
 
   // Den Token-Zustand kennt nur der Besitzer – alle anderen sehen die Zahl verknüpfter Issues.
-  const issueStat = !canManage ? (linked ? String(linked) : "–") : !access.tokenHint ? "aus" : !access.issueSync ? "pausiert" : String(linked);
+  const hasToken = Boolean(access.tokenHint || access.accountToken);
+  const issueStat = !canManage ? (linked ? String(linked) : "–") : !hasToken ? "aus" : !access.issueSync ? "pausiert" : String(linked);
   const issueHint = !canManage
     ? `${linked} Aufgaben mit Issue`
-    : !access.tokenHint
-      ? "Für Issues ein Zugangstoken hinterlegen"
+    : !hasToken
+      ? "Für Issues ein Zugangstoken hinterlegen – am besten einmal unter „Mein Konto“"
       : !access.issueSync
         ? "Spiegelung ist abgeschaltet"
         : `${linked} Aufgaben mit Issue`;

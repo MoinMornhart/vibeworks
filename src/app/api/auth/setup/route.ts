@@ -4,6 +4,7 @@ import { setupSchema } from "@/lib/validation";
 import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { optionalCredential } from "@/lib/git/token";
 
 // Legt beim allerersten Aufruf das Administratorkonto an. Danach gesperrt.
 export const POST = route(async (req) => {
@@ -13,13 +14,15 @@ export const POST = route(async (req) => {
   const policy = checkPasswordPolicy(input.password, input.username);
   if (policy) throw new ApiError(400, policy, { password: policy });
   const passwordHash = await hashPassword(input.password);
+  // Token vor dem Anlegen prüfen – ein Tippfehler soll kein halbes Konto hinterlassen.
+  const tokenData = await optionalCredential(input);
 
   // Serializable: zwei gleichzeitige Einrichtungen dürfen nicht beide durchkommen.
   const user = await db.$transaction(
     async (tx) => {
       if ((await tx.user.count()) > 0) throw new ApiError(409, "Die Einrichtung ist bereits abgeschlossen.");
       const created = await tx.user.create({
-        data: { username: input.username, displayName: input.displayName, passwordHash, role: "ADMIN" },
+        data: { username: input.username, displayName: input.displayName, passwordHash, role: "ADMIN", ...tokenData },
       });
       const data = {
         mode: input.mode,

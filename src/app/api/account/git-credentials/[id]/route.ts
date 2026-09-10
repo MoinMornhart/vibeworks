@@ -1,0 +1,13 @@
+import { db } from "@/lib/db";
+import { json, notFound, route } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth/guard";
+import { credentialList } from "@/lib/git/token";
+
+type Params = { id: string };
+
+export const DELETE = route<Params>(async (_req, { params }) => {
+  const user = await requireApiUser();
+  const { count } = await db.gitCredential.deleteMany({ where: { id: (await params).id, userId: user.id } });
+  if (!count) throw notFound("Verbindung nicht gefunden");
+  return json({ connections: await credentialList(user.id) });
+});

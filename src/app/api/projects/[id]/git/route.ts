@@ -1,10 +1,11 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, Project } from "@prisma/client";
 import { db } from "@/lib/db";
 import { json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { requireProject, type ProjectAccess } from "@/lib/access";
 import { encrypt } from "@/lib/crypto";
 import { tokenHint } from "@/lib/git/parse";
+import { accountTokenFor } from "@/lib/git/token";
 import { serializeRepoCache, syncProjectRepository } from "@/lib/git/sync";
 import { syncIssues } from "@/lib/git/issues";
 import { repoAccessSchema } from "@/lib/validation";
@@ -12,17 +13,22 @@ import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { id: string };
 
-// Token-Hinweis sieht nur der Besitzer; Mitglieder erfahren nur, ob gespiegelt wird.
-const accessOf = (p: { repoTokenHint: string | null; issueSync: boolean }, access: ProjectAccess) => ({
-  tokenHint: access === "OWNER" ? p.repoTokenHint : null,
-  issueSync: p.issueSync,
-});
+// Token-Hinweise sieht nur der Besitzer; Mitglieder erfahren nur, ob gespiegelt wird.
+async function accessInfo(project: Pick<Project, "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync">, access: ProjectAccess) {
+  const owner = access === "OWNER";
+  const account = owner ? await accountTokenFor(project.ownerId, project.repoUrl) : null;
+  return {
+    tokenHint: owner ? project.repoTokenHint : null,
+    issueSync: project.issueSync,
+    accountToken: account ? { hint: account.hint, login: account.login } : null,
+  };
+}
 
 export const GET = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { project, access } = await requireProject(user.id, (await params).id);
   const cache = await db.repoCache.findUnique({ where: { projectId: project.id } });
-  return json({ cache: cache ? serializeRepoCache(cache) : null, access: accessOf(project, access) });
+  return json({ cache: cache ? serializeRepoCache(cache) : null, access: await accessInfo(project, access) });
 });
 
 // Jetzt abgleichen: Commits holen, danach Issues ↔ Aufgaben. Darf jedes
@@ -37,7 +43,7 @@ export const POST = route<Params>(async (_req, { params }) => {
   return json({ cache: serializeRepoCache(cache), issues });
 });
 
-// Zugangstoken setzen/entfernen, Issue-Spiegelung an/aus – nur der Besitzer.
+// Projekteigenes Token setzen/entfernen, Issue-Spiegelung an/aus – nur der Besitzer.
 export const PUT = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   limitOrThrow(`git-access:${user.id}`, 20, 10 * MINUTE);
@@ -50,6 +56,6 @@ export const PUT = route<Params>(async (req, { params }) => {
     data.repoTokenHint = input.token ? tokenHint(input.token) : null;
   }
   if (input.issueSync !== undefined) data.issueSync = input.issueSync;
-  const updated = await db.project.update({ where: { id: project.id }, data, select: { repoTokenHint: true, issueSync: true } });
-  return json({ access: accessOf(updated, "OWNER") });
+  const updated = await db.project.update({ where: { id: project.id }, data });
+  return json({ access: await accessInfo(updated, "OWNER") });
 });

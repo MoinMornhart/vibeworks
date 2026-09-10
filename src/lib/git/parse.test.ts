@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guessProvider, parseRepoUrl, splitCommitMessage, tokenHint } from "./parse";
+import { guessProvider, newTokenUrl, normalizeServer, parseRepoUrl, splitCommitMessage, tokenHint } from "./parse";
 
 describe("parseRepoUrl", () => {
   it.each([
@@ -19,6 +19,28 @@ describe("parseRepoUrl", () => {
     expect(parseRepoUrl("javascript:alert(1)")).toBeNull();
     expect(parseRepoUrl("https://github.com/nur-owner")).toBeNull();
     expect(parseRepoUrl("")).toBeNull();
+  });
+});
+
+describe("Serveradressen", () => {
+  it("merkt sich den Port für den Abgleich", () => {
+    expect(parseRepoUrl("http://localhost:3999/team/app")).toMatchObject({ host: "localhost", hostPort: "localhost:3999" });
+    expect(parseRepoUrl("https://github.com/a/b")).toMatchObject({ hostPort: "github.com" });
+  });
+
+  it("normalisiert Eingaben", () => {
+    expect(normalizeServer("git.example.de")).toEqual({ baseUrl: "https://git.example.de", hostPort: "git.example.de" });
+    expect(normalizeServer("http://192.168.1.5:3000/explore")).toEqual({ baseUrl: "http://192.168.1.5:3000", hostPort: "192.168.1.5:3000" });
+    expect(normalizeServer("GitLab.com")).toEqual({ baseUrl: "https://gitlab.com", hostPort: "gitlab.com" });
+    expect(normalizeServer("")).toBeNull();
+    expect(normalizeServer("https://user:pw@git.example.de")).toBeNull();
+    expect(normalizeServer("keinserver")).toBeNull();
+  });
+
+  it("baut die Token-Seite je Anbieter", () => {
+    expect(newTokenUrl("github", "https://github.com")).toContain("scopes=repo");
+    expect(newTokenUrl("gitlab", "https://gitlab.com")).toBe("https://gitlab.com/-/user_settings/personal_access_tokens?name=VibeWorks&scopes=api");
+    expect(newTokenUrl("gitea", "https://git.example.de")).toBe("https://git.example.de/user/settings/applications");
   });
 });
 

@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.7",
+    date: "2026-09-10",
+    title: "Git-Verbindungen fürs ganze Konto",
+    changes: [
+      { type: "neu", text: "Mein Konto → Git-Verbindungen: einmal verbinden, für alle Projekte – Commits auch aus privaten Repositories, Aufgaben automatisch als Issues" },
+      { type: "neu", text: "GitHub, GitLab und Gitea/Forgejo – auch selbst gehostet, im Heimnetz und auf eigenem Port; mehrere Verbindungen gleichzeitig möglich" },
+      { type: "neu", text: "Anleitung je Anbieter mit Link zur passenden Token-Seite; das Token wird beim Speichern geprüft und zeigt, als wer du verbunden bist" },
+      { type: "besser", text: "Projekte ohne eigenes Token nutzen automatisch die Verbindung zu ihrem Server – im Git-Bereich steht dann „Konto-Token aktiv“" },
+      { type: "neu", text: "Schon bei der Registrierung und der Ersteinrichtung lässt sich Git optional verbinden – mit kurzer Erklärung" },
+    ],
+  },
+  {
     version: "0.2.6",
     date: "2026-09-10",
     title: "Projekte teilen",
