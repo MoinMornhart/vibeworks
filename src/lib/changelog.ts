@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.8",
+    date: "2026-09-10",
+    title: "Git-Abgleich im Hintergrund",
+    changes: [
+      { type: "neu", text: "Der Server gleicht alle 5 Minuten selbst Commits und Issues ab – Aufgaben wandern nach „In Arbeit“ oder „Erledigt“, auch wenn niemand VibeWorks offen hat" },
+      { type: "besser", text: "Gilt für alle Projekte mit Token oder Git-Verbindung; Takt über GIT_SYNC_INTERVAL_MIN einstellbar, mit GIT_SYNC_DISABLED=true abschaltbar" },
+    ],
+  },
+  {
     version: "0.2.7",
     date: "2026-09-10",
     title: "Git-Verbindungen fürs ganze Konto",
