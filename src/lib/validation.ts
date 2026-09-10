@@ -81,6 +81,22 @@ export const projectBulkSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("delete"), ids: z.array(z.string().max(40)).min(1).max(500) }),
 ]);
 
+// ── Notizen ─────────────────────────────────────────────────
+
+export const noteCreateSchema = z.object({
+  title: optionalText(200),
+  content: z.string().max(50_000, "Notiz: höchstens 50 000 Zeichen").refine((v) => v.trim().length > 0, "Die Notiz ist leer"),
+  pinned: z.boolean().default(false),
+});
+
+export const noteUpdateSchema = z.object({
+  // .optional() außen: ein fehlender Titel bleibt undefined („nicht ändern“)
+  // und wird nicht zu null („Titel löschen“).
+  title: optionalText(200).optional(),
+  content: z.string().max(50_000).refine((v) => v.trim().length > 0, "Die Notiz ist leer").optional(),
+  pinned: z.boolean().optional(),
+});
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

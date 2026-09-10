@@ -11,6 +11,7 @@ import { formatDate, timeAgo } from "@/lib/utils";
 import { accentGradient, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
+import { Markdown } from "@/components/Markdown";
 
 export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
   const router = useRouter();
@@ -87,7 +88,7 @@ export function ProjectHeader({ initial }: { initial: ProjectDetail }) {
       <section className="glass p-6 sm:p-8">
         <h2 className="mb-3 text-lg font-semibold">Beschreibung</h2>
         {p.description ? (
-          <div className="whitespace-pre-wrap break-words leading-relaxed">{p.description}</div>
+          <Markdown>{p.description}</Markdown>
         ) : (
           <p className="text-muted">
             Noch keine Beschreibung.{" "}

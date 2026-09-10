@@ -16,6 +16,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.0.7",
+    date: "2026-09-10",
+    title: "Notizen mit Markdown",
+    changes: [
+      { type: "neu", text: "Beliebig viele Notizen je Projekt mit optionalem Titel – Überschriften, Listen, Tabellen, Code und echte Checklisten per Markdown" },
+      { type: "neu", text: "Schreiben und Vorschau im Wechsel, Strg+Enter speichert" },
+      { type: "neu", text: "Notizen anpinnen – angepinnte stehen oben und sind hervorgehoben" },
+      { type: "neu", text: "„bearbeitet vor …“ erscheint nur bei echter Änderung, nicht beim Anpinnen" },
+      { type: "besser", text: "Projektbeschreibung wird als Markdown dargestellt" },
+      { type: "besser", text: "Rohes HTML, javascript:-Links und fremde Bilder werden beim Darstellen entfernt" },
+    ],
+  },
+  {
     version: "0.0.6",
     date: "2026-09-10",
     title: "Kanban und Mehrfachauswahl",
