@@ -79,8 +79,9 @@ export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S
 
 export function clientIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unbekannt";
+  const ip = fwd ? fwd.split(",")[0].trim() : (req.headers.get("x-real-ip") ?? "unbekannt");
+  // IPv4 im IPv6-Gewand (::ffff:192.168.1.5) lesbar machen
+  return ip.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/, "$1");
 }
 
 type Handler<P> = (req: NextRequest, ctx: { params: Promise<P> }) => Promise<Response>;

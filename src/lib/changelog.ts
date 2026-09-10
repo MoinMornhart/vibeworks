@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.0",
+    date: "2026-09-10",
+    title: "Mein Konto",
+    changes: [
+      { type: "neu", text: "Neue Seite „Mein Konto“: Anzeigename und E-Mail ändern" },
+      { type: "neu", text: "Passwort setzen oder wechseln – alle anderen Geräte werden dabei abgemeldet, dieses bleibt angemeldet" },
+      { type: "neu", text: "Aktive Sitzungen mit Browser, Betriebssystem, IP und letzter Aktivität; einzeln oder überall sonst abmelden" },
+      { type: "besser", text: "Benutzermenü mit direkten Wegen zu Konto und Design" },
+    ],
+  },
+  {
     version: "0.0.9",
     date: "2026-09-10",
     title: "Aufgaben über alle Projekte",

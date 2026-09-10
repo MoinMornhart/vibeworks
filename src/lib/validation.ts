@@ -139,6 +139,32 @@ export const taskReorderSchema = z.object({
   ids: z.array(z.string().max(40)).max(2000),
 });
 
+// ── Mein Konto ──────────────────────────────────────────────
+
+export const profileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .max(60, "Anzeigename: höchstens 60 Zeichen")
+    .nullish()
+    .transform((v) => v || null)
+    .optional(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(200)
+    .nullish()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Bitte eine gültige E-Mail-Adresse")
+    .optional(),
+});
+
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().max(256).optional(),
+  newPassword: z.string().min(1, "Neues Passwort fehlt").max(256),
+});
+
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";

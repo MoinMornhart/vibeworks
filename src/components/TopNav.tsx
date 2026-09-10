@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, UserRound, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -90,6 +90,13 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
           {menu && (
             <div role="menu" className="glass-strong fade-in absolute right-0 mt-2 w-56 p-1.5">
               <p className="px-3 py-2 text-xs text-muted">Angemeldet als <strong className="text-fg">{user.username}</strong></p>
+              <Link role="menuitem" href="/account" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                <UserRound size={15} /> Mein Konto
+              </Link>
+              <Link role="menuitem" href="/design" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                <Palette size={15} /> Design
+              </Link>
+              <div className="my-1 h-px bg-fg/10" />
               <button role="menuitem" className="btn btn-ghost btn-sm w-full justify-start" onClick={logout}>
                 <LogOut size={15} /> Abmelden
               </button>
