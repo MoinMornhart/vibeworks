@@ -16,6 +16,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.1",
+    date: "2026-09-11",
+    title: "Schlichtere Sortierauswahl",
+    changes: [{ type: "besser", text: "Dashboard: Die Sortierung heißt wieder einfach „Priorität“ – ohne Stern in der Beschriftung" }],
+  },
+  {
     version: "0.3.0",
     date: "2026-09-11",
     title: "Favoriten nur bei Priorität vorne",

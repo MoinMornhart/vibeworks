@@ -38,7 +38,7 @@ const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: Pr
   { value: "created", label: "Neueste zuerst", cmp: (a, b) => b.createdAt.localeCompare(a.createdAt) },
   { value: "name", label: "Name", cmp: (a, b) => a.name.localeCompare(b.name, "de") },
   { value: "progress", label: "Fortschritt", cmp: (a, b) => b.progress - a.progress },
-  { value: "priority", label: "Priorität (★ zuerst)", cmp: (a, b) => b.priority - a.priority || b.updatedAt.localeCompare(a.updatedAt) },
+  { value: "priority", label: "Priorität", cmp: (a, b) => b.priority - a.priority || b.updatedAt.localeCompare(a.updatedAt) },
   // Reihenfolge der Status von der Idee bis Fertig (Archiviert zuletzt),
   // innerhalb eines Status die zuletzt geänderten zuerst.
   { value: "status", label: "Status (Idee → Fertig)", cmp: (a, b) => statusRank(a.status) - statusRank(b.status) || b.updatedAt.localeCompare(a.updatedAt) },
