@@ -7,8 +7,9 @@ import { tk } from "@/lib/i18n/messages";
 
 export const GET = route(async () => {
   const user = await requireApiUser();
+  // Nur Hintergründe – Vorschaubilder der Live-Seiten gehören nicht in den Design-Editor
   const uploads = await db.upload.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, kind: "background" },
     orderBy: { createdAt: "desc" },
     select: { id: true, size: true, mime: true, createdAt: true },
   });
@@ -26,7 +27,7 @@ export const POST = route(async (req) => {
     throw new ApiError(415, tk("theme", "errors.multipartExpected"));
   }
 
-  const count = await db.upload.count({ where: { userId: user.id } });
+  const count = await db.upload.count({ where: { userId: user.id, kind: "background" } });
   if (count >= MAX_UPLOADS_PER_USER) {
     throw new ApiError(409, tk("theme", "errors.tooManyImages", { n: MAX_UPLOADS_PER_USER }));
   }

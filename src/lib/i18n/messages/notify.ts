@@ -32,6 +32,7 @@ const de = {
     accessRequest: "Jemand fragt Zugriff auf eines deiner Projekte an",
     issueClosed: "Aufgaben wurden per Git erledigt (Issue geschlossen)",
     ciFailed: "Die CI eines Projekts ist fehlgeschlagen",
+    siteDown: "Eine Live-Seite fällt aus, ist wieder da oder ihr Zertifikat läuft bald ab",
     updated: "VibeWorks wurde aktualisiert",
   },
   save: "Speichern",
@@ -68,6 +69,12 @@ const de = {
     issueClosed: { title: plural("Per Git erledigt: {n} Aufgabe", "Per Git erledigt: {n} Aufgaben"), message: "In „{project}“ wurden Issues geschlossen:\n{list}" },
     ciFailed: { title: "CI fehlgeschlagen: {project}", message: "„{run}“ ist rot." },
     updated: { title: "VibeWorks {version} ist installiert" },
+    siteDown: { title: "Nicht erreichbar: {project}", message: "{url} antwortet nicht ({error})." },
+    siteUp: { title: "Wieder erreichbar: {project}", message: "{url} antwortet wieder – {ms} ms." },
+    sslExpiring: {
+      title: "Zertifikat läuft ab: {project}",
+      message: plural("Das SSL-Zertifikat von {host} läuft in {n} Tag ab.", "Das SSL-Zertifikat von {host} läuft in {n} Tagen ab."),
+    },
     test: { title: "Test von VibeWorks", message: "Wenn du das liest, kommt der Kanal an. 🎉" },
   },
   errors: {
@@ -112,6 +119,7 @@ const en: Shape<typeof de> = {
     accessRequest: "Someone requests access to one of your projects",
     issueClosed: "Tasks were completed via Git (issue closed)",
     ciFailed: "A project's CI failed",
+    siteDown: "A live site goes down, comes back or its certificate is about to expire",
     updated: "VibeWorks was updated",
   },
   save: "Save",
@@ -148,6 +156,12 @@ const en: Shape<typeof de> = {
     issueClosed: { title: plural("Done via Git: {n} task", "Done via Git: {n} tasks"), message: "Issues were closed in “{project}”:\n{list}" },
     ciFailed: { title: "CI failed: {project}", message: "“{run}” is red." },
     updated: { title: "VibeWorks {version} is installed" },
+    siteDown: { title: "Down: {project}", message: "{url} is not responding ({error})." },
+    siteUp: { title: "Back up: {project}", message: "{url} is responding again – {ms} ms." },
+    sslExpiring: {
+      title: "Certificate expiring: {project}",
+      message: plural("The SSL certificate of {host} expires in {n} day.", "The SSL certificate of {host} expires in {n} days."),
+    },
     test: { title: "Test from VibeWorks", message: "If you can read this, the channel works. 🎉" },
   },
   errors: {

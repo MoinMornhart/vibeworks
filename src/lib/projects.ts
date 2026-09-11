@@ -20,6 +20,13 @@ export const projectListSelect = {
   position: true,
   progressFromTasks: true,
   repoUrl: true,
+  // Live-Überwachung: Punkt und Titelbild auf der Karte
+  liveUrl: true,
+  liveState: true,
+  liveMs: true,
+  liveSince: true,
+  sslExpiresAt: true,
+  coverUploadId: true,
   createdAt: true,
   updatedAt: true,
   _count: { select: { notes: true, tasks: true } },
@@ -31,9 +38,11 @@ export type ProjectListRow = Prisma.ProjectGetPayload<{ select: typeof projectLi
 
 /** Für den Client: Datumsfelder als ISO-Strings, Zähler flach. */
 export function serializeProject<T extends ProjectListRow>(p: T, tasksDone = 0) {
-  const { _count, createdAt, updatedAt, repoCache, ...rest } = p;
+  const { _count, createdAt, updatedAt, repoCache, liveSince, sslExpiresAt, ...rest } = p;
   return {
     ...rest,
+    liveSince: liveSince?.toISOString() ?? null,
+    sslExpiresAt: sslExpiresAt?.toISOString() ?? null,
     ci: ((repoCache?.ci as { state?: CiState } | null)?.state ?? null) as CiState | null,
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),

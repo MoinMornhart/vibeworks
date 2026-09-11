@@ -26,6 +26,7 @@ interface Form {
   tags: string;
   favorite: boolean;
   repoUrl: string;
+  liveUrl: string;
   progressFromTasks: boolean;
 }
 
@@ -41,6 +42,7 @@ function toForm(p?: ProjectListItem | null): Form {
     tags: p?.tags.join(", ") ?? "",
     favorite: p?.favorite ?? false,
     repoUrl: p?.repoUrl ?? "",
+    liveUrl: p?.liveUrl ?? "",
     progressFromTasks: p?.progressFromTasks ?? false,
   };
 }
@@ -64,6 +66,7 @@ export function ProjectDialog({
   const t = useT("projects");
   const ts = useT("status");
   const tc = useT("common");
+  const tl = useT("live");
   const editing = Boolean(project);
   const [form, setForm] = useState<Form>(() => toForm(project));
   const [busy, setBusy] = useState(false);
@@ -307,6 +310,15 @@ export function ProjectDialog({
             </div>
           )}
         </div>
+
+        {ownerControls && (
+          <div>
+            <label className="label" htmlFor="p-live">{tl("dialog.label")}</label>
+            <input id="p-live" className="field" inputMode="url" value={form.liveUrl} onChange={(e) => set("liveUrl", e.target.value)} placeholder="https://meine-app.de" />
+            {fieldErrors.liveUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.liveUrl}</p>}
+            <p className="mt-1 text-xs text-muted">{tl("dialog.hint")}</p>
+          </div>
+        )}
 
         {ownerControls && (
           <button type="button" onClick={() => set("favorite", !form.favorite)} aria-pressed={form.favorite} className="btn btn-sm">

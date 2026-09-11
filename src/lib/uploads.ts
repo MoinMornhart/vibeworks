@@ -40,10 +40,11 @@ function filePath(id: string, ext: string): string {
   return path.join(config.uploadDir, `${id}.${ext}`);
 }
 
-export async function saveUpload(userId: string, buf: Uint8Array, kind: ImageKind) {
+/** usage: "background" (Design-Editor) oder "cover" (Vorschaubild der Live-Seite) */
+export async function saveUpload(userId: string, buf: Uint8Array, kind: ImageKind, usage: "background" | "cover" = "background") {
   await mkdir(config.uploadDir, { recursive: true });
   const upload = await db.upload.create({
-    data: { userId, mime: kind.mime, ext: kind.ext, size: buf.length },
+    data: { userId, kind: usage, mime: kind.mime, ext: kind.ext, size: buf.length },
   });
   try {
     await writeFile(filePath(upload.id, upload.ext), buf);

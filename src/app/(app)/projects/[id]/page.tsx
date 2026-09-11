@@ -16,6 +16,9 @@ import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { GitPanel } from "@/components/git/GitPanel";
 import { AutoRefresh } from "@/lib/client/useAutoRefresh";
 import { analyzeProgress, progressInput } from "@/lib/progress";
+import { liveStats } from "@/lib/monitor/stats";
+import { LivePanel } from "@/components/live/LivePanel";
+import { dayKey } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -29,6 +32,8 @@ const loadProject = cache(async (id: string) => {
       repoTokenHint: true,
       issueSync: true,
       repoCache: true,
+      liveCheckedAt: true,
+      liveError: true,
       ownerId: true,
       owner: { select: { username: true, displayName: true } },
       members: { where: { userId: user.id }, select: { role: true } },
@@ -51,7 +56,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
   const { project, access } = loaded;
-  const { notes, tasks, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, ...rest } = project;
+  const { notes, tasks, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const live = project.liveUrl ? await liveStats(project.id) : null;
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
   // falls der gespeicherte Wert noch aus der alten Berechnung stammt
@@ -78,6 +84,23 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         openShare={query.teilen === "1"}
         analysis={analysis}
       />
+      {project.liveUrl && live && (
+        <LivePanel
+          projectId={project.id}
+          canCheck={!readOnly}
+          today={dayKey(new Date())}
+          stats={live}
+          info={{
+            url: project.liveUrl,
+            state: project.liveState === "up" || project.liveState === "down" ? project.liveState : null,
+            ms: project.liveMs,
+            since: project.liveSince?.toISOString() ?? null,
+            checkedAt: liveCheckedAt?.toISOString() ?? null,
+            error: liveError,
+            sslExpiresAt: project.sslExpiresAt?.toISOString() ?? null,
+          }}
+        />
+      )}
       <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={readOnly} />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={readOnly} />
       <GitPanel

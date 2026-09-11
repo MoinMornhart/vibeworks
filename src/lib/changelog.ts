@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.1",
+    date: "2026-09-12",
+    title: "Live-Überwachung",
+    titleEn: "Live monitoring",
+    changes: [
+      {
+        type: "neu",
+        text: "Live-Adresse am Projekt: VibeWorks prüft die fertige Seite alle 5 Minuten – Online/Offline, Antwortzeit, Erreichbarkeit über 24 Stunden, 7 und 30 Tage, 30-Tage-Balken und „Jetzt prüfen“",
+        en: "Live address on a project: VibeWorks checks the finished site every 5 minutes – online/offline, response time, uptime over 24 hours, 7 and 30 days, a 30-day bar and “Check now”",
+      },
+      {
+        type: "neu",
+        text: "Benachrichtigung, wenn eine Seite ausfällt (erst nach zwei Fehlversuchen), wieder da ist oder ihr SSL-Zertifikat in 14 bzw. 3 Tagen abläuft",
+        en: "Notification when a site goes down (only after two failed checks), comes back or its SSL certificate expires in 14 or 3 days",
+      },
+      {
+        type: "neu",
+        text: "Das Vorschaubild der Seite (og:image, sonst Icon) wird zum Titelbild der Projektkarte, dazu ein Globus in der Farbe des Zustands",
+        en: "The site's preview image (og:image, otherwise its icon) becomes the project card's cover, plus a globe in the colour of the current state",
+      },
+    ],
+  },
+  {
     version: "0.4.0",
     date: "2026-09-11",
     title: "Fortschritt per Analyse, Aufgaben für mehrere Projekte",

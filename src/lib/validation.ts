@@ -70,6 +70,14 @@ const repoUrlSchema = z
   .transform((v) => v || null)
   .refine((v) => v === null || /^(https?:\/\/|git@)[^\s]+$/.test(v), tk("validation", "repoUrl"));
 
+const liveUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .nullish()
+  .transform((v) => v || null)
+  .refine((v) => v === null || /^https?:\/\/[^\s/]+[^\s]*$/.test(v), tk("validation", "liveUrl"));
+
 export const projectCreateSchema = z.object({
   name: z.string().trim().min(1, tk("validation", "nameMissing")).max(120, tk("validation", "nameMax120")),
   summary: optionalText(240),
@@ -82,6 +90,7 @@ export const projectCreateSchema = z.object({
   favorite: z.boolean().default(false),
   progressFromTasks: z.boolean().default(false),
   repoUrl: repoUrlSchema,
+  liveUrl: liveUrlSchema,
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();

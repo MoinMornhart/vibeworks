@@ -246,6 +246,24 @@ model Project {
   webhookSecretCipher String?
   /// Zuletzt ein gültiger Webhook angekommen
   webhookAt           DateTime?
+  /// Live-Überwachung: die fertige Seite, alle 5 Minuten geprüft
+  liveUrl        String?
+  /// "up" | "down" – null, solange noch nicht geprüft
+  liveState      String?
+  /// Fehlschläge in Folge – offline gilt eine Seite erst ab zwei
+  liveFails      Int       @default(0)
+  liveMs         Int?
+  liveError      String?
+  /// Seit wann der aktuelle Zustand gilt
+  liveSince      DateTime?
+  liveCheckedAt  DateTime?
+  sslExpiresAt   DateTime?
+  sslCheckedAt   DateTime?
+  /// Schon gemeldete Warnstufe ("14" | "3") – nach Verlängerung wieder null
+  sslNotified    String?
+  /// Vorschaubild der Seite (og:image, sonst Icon) als Upload
+  coverUploadId  String?
+  coverCheckedAt DateTime?
 
   notes      Note[]
   tasks      Task[]
@@ -253,6 +271,7 @@ model Project {
   repoCache  RepoCache?
   members        ProjectMember[]
   accessRequests AccessRequest[]
+  uptimeChecks   UptimeCheck[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -391,6 +410,20 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Einzelne Prüfung einer Live-Seite – 30 Tage aufbewahrt.
+model UptimeCheck {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  at        DateTime @default(now())
+  ok        Boolean
+  status    Int?
+  ms        Int?
+  error     String?
+
+  @@index([projectId, at])
 }
 
 /// Posteingang der Benachrichtigungen – die Windows-App holt ihn ab; nach 30 Tagen gelöscht.

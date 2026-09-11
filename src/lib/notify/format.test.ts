@@ -5,7 +5,7 @@ const notice: Notice = { event: "ciFailed", title: "CI fehlgeschlagen: Übersich
 
 describe("Anlässe", () => {
   it("fehlende Schalter sind an, ausdrücklich ausgeschaltete aus", () => {
-    expect(eventsOf(null)).toEqual({ taskDue: true, accessRequest: true, issueClosed: true, ciFailed: true, updated: true });
+    expect(eventsOf(null)).toEqual({ taskDue: true, accessRequest: true, issueClosed: true, ciFailed: true, siteDown: true, updated: true });
     expect(eventsOf({ ciFailed: false, taskDue: true }).ciFailed).toBe(false);
   });
 });

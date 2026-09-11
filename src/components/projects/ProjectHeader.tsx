@@ -10,7 +10,7 @@ import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
-import { accentGradient, PriorityBadge, ProgressBar } from "./ProjectCard";
+import { accentGradient, LiveIcon, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
@@ -161,6 +161,11 @@ export function ProjectHeader({
           {p.repoUrl && (
             <a href={p.repoUrl.startsWith("git@") ? undefined : p.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent-ink hover:underline">
               <GitBranch size={14} /> {p.repoUrl.replace(/^https?:\/\//, "")} {!p.repoUrl.startsWith("git@") && <ExternalLink size={12} />}
+            </a>
+          )}
+          {p.liveUrl && (
+            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1.5 hover:underline ${p.liveState === "down" ? "text-red-400" : "text-accent-ink"}`}>
+              <LiveIcon state={p.liveState} /> {p.liveUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")} <ExternalLink size={12} />
             </a>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowDown, ArrowUp, Check, Flame, GitBranch, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Flame, GitBranch, Globe, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { useFormat, useT } from "@/lib/i18n/client";
@@ -52,6 +52,13 @@ export function ProgressBar({ value, accent, className }: { value: number; accen
   );
 }
 
+/** Globus in der Farbe des Live-Zustands */
+export function LiveIcon({ state }: { state: string | null }) {
+  const t = useT("live");
+  const label = state === "up" ? t("card.up") : state === "down" ? t("card.down") : t("card.unknown");
+  return <Globe size={13} className={state === "up" ? "text-emerald-400" : state === "down" ? "text-red-400" : ""} role="img" aria-label={label}><title>{label}</title></Globe>;
+}
+
 interface CardProps {
   project: ProjectListItem;
   onStatus: (p: ProjectListItem, status: ProjectStatus) => void;
@@ -93,6 +100,11 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
       className={cn("glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20", selected && "ring-2 ring-accent/60")}
       style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
     >
+      {p.coverUploadId && (
+        // Vorschaubild der Live-Seite (og:image) – als eigener Upload, daher <img> statt next/image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`/api/uploads/${p.coverUploadId}`} alt="" loading="lazy" className="-mx-5 -mt-5 mb-4 h-28 w-[calc(100%+2.5rem)] max-w-none rounded-t-[1.25rem] object-cover" />
+      )}
       <div className="absolute inset-x-0 top-0 h-1 rounded-t-[1.25rem]" style={{ background: accentGradient(p.accent) }} />
       <div className="flex items-start gap-1.5">
         <SelectBox project={p} selected={selected} selecting={selecting} onSelect={onSelect} />
@@ -149,7 +161,8 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
             <span className="inline-flex items-center gap-1" title={t("card.notes")}><StickyNote size={13} />{p.notes}</span>
           )}
           {p.repoUrl && <GitBranch size={13} aria-label={t("card.repoLinked")} />}
-          {p.ci && <span className={cn("h-2 w-2 shrink-0 rounded-full", CI_DOT[p.ci])} title={t(`card.ci.${p.ci}`)} role="img" aria-label={t(`card.ci.${p.ci}`)} />}
+          {p.liveUrl && <LiveIcon state={p.liveState} />}
+          {p.ci &&<span className={cn("h-2 w-2 shrink-0 rounded-full", CI_DOT[p.ci])} title={t(`card.ci.${p.ci}`)} role="img" aria-label={t(`card.ci.${p.ci}`)} />}
           <span suppressHydrationWarning className="truncate" title={t("card.lastUpdated")}>{f.ago(p.updatedAt)}</span>
         </div>
         <StatusSelect value={p.status} onChange={(s) => onStatus(p, s)} />

@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { ApiError, json, notFound, readBody, route } from "@/lib/api";
+import { checkProjectNow, dropUpload, resetLive } from "@/lib/monitor/run";
 import { requireApiUser } from "@/lib/auth/guard";
 import { tk } from "@/lib/i18n/messages";
 import { requireProject, visibleTo } from "@/lib/access";
@@ -32,8 +34,10 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const { project: current, access } = await requireProject(user.id, id, "EDITOR");
   const input = await readBody(req, projectUpdateSchema);
   // Repository (samt Token) und Favorit gehören dem Besitzer.
+  // Live-Adresse ebenso: der Server ruft sie selbst ab.
+  const liveChanged = input.liveUrl !== undefined && input.liveUrl !== current.liveUrl;
   const ownerOnly =
-    (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) || (input.favorite !== undefined && input.favorite !== current.favorite);
+    (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) || (input.favorite !== undefined && input.favorite !== current.favorite) || liveChanged;
   if (ownerOnly && access !== "OWNER") throw new ApiError(403, tk("projects", "errors.ownerFields"));
 
   const data: Record<string, unknown> = { ...input };
@@ -51,6 +55,10 @@ export const PATCH = route<Params>(async (req, { params }) => {
     if (parseRepoUrl(input.repoUrl)?.host !== parseRepoUrl(current.repoUrl)?.host) {
       await db.project.update({ where: { id }, data: { repoTokenCipher: null, repoTokenHint: null } });
     }
+  }
+  if (liveChanged) {
+    await resetLive(id, current.coverUploadId);
+    if (input.liveUrl) after(() => checkProjectNow(id));
   }
   // Mit abgeleitetem Fortschritt gilt der Anteil erledigter Aufgaben, nicht der Regler.
   if (updated.progressFromTasks) await syncProjectProgress(id);
@@ -74,7 +82,9 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
+  const cover = await db.project.findFirst({ where: { id, ownerId: user.id }, select: { coverUploadId: true } });
   const { count } = await db.project.deleteMany({ where: { id, ownerId: user.id } });
   if (!count) throw notFound(tk("projects", "errors.notFound"));
+  await dropUpload(cover?.coverUploadId ?? null);
   return json({ ok: true });
 });
