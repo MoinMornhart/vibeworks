@@ -15,7 +15,7 @@
 
 **Projekte, Aufgaben, Notizen und Commits an einem Ort – auf deinem eigenen Server.**
 
-[Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Entwicklung](#%EF%B8%8F-entwicklung)
+[Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Entwicklung](#%EF%B8%8F-entwicklung)
 
 <br>
 
@@ -196,6 +196,33 @@ wieder vollständig angezeigt.
 
 </details>
 
+## 🤖 Claude Code (MCP)
+
+VibeWorks ist auch ein MCP-Server. Unter **Mein Konto → Claude Code & API-Schlüssel** einen
+Schlüssel erstellen – die App zeigt gleich den fertigen Befehl:
+
+```bash
+claude mcp add --scope user --transport http vibeworks https://vibeworks.example.de/api/mcp --header "Authorization: Bearer vw_…"
+```
+
+Danach arbeitet Claude Code direkt mit deinen Projekten – ganz ohne Umweg über GitHub:
+
+| Werkzeug | Was es tut |
+| --- | --- |
+| `list_projects`, `get_project` | Projekte mit Status, offenen Aufgaben, Notizen und Repository |
+| `list_tasks`, `get_task` | Aufgaben über alle Projekte – z. B. alles, was diese Woche fällig ist |
+| `create_task`, `update_task` | Aufgaben anlegen und nach *In Arbeit* oder *Erledigt* schieben – gespiegelte Issues laufen mit |
+| `update_project` | Status, Priorität, Fortschritt und Kurzbeschreibung |
+| `create_note`, `get_note` | Notizen am Projekt, z. B. ein Arbeitsprotokoll |
+| `search` | Volltextsuche über Notizen, Aufgaben und Docs |
+| `list_docs`, `get_doc`, `create_doc`, `update_doc` | Docs lesen und schreiben |
+
+Probier zum Beispiel: „Welche Aufgaben sind in VibeWorks offen?“ oder „Arbeite die offenen Aufgaben
+von Projekt X ab und halte fest, was du gemacht hast, als Notiz.“ Claude handelt mit deinen Rechten,
+jede Änderung steht im Verlauf des Projekts. Von jedem Schlüssel wird nur ein Hash gespeichert; du
+kannst ihn jederzeit widerrufen. Andere MCP-Clients verbinden sich per Streamable HTTP mit
+`/api/mcp` und demselben Header.
+
 ## 🛠️ Entwicklung
 
 ```bash
@@ -253,7 +280,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 
 **Stufe 4 – KI, Überwachung & Spaß**
 
-- ⏳ VibeWorks als MCP-Server für Claude Code – Aufgaben, Notizen und Docs direkt aus Claude heraus
+- ✅ VibeWorks als MCP-Server für Claude Code – Aufgaben, Notizen und Docs direkt aus Claude heraus
 - ⏳ Live-Überwachung: Erreichbarkeit, Antwortzeit, SSL-Ablauf, Uptime-Balken und automatischer Screenshot als Titelbild
 - ⏳ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
 - ⏳ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge

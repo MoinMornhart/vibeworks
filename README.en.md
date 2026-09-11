@@ -15,7 +15,7 @@
 
 **Projects, tasks, notes and commits in one place – on your own server.**
 
-[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Development](#%EF%B8%8F-development)
+[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Development](#%EF%B8%8F-development)
 
 <br>
 
@@ -196,6 +196,32 @@ verified when saved, stored encrypted with AES-256-GCM and never shown in full a
 
 </details>
 
+## 🤖 Claude Code (MCP)
+
+VibeWorks is also an MCP server. Create an API key under **My account → Claude Code & API keys** –
+the app shows the finished command right away:
+
+```bash
+claude mcp add --scope user --transport http vibeworks https://vibeworks.example.com/api/mcp --header "Authorization: Bearer vw_…"
+```
+
+After that, Claude Code works directly with your projects – no GitHub detour needed:
+
+| Tool | What it does |
+| --- | --- |
+| `list_projects`, `get_project` | Projects with status, open tasks, notes and repository |
+| `list_tasks`, `get_task` | Tasks across all projects – e.g. everything due this week |
+| `create_task`, `update_task` | Create tasks and move them to *In progress* or *Done* – mirrored issues follow |
+| `update_project` | Status, priority, progress and summary |
+| `create_note`, `get_note` | Notes on a project, e.g. a work log |
+| `search` | Full-text search across notes, tasks and docs |
+| `list_docs`, `get_doc`, `create_doc`, `update_doc` | Read and write your docs |
+
+Try for example: "Which tasks are open in VibeWorks?" or "Work through the open tasks of project X
+and write down what you did as a note." Claude acts with your permissions, and every change shows
+up in the project's activity log. Only a hash of each key is stored; you can revoke keys at any time.
+Other MCP clients connect to `/api/mcp` via Streamable HTTP with the same header.
+
 ## 🛠️ Development
 
 ```bash
@@ -256,7 +282,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 
 **Stage 4 – AI, monitoring & fun**
 
-- ⏳ VibeWorks as an MCP server for Claude Code – tasks, notes and docs right from Claude
+- ✅ VibeWorks as an MCP server for Claude Code – tasks, notes and docs right from Claude
 - ⏳ Live monitoring: availability, response time, SSL expiry, uptime bar and an automatic screenshot as cover image
 - ⏳ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
 - ⏳ Activity heatmap across all projects, streaks and small achievements

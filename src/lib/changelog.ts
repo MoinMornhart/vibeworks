@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.8",
+    date: "2026-09-11",
+    title: "Claude Code direkt anbinden (MCP-Server)",
+    titleEn: "Connect Claude Code directly (MCP server)",
+    changes: [
+      {
+        type: "neu",
+        text: "VibeWorks ist ein MCP-Server: Claude Code liest Projekte, Aufgaben, Notizen und Docs, legt Aufgaben an und verschiebt sie, schreibt Notizen und Docs – ganz ohne Umweg über GitHub",
+        en: "VibeWorks is an MCP server: Claude Code reads projects, tasks, notes and docs, creates and moves tasks, writes notes and docs – no GitHub detour needed",
+      },
+      {
+        type: "neu",
+        text: "Mein Konto → Claude Code & API-Schlüssel: Schlüssel erstellen, fertigen Befehl kopieren, jederzeit widerrufen",
+        en: "My account → Claude Code & API keys: create a key, copy the finished command, revoke it at any time",
+      },
+      {
+        type: "besser",
+        text: "Aufgaben und Notizen entstehen in der Oberfläche und über Claude auf demselben Weg – Verlauf, Fortschritt und Issues verhalten sich gleich",
+        en: "Tasks and notes are created the same way in the app and through Claude – activity log, progress and issues behave identically",
+      },
+    ],
+  },
+  {
     version: "0.3.7",
     date: "2026-09-11",
     title: "Neuer Fahrplan: Stufe 4",

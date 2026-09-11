@@ -135,6 +135,7 @@ model User {
   memberships    ProjectMember[]
   accessRequests AccessRequest[]
   gitCredentials GitCredential[]
+  apiTokens      ApiToken[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -374,6 +375,21 @@ model ProjectTemplate {
   createdAt   DateTime @default(now())
 
   @@index([ownerId])
+}
+
+/// API-Schlüssel für Claude Code und andere MCP-Clients – gespeichert wird nur der SHA-256.
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique
+  /// Gekürzte Anzeige, z. B. "vw_AbCd…9f3a"
+  hint       String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Benachrichtigungen eines Kontos: Kanäle und Anlässe

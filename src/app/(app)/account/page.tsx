@@ -14,6 +14,9 @@ import { DataSection } from "@/components/account/DataSection";
 import { NotificationsSection } from "@/components/account/NotificationsSection";
 import { notificationView } from "@/lib/notify";
 import { smtpReady } from "@/lib/notify/mail";
+import { ApiTokensSection } from "@/components/account/ApiTokensSection";
+import { serializeApiToken } from "@/lib/mcp/token";
+import { config } from "@/lib/config";
 import { getT } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -26,13 +29,14 @@ export default async function AccountPage() {
   if (!auth) redirect("/login");
   const { user, sessionId } = auth;
   const hasPassword = Boolean(user.passwordHash);
-  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady] = await Promise.all([
+  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady, apiTokens] = await Promise.all([
     listSessions(user.id, sessionId),
     recoveryCodesLeft(user.id),
     db.passkey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     credentialList(user.id),
     db.notificationSettings.findUnique({ where: { userId: user.id } }),
     smtpReady(),
+    db.apiToken.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
   ]);
   return (
     <AccountManager
@@ -50,6 +54,7 @@ export default async function AccountPage() {
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
       <GitConnectionsSection initial={connections} />
+      <ApiTokensSection initial={apiTokens.map(serializeApiToken)} appUrl={config.appUrl} />
       <NotificationsSection initial={notificationView(notifications)} smtpReady={mailReady} isAdmin={user.role === "ADMIN"} />
       <DataSection />
     </AccountManager>

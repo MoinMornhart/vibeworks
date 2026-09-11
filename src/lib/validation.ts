@@ -86,6 +86,12 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── API-Schlüssel ───────────────────────────────────────────
+
+export const apiTokenCreateSchema = z.object({
+  name: z.string().trim().min(1, tk("mcp", "errors.nameMissing")).max(60),
+});
+
 // ── Benachrichtigungen ──────────────────────────────────────
 
 const optionalText254 = z.string().trim().max(254).nullish().transform((v) => v || null);
