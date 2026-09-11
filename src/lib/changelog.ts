@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.4",
+    date: "2026-09-11",
+    title: "Projektvorlagen, Export und Import",
+    titleEn: "Project templates, export and import",
+    changes: [
+      {
+        type: "neu",
+        text: "Beim Anlegen eines Projekts eine Vorlage wählen: Web-App, Hardware/IoT, Bot/Automatisierung, Lernprojekt – jeweils mit passenden Aufgaben und einer Notiz",
+        en: "Pick a template when creating a project: web app, hardware/IoT, bot/automation, learning project – each with matching tasks and a note",
+      },
+      {
+        type: "neu",
+        text: "Eigene Vorlagen: jedes Projekt über „…“ → „Als Vorlage speichern“ – samt Aufgaben und Notizen",
+        en: "Your own templates: save any project via “…” → “Save as template” – including tasks and notes",
+      },
+      {
+        type: "neu",
+        text: "Export als JSON: ein Projekt über „…“ im Projektkopf oder alles unter „Mein Konto → Daten“ – ohne Tokens und Geheimnisse",
+        en: "Export as JSON: a single project via “…” in the project header or everything under “My account → Data” – without tokens or secrets",
+      },
+      {
+        type: "neu",
+        text: "Import unter „Mein Konto → Daten“: Projekte, Aufgaben, Notizen und Docs kommen neu dazu, nichts wird überschrieben",
+        en: "Import under “My account → Data”: projects, tasks, notes and docs are added as new, nothing gets overwritten",
+      },
+    ],
+  },
+  {
     version: "0.3.3",
     date: "2026-09-11",
     title: "CI-Status und Webhooks",

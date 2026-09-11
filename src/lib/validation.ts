@@ -86,6 +86,15 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// Anlegen mit Vorlage: "builtin:web" oder die ID einer eigenen Vorlage
+export const projectCreateWithTemplateSchema = projectCreateSchema.extend({ templateId: z.string().max(60).optional() });
+
+export const templateCreateSchema = z.object({
+  projectId: z.string().max(40),
+  name: z.string().trim().min(1, tk("validation", "nameMissing")).max(80),
+  description: z.string().trim().max(300).nullish(),
+});
+
 export const repoAccessSchema = z.object({
   // null entfernt das Token, undefined lässt es stehen
   token: z

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProjectStatus } from "@prisma/client";
-import { Save, Star, Trash2 } from "lucide-react";
+import { Save, Star, Trash2, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
 import { Segmented, Slider, Toggle } from "@/components/theme/controls";
@@ -11,6 +11,9 @@ import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import type { TemplateView } from "@/lib/templateData";
+
+type TemplateList = { builtin: TemplateView[]; own: TemplateView[] };
 
 interface Form {
   name: string;
@@ -67,12 +70,24 @@ export function ProjectDialog({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const td = useT("data");
+  const [templates, setTemplates] = useState<TemplateList | null>(null);
+  const [templateId, setTemplateId] = useState("");
+  // Was die zuletzt gewählte Vorlage eingetragen hat – nur das wird beim Wechsel ersetzt.
+  const applied = useRef({ summary: "", description: "", tags: "" });
 
   useEffect(() => {
     if (!open) return;
     setForm(toForm(project));
     setError(null);
     setFieldErrors({});
+    setTemplateId("");
+    applied.current = { summary: "", description: "", tags: "" };
+    if (!project) {
+      api<TemplateList>("/api/templates")
+        .then(setTemplates)
+        .catch(() => setTemplates(null));
+    }
     // Auf dem Board fehlt die ausführliche Beschreibung – nachladen.
     if (project && project.description === undefined) {
       setLoadingDetails(true);
@@ -85,13 +100,43 @@ export function ProjectDialog({
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  /** Vorlage wählen: füllt Texte nur, wo nichts Eigenes steht; Farbe, Priorität und Fortschrittsart kommen immer mit. */
+  function chooseTemplate(tp: TemplateView | null) {
+    setTemplateId(tp?.id ?? "");
+    const values = { summary: tp?.data.summary ?? "", description: tp?.data.description ?? "", tags: tp?.data.tags?.join(", ") ?? "" };
+    setForm((f) => {
+      const prev = applied.current;
+      const pick = (current: string, before: string, value: string) => (!current.trim() || current === before ? value : current);
+      return {
+        ...f,
+        summary: pick(f.summary, prev.summary, values.summary),
+        description: pick(f.description, prev.description, values.description),
+        tags: pick(f.tags, prev.tags, values.tags),
+        ...(tp ? { accent: tp.data.accent ?? f.accent, priority: tp.data.priority ?? f.priority, progressFromTasks: tp.data.progressFromTasks ?? f.progressFromTasks } : {}),
+      };
+    });
+    applied.current = values;
+  }
+
+  async function deleteTemplate(tp: TemplateView) {
+    if (!window.confirm(td("templates.confirmDelete", { name: tp.name }))) return;
+    try {
+      setTemplates(await api<TemplateList>(`/api/templates/${tp.id}`, { method: "DELETE" }));
+      if (templateId === tp.id) chooseTemplate(null);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  const selectedTemplate = templates ? ([...templates.builtin, ...templates.own].find((x) => x.id === templateId) ?? null) : null;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     setFieldErrors({});
     try {
-      const body = { ...form };
+      const body = { ...form, ...(!project && templateId ? { templateId } : {}) };
       const res = project
         ? await api<{ project: ProjectListItem }>(`/api/projects/${project.id}`, { method: "PATCH", body })
         : await api<{ project: ProjectListItem }>("/api/projects", { body });
@@ -140,6 +185,40 @@ export function ProjectDialog({
       }
     >
       <form id="project-form" onSubmit={submit} className="space-y-4">
+        {!editing && templates && (
+          <div>
+            <span className="label">{td("templates.label")}</span>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={td("templates.label")}>
+              <button type="button" role="radio" aria-checked={!templateId} className={cn("chip", !templateId && "chip-active")} onClick={() => chooseTemplate(null)}>
+                {td("templates.empty")}
+              </button>
+              {templates.builtin.map((tp) => (
+                <button key={tp.id} type="button" role="radio" aria-checked={templateId === tp.id} title={tp.description ?? undefined} className={cn("chip", templateId === tp.id && "chip-active")} onClick={() => chooseTemplate(tp)}>
+                  {tp.name}
+                </button>
+              ))}
+              {templates.own.map((tp) => (
+                <span key={tp.id} className={cn("chip gap-1 !pr-1", templateId === tp.id && "chip-active")}>
+                  <button type="button" role="radio" aria-checked={templateId === tp.id} onClick={() => chooseTemplate(tp)}>
+                    {tp.name}
+                  </button>
+                  <button type="button" onClick={() => void deleteTemplate(tp)} className="rounded-full p-0.5 text-muted hover:text-red-400" aria-label={td("templates.deleteOwn", { name: tp.name })} title={td("templates.deleteOwn", { name: tp.name })}>
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            {selectedTemplate && (
+              <p className="mt-1.5 text-xs text-muted">
+                {selectedTemplate.description ? `${selectedTemplate.description} ` : ""}
+                {td("templates.contains", {
+                  tasks: td("templates.tasks", { n: selectedTemplate.data.tasks.length }),
+                  notes: td("templates.notes", { n: selectedTemplate.data.notes.length }),
+                })}
+              </p>
+            )}
+          </div>
+        )}
         <div>
           <label className="label" htmlFor="p-name">{t("dialog.name")}</label>
           <input id="p-name" className="field" value={form.name} onChange={(e) => set("name", e.target.value)} required maxLength={120} autoFocus placeholder={t("dialog.namePlaceholder")} />

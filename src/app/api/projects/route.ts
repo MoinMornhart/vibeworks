@@ -1,8 +1,11 @@
 import { db } from "@/lib/db";
-import { json, readBody, route } from "@/lib/api";
+import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
-import { projectCreateSchema } from "@/lib/validation";
+import { projectCreateWithTemplateSchema } from "@/lib/validation";
 import { nextPosition, projectListSelect, serializeProject, taskDoneCounts, uniqueSlug } from "@/lib/projects";
+import { applyTemplate, resolveTemplate } from "@/lib/templates";
+import { getLocale } from "@/lib/i18n/server";
+import { tk } from "@/lib/i18n/messages";
 import { logActivity } from "@/lib/activity";
 
 export const GET = route(async (req) => {
@@ -19,16 +22,22 @@ export const GET = route(async (req) => {
 
 export const POST = route(async (req) => {
   const user = await requireApiUser();
-  const input = await readBody(req, projectCreateSchema);
-  const project = await db.project.create({
+  const { templateId, ...input } = await readBody(req, projectCreateWithTemplateSchema);
+  // Vorlage vor dem Anlegen auflösen – eine unbekannte soll kein halbes Projekt hinterlassen.
+  const template = templateId ? await resolveTemplate(user.id, await getLocale(), templateId) : null;
+  if (templateId && !template) throw new ApiError(400, tk("data", "errors.templateNotFound"));
+
+  const created = await db.project.create({
     data: {
       ...input,
       ownerId: user.id,
       slug: await uniqueSlug(user.id, input.name),
       position: await nextPosition(user.id, input.status),
     },
-    select: projectListSelect,
+    select: { id: true, name: true },
   });
-  await logActivity({ projectId: project.id, userId: user.id, kind: "PROJECT_CREATED", summary: `Projekt „${project.name}“ angelegt` });
+  if (template) await applyTemplate(created.id, template);
+  await logActivity({ projectId: created.id, userId: user.id, kind: "PROJECT_CREATED", summary: `Projekt „${created.name}“ angelegt` });
+  const project = await db.project.findUniqueOrThrow({ where: { id: created.id }, select: projectListSelect });
   return json({ project: serializeProject(project) }, { status: 201 });
 });

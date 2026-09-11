@@ -10,6 +10,7 @@ import { TotpSection } from "@/components/account/TotpSection";
 import { PasskeySection } from "@/components/account/PasskeySection";
 import { GitConnectionsSection } from "@/components/account/GitConnectionsSection";
 import { LanguageSection } from "@/components/account/LanguageSection";
+import { DataSection } from "@/components/account/DataSection";
 import { getT } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -44,6 +45,7 @@ export default async function AccountPage() {
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
       <GitConnectionsSection initial={connections} />
+      <DataSection />
     </AccountManager>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowLeft, CalendarPlus, ExternalLink, GitBranch, History, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Download, ExternalLink, GitBranch, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
 import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
@@ -15,6 +15,7 @@ import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
 import { ShareDialog } from "@/components/share/ShareDialog";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 
 export function ProjectHeader({
   initial,
@@ -33,6 +34,7 @@ export function ProjectHeader({
   const t = useT("projects");
   const ts = useT("status");
   const tc = useT("common");
+  const td = useT("data");
   const f = useFormat();
   const router = useRouter();
   const isOwner = access === "OWNER";
@@ -45,6 +47,20 @@ export function ProjectHeader({
   const [pending, setPending] = useState(pendingRequests);
   useEffect(() => setPending(pendingRequests), [pendingRequests]);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function saveTemplate() {
+    const name = window.prompt(td("templates.namePrompt"), p.name)?.trim();
+    if (!name) return;
+    setError(null);
+    setNotice(null);
+    try {
+      await api("/api/templates", { body: { projectId: p.id, name } });
+      setNotice(td("templates.saved", { name }));
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
 
   async function patch(data: Partial<ProjectListItem>) {
     const before = p;
@@ -104,6 +120,13 @@ export function ProjectHeader({
                 <Pencil size={14} /> {tc("edit")}
               </button>
             )}
+            <ActionMenu
+              label={td("more")}
+              items={[
+                { label: td("templates.saveAs"), icon: LayoutTemplate, onClick: () => void saveTemplate() },
+                { label: td("export.project"), icon: Download, onClick: () => window.location.assign(`/api/projects/${p.id}/export`) },
+              ]}
+            />
             {!isOwner && (
               <button className="btn btn-sm" onClick={() => void leave()} title={t("header.leaveTitle")}>
                 <LogOut size={14} /> {t("header.leave")}
@@ -151,6 +174,7 @@ export function ProjectHeader({
           </div>
         )}
         {error && <p role="alert" className="mt-4 text-sm text-red-400">{error}</p>}
+        {notice && <p role="status" className="mt-4 text-sm text-emerald-400">{notice}</p>}
       </section>
 
       <section className="glass p-6 sm:p-8">

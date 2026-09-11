@@ -247,8 +247,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 **Etappe 3 – Überblick & Komfort**
 
 - ⏳ Wochenrückblick und Zeitleiste
-- ⏳ Projektvorlagen
-- ⏳ Import/Export
+- ✅ Projektvorlagen (eingebaute und eigene)
+- ✅ Import/Export als JSON
 - ⏳ Benachrichtigungen (ntfy, Webhook, E-Mail)
 
 ## 📄 Lizenz

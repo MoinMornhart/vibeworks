@@ -250,8 +250,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 **Stage 3 – Overview & comfort**
 
 - ⏳ Weekly review and timeline
-- ⏳ Project templates
-- ⏳ Import/export
+- ✅ Project templates (built-in and your own)
+- ✅ Import/export as JSON
 - ⏳ Notifications (ntfy, webhook, email)
 
 ## 📄 License
