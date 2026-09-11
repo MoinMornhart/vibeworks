@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.3",
+    date: "2026-09-11",
+    title: "CI-Status und Webhooks",
+    titleEn: "CI status and webhooks",
+    changes: [
+      {
+        type: "neu",
+        text: "CI-Status: GitHub Actions, GitLab-Pipelines und Gitea-Status des Hauptzweigs – als Abzeichen im Git-Bereich, mit Liste der letzten Läufe und als Punkt auf der Projektkarte",
+        en: "CI status: GitHub Actions, GitLab pipelines and Gitea statuses of the main branch – as a badge in the Git section, with a list of recent runs and as a dot on the project card",
+      },
+      {
+        type: "neu",
+        text: "Webhooks: GitHub, GitLab und Gitea melden Commits, Issues und CI-Läufe sofort – Einrichtung unter Git & Updates → Zugang, mit Knopf zum automatischen Eintragen",
+        en: "Webhooks: GitHub, GitLab and Gitea report commits, issues and CI runs instantly – set up under Git & updates → Access, with a button to add it automatically",
+      },
+      {
+        type: "besser",
+        text: "Der GitHub-Token-Link enthält jetzt auch das Recht „admin:repo_hook“, damit Webhooks automatisch eingetragen werden können",
+        en: "The GitHub token link now also includes the “admin:repo_hook” scope so webhooks can be added automatically",
+      },
+    ],
+  },
+  {
     version: "0.3.2",
     date: "2026-09-11",
     title: "VibeWorks auf Englisch",

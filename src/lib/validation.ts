@@ -97,6 +97,8 @@ export const repoAccessSchema = z.object({
     .nullable()
     .optional(),
   issueSync: z.boolean().optional(),
+  // Webhook: einrichten, Geheimnis erneuern, entfernen oder beim Anbieter eintragen
+  webhook: z.enum(["on", "renew", "off", "install"]).optional(),
 });
 
 export const gitCredentialSchema = z.object({

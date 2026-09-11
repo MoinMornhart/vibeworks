@@ -58,7 +58,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   return (
     <div className="space-y-6">
       <ProjectHeader
-        initial={serializeProject(rest, done)}
+        initial={serializeProject({ ...rest, repoCache }, done)}
         access={access}
         ownerName={displayNameOf(owner)}
         pendingRequests={isOwner ? accessRequests.length : 0}

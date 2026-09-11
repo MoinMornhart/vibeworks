@@ -8,6 +8,16 @@ import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { StatusSelect } from "./StatusSelect";
+import type { CiState } from "@/lib/git/ci";
+
+// Farbe des CI-Punkts auf der Karte
+const CI_DOT: Record<CiState, string> = {
+  success: "bg-emerald-400",
+  failure: "bg-red-400",
+  running: "bg-amber-400 animate-pulse",
+  pending: "bg-amber-400",
+  canceled: "bg-fg/30",
+};
 
 export function accentGradient(accent: string, dir = "90deg"): string {
   const a = PROJECT_ACCENTS[accent] ?? PROJECT_ACCENTS.violet;
@@ -139,6 +149,7 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
             <span className="inline-flex items-center gap-1" title={t("card.notes")}><StickyNote size={13} />{p.notes}</span>
           )}
           {p.repoUrl && <GitBranch size={13} aria-label={t("card.repoLinked")} />}
+          {p.ci && <span className={cn("h-2 w-2 shrink-0 rounded-full", CI_DOT[p.ci])} title={t(`card.ci.${p.ci}`)} role="img" aria-label={t(`card.ci.${p.ci}`)} />}
           <span suppressHydrationWarning className="truncate" title={t("card.lastUpdated")}>{f.ago(p.updatedAt)}</span>
         </div>
         <StatusSelect value={p.status} onChange={(s) => onStatus(p, s)} />

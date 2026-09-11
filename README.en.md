@@ -49,8 +49,8 @@ account.
   <tr>
     <td valign="top">
       <h3>🔀 Git &amp; updates</h3>
-      Commits from GitHub, GitLab or Gitea as a timeline with an activity chart. Tasks can
-      automatically become issues – and sync back.
+      Commits from GitHub, GitLab or Gitea as a timeline with an activity chart, CI status at a
+      glance. Tasks can automatically become issues – and sync back; instantly via webhook.
     </td>
     <td valign="top">
       <h3>📝 Notes &amp; docs</h3>
@@ -152,7 +152,8 @@ working version.
 Add a repository to a project and VibeWorks shows its commits below the notes. With a Git
 connection (**My account → Git connections** – GitHub, GitLab or Gitea/Forgejo, self-hosted
 too) every task also becomes an issue automatically. The connection applies to all your projects
-on that server, and the server syncs by itself every 5 minutes. The status travels both ways:
+on that server, and the server syncs by itself every 5 minutes – with a webhook (project page →
+**Git & updates** → **Access**) even instantly. The status travels both ways:
 
 | Column in VibeWorks | Issue in the repository |
 | --- | --- |
@@ -184,7 +185,7 @@ When you connect, the app shows a short guide with a link to the right token pag
 
 | Provider | Token |
 | --- | --- |
-| GitHub | Classic token with the `repo` scope (the link is pre-filled) |
+| GitHub | Classic token with the `repo` and `admin:repo_hook` scopes (for webhooks; the link is pre-filled) |
 | GitLab | Personal access token with the `api` scope |
 | Gitea / Forgejo | Token with *repository: read* and *issue: read and write* |
 
@@ -243,8 +244,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Tasks ↔ issues (GitHub, GitLab, Gitea/Forgejo)
 - ✅ Account-wide Git connections, background sync
 - ✅ Project sharing
-- ⏳ CI status
-- ⏳ Webhooks
+- ✅ CI status (GitHub Actions, GitLab pipelines, Gitea)
+- ✅ Webhooks – changes arrive instantly
 
 **Stage 3 – Overview & comfort**
 

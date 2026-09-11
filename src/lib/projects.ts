@@ -1,4 +1,5 @@
 import type { Prisma, ProjectStatus } from "@prisma/client";
+import type { CiState } from "@/lib/git/ci";
 import { db } from "./db";
 import { slugify } from "./utils";
 
@@ -22,15 +23,18 @@ export const projectListSelect = {
   createdAt: true,
   updatedAt: true,
   _count: { select: { notes: true, tasks: true } },
+  // Nur der CI-Zustand – für den Punkt auf der Projektkarte
+  repoCache: { select: { ci: true } },
 } satisfies Prisma.ProjectSelect;
 
 export type ProjectListRow = Prisma.ProjectGetPayload<{ select: typeof projectListSelect }>;
 
 /** Für den Client: Datumsfelder als ISO-Strings, Zähler flach. */
 export function serializeProject<T extends ProjectListRow>(p: T, tasksDone = 0) {
-  const { _count, createdAt, updatedAt, ...rest } = p;
+  const { _count, createdAt, updatedAt, repoCache, ...rest } = p;
   return {
     ...rest,
+    ci: ((repoCache?.ci as { state?: CiState } | null)?.state ?? null) as CiState | null,
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
     notes: _count.notes,

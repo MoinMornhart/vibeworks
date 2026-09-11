@@ -1,10 +1,11 @@
-import type { Prisma, RepoCache } from "@prisma/client";
+import { Prisma, type RepoCache } from "@prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { tk } from "@/lib/i18n/messages";
 import { parseRepoUrl } from "./parse";
 import { tokenCipherFor } from "./token";
 import { fetchRepository, GitError, type CommitInfo } from "./providers";
+import { fetchCi, type CiStatus } from "./ci";
 
 export function serializeRepoCache(c: RepoCache) {
   return {
@@ -15,6 +16,7 @@ export function serializeRepoCache(c: RepoCache) {
     description: c.description,
     stars: c.stars,
     commits: (c.commits as unknown as CommitInfo[]) ?? [],
+    ci: (c.ci as unknown as CiStatus | null) ?? null,
     fetchedAt: c.fetchedAt.toISOString(),
     error: c.error,
   };
@@ -48,6 +50,8 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
 
   try {
     const snap = await fetchRepository(parsed, token);
+    // CI ist ein Zusatz: klappt der Abruf nicht, bleibt der Commit-Stand trotzdem gültig.
+    const ci = await fetchCi(snap.provider, parsed, token, snap.defaultBranch, snap.commits[0]?.sha ?? null).catch(() => null);
     const data = {
       provider: snap.provider,
       fullName: snap.fullName,
@@ -56,6 +60,7 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
       description: snap.description,
       stars: snap.stars,
       commits: snap.commits as unknown as Prisma.InputJsonValue,
+      ci: ci ? (ci as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
       fetchedAt: new Date(),
       error: null,
     };

@@ -46,6 +46,32 @@ export async function runGitSyncOnce(): Promise<{ synced: number; skipped: numbe
   return { synced, skipped };
 }
 
+// Sofort-Abgleich (Webhook): läuft je Projekt nur einmal gleichzeitig; kommt
+// währenddessen noch ein Webhook, folgt genau ein weiterer Durchgang.
+const inFlight = new Map<string, { rerun: boolean; job: Promise<void> }>();
+
+export function syncProjectNow(projectId: string): Promise<void> {
+  const current = inFlight.get(projectId);
+  if (current) {
+    current.rerun = true;
+    return current.job;
+  }
+  const entry = { rerun: false, job: Promise.resolve() };
+  entry.job = (async () => {
+    do {
+      entry.rerun = false;
+      const project = await db.project.findUnique({ where: { id: projectId }, select: { id: true, ownerId: true, repoUrl: true, repoTokenCipher: true } });
+      if (!project?.repoUrl) break;
+      const cache = await syncProjectRepository(project);
+      if (!cache.error) await syncIssues(project.id);
+    } while (entry.rerun);
+  })()
+    .catch((err) => console.error(`[git-sync] Webhook ${projectId}:`, err))
+    .finally(() => inFlight.delete(projectId));
+  inFlight.set(projectId, entry);
+  return entry.job;
+}
+
 /** Startet den Takt genau einmal je Serverprozess. */
 export function startGitScheduler() {
   if (process.env.GIT_SYNC_DISABLED === "true") return;

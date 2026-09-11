@@ -45,7 +45,7 @@ function explain(status: number): string {
   return tk("git", "errors.http", { status });
 }
 
-async function request<T>(method: string, url: string, headers: Record<string, string>, body?: unknown): Promise<T> {
+export async function request<T>(method: string, url: string, headers: Record<string, string>, body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await safeFetch(url, {
@@ -74,13 +74,13 @@ async function request<T>(method: string, url: string, headers: Record<string, s
 
 const getJson = <T>(url: string, headers: Record<string, string>) => request<T>("GET", url, headers);
 
-function apiBase(provider: GitProvider, repo: ParsedRepo): string {
+export function apiBase(provider: GitProvider, repo: ParsedRepo): string {
   if (provider === "github") return `${repo.host === "github.com" ? "https://api.github.com" : `${repo.origin}/api/v3`}/repos/${repo.path}`;
   if (provider === "gitlab") return `${repo.origin}/api/v4/projects/${encodeURIComponent(repo.path)}`;
   return `${repo.origin}/api/v1/repos/${repo.path}`;
 }
 
-function authHeaders(provider: GitProvider, token: string | null): Record<string, string> {
+export function authHeaders(provider: GitProvider, token: string | null): Record<string, string> {
   if (provider === "github") return { "X-GitHub-Api-Version": "2022-11-28", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   if (!token) return {};
   return provider === "gitlab" ? { "PRIVATE-TOKEN": token } : { Authorization: `token ${token}` };

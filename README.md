@@ -49,8 +49,8 @@ Englisch, einstellbar für jedes Konto.
   <tr>
     <td valign="top">
       <h3>🔀 Git &amp; Updates</h3>
-      Commits von GitHub, GitLab oder Gitea als Zeitleiste mit Aktivitätsdiagramm. Aufgaben
-      werden auf Wunsch automatisch zu Issues – und zurück.
+      Commits von GitHub, GitLab oder Gitea als Zeitleiste mit Aktivitätsdiagramm, CI-Status auf
+      einen Blick. Aufgaben werden auf Wunsch automatisch zu Issues – und zurück; per Webhook sofort.
     </td>
     <td valign="top">
       <h3>📝 Notizen &amp; Docs</h3>
@@ -153,8 +153,9 @@ Stand zurück.
 Trägst du am Projekt ein Repository ein, zeigt VibeWorks dessen Commits unter den Notizen.
 Mit einer Git-Verbindung (**Mein Konto → Git-Verbindungen** – GitHub, GitLab oder Gitea/Forgejo,
 auch selbst gehostet) wird zusätzlich jede Aufgabe automatisch zum Issue. Die Verbindung gilt
-für alle deine Projekte auf diesem Server; der Server gleicht alle 5 Minuten selbst ab. Der
-Status wandert in beide Richtungen mit:
+für alle deine Projekte auf diesem Server; der Server gleicht alle 5 Minuten selbst ab – mit
+einem Webhook (Projektseite → **Git & Updates** → **Zugang**) sogar sofort. Der Status wandert
+in beide Richtungen mit:
 
 | Spalte in VibeWorks | Issue im Repository |
 | --- | --- |
@@ -183,7 +184,7 @@ Die App zeigt beim Verbinden eine kurze Anleitung mit Link zur passenden Token-S
 
 | Anbieter | Token |
 | --- | --- |
-| GitHub | Klassisches Token mit dem Recht `repo` (der Link ist vorausgefüllt) |
+| GitHub | Klassisches Token mit den Rechten `repo` und `admin:repo_hook` (für Webhooks; der Link ist vorausgefüllt) |
 | GitLab | Personal-Access-Token mit dem Scope `api` |
 | Gitea / Forgejo | Token mit *repository: Lesen* und *issue: Lesen und Schreiben* |
 
@@ -240,8 +241,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Aufgaben ↔ Issues (GitHub, GitLab, Gitea/Forgejo)
 - ✅ Git-Verbindungen fürs ganze Konto, Abgleich im Hintergrund
 - ✅ Projekte teilen
-- ⏳ CI-Status
-- ⏳ Webhooks
+- ✅ CI-Status (GitHub Actions, GitLab-Pipelines, Gitea)
+- ✅ Webhooks – Änderungen kommen sofort an
 
 **Etappe 3 – Überblick & Komfort**
 

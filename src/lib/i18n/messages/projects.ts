@@ -58,6 +58,7 @@ const de = {
     repoLinked: "Repository verknüpft",
     lastUpdated: "Zuletzt geändert",
     priority: "Priorität: {label}",
+    ci: { success: "CI erfolgreich", failure: "CI fehlgeschlagen", running: "CI läuft", pending: "CI wartet", canceled: "CI abgebrochen" },
   },
   bulk: {
     region: "Mehrfachauswahl",
@@ -184,6 +185,7 @@ const en: Shape<typeof de> = {
     repoLinked: "Repository linked",
     lastUpdated: "Last updated",
     priority: "Priority: {label}",
+    ci: { success: "CI passed", failure: "CI failed", running: "CI running", pending: "CI pending", canceled: "CI canceled" },
   },
   bulk: {
     region: "Multiple selection",

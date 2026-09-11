@@ -46,8 +46,11 @@ export function guessProvider(host: string): GitProvider | null {
 
 export const PROVIDER_LABEL: Record<GitProvider, string> = { github: "GitHub", gitlab: "GitLab", gitea: "Gitea" };
 
-/** GitHub-Seite für ein neues klassisches Token, vorausgefüllt mit dem Recht „repo“ (alle eigenen Repositories). */
-export const GITHUB_NEW_TOKEN_URL = "https://github.com/settings/tokens/new?scopes=repo&description=VibeWorks";
+/**
+ * GitHub-Seite für ein neues klassisches Token, vorausgefüllt mit „repo“ (alle
+ * eigenen Repositories) und „admin:repo_hook“ (Webhooks automatisch eintragen).
+ */
+export const GITHUB_NEW_TOKEN_URL = "https://github.com/settings/tokens/new?scopes=repo,admin:repo_hook&description=VibeWorks";
 
 /** Voreingestellter Server je Anbieter – Gitea/Forgejo hat keinen, das ist fast immer eine eigene Instanz. */
 export const DEFAULT_SERVER: Record<GitProvider, string> = { github: "github.com", gitlab: "gitlab.com", gitea: "" };
@@ -71,7 +74,7 @@ export function normalizeServer(input: string): { baseUrl: string; hostPort: str
 
 /** Seite, auf der man beim Anbieter ein Token erzeugt – so weit wie möglich vorausgefüllt. */
 export function newTokenUrl(provider: GitProvider, baseUrl: string): string {
-  if (provider === "github") return baseUrl === "https://github.com" ? GITHUB_NEW_TOKEN_URL : `${baseUrl}/settings/tokens/new?scopes=repo&description=VibeWorks`;
+  if (provider === "github") return baseUrl === "https://github.com" ? GITHUB_NEW_TOKEN_URL : `${baseUrl}/settings/tokens/new?scopes=repo,admin:repo_hook&description=VibeWorks`;
   if (provider === "gitlab") return `${baseUrl}/-/user_settings/personal_access_tokens?name=VibeWorks&scopes=api`;
   return `${baseUrl}/user/settings/applications`;
 }

@@ -3,18 +3,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Check,
+  CheckCircle2,
   ChevronDown,
   CircleDot,
+  CircleSlash,
+  Clock,
+  Copy,
   ExternalLink,
   GitBranch,
   GitCommitHorizontal,
   KeyRound,
+  Loader2,
   RefreshCw,
   Star,
   TriangleAlert,
   Users,
+  Webhook,
+  XCircle,
 } from "lucide-react";
 import type { RepoCacheView } from "@/lib/git/sync";
+import type { CiState, CiStatus } from "@/lib/git/ci";
 import type { IssueSyncResult } from "@/lib/git/issues";
 import type { CommitInfo } from "@/lib/git/providers";
 import { guessProvider, parseRepoUrl, PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
@@ -31,7 +40,11 @@ interface Access {
   issueSync: boolean;
   /** Konto-Token des Besitzers, das greift, wenn das Projekt kein eigenes hat */
   accountToken?: { hint: string | null; login: string | null } | null;
+  /** Eingehender Webhook – nur für den Besitzer */
+  webhook?: { url: string; secret: string; receivedAt: string | null; publicUrl: boolean } | null;
 }
+
+type WebhookAction = "on" | "renew" | "off" | "install";
 
 const STALE_MS = 5 * 60_000;
 const PAGE = 20;
@@ -196,18 +209,173 @@ function Stat({ icon: Icon, label, value, hint }: { icon: typeof Star; label: st
   );
 }
 
+const CI_STYLE: Record<CiState, { icon: typeof Star; className: string; spin?: boolean }> = {
+  success: { icon: CheckCircle2, className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
+  failure: { icon: XCircle, className: "border-red-500/40 bg-red-500/10 text-red-400" },
+  running: { icon: Loader2, className: "border-amber-500/40 bg-amber-500/10 text-amber-400", spin: true },
+  pending: { icon: Clock, className: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
+  canceled: { icon: CircleSlash, className: "text-muted" },
+};
+
+function CiIcon({ state, size = 12 }: { state: CiState; size?: number }) {
+  const { icon: Icon, spin } = CI_STYLE[state];
+  return <Icon size={size} className={cn(spin && "animate-spin")} />;
+}
+
+/** „CI: erfolgreich“ – verlinkt auf den jüngsten Lauf. */
+function CiBadge({ ci }: { ci: CiStatus }) {
+  const t = useT("git");
+  const state = t(`ci.state.${ci.state}`);
+  const className = cn("chip !py-0.5", CI_STYLE[ci.state].className);
+  const url = ci.runs[0]?.url;
+  const content = (
+    <>
+      <CiIcon state={ci.state} /> {t("ci.label")}: {state}
+    </>
+  );
+  return url ? (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={className} title={t("ci.badgeTitle", { state })}>
+      {content}
+    </a>
+  ) : (
+    <span className={className}>{content}</span>
+  );
+}
+
+function CiRuns({ ci }: { ci: CiStatus }) {
+  const t = useT("git");
+  const f = useFormat();
+  return (
+    <div className="mb-6 rounded-2xl border bg-bg/25 p-3">
+      <p className="mb-2 text-xs text-muted">{t("ci.runsTitle")}</p>
+      <ul className="space-y-1.5">
+        {ci.runs.map((r, i) => (
+          <li key={`${r.name}-${i}`} className="flex items-center gap-2 text-sm">
+            <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border", CI_STYLE[r.state].className)}>
+              <CiIcon state={r.state} size={11} />
+            </span>
+            {r.url ? (
+              <a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate hover:text-accent-ink">{r.name}</a>
+            ) : (
+              <span className="min-w-0 flex-1 truncate">{r.name}</span>
+            )}
+            <span className="shrink-0 text-xs text-muted">
+              {t(`ci.state.${r.state}`)} · <span suppressHydrationWarning>{f.ago(r.updatedAt)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CopyField({ label, value, secret }: { label: string; value: string; secret?: boolean }) {
+  const tc = useT("common");
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      // Ohne HTTPS gibt es keine Zwischenablage-API – dann markieren und klassisch kopieren.
+      ref.current?.select();
+      document.execCommand("copy");
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+  return (
+    <div>
+      <span className="label">{label}</span>
+      <div className="flex gap-2">
+        <input ref={ref} readOnly value={value} type={secret ? "password" : "text"} onFocus={(e) => e.target.select()} className="field min-w-0 flex-1 font-mono text-xs" aria-label={label} />
+        <button type="button" className="btn btn-sm shrink-0" onClick={() => void copy()}>
+          {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? tc("copied") : tc("copy")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function WebhookSection({
+  provider,
+  access,
+  busy,
+  note,
+  onWebhook,
+}: {
+  provider: GitProvider | null;
+  access: Access;
+  busy: boolean;
+  note: string | null;
+  onWebhook: (action: WebhookAction) => void;
+}) {
+  const t = useT("git");
+  const f = useFormat();
+  const hook = access.webhook;
+  const hasToken = Boolean(access.tokenHint || access.accountToken);
+  return (
+    <div className="space-y-3 border-t pt-4">
+      <div>
+        <p className="flex items-center gap-2 text-sm font-medium">
+          <Webhook size={15} className="text-accent-ink" /> {t("webhook.title")}
+        </p>
+        <p className="text-xs text-muted">{t("webhook.hint")}</p>
+      </div>
+      {!hook ? (
+        <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onWebhook("on")}>
+          <Webhook size={14} /> {t("webhook.enable")}
+        </button>
+      ) : (
+        <>
+          {!hook.publicUrl && (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">{t("webhook.notPublic", { url: hook.url })}</p>
+          )}
+          <CopyField label={t("webhook.url")} value={hook.url} />
+          <CopyField label={t("webhook.secret")} value={hook.secret} secret />
+          <p className="text-xs text-muted" suppressHydrationWarning>
+            {hook.receivedAt ? t("webhook.received", { ago: f.ago(hook.receivedAt) }) : t("webhook.never")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {provider && hasToken && hook.publicUrl && (
+              <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => onWebhook("install")}>
+                <Webhook size={14} /> {t("webhook.install", { provider: PROVIDER_LABEL[provider] })}
+              </button>
+            )}
+            <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onWebhook("renew")}>
+              <RefreshCw size={14} /> {t("webhook.renew")}
+            </button>
+            <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => window.confirm(t("webhook.confirmRemove")) && onWebhook("off")}>
+              {t("webhook.remove")}
+            </button>
+          </div>
+          <details className="text-xs text-muted">
+            <summary className="cursor-pointer hover:text-fg">{t("webhook.manualTitle")}</summary>
+            <p className="mt-1">{t(`webhook.manual.${provider || "github"}`)}</p>
+          </details>
+        </>
+      )}
+      {note && <p role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">{note}</p>}
+    </div>
+  );
+}
+
 function AccessPanel({
   provider,
   access,
   busy,
   error,
   onSave,
+  webhookNote,
+  onWebhook,
 }: {
   provider: GitProvider | null;
   access: Access;
   busy: boolean;
   error: string | null;
   onSave: (body: { token?: string | null; issueSync?: boolean }) => void;
+  webhookNote: string | null;
+  onWebhook: (action: WebhookAction) => void;
 }) {
   const t = useT("git");
   const tc = useT("common");
@@ -259,7 +427,7 @@ function AccessPanel({
         </div>
         {(provider === "github" || !provider) && (
           <a
-            href="https://github.com/settings/tokens/new?scopes=public_repo&description=VibeWorks"
+            href="https://github.com/settings/tokens/new?scopes=public_repo,admin:repo_hook&description=VibeWorks"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-sm w-full justify-center sm:w-auto"
@@ -290,6 +458,7 @@ function AccessPanel({
           <span className="block text-xs text-muted">{t("access.issueSyncHint")}</span>
         </span>
       </label>
+      <WebhookSection provider={provider} access={access} busy={busy} note={webhookNote} onWebhook={onWebhook} />
       <FormError message={error} />
     </div>
   );
@@ -332,6 +501,7 @@ export function GitPanel({
   const [showAccess, setShowAccess] = useState(false);
   const [accessBusy, setAccessBusy] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [webhookNote, setWebhookNote] = useState<string | null>(null);
   const [shown, setShown] = useState(PAGE);
   // Datum und Zeitzone erst im Browser – sonst passen Server- und Browserdarstellung nicht zusammen.
   const [today, setToday] = useState<Date | null>(null);
@@ -378,6 +548,21 @@ export function GitPanel({
       const res = await api<{ access: Access }>(`/api/projects/${projectId}/git`, { method: "PUT", body });
       setAccess(res.access);
       await sync(); // prüft das Token und trägt fehlende Issues nach
+    } catch (e) {
+      setAccessError(errorMessage(e));
+    } finally {
+      setAccessBusy(false);
+    }
+  }
+
+  async function webhookAction(action: WebhookAction) {
+    setAccessBusy(true);
+    setAccessError(null);
+    setWebhookNote(null);
+    try {
+      const res = await api<{ access: Access; installed?: boolean }>(`/api/projects/${projectId}/git`, { method: "PUT", body: { webhook: action } });
+      setAccess(res.access);
+      if (res.installed && provider) setWebhookNote(t("webhook.installed", { provider: PROVIDER_LABEL[provider] }));
     } catch (e) {
       setAccessError(errorMessage(e));
     } finally {
@@ -433,6 +618,7 @@ export function GitPanel({
                 {provider && <span className="chip !py-0.5">{PROVIDER_LABEL[provider]}</span>}
                 {cache.defaultBranch && <span className="chip !py-0.5"><GitBranch size={12} /> {cache.defaultBranch}</span>}
                 {cache.stars !== null && <span className="chip !py-0.5"><Star size={12} /> {cache.stars}</span>}
+                {cache.ci && <CiBadge ci={cache.ci} />}
               </div>
             )}
           </div>
@@ -468,7 +654,17 @@ export function GitPanel({
         </div>
       ) : (
         <>
-          {showAccess && canManage && <AccessPanel provider={provider || null} access={access} busy={accessBusy || busy} error={accessError} onSave={(b) => void saveAccess(b)} />}
+          {showAccess && canManage && (
+            <AccessPanel
+              provider={provider || null}
+              access={access}
+              busy={accessBusy || busy}
+              error={accessError}
+              onSave={(b) => void saveAccess(b)}
+              webhookNote={webhookNote}
+              onWebhook={(a) => void webhookAction(a)}
+            />
+          )}
 
           {(error || cacheError) && (
             <p role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
@@ -496,6 +692,8 @@ export function GitPanel({
               {today && <ActivityChart commits={commits} today={today} />}
             </div>
           )}
+
+          {cache?.ci && cache.ci.runs.length > 0 && <CiRuns ci={cache.ci} />}
 
           {!cache && busy && (
             <div className="space-y-3" aria-hidden>

@@ -229,6 +229,10 @@ model Project {
   issueSync       Boolean @default(true)
   /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
   shareToken      String? @unique
+  /// Geheimnis für eingehende Webhooks (AES-256-GCM) – null heißt „kein Webhook“
+  webhookSecretCipher String?
+  /// Zuletzt ein gültiger Webhook angekommen
+  webhookAt           DateTime?
 
   notes      Note[]
   tasks      Task[]
@@ -316,6 +320,8 @@ model RepoCache {
   stars         Int?
   /// [{ sha, title, body, author, date, url }], neueste zuerst
   commits       Json     @default("[]")
+  /// CI des Hauptzweigs: { state, runs: [{ name, state, url, updatedAt }], sha, checkedAt } – null ohne CI
+  ci            Json?
   fetchedAt     DateTime @default(now())
   error         String?
 }
