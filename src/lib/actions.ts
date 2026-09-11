@@ -8,6 +8,7 @@ import { dayKeyToDate } from "./taskDates";
 import { noteLabel, touchProject } from "./notes";
 import { logActivity } from "./activity";
 import { truncate } from "./utils";
+import { accessOf, canAccess } from "./access";
 import type { noteCreateSchema, taskCreateSchema, taskUpdateSchema } from "./validation";
 
 // Schreibvorgänge mit allen Folgen – Verlauf, Fortschritt, Issue-Spiegelung.
@@ -59,5 +60,30 @@ export async function createNote(userId: string, projectId: string, input: z.out
   const note = await db.note.create({ data: { ...input, projectId } });
   await touchProject(projectId);
   await logActivity({ projectId, userId, kind: "NOTE_ADDED", summary: `Notiz „${noteLabel(note)}“ hinzugefügt`, meta: { title: noteLabel(note) } });
+  await syncProjectProgress(projectId); // Notizen zählen zur Planung
   return note;
+}
+
+/**
+ * Dieselbe Aufgabe in mehreren Projekten anlegen – z. B. „Abhängigkeiten
+ * aktualisieren“ für alle Projekte mit Git. Projekte ohne Schreibrecht werden
+ * übersprungen. Issues entstehen wie gewohnt je Projekt.
+ */
+export async function createTaskInProjects(
+  userId: string,
+  projectIds: string[],
+  input: Pick<z.output<typeof taskCreateSchema>, "title" | "description" | "dueDate" | "labels">,
+) {
+  const created: Array<{ task: Task; project: { id: string; name: string; accent: string } }> = [];
+  let skipped = 0;
+  for (const id of [...new Set(projectIds)]) {
+    const res = await accessOf(userId, id);
+    if (!res || !canAccess(res.access, "EDITOR") || res.project.status === "ARCHIVED") {
+      skipped++;
+      continue;
+    }
+    const { task } = await createTask(userId, id, { ...input, status: "TODO", recurrence: null });
+    created.push({ task, project: { id, name: res.project.name, accent: res.project.accent } });
+  }
+  return { created, skipped };
 }

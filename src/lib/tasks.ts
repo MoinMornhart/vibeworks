@@ -1,7 +1,8 @@
 import type { Prisma, PrismaClient, Task, TaskStatus } from "@prisma/client";
 import { db } from "./db";
 import { logActivity } from "./activity";
-import { dayKeyToDate, derivedProgress, nextDueKey } from "./taskDates";
+import { dayKeyToDate, nextDueKey } from "./taskDates";
+import { analyzeProgress, progressInput } from "./progress";
 import { TASK_STATUSES } from "./status";
 import { dayKey, truncate } from "./utils";
 
@@ -93,15 +94,27 @@ export async function transitionTask(
   return { task: updated, spawned };
 }
 
-/** Fortschritt aus dem Anteil erledigter Aufgaben – nur wenn am Projekt eingeschaltet. */
+/**
+ * Automatischer Fortschritt – Analyse aus Aufgaben, Entwicklung und Planung
+ * (siehe lib/progress). Nur wenn am Projekt eingeschaltet.
+ */
 export async function syncProjectProgress(projectId: string, client: Client = db): Promise<number | null> {
-  const project = await client.project.findUnique({ where: { id: projectId }, select: { progressFromTasks: true } });
+  const project = await client.project.findUnique({
+    where: { id: projectId },
+    select: {
+      progressFromTasks: true,
+      status: true,
+      summary: true,
+      description: true,
+      repoUrl: true,
+      repoCache: { select: { commits: true, ci: true } },
+      _count: { select: { notes: true } },
+    },
+  });
   if (!project?.progressFromTasks) return null;
-  const [total, done] = await Promise.all([
-    client.task.count({ where: { projectId } }),
-    client.task.count({ where: { projectId, status: "DONE" } }),
-  ]);
-  const progress = derivedProgress(total, done);
+  const groups = await client.task.groupBy({ by: ["status"], where: { projectId }, _count: { _all: true } });
+  const tasks = Object.fromEntries(groups.map((g) => [g.status, g._count._all]));
+  const { progress } = analyzeProgress(progressInput({ ...project, notes: project._count.notes, tasks }));
   await client.$executeRaw`UPDATE "Project" SET "progress" = ${progress} WHERE "id" = ${projectId}`;
   return progress;
 }

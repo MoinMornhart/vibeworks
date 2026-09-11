@@ -244,6 +244,11 @@ export const taskCreateSchema = z.object({
   recurrence: recurrenceSchema.nullish().transform((v) => v ?? null),
 });
 
+// Dieselbe Aufgabe für mehrere Projekte (Aufgabenübersicht, MCP)
+export const taskBulkSchema = taskCreateSchema.pick({ title: true, description: true, dueDate: true, labels: true }).extend({
+  projectIds: z.array(z.string().max(40)).min(1, tk("tasks", "overview.bulk.noProjects")).max(200),
+});
+
 // Alles außen .optional(): Fehlendes heißt „nicht ändern“, nicht „leeren“.
 export const taskUpdateSchema = z.object({
   title: z.string().trim().min(1, tk("validation", "titleMissing")).max(200).optional(),

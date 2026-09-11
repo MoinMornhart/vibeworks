@@ -4,8 +4,8 @@ import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";
 import { tk } from "@/lib/i18n/messages";
-import { docCreateSchema, docUpdateSchema, noteCreateSchema, projectUpdateSchema, taskCreateSchema, taskUpdateSchema } from "@/lib/validation";
-import { createNote, createTask, updateTask } from "@/lib/actions";
+import { docCreateSchema, docUpdateSchema, noteCreateSchema, projectUpdateSchema, taskBulkSchema, taskCreateSchema, taskUpdateSchema } from "@/lib/validation";
+import { createNote, createTask, createTaskInProjects, updateTask } from "@/lib/actions";
 import { searchContent } from "@/lib/searchQuery";
 import { HIT_END, HIT_START } from "@/lib/search";
 import { findOwnDoc, loadTree, nextDocPosition } from "@/lib/docs";
@@ -265,6 +265,39 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const { project } = await resolveProject(userId, ref.parse(args.project), "EDITOR");
       const { task, progress } = await createTask(userId, project.id, taskCreateSchema.parse(args));
       return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
+    },
+  },
+  {
+    name: "create_task_in_projects",
+    title: "Create task in several projects",
+    description:
+      "Create the same task in several projects at once – by default in every non-archived project linked to a Git repository (e.g. \"Update dependencies\"). Projects without write access are skipped.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projects: { type: "array", items: { type: "string" }, description: "Project ids or exact names; omit for all projects linked to Git" },
+        title: { type: "string", maxLength: 200 },
+        description: { type: "string", description: "Markdown" },
+        dueDate: S.dueDate,
+        labels: S.labels,
+      },
+      required: ["title"],
+      additionalProperties: false,
+    },
+    run: async (args, { userId }) => {
+      const refs = z.array(ref).max(200).optional().parse(args.projects);
+      const ids = refs
+        ? await Promise.all(refs.map(async (r) => (await resolveProject(userId, r, "EDITOR")).project.id))
+        : (
+            await db.project.findMany({
+              where: { AND: [visibleTo(userId), { repoUrl: { not: null } }, { status: { not: "ARCHIVED" } }] },
+              select: { id: true },
+            })
+          ).map((p) => p.id);
+      const input = taskBulkSchema.parse({ ...args, projectIds: ids.length ? ids : undefined });
+      const { projectIds, ...fields } = input;
+      const { created, skipped } = await createTaskInProjects(userId, projectIds, fields);
+      return { created: created.map((c) => ({ project: c.project.name, projectId: c.project.id, taskId: c.task.id })), skipped };
     },
   },
   {

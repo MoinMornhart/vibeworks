@@ -16,15 +16,24 @@ export async function generateMetadata() {
 // nichts in den falschen Tag.
 export default async function TasksPage() {
   const user = await requirePageUser();
-  const tasks = await db.task.findMany({
-    where: { project: { ownerId: user.id, status: { not: "ARCHIVED" } } },
-    include: { project: { select: { id: true, name: true, accent: true } } },
-    orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
-  });
+  const [tasks, projects] = await Promise.all([
+    db.task.findMany({
+      where: { project: { ownerId: user.id, status: { not: "ARCHIVED" } } },
+      include: { project: { select: { id: true, name: true, accent: true } } },
+      orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    }),
+    // Für „Aufgabe für mehrere Projekte“
+    db.project.findMany({
+      where: { ownerId: user.id, status: { not: "ARCHIVED" } },
+      select: { id: true, name: true, accent: true, repoUrl: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   return (
     <TaskOverview
       today={dayKey(new Date())}
       initial={tasks.map((t) => ({ ...serializeTask(t), project: t.project }))}
+      allProjects={projects}
     />
   );
 }

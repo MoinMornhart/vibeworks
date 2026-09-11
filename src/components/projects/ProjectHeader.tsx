@@ -16,6 +16,8 @@ import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
 import { ShareDialog } from "@/components/share/ShareDialog";
 import { ActionMenu } from "@/components/ui/ActionMenu";
+import type { ProgressAnalysis } from "@/lib/progress";
+import { ProgressAnalysisView } from "./ProgressAnalysisView";
 
 export function ProjectHeader({
   initial,
@@ -23,11 +25,14 @@ export function ProjectHeader({
   ownerName,
   pendingRequests = 0,
   openShare = false,
+  analysis = null,
 }: {
   initial: ProjectDetail;
   access?: ProjectAccess;
   ownerName?: string;
   pendingRequests?: number;
+  /** Automatischer Fortschritt: Bestandteile für „Wie berechnet?“ */
+  analysis?: ProgressAnalysis | null;
   /** Teilen-Dialog gleich öffnen (Link aus dem Hinweis auf dem Dashboard) */
   openShare?: boolean;
 }) {
@@ -69,6 +74,8 @@ export function ProjectHeader({
     try {
       const res = await api<{ project: ProjectDetail }>(`/api/projects/${p.id}`, { method: "PATCH", body: data });
       setP(res.project);
+      // Neuer Status → neue Analyse (Obergrenze)
+      if (res.project.progressFromTasks && data.status) router.refresh();
     } catch (e) {
       setP(before);
       setError(errorMessage(e));
@@ -164,6 +171,7 @@ export function ProjectHeader({
             <span className="font-semibold tabular-nums">{p.progress} %</span>
           </div>
           <ProgressBar value={p.progress} accent={p.accent} className="!h-2.5" />
+          {p.progressFromTasks && analysis && <ProgressAnalysisView analysis={analysis} />}
         </div>
 
         {p.tags.length > 0 && (

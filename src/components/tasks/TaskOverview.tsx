@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { TaskStatus } from "@prisma/client";
-import { Check, CheckCheck, Repeat } from "lucide-react";
+import { Check, CheckCheck, ListPlus, Repeat } from "lucide-react";
+import { BulkTaskDialog, type BulkProject } from "./BulkTaskDialog";
 import type { TaskItem } from "@/lib/tasks";
 import { BUCKETS, bucketOf, recurrenceLabel, type Bucket } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
@@ -30,11 +31,13 @@ const BUCKET_TONE: Partial<Record<Bucket, string>> = { overdue: "text-red-400", 
 const byDue = (a: OverviewTask, b: OverviewTask) =>
   (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || a.createdAt.localeCompare(b.createdAt);
 
-export function TaskOverview({ initial, today }: { initial: OverviewTask[]; today: string }) {
+export function TaskOverview({ initial, today, allProjects = [] }: { initial: OverviewTask[]; today: string; allProjects?: BulkProject[] }) {
   const t = useT("tasks");
   const ts = useT("status");
   const locale = useLocale();
   const [tasks, setTasks] = useState(initial);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<TaskStatus[]>([]);
   const [showDone, setShowDone] = useState(false);
   const [projectId, setProjectId] = useState("");
@@ -92,12 +95,20 @@ export function TaskOverview({ initial, today }: { initial: OverviewTask[]; toda
 
   return (
     <div className="fade-in">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">{t("overview.title")}</h1>
-        <p className="mt-1 text-muted">
-          {openCount === 0 ? t("overview.allDone") : t("overview.summary", { open: openCount, n: projects.length })}
-        </p>
+      <header className="mb-6 flex flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-bold tracking-tight">{t("overview.title")}</h1>
+          <p className="mt-1 text-muted">
+            {openCount === 0 ? t("overview.allDone") : t("overview.summary", { open: openCount, n: projects.length })}
+          </p>
+        </div>
+        {allProjects.length > 0 && (
+          <button className="btn btn-sm" onClick={() => setBulkOpen(true)}>
+            <ListPlus size={14} /> {t("overview.bulk.open")}
+          </button>
+        )}
       </header>
+      {notice && <p role="status" className="mb-4 text-sm text-emerald-400">{notice}</p>}
 
       <div className="glass mb-6 flex flex-wrap items-center gap-2 p-2">
         {TASK_STATUSES.filter((s) => s.value !== "DONE").map((s) => (
@@ -177,6 +188,16 @@ export function TaskOverview({ initial, today }: { initial: OverviewTask[]; toda
           )}
         </div>
       )}
+
+      <BulkTaskDialog
+        open={bulkOpen}
+        projects={allProjects}
+        onClose={() => setBulkOpen(false)}
+        onCreated={(created, skipped) => {
+          setTasks((list) => [...list, ...created]);
+          setNotice(t("overview.bulk.created", { n: created.length }) + (skipped ? ` ${t("overview.bulk.skipped", { n: skipped })}` : ""));
+        }}
+      />
 
       <TaskDialog
         open={editing !== null}

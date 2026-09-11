@@ -7,6 +7,7 @@ import { tokenCipherFor } from "./token";
 import { fetchRepository, GitError, type CommitInfo } from "./providers";
 import { fetchCi, type CiStatus } from "./ci";
 import { appLink, notifyUser } from "@/lib/notify";
+import { syncProjectProgress } from "@/lib/tasks";
 
 export function serializeRepoCache(c: RepoCache) {
   return {
@@ -67,6 +68,8 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
       error: null,
     };
     const saved = await db.repoCache.upsert({ where: { projectId: project.id }, create: { projectId: project.id, ...data }, update: data });
+    // Commits und CI fließen in den automatischen Fortschritt ein
+    await syncProjectProgress(project.id);
     // Nur beim Umschlagen auf Rot melden, nicht bei jedem Abgleich einer roten CI
     const before = (previous?.ci as { state?: string } | null)?.state;
     if (ci?.state === "failure" && before !== "failure") void notifyCiFailed(project.id, project.ownerId, ci);

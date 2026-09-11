@@ -212,6 +212,7 @@ After that, Claude Code works directly with your projects – no GitHub detour n
 | `list_projects`, `get_project` | Projects with status, open tasks, notes and repository |
 | `list_tasks`, `get_task` | Tasks across all projects – e.g. everything due this week |
 | `create_task`, `update_task` | Create tasks and move them to *In progress* or *Done* – mirrored issues follow |
+| `create_task_in_projects` | The same task in several projects – by default in all linked to Git |
 | `update_project` | Status, priority, progress and summary |
 | `create_note`, `get_note` | Notes on a project, e.g. a work log |
 | `search` | Full-text search across notes, tasks and docs |
@@ -298,6 +299,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 
 - ✅ VibeWorks as an MCP server for Claude Code – tasks, notes and docs right from Claude
 - ✅ Windows app with tray, quick capture via shortcut, Windows notifications and auto-update
+- ✅ Automatic progress by analyzing tasks, commits, CI and planning – with "How is it calculated?"
+- ✅ One task for several projects at once, e.g. all linked to Git
 - ⏳ Live monitoring: availability, response time, SSL expiry, uptime bar and an automatic screenshot as cover image
 - ⏳ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
 - ⏳ Activity heatmap across all projects, streaks and small achievements

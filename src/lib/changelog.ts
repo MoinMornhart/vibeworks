@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.0",
+    date: "2026-09-11",
+    title: "Fortschritt per Analyse, Aufgaben für mehrere Projekte",
+    titleEn: "Progress by analysis, tasks for several projects",
+    changes: [
+      {
+        type: "neu",
+        text: "„Fortschritt automatisch bestimmen“ analysiert jetzt Aufgaben (in Arbeit zählt halb), Commits, CI und Planung; der Status setzt den Rahmen – „Wie berechnet?“ im Projektkopf zeigt die Bestandteile",
+        en: "“Determine progress automatically” now analyzes tasks (in progress counts half), commits, CI and planning; the status sets the limits – “How is it calculated?” in the project header shows the parts",
+      },
+      {
+        type: "neu",
+        text: "Aufgaben → „Für mehrere Projekte“: dieselbe Aufgabe in vielen Projekten anlegen, alle mit Git sind vorausgewählt – für Claude als MCP-Werkzeug create_task_in_projects",
+        en: "Tasks → “For several projects”: create the same task in many projects, all linked to Git are preselected – for Claude as the MCP tool create_task_in_projects",
+      },
+    ],
+  },
+  {
     version: "0.3.9",
     date: "2026-09-11",
     title: "VibeWorks für Windows",

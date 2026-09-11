@@ -15,6 +15,7 @@ import { NotesPanel } from "@/components/notes/NotesPanel";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { GitPanel } from "@/components/git/GitPanel";
 import { AutoRefresh } from "@/lib/client/useAutoRefresh";
+import { analyzeProgress, progressInput } from "@/lib/progress";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -52,6 +53,18 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const { project, access } = loaded;
   const { notes, tasks, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, ...rest } = project;
   const done = tasks.filter((t) => t.status === "DONE").length;
+  // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
+  // falls der gespeicherte Wert noch aus der alten Berechnung stammt
+  let analysis = null;
+  if (project.progressFromTasks) {
+    const counts = { TODO: 0, DOING: 0, BLOCKED: 0, DONE: 0 };
+    for (const t of tasks) counts[t.status]++;
+    analysis = analyzeProgress(progressInput({ ...project, notes: notes.length, tasks: counts, repoCache }));
+    if (analysis.progress !== project.progress) {
+      await db.$executeRaw`UPDATE "Project" SET "progress" = ${analysis.progress} WHERE "id" = ${project.id}`;
+      rest.progress = analysis.progress;
+    }
+  }
   const isOwner = access === "OWNER";
   const readOnly = access === "VIEWER";
   const account = isOwner ? await accountTokenFor(project.ownerId, project.repoUrl) : null;
@@ -63,6 +76,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         ownerName={displayNameOf(owner)}
         pendingRequests={isOwner ? accessRequests.length : 0}
         openShare={query.teilen === "1"}
+        analysis={analysis}
       />
       <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={readOnly} />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={readOnly} />
