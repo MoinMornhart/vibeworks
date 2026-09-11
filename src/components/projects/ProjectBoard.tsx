@@ -38,7 +38,7 @@ const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: Pr
   { value: "created", label: "Neueste zuerst", cmp: (a, b) => b.createdAt.localeCompare(a.createdAt) },
   { value: "name", label: "Name", cmp: (a, b) => a.name.localeCompare(b.name, "de") },
   { value: "progress", label: "Fortschritt", cmp: (a, b) => b.progress - a.progress },
-  { value: "priority", label: "Priorität", cmp: (a, b) => b.priority - a.priority },
+  { value: "priority", label: "Priorität (★ zuerst)", cmp: (a, b) => b.priority - a.priority || b.updatedAt.localeCompare(a.updatedAt) },
   // Reihenfolge der Status von der Idee bis Fertig (Archiviert zuletzt),
   // innerhalb eines Status die zuletzt geänderten zuerst.
   { value: "status", label: "Status (Idee → Fertig)", cmp: (a, b) => statusRank(a.status) - statusRank(b.status) || b.updatedAt.localeCompare(a.updatedAt) },
@@ -143,13 +143,9 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
     const fav = (a: ProjectListItem, b: ProjectListItem) => Number(b.favorite) - Number(a.favorite);
     return base
       .filter((p) => !statuses.length || statuses.includes(p.status))
-      // Favoriten stehen oben – bei der Status-Sortierung aber nur innerhalb
-      // ihres Status, sonst gerät die Reihenfolge Idee → Fertig durcheinander.
-      .sort((a, b) =>
-        sort === "status"
-          ? statusRank(a.status) - statusRank(b.status) || fav(a, b) || b.updatedAt.localeCompare(a.updatedAt)
-          : fav(a, b) || cmp(a, b),
-      );
+      // Favoriten ziehen nur bei „Priorität“ nach oben – sie gelten dort als
+      // wichtigste Stufe. Alle anderen Sortierungen folgen allein ihrem Kriterium.
+      .sort((a, b) => (sort === "priority" ? fav(a, b) || cmp(a, b) : cmp(a, b)));
   }, [base, statuses, sort]);
 
   const kanbanColumns = useMemo(

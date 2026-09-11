@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.0",
+    date: "2026-09-11",
+    title: "Favoriten nur bei Priorität vorne",
+    changes: [
+      { type: "besser", text: "Dashboard: Projekte mit ★ stehen nur noch bei der Sortierung „Priorität“ oben – bei Zuletzt geändert, Erstellt, Name, Fortschritt und Status zählt allein das jeweilige Kriterium" },
+      { type: "besser", text: "Sortierung „Priorität (★ zuerst)“: Favoriten, dann Kritisch bis Niedrig, bei Gleichstand das zuletzt Geänderte zuerst" },
+    ],
+  },
+  {
     version: "0.2.9",
     date: "2026-09-11",
     title: "Übersichtlicher Fahrplan",

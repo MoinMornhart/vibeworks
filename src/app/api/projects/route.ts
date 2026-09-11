@@ -11,7 +11,7 @@ export const GET = route(async (req) => {
   const projects = await db.project.findMany({
     where: { ownerId: user.id, ...(archived ? {} : { status: { not: "ARCHIVED" } }) },
     select: projectListSelect,
-    orderBy: [{ favorite: "desc" }, { updatedAt: "desc" }],
+    orderBy: { updatedAt: "desc" },
   });
   const done = await taskDoneCounts(user.id);
   return json({ projects: projects.map((p) => serializeProject(p, done.get(p.id))) });

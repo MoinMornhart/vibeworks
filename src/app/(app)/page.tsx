@@ -10,7 +10,7 @@ export default async function Dashboard() {
     db.project.findMany({
       where: { ownerId: user.id },
       select: projectListSelect,
-      orderBy: [{ favorite: "desc" }, { updatedAt: "desc" }],
+      orderBy: { updatedAt: "desc" },
     }),
     taskDoneCounts(user.id),
     // Projekte anderer Konten, in denen man Mitglied ist
