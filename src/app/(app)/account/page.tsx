@@ -11,6 +11,9 @@ import { PasskeySection } from "@/components/account/PasskeySection";
 import { GitConnectionsSection } from "@/components/account/GitConnectionsSection";
 import { LanguageSection } from "@/components/account/LanguageSection";
 import { DataSection } from "@/components/account/DataSection";
+import { NotificationsSection } from "@/components/account/NotificationsSection";
+import { notificationView } from "@/lib/notify";
+import { smtpReady } from "@/lib/notify/mail";
 import { getT } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -23,11 +26,13 @@ export default async function AccountPage() {
   if (!auth) redirect("/login");
   const { user, sessionId } = auth;
   const hasPassword = Boolean(user.passwordHash);
-  const [sessions, recoveryLeft, passkeys, connections] = await Promise.all([
+  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady] = await Promise.all([
     listSessions(user.id, sessionId),
     recoveryCodesLeft(user.id),
     db.passkey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     credentialList(user.id),
+    db.notificationSettings.findUnique({ where: { userId: user.id } }),
+    smtpReady(),
   ]);
   return (
     <AccountManager
@@ -45,6 +50,7 @@ export default async function AccountPage() {
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
       <GitConnectionsSection initial={connections} />
+      <NotificationsSection initial={notificationView(notifications)} smtpReady={mailReady} isAdmin={user.role === "ADMIN"} />
       <DataSection />
     </AccountManager>
   );

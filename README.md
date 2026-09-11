@@ -249,7 +249,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Wochenrückblick und Zeitleiste
 - ✅ Projektvorlagen (eingebaute und eigene)
 - ✅ Import/Export als JSON
-- ⏳ Benachrichtigungen (ntfy, Webhook, E-Mail)
+- ✅ Benachrichtigungen (ntfy, Webhook, E-Mail)
 
 ## 📄 Lizenz
 

@@ -27,6 +27,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import type { PublicBuildInfo } from "@/lib/buildInfo";
 import { CloudDownload } from "lucide-react";
 import { UpdatePanel } from "./UpdatePanel";
+import { SmtpSection } from "./SmtpSection";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -353,6 +354,8 @@ export function AdminManager({
           <dd className="break-all font-mono">{appUrl}</dd>
         </dl>
       </AccountSection>
+
+      <SmtpSection />
 
       <AccountSection icon={<CloudDownload size={18} />} title={t("update.title")} description={t("update.description")}>
         <UpdatePanel initial={update} />

@@ -6,6 +6,7 @@ import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tas
 import { recurrenceLabel } from "@/lib/taskDates";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
 import { tokenCipherFor } from "./token";
+import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
 // Aufgaben ↔ Issues. Jede Aufgabe eines Projekts mit Repository und Token
@@ -182,6 +183,7 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     const recent = await ctx.api.recent();
     const byNumber = new Map(recent.map((i) => [i.number, i]));
     const linked = await db.task.findMany({ where: { projectId, issueNumber: { in: [...byNumber.keys()] } } });
+    const closedViaGit: string[] = [];
     for (const task of linked) {
       const issue = byNumber.get(task.issueNumber!)!;
       const target = statusFromIssue(issue);
@@ -192,11 +194,25 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
       const position = await nextTaskPosition(db, projectId, target);
       await db.$transaction((tx) => transitionTask(tx, task, target, null, { position }));
       result.tasksChanged++;
+      if (target === "DONE") closedViaGit.push(`#${task.issueNumber} ${task.title}`);
     }
     if (result.tasksChanged) await syncProjectProgress(projectId);
+    if (closedViaGit.length) void notifyClosed(projectId, closedViaGit);
   } catch (err) {
     result.error ??= describe(err);
   }
   result.linked = await db.task.count({ where: { projectId, issueNumber: { not: null } } });
   return result;
+}
+
+/** Besitzer benachrichtigen: Aufgaben wurden im Git-System erledigt (Issue geschlossen). */
+async function notifyClosed(projectId: string, titles: string[]): Promise<void> {
+  const project = await db.project.findUnique({ where: { id: projectId }, select: { ownerId: true, name: true } });
+  if (!project) return;
+  await notifyUser(project.ownerId, "issueClosed", (t) => ({
+    event: "issueClosed",
+    title: t("events.issueClosed.title", { n: titles.length }),
+    message: t("events.issueClosed.message", { project: project.name, list: titles.slice(0, 10).map((x) => `• ${x}`).join("\n") }),
+    url: appLink(`/projects/${projectId}`),
+  }));
 }

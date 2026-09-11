@@ -6,6 +6,7 @@ import { parseRepoUrl } from "./parse";
 import { tokenCipherFor } from "./token";
 import { fetchRepository, GitError, type CommitInfo } from "./providers";
 import { fetchCi, type CiStatus } from "./ci";
+import { appLink, notifyUser } from "@/lib/notify";
 
 export function serializeRepoCache(c: RepoCache) {
   return {
@@ -49,6 +50,7 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
   }
 
   try {
+    const previous = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { ci: true } });
     const snap = await fetchRepository(parsed, token);
     // CI ist ein Zusatz: klappt der Abruf nicht, bleibt der Commit-Stand trotzdem gültig.
     const ci = await fetchCi(snap.provider, parsed, token, snap.defaultBranch, snap.commits[0]?.sha ?? null).catch(() => null);
@@ -64,8 +66,25 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
       fetchedAt: new Date(),
       error: null,
     };
-    return await db.repoCache.upsert({ where: { projectId: project.id }, create: { projectId: project.id, ...data }, update: data });
+    const saved = await db.repoCache.upsert({ where: { projectId: project.id }, create: { projectId: project.id, ...data }, update: data });
+    // Nur beim Umschlagen auf Rot melden, nicht bei jedem Abgleich einer roten CI
+    const before = (previous?.ci as { state?: string } | null)?.state;
+    if (ci?.state === "failure" && before !== "failure") void notifyCiFailed(project.id, project.ownerId, ci);
+    return saved;
   } catch (err) {
     return fail(err instanceof GitError ? err.message : tk("git", "errors.syncFailed"));
   }
+}
+
+async function notifyCiFailed(projectId: string, ownerId: string, ci: CiStatus): Promise<void> {
+  const project = await db.project.findUnique({ where: { id: projectId }, select: { name: true } });
+  if (!project) return;
+  const run = ci.runs.find((r) => r.state === "failure") ?? ci.runs[0];
+  await notifyUser(ownerId, "ciFailed", (t) => ({
+    event: "ciFailed",
+    title: t("events.ciFailed.title", { project: project.name }),
+    message: t("events.ciFailed.message", { run: run?.name ?? "CI" }),
+    url: run?.url ?? appLink(`/projects/${projectId}`),
+    priority: "high",
+  }));
 }

@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.6",
+    date: "2026-09-11",
+    title: "Benachrichtigungen per ntfy, Webhook und E-Mail",
+    titleEn: "Notifications via ntfy, webhook and email",
+    changes: [
+      {
+        type: "neu",
+        text: "Mein Konto → Benachrichtigungen: Push aufs Handy mit ntfy (auch eigener Server), Webhook (Discord, Slack oder JSON) und E-Mail – mit Test-Knopf",
+        en: "My account → Notifications: push to your phone with ntfy (your own server works too), webhook (Discord, Slack or JSON) and email – with a test button",
+      },
+      {
+        type: "neu",
+        text: "Anlässe: fällige Aufgaben jeden Morgen um 8 Uhr, Zugriffsanfragen, per Git erledigte Aufgaben, fehlgeschlagene CI und – für Admins – installierte Updates",
+        en: "Triggers: due tasks every morning at 8 am, access requests, tasks completed via Git, failed CI and – for admins – installed updates",
+      },
+      {
+        type: "neu",
+        text: "Admin → E-Mail-Versand: SMTP-Server eintragen und Test-Mail senden",
+        en: "Admin → Email sending: configure the SMTP server and send a test email",
+      },
+    ],
+  },
+  {
     version: "0.3.5",
     date: "2026-09-11",
     title: "Wochenrückblick und Zeitleiste",

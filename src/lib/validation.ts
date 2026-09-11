@@ -86,6 +86,43 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── Benachrichtigungen ──────────────────────────────────────
+
+const optionalText254 = z.string().trim().max(254).nullish().transform((v) => v || null);
+
+export const notificationSettingsSchema = z.object({
+  ntfyUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .nullish()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^https?:\/\/[^/\s]+\/[\w-]{1,64}\/?$/.test(v), tk("notify", "errors.badNtfyUrl")),
+  // undefined = behalten, null = entfernen
+  ntfyToken: z.string().trim().max(300).nullable().optional(),
+  webhookUrl: z
+    .string()
+    .trim()
+    .max(1000)
+    .nullish()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), tk("notify", "errors.badWebhookUrl")),
+  email: optionalText254.refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), tk("notify", "errors.badEmail")),
+  events: z.record(z.boolean()).default({}),
+});
+
+export const smtpSettingsSchema = z.object({
+  host: z.string().trim().max(253).nullish().transform((v) => v || null),
+  port: z.number().int().min(1).max(65535).nullish(),
+  secure: z.boolean().default(false),
+  user: optionalText254,
+  // undefined = behalten, null = entfernen
+  password: z.string().max(500).nullable().optional(),
+  from: optionalText254,
+});
+
+export const smtpTestSchema = z.object({ to: z.string().trim().max(254).regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, tk("notify", "errors.badEmail")) });
+
 // Anlegen mit Vorlage: "builtin:web" oder die ID einer eigenen Vorlage
 export const projectCreateWithTemplateSchema = projectCreateSchema.extend({ templateId: z.string().max(60).optional() });
 

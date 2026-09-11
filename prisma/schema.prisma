@@ -84,6 +84,15 @@ model Settings {
   /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
   taskColumnLimit   Int          @default(15)
   setupDoneAt       DateTime?
+  /// SMTP für Benachrichtigungen per E-Mail (Passwort AES-256-GCM)
+  smtpHost          String?
+  smtpPort          Int?
+  smtpSecure        Boolean      @default(false)
+  smtpUser          String?
+  smtpPassCipher    String?
+  smtpFrom          String?
+  /// Zuletzt gestartete Version – für die Meldung „VibeWorks aktualisiert“
+  lastVersion       String?
   updatedAt         DateTime     @updatedAt
 }
 
@@ -127,6 +136,7 @@ model User {
   accessRequests AccessRequest[]
   gitCredentials GitCredential[]
   templates      ProjectTemplate[]
+  notificationSettings NotificationSettings?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -364,6 +374,28 @@ model ProjectTemplate {
   createdAt   DateTime @default(now())
 
   @@index([ownerId])
+}
+
+/// Benachrichtigungen eines Kontos: Kanäle und Anlässe
+model NotificationSettings {
+  userId          String    @id
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Vollständige ntfy-Adresse samt Thema, z. B. https://ntfy.sh/mein-thema
+  ntfyUrl         String?
+  /// Optionales ntfy-Zugangstoken (AES-256-GCM)
+  ntfyTokenCipher String?
+  /// Webhook – Discord, Slack oder beliebiger JSON-Empfänger
+  webhookUrl      String?
+  /// Versand über den SMTP-Server der Instanz
+  email           String?
+  /// { taskDue, accessRequest, issueClosed, ciFailed, updated } – fehlt ein Schlüssel, ist der Anlass an
+  events          Json      @default("{}")
+  /// Kalendertag der letzten Zusammenfassung fälliger Aufgaben
+  digestSentOn    String?
+  lastSentAt      DateTime?
+  /// "kanal|meldung" des letzten Fehlschlags
+  lastError       String?
+  updatedAt       DateTime  @updatedAt
 }
 
 // ── Teilen ──────────────────────────────────────────────────

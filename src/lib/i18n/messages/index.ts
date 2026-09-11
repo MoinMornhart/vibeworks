@@ -18,11 +18,12 @@ import shell from "./shell";
 import docs from "./docs";
 import data from "./data";
 import review from "./review";
+import notify from "./notify";
 
 // Alle Übersetzungen, nach Namensräumen. Übersetzungsdateien importieren nur
 // ../types und ../translate – nie App-Code, sonst entstehen Zirkelbezüge.
 
-export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review };
+export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify };
 
 export type Namespace = keyof typeof MESSAGES;
 export type Key<N extends Namespace> = Leaves<(typeof MESSAGES)[N]["de"]>;

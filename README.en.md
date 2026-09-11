@@ -252,7 +252,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Weekly review and timeline
 - ✅ Project templates (built-in and your own)
 - ✅ Import/export as JSON
-- ⏳ Notifications (ntfy, webhook, email)
+- ✅ Notifications (ntfy, webhook, email)
 
 ## 📄 License
 
