@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.2",
+    date: "2026-09-12",
+    title: "Projekt-Friedhof",
+    titleEn: "Project graveyard",
+    changes: [
+      {
+        type: "neu",
+        text: "Projekte ohne Änderung und Commit seit 30 Tagen erscheinen auf dem Dashboard: weitermachen, später fragen oder begraben",
+        en: "Projects without a change or commit for 30 days show up on the dashboard: carry on, ask later or bury",
+      },
+      {
+        type: "neu",
+        text: "Begraben mit Todesursache und letzten Worten – der Friedhof zeigt Grabsteine mit Lebensdauer, Aufgaben, Commits und Notizen",
+        en: "Bury with a cause of death and last words – the graveyard shows tombstones with lifespan, tasks, commits and notes",
+      },
+      {
+        type: "neu",
+        text: "Wiederbeleben holt ein Projekt mit seinem alten Status zurück; nichts geht beim Begraben verloren",
+        en: "Bringing a project back restores its old status; nothing is lost when burying",
+      },
+    ],
+  },
+  {
     version: "0.4.1",
     date: "2026-09-12",
     title: "Live-Überwachung",

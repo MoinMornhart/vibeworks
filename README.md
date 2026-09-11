@@ -300,7 +300,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Automatischer Fortschritt per Analyse aus Aufgaben, Commits, CI und Planung – mit „Wie berechnet?“
 - ✅ Eine Aufgabe für mehrere Projekte auf einmal, z. B. für alle mit Git
 - ✅ Live-Überwachung: Erreichbarkeit, Antwortzeit, SSL-Ablauf, Uptime-Balken und das Vorschaubild der Seite als Titelbild
-- ⏳ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
+- ✅ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
 - ⏳ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge
 - ⏳ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
 - ⏳ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben

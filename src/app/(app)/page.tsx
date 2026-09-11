@@ -1,14 +1,20 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { projectListSelect, serializeProject, taskDoneCounts } from "@/lib/projects";
+import { AWAKE_STATUSES, lastSign, SLEEP_DAYS } from "@/lib/grave";
+import { getT } from "@/lib/i18n/server";
 import { ProjectBoard } from "@/components/projects/ProjectBoard";
 import { PendingRequests, SharedProjects } from "@/components/share/SharedProjects";
+import { SleepingProjects } from "@/components/grave/SleepingProjects";
 
 export default async function Dashboard() {
   const user = await requirePageUser();
-  const [projects, done, shared, requests] = await Promise.all([
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - SLEEP_DAYS * 86_400_000);
+  const [projects, done, shared, requests, drowsy, buried, tg] = await Promise.all([
     db.project.findMany({
-      where: { ownerId: user.id },
+      where: { ownerId: user.id, buriedAt: null },
       select: projectListSelect,
       orderBy: { updatedAt: "desc" },
     }),
@@ -34,12 +40,34 @@ export default async function Dashboard() {
       select: { id: true, role: true, user: { select: { username: true, displayName: true } }, project: { select: { id: true, name: true } } },
       orderBy: { createdAt: "asc" },
     }),
+    // Schläft seit 30 Tagen? Kandidaten nach „zuletzt geändert“, Commits prüfen wir danach
+    db.project.findMany({
+      where: {
+        ownerId: user.id,
+        buriedAt: null,
+        status: { in: AWAKE_STATUSES },
+        updatedAt: { lt: cutoff },
+        OR: [{ nudgeSnoozedUntil: null }, { nudgeSnoozedUntil: { lt: now } }],
+      },
+      select: { id: true, name: true, accent: true, updatedAt: true, repoCache: { select: { commits: true } } },
+      orderBy: { updatedAt: "asc" },
+      take: 20,
+    }),
+    db.project.count({ where: { ownerId: user.id, buriedAt: { not: null } } }),
+    getT("grave"),
   ]);
+  const sleeping = drowsy
+    .map((p) => ({ id: p.id, name: p.name, accent: p.accent, since: lastSign(p.updatedAt, p.repoCache?.commits) }))
+    .filter((p) => p.since < cutoff)
+    .slice(0, 5)
+    .map((p) => ({ ...p, since: p.since.toISOString() }));
+
   return (
     <>
       <PendingRequests
         items={requests.map((r) => ({ id: r.id, projectId: r.project.id, projectName: r.project.name, name: displayNameOf(r.user), role: r.role }))}
       />
+      <SleepingProjects items={sleeping} />
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />
       <SharedProjects
         projects={shared.map((p) => ({
@@ -53,6 +81,11 @@ export default async function Dashboard() {
           role: p.members[0]?.role ?? "VIEWER",
         }))}
       />
+      {buried > 0 && (
+        <p className="mt-8 text-center text-sm">
+          <Link href="/graveyard" className="text-muted hover:text-fg">{tg("page.link", { n: buried })}</Link>
+        </p>
+      )}
     </>
   );
 }

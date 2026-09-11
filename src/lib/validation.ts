@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PROJECT_ACCENTS } from "./status";
 import { normalizeTags } from "./utils";
 import { tk } from "./i18n/messages";
+import { CAUSES } from "./grave";
 
 export const usernameSchema = z
   .string()
@@ -94,6 +95,19 @@ export const projectCreateSchema = z.object({
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();
+
+// ── Projekt-Friedhof ────────────────────────────────────────
+
+export const graveActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("bury"),
+    cause: z.enum(CAUSES).nullish(),
+    epitaph: z.string().trim().max(200).nullish(),
+  }),
+  z.object({ action: z.literal("resurrect") }),
+  z.object({ action: z.literal("snooze") }),
+  z.object({ action: z.literal("continue") }),
+]);
 
 // ── API-Schlüssel ───────────────────────────────────────────
 

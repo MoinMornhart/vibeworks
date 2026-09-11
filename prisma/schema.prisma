@@ -264,6 +264,13 @@ model Project {
   /// Vorschaubild der Seite (og:image, sonst Icon) als Upload
   coverUploadId  String?
   coverCheckedAt DateTime?
+  /// Projekt-Friedhof: begraben (Status dann ARCHIVED), Ursache, letzte Worte
+  buriedAt           DateTime?
+  epitaph            String?
+  causeOfDeath       String?
+  statusBeforeBurial ProjectStatus?
+  /// „Später fragen“ – bis dahin kein Hinweis auf dem Dashboard
+  nudgeSnoozedUntil  DateTime?
 
   notes      Note[]
   tasks      Task[]

@@ -10,6 +10,8 @@ const TASK_STATUSES = ["TODO", "DOING", "BLOCKED", "DONE"] as const;
 const isProjectStatus = (v: unknown): v is ProjectStatus => typeof v === "string" && (PROJECT_STATUSES as readonly string[]).includes(v);
 const isTaskStatus = (v: unknown): v is TaskStatus => typeof v === "string" && (TASK_STATUSES as readonly string[]).includes(v);
 
+const GRAVE_ACTIONS: string[] = ["buried", "resurrected"];
+
 export interface ActivityLike {
   kind: ActivityKind;
   summary: string;
@@ -22,7 +24,7 @@ export type FeedKind = ActivityKind | "TASK_DONE" | "SHARE" | "COMMIT";
 export function feedKind(a: ActivityLike): FeedKind {
   const m = (a.meta ?? {}) as Record<string, unknown>;
   if (a.kind === "TASK_MOVED" && m.to === "DONE") return "TASK_DONE";
-  if (a.kind === "PROJECT_UPDATED" && typeof m.action === "string") return "SHARE";
+  if (a.kind === "PROJECT_UPDATED" && typeof m.action === "string" && !GRAVE_ACTIONS.includes(m.action)) return "SHARE";
   return a.kind;
 }
 
@@ -56,6 +58,7 @@ export function activityText(a: ActivityLike, t: TFunction<"review">, ts: TFunct
       break;
     case "PROJECT_UPDATED":
       if (m.action === "shareOn" || m.action === "shareOff" || m.action === "shareRenew") return t(`activity.${m.action}`);
+      if (m.action === "buried" || m.action === "resurrected") return t(`activity.${m.action}`);
       if ((m.action === "requestApproved" || m.action === "requestDenied") && typeof m.username === "string") return t(`activity.${m.action}`, { username: m.username });
       if (Array.isArray(m.fields)) return t("activity.projectEdited");
       break;

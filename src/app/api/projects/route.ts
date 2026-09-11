@@ -12,7 +12,8 @@ export const GET = route(async (req) => {
   const user = await requireApiUser();
   const archived = req.nextUrl.searchParams.get("archived") === "1";
   const projects = await db.project.findMany({
-    where: { ownerId: user.id, ...(archived ? {} : { status: { not: "ARCHIVED" } }) },
+    // Begrabene ruhen auf dem Friedhof – auch nicht unter „Archiviert“
+    where: { ownerId: user.id, buriedAt: null, ...(archived ? {} : { status: { not: "ARCHIVED" } }) },
     select: projectListSelect,
     orderBy: { updatedAt: "desc" },
   });
