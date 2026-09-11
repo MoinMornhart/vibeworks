@@ -251,6 +251,27 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Import/Export als JSON
 - ✅ Benachrichtigungen (ntfy, Webhook, E-Mail)
 
+**Stufe 4 – KI, Überwachung & Spaß**
+
+- ⏳ VibeWorks als MCP-Server für Claude Code – Aufgaben, Notizen und Docs direkt aus Claude heraus
+- ⏳ Live-Überwachung: Erreichbarkeit, Antwortzeit, SSL-Ablauf, Uptime-Balken und automatischer Screenshot als Titelbild
+- ⏳ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
+- ⏳ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge
+- ⏳ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
+- ⏳ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
+- ⏳ Ideen-Eingang per ntfy, E-Mail oder „Teilen“ vom Handy (PWA)
+- ⏳ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
+- ⏳ Heute-Ansicht: höchstens fünf Aufgaben über alle Projekte
+- ⏳ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
+- ⏳ Öffentliches Portfolio mit ausgewählten Projekten
+
+**Webseite**
+
+- ⏳ Landingpage auf GitHub Pages mit Installationsbefehl zum Kopieren
+- ⏳ Live-Demo mit schreibgeschütztem Demo-Konto
+- ⏳ Doku-Seiten auf Deutsch und Englisch
+- ⏳ Kurzes Vorführ-GIF: Aufgabe → Issue → Claude → erledigt
+
 ## 📄 Lizenz
 
 MIT – siehe [LICENSE](LICENSE).

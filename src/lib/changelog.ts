@@ -26,6 +26,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.7",
+    date: "2026-09-11",
+    title: "Neuer Fahrplan: Stufe 4",
+    titleEn: "New roadmap: stage 4",
+    changes: [
+      {
+        type: "besser",
+        text: "README: Fahrplan um Stufe 4 (MCP-Server, Live-Überwachung, Projekt-Friedhof, Heatmap, Kosten, Prompt-Bibliothek …) und die Webseite erweitert",
+        en: "README: roadmap extended with stage 4 (MCP server, live monitoring, project graveyard, heatmap, costs, prompt library …) and the website",
+      },
+    ],
+  },
+  {
     version: "0.3.6",
     date: "2026-09-11",
     title: "Benachrichtigungen per ntfy, Webhook und E-Mail",
