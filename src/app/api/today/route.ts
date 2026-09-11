@@ -9,7 +9,8 @@ import { dayKey } from "@/lib/utils";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 // Aufgabe für heute vormerken / wieder herausnehmen. Gilt je Konto und Tag –
-// in geteilten Projekten kommen sich zwei Leute nicht in die Quere.
+// in geteilten Projekten kommen sich zwei Leute nicht in die Quere. Eine
+// Obergrenze gibt es nicht, nur eine technische Schranke (MAX_FOCUS).
 
 export const POST = route(async (req) => {
   const user = await requireApiUser();

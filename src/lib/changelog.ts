@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.7",
+    date: "2026-09-12",
+    title: "Abhängigkeiten-Check",
+    titleEn: "Dependency check",
+    changes: [
+      {
+        type: "neu",
+        text: "Projektseite → Abhängigkeiten: liest die package.json aus dem Repository, vergleicht mit der neuesten Version bei npm (Major, Minor, Patch) und zeigt bekannte Sicherheitslücken – dieselbe Quelle wie „npm audit“",
+        en: "Project page → Dependencies: reads package.json from the repository, compares with the latest npm version (major, minor, patch) and shows known vulnerabilities – the same source as “npm audit”",
+      },
+      {
+        type: "neu",
+        text: "Geprüft wird einmal am Tag beim Git-Abgleich oder sofort mit „Jetzt prüfen“; Sicherheitswarnungen stehen oben",
+        en: "Checked once a day during the Git sync or right away with “Check now”; security advisories come first",
+      },
+      {
+        type: "besser",
+        text: "Heute: keine Obergrenze mehr – so viele Aufgaben vormerken, wie du willst",
+        en: "Today: no upper limit any more – plan as many tasks as you like",
+      },
+      {
+        type: "fix",
+        text: "Navigation aufgeräumt: „Design“ und „Admin“ sind ins Profilmenü gewandert – so passt die Leiste auch mit laufendem Timer vollständig",
+        en: "Tidier navigation: “Design” and “Admin” moved into the profile menu – so the bar fits completely even with a running timer",
+      },
+    ],
+  },
+  {
     version: "0.4.6",
     date: "2026-09-12",
     title: "Zeiterfassung & Fokus-Timer",

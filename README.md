@@ -307,8 +307,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
 - ⏳ Ideen-Eingang per ntfy, E-Mail oder „Teilen“ vom Handy (PWA)
 - ✅ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
-- ✅ Heute-Ansicht: höchstens fünf Aufgaben über alle Projekte
-- ⏳ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
+- ✅ Heute-Ansicht: Aufgaben aus allen Projekten für den Tag vormerken und abhaken
+- ✅ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
 - ⏳ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**

@@ -21,6 +21,8 @@ import { LivePanel } from "@/components/live/LivePanel";
 import { CostPanel } from "@/components/costs/CostPanel";
 import { serializeCost } from "@/lib/costs";
 import { sumSeconds } from "@/lib/timeServer";
+import { DepsPanel } from "@/components/git/DepsPanel";
+import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
@@ -121,6 +123,9 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         linkedIssues={tasks.filter((t) => t.issueNumber !== null).length}
         mode={isOwner ? "owner" : "member"}
       />
+      {project.repoUrl && repoCache?.provider && (
+        <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={!readOnly} />
+      )}
       <AutoRefresh />
     </div>
   );

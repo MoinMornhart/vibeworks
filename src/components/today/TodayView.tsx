@@ -11,7 +11,6 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { INTL_LOCALE } from "@/lib/i18n/config";
 import { dayKeyToDate } from "@/lib/taskDates";
-import { MAX_FOCUS } from "@/lib/today";
 import { formatDuration } from "@/lib/time";
 import { TimerButtons } from "@/components/time/TimerPill";
 import { cn } from "@/lib/utils";
@@ -51,7 +50,6 @@ export function TodayView({
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   const [error, setError] = useState<string | null>(null);
 
-  const full = focus.length >= MAX_FOCUS;
   const done = focus.filter((x) => x.status === "DONE").length;
   const heading = new Intl.DateTimeFormat(INTL_LOCALE[locale], { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(dayKeyToDate(today));
 
@@ -108,7 +106,8 @@ export function TodayView({
       {error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
 
       <section aria-labelledby="focus-heading" className="glass p-5">
-        <h2 id="focus-heading" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{t("focus")} · {focus.length}/{MAX_FOCUS}</h2>
+        <h2 id="focus-heading" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{t("focus")} · {focus.length}</h2>
+        {focus.length === 0 && <p className="text-sm text-muted">{t("emptyFocus")}</p>}
         <ul className="space-y-2">
           {focus.map((task) => {
             const isDone = task.status === "DONE";
@@ -136,9 +135,6 @@ export function TodayView({
               </li>
             );
           })}
-          {Array.from({ length: MAX_FOCUS - focus.length }, (_, i) => (
-            <li key={`free-${i}`} className="rounded-xl border border-dashed px-3 py-3 text-sm text-muted opacity-60">{t("free")}</li>
-          ))}
         </ul>
         {focus.length > 0 && done === focus.length && <p className="mt-4 text-center font-medium text-emerald-400">{t("allDone")}</p>}
       </section>
@@ -158,7 +154,7 @@ export function TodayView({
                 </div>
                 {task.status === "DOING" && <span className="text-xs text-accent-ink">{ts("task.DOING")}</span>}
                 {task.dueDate && <DueBadge dueDate={task.dueDate} done={false} today={today} />}
-                <button type="button" className="btn btn-sm" disabled={full} title={full ? t("full") : undefined} onClick={() => void add(task)}>
+                <button type="button" className="btn btn-sm" onClick={() => void add(task)}>
                   <Plus size={14} /> {t("add")}
                 </button>
               </li>

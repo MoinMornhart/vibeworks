@@ -369,6 +369,9 @@ model RepoCache {
   commits       Json     @default("[]")
   /// CI des Hauptzweigs: { state, runs: [{ name, state, url, updatedAt }], sha, checkedAt } – null ohne CI
   ci            Json?
+  /// Abhängigkeiten aus package.json: { manifest, packages, counts, error, checkedAt } – einmal am Tag
+  deps          Json?
+  depsCheckedAt DateTime?
   fetchedAt     DateTime @default(now())
   error         String?
 }

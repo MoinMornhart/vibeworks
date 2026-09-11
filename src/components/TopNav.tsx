@@ -35,8 +35,7 @@ const NAV: NavItem[] = [
   { href: "/prompts", label: "nav.prompts", icon: MessageSquare },
   { href: "/review", label: "nav.review", icon: CalendarRange },
   { href: "/docs", label: "nav.docs", icon: BookOpen },
-  { href: "/design", label: "nav.design", icon: Palette },
-  { href: "/admin", label: "nav.admin", icon: Shield, admin: true },
+  // Design und Admin stehen im Profilmenü – die Leiste bleibt so auch mit laufendem Timer vollständig
 ];
 
 function isActive(pathname: string, href: string) {
@@ -88,7 +87,8 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
                 title={t(item.label)}
               >
                 <item.icon size={16} />
-                <span className="hidden md:inline">{t(item.label)}</span>
+                {/* Beschriftung erst ab 1280 px – darunter Symbole mit Tooltip, sonst läuft die Leiste über */}
+                <span className="hidden xl:inline">{t(item.label)}</span>
               </Link>
             </li>
           ))}
@@ -128,6 +128,11 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
               <Link role="menuitem" href="/design" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <Palette size={15} /> {t("nav.design")}
               </Link>
+              {user.isAdmin && (
+                <Link role="menuitem" href="/admin" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                  <Shield size={15} /> {t("nav.admin")}
+                </Link>
+              )}
               {/* Sprachwahl überall erreichbar */}
               <div className="flex flex-col gap-1.5 px-3 py-2">
                 <span className="flex items-center gap-2 text-xs text-muted"><Languages size={14} /> {tc("language.label")}</span>

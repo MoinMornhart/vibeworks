@@ -57,7 +57,7 @@ export function TimerPill() {
   return (
     <div className={cn("flex items-center gap-1 rounded-full border py-0.5 pl-2.5 pr-0.5 text-xs", remaining !== null ? "border-amber-400/50" : "border-accent/50")} data-testid="timer-pill">
       <Timer size={13} className={remaining !== null ? "text-amber-400" : "text-accent-ink"} />
-      <Link href={`/projects/${timer.project.id}`} className="hidden max-w-40 truncate hover:text-accent-ink lg:inline" title={label}>{label}</Link>
+      <Link href={`/projects/${timer.project.id}`} className="hidden max-w-40 truncate hover:text-accent-ink 2xl:inline" title={label}>{label}</Link>
       <span className="font-mono tabular-nums" title={remaining !== null ? t("focusLeft") : t("elapsed", { d: formatDuration(elapsed) })}>
         {remaining !== null ? formatClock(Math.max(0, remaining)) : formatClock(elapsed)}
       </span>
