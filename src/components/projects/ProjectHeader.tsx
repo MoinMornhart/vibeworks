@@ -11,7 +11,7 @@ import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
-import { accentGradient, LiveIcon, PriorityBadge, ProgressBar } from "./ProjectCard";
+import { AccentStrip, LiveIcon, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
@@ -127,7 +127,7 @@ export function ProjectHeader({
       )}
 
       <section className="glass relative overflow-visible p-6 sm:p-8">
-        <div className="absolute inset-x-0 top-0 h-1.5 rounded-t-[1.25rem]" style={{ background: accentGradient(p.accent) }} />
+        <AccentStrip accent={p.accent} className="h-1.5" />
         <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{p.name}</h1>

@@ -96,6 +96,10 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── Heute ───────────────────────────────────────────────────
+
+export const todayFocusSchema = z.object({ taskId: z.string().min(1).max(40) });
+
 // ── Projekt-Friedhof ────────────────────────────────────────
 
 export const graveActionSchema = z.discriminatedUnion("action", [

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { TaskStatus } from "@prisma/client";
-import { Check, CheckCheck, ListPlus, Repeat } from "lucide-react";
+import { Check, CheckCheck, ListPlus, Repeat, Sun } from "lucide-react";
 import { BulkTaskDialog, type BulkProject } from "./BulkTaskDialog";
 import type { TaskItem } from "@/lib/tasks";
 import { BUCKETS, bucketOf, recurrenceLabel, type Bucket } from "@/lib/taskDates";
@@ -31,8 +31,28 @@ const BUCKET_TONE: Partial<Record<Bucket, string>> = { overdue: "text-red-400", 
 const byDue = (a: OverviewTask, b: OverviewTask) =>
   (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || a.createdAt.localeCompare(b.createdAt);
 
-export function TaskOverview({ initial, today, allProjects = [] }: { initial: OverviewTask[]; today: string; allProjects?: BulkProject[] }) {
+export function TaskOverview({ initial, today, allProjects = [], focusIds = [] }: { initial: OverviewTask[]; today: string; allProjects?: BulkProject[]; focusIds?: string[] }) {
   const t = useT("tasks");
+  const tday = useT("today");
+  const [focus, setFocus] = useState(() => new Set(focusIds));
+
+  // Sonne: für die Heute-Ansicht vormerken bzw. wieder herausnehmen
+  async function toggleFocus(task: OverviewTask) {
+    setError(null);
+    const on = !focus.has(task.id);
+    try {
+      if (on) await api("/api/today", { body: { taskId: task.id } });
+      else await api(`/api/today?taskId=${encodeURIComponent(task.id)}`, { method: "DELETE" });
+      setFocus((s) => {
+        const next = new Set(s);
+        if (on) next.add(task.id);
+        else next.delete(task.id);
+        return next;
+      });
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
   const ts = useT("status");
   const locale = useLocale();
   const [tasks, setTasks] = useState(initial);
@@ -175,6 +195,18 @@ export function TaskOverview({ initial, today, allProjects = [] }: { initial: Ov
                           ))}
                         </div>
                         {task.recurrence && <Repeat size={14} className="shrink-0 text-muted" aria-label={recurrenceLabel(task.recurrence, locale)} />}
+                        {!done && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm shrink-0"
+                            aria-pressed={focus.has(task.id)}
+                            aria-label={focus.has(task.id) ? tday("toggleRemove") : tday("toggleAdd")}
+                            title={focus.has(task.id) ? tday("toggleRemove") : tday("toggleAdd")}
+                            onClick={() => void toggleFocus(task)}
+                          >
+                            <Sun size={15} className={focus.has(task.id) ? "fill-amber-400 text-amber-400" : "text-muted"} />
+                          </button>
+                        )}
                         <span className={cn("hidden w-20 shrink-0 text-right text-xs sm:inline", STATUS_TONE[task.status])}>
                           {ts(`task.${task.status}`)}
                         </span>

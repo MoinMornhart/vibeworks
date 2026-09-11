@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.3",
+    date: "2026-09-12",
+    title: "Heute-Ansicht, Aktivität & Erfolge",
+    titleEn: "Today view, activity & achievements",
+    changes: [
+      {
+        type: "neu",
+        text: "„Heute“: bis zu fünf Aufgaben aus allen Projekten für den Tag vormerken, abhaken, dazu Vorschläge (überfällig, heute fällig, in Arbeit) – vormerken auch per Sonne in der Aufgabenliste",
+        en: "“Today”: plan up to five tasks from all projects for the day and check them off, with suggestions (overdue, due today, in progress) – also via the sun in the task list",
+      },
+      {
+        type: "neu",
+        text: "Rückblick: Aktivitätsgitter über das letzte Jahr aus Verlauf und Commits, aktuelle und längste Serie",
+        en: "Review: activity grid over the last year from your history and commits, current and longest streak",
+      },
+      {
+        type: "neu",
+        text: "Elf kleine Erfolge – von „Erste Idee“ über „Serienheld“ bis „Friedhofsgärtner“ – mit Fortschrittsanzeige",
+        en: "Eleven small achievements – from “First idea” to “Streak hero” and “Graveyard keeper” – with progress bars",
+      },
+      {
+        type: "besser",
+        text: "Projektkarten wieder ohne Titelbild – der Farbstreifen oben sitzt sauber am Rand; schon geholte Vorschaubilder werden aufgeräumt",
+        en: "Project cards without a cover image again – the colour strip at the top sits cleanly on the edge; previously fetched previews are cleaned up",
+      },
+    ],
+  },
+  {
     version: "0.4.2",
     date: "2026-09-12",
     title: "Projekt-Friedhof",

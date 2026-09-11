@@ -24,6 +24,19 @@ export function accentGradient(accent: string, dir = "90deg"): string {
   return `linear-gradient(${dir}, ${a.from}, ${a.to})`;
 }
 
+/**
+ * Farbstreifen oben an einer Karte. Er liegt in einer Hülle mit der Rundung
+ * der Karte (inherit) – so folgt er exakt deren Ecken. Direkt gerundet würde
+ * der Browser die Rundung eines 4 px hohen Streifens auf 4 px kappen.
+ */
+export function AccentStrip({ accent, className = "h-1" }: { accent: string; className?: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]" aria-hidden>
+      <div className={className} style={{ background: accentGradient(accent) }} />
+    </div>
+  );
+}
+
 export function PriorityBadge({ priority, compact = false }: { priority: number; compact?: boolean }) {
   const t = useT("projects");
   const ts = useT("status");
@@ -100,12 +113,7 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
       className={cn("glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20", selected && "ring-2 ring-accent/60")}
       style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
     >
-      {p.coverUploadId && (
-        // Vorschaubild der Live-Seite (og:image) – als eigener Upload, daher <img> statt next/image
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/api/uploads/${p.coverUploadId}`} alt="" loading="lazy" className="-mx-5 -mt-5 mb-4 h-28 w-[calc(100%+2.5rem)] max-w-none rounded-t-[1.25rem] object-cover" />
-      )}
-      <div className="absolute inset-x-0 top-0 h-1 rounded-t-[1.25rem]" style={{ background: accentGradient(p.accent) }} />
+      <AccentStrip accent={p.accent} />
       <div className="flex items-start gap-1.5">
         <SelectBox project={p} selected={selected} selecting={selecting} onSelect={onSelect} />
         <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 text-lg font-semibold leading-snug hover:text-accent-ink">

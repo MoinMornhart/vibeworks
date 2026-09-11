@@ -29,7 +29,7 @@ const de = {
   hint: "VibeWorks prüft die Seite alle 5 Minuten. Offline gilt sie erst nach zwei Fehlversuchen hintereinander.",
   dialog: {
     label: "Live-Adresse (optional)",
-    hint: "Die fertige Seite, z. B. https://meine-app.de – VibeWorks prüft sie alle 5 Minuten und holt ihr Vorschaubild als Titelbild.",
+    hint: "Die fertige Seite, z. B. https://meine-app.de – VibeWorks prüft sie alle 5 Minuten.",
   },
   card: { up: "Live-Seite online", down: "Live-Seite offline", unknown: "Live-Seite noch nicht geprüft" },
   errors: {
@@ -65,7 +65,7 @@ const en: Shape<typeof de> = {
   hint: "VibeWorks checks the site every 5 minutes. It only counts as down after two failed checks in a row.",
   dialog: {
     label: "Live address (optional)",
-    hint: "The finished site, e.g. https://my-app.com – VibeWorks checks it every 5 minutes and uses its preview image as cover.",
+    hint: "The finished site, e.g. https://my-app.com – VibeWorks checks it every 5 minutes.",
   },
   card: { up: "Live site online", down: "Live site down", unknown: "Live site not checked yet" },
   errors: {

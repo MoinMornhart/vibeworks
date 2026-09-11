@@ -3,16 +3,15 @@ import { db } from "@/lib/db";
 import { removeUploadFile } from "@/lib/uploads";
 import { appLink, notifyUser } from "@/lib/notify";
 import { translateMessage } from "@/lib/i18n/messages";
-import { checkSite, fetchCover, sslExpiry } from "./check";
-import { extractImage, nextLiveState, sslStep, type LiveState } from "./logic";
+import { checkSite, sslExpiry } from "./check";
+import { nextLiveState, sslStep, type LiveState } from "./logic";
 
 // Eine Runde der Live-Überwachung: jede eingetragene Seite abrufen, die
 // Prüfung speichern, Zustand und Benachrichtigungen fortschreiben. SSL wird
-// alle 12 Stunden gelesen, das Vorschaubild höchstens einmal am Tag versucht.
+// alle 12 Stunden gelesen.
 
 const DAY = 86_400_000;
 const SSL_EVERY_MS = 12 * 3_600_000;
-const COVER_EVERY_MS = DAY;
 const KEEP_MS = 30 * DAY;
 const PARALLEL = 4;
 
@@ -51,8 +50,7 @@ async function checkProject(projectId: string): Promise<void> {
   if (!p?.liveUrl) return;
   const liveUrl = p.liveUrl;
   const now = new Date();
-  const wantCover = !p.coverUploadId && (!p.coverCheckedAt || now.getTime() - p.coverCheckedAt.getTime() > COVER_EVERY_MS);
-  const result = await checkSite(liveUrl, wantCover);
+  const result = await checkSite(liveUrl);
   const next = nextLiveState({ state: (p.liveState as LiveState | null) ?? null, fails: p.liveFails }, result.ok);
 
   // updatedAt bewusst beibehalten – eine Prüfung ist keine Änderung am Projekt
@@ -79,11 +77,10 @@ async function checkProject(projectId: string): Promise<void> {
     }
   }
 
-  if (wantCover && result.ok) {
-    data.coverCheckedAt = now;
-    const image = result.html ? extractImage(result.html, liveUrl) : null;
-    const upload = image ? await fetchCover(p.ownerId, image).catch(() => null) : null;
-    if (upload) data.coverUploadId = upload.id;
+  // Titelbilder auf den Karten gibt es nicht mehr – ein früher geholtes aufräumen
+  if (p.coverUploadId) {
+    data.coverUploadId = null;
+    await dropUpload(p.coverUploadId);
   }
 
   await db.$transaction([

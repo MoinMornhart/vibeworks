@@ -11,6 +11,7 @@ const de = {
   nav: {
     main: "Hauptnavigation",
     dashboard: "Dashboard",
+    today: "Heute",
     tasks: "Aufgaben",
     review: "Rückblick",
     timeline: "Zeitleiste",
@@ -96,6 +97,7 @@ const en: Shape<typeof de> = {
   nav: {
     main: "Main navigation",
     dashboard: "Dashboard",
+    today: "Today",
     tasks: "Tasks",
     review: "Review",
     timeline: "Timeline",

@@ -301,14 +301,14 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Windows app with tray, quick capture via shortcut, Windows notifications and auto-update
 - ✅ Automatic progress by analyzing tasks, commits, CI and planning – with "How is it calculated?"
 - ✅ One task for several projects at once, e.g. all linked to Git
-- ✅ Live monitoring: availability, response time, SSL expiry, uptime bar and the site's preview image as cover
+- ✅ Live monitoring: availability, response time, SSL expiry and uptime bar
 - ✅ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
-- ⏳ Activity heatmap across all projects, streaks and small achievements
+- ✅ Activity heatmap across all projects, streaks and small achievements
 - ⏳ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
 - ⏳ Prompt library and a CLAUDE.md generator from description, notes and tasks
 - ⏳ Idea inbox via ntfy, email or "share" from your phone (PWA)
 - ⏳ Time tracking and focus timer per task, evaluated in the weekly review
-- ⏳ Today view: at most five tasks across all projects
+- ✅ Today view: at most five tasks across all projects
 - ⏳ Dependency check: outdated packages and security alerts from the repository
 - ⏳ Public portfolio with selected projects
 

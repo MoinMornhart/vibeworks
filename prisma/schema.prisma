@@ -137,6 +137,7 @@ model User {
   gitCredentials GitCredential[]
   apiTokens      ApiToken[]
   notifications  Notification[]
+  taskFocus      TaskFocus[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -322,6 +323,7 @@ model Task {
   issueUrl    String?
   /// Letzter Fehler beim Spiegeln – wird beim nächsten Erfolg geleert
   issueError  String?
+  focus       TaskFocus[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -417,6 +419,22 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Heute-Ansicht: bis zu fünf Aufgaben, die sich ein Konto für einen Tag vornimmt.
+model TaskFocus {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  /// Kalendertag "YYYY-MM-DD" (Europe/Berlin)
+  day       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, taskId, day])
+  @@index([userId, day])
 }
 
 /// Einzelne Prüfung einer Live-Seite – 30 Tage aufbewahrt.

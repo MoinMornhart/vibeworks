@@ -9,6 +9,8 @@ import { dayKeyToDate, dueState, formatDue, isDayKey } from "@/lib/taskDates";
 import { PROJECT_ACCENTS } from "@/lib/status";
 import { cn, dayKey } from "@/lib/utils";
 import { Feed } from "@/components/review/Feed";
+import { ActivityHeatmap } from "@/components/review/ActivityHeatmap";
+import { loadActivityStats } from "@/lib/activityStats";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +33,10 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   const today = dayKey(new Date());
   const current = mondayOf(today);
   const monday = week && isDayKey(week) ? mondayOf(week) : current;
-  const data = await loadWeek(user.id, locale, zonedMidnight(monday), zonedMidnight(addDaysKey(monday, 7)), today);
+  const [data, activity] = await Promise.all([
+    loadWeek(user.id, locale, zonedMidnight(monday), zonedMidnight(addDaysKey(monday, 7)), today),
+    loadActivityStats(user.id, today),
+  ]);
 
   const range = new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "long", timeZone: "UTC" });
   const prev = addDaysKey(monday, -7);
@@ -74,6 +79,8 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
           </div>
         ))}
       </div>
+
+      <ActivityHeatmap stats={activity} />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <section className="glass p-6" aria-labelledby="done-heading">
