@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.4",
+    date: "2026-09-12",
+    title: "Prompt-Bibliothek & CLAUDE.md",
+    titleEn: "Prompt library & CLAUDE.md",
+    changes: [
+      {
+        type: "neu",
+        text: "Prompts: bewährte Anweisungen sammeln, durchsuchen und kopieren – Platzhalter wie {{projekt}}, {{repo}} und {{live}} füllt ein gewähltes Projekt aus; fünf Beispiele zum Start",
+        en: "Prompts: collect, search and copy proven instructions – placeholders like {{project}}, {{repo}} and {{live}} are filled in by a chosen project; five examples to start with",
+      },
+      {
+        type: "neu",
+        text: "Projekt → Mehr → „CLAUDE.md erzeugen“: Beschreibung, Stand, offene Aufgaben, angepinnte Notizen und die Arbeitsweise mit VibeWorks – anpassen, kopieren oder herunterladen",
+        en: "Project → More → “Generate CLAUDE.md”: description, status, open tasks, pinned notes and the VibeWorks workflow – adjust, copy or download",
+      },
+      {
+        type: "neu",
+        text: "Für Claude: MCP-Werkzeuge get_claude_md, list_prompts und get_prompt",
+        en: "For Claude: MCP tools get_claude_md, list_prompts and get_prompt",
+      },
+      {
+        type: "neu",
+        text: "Schnellerfassung (Blitz, Strg+Alt+V in der Windows-App): eine Aufgabe auf einmal in „Alle Projekte“ oder „Alle mit Git“ legen",
+        en: "Quick capture (lightning, Ctrl+Alt+V in the Windows app): put a task into “All projects” or “All with Git” at once",
+      },
+    ],
+  },
+  {
     version: "0.4.3",
     date: "2026-09-12",
     title: "Heute-Ansicht, Aktivität & Erfolge",

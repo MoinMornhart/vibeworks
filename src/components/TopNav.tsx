@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, Sun, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Search, Shield, Sun, UserRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -31,6 +31,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "nav.dashboard", icon: LayoutDashboard },
   { href: "/today", label: "nav.today", icon: Sun },
   { href: "/tasks", label: "nav.tasks", icon: ListChecks },
+  { href: "/prompts", label: "nav.prompts", icon: MessageSquare },
   { href: "/review", label: "nav.review", icon: CalendarRange },
   { href: "/docs", label: "nav.docs", icon: BookOpen },
   { href: "/design", label: "nav.design", icon: Palette },

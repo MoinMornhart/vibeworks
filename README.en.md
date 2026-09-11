@@ -213,6 +213,7 @@ After that, Claude Code works directly with your projects – no GitHub detour n
 | `list_tasks`, `get_task` | Tasks across all projects – e.g. everything due this week |
 | `create_task`, `update_task` | Create tasks and move them to *In progress* or *Done* – mirrored issues follow |
 | `create_task_in_projects` | The same task in several projects – by default in all linked to Git |
+| `get_claude_md`, `list_prompts`, `get_prompt` | A ready-made CLAUDE.md for a project and your prompt library |
 | `update_project` | Status, priority, progress and summary |
 | `create_note`, `get_note` | Notes on a project, e.g. a work log |
 | `search` | Full-text search across notes, tasks and docs |
@@ -305,7 +306,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
 - ✅ Activity heatmap across all projects, streaks and small achievements
 - ⏳ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
-- ⏳ Prompt library and a CLAUDE.md generator from description, notes and tasks
+- ✅ Prompt library and a CLAUDE.md generator from description, notes and tasks
 - ⏳ Idea inbox via ntfy, email or "share" from your phone (PWA)
 - ⏳ Time tracking and focus timer per task, evaluated in the weekly review
 - ✅ Today view: at most five tasks across all projects

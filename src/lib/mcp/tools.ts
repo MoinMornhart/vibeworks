@@ -19,6 +19,9 @@ import { addDaysKey } from "@/lib/weeks";
 import { dayKey, truncate } from "@/lib/utils";
 import { config } from "@/lib/config";
 import type { ToolDef } from "./protocol";
+import type { Locale } from "@/lib/i18n/config";
+import { claudeMdFor } from "@/lib/claudeMdServer";
+import { fillPrompt } from "@/lib/prompts";
 
 // Die Werkzeuge, die Claude Code über MCP sieht. Beschreibungen auf Englisch
 // (sie richten sich an das Modell), Inhalte so, wie sie gespeichert sind.
@@ -27,6 +30,7 @@ import type { ToolDef } from "./protocol";
 
 export interface McpContext {
   userId: string;
+  locale: Locale;
 }
 
 export const MCP_INSTRUCTIONS = [
@@ -409,6 +413,64 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         createdAt: note.createdAt.toISOString(),
         updatedAt: note.updatedAt.toISOString(),
       };
+    },
+  },
+  {
+    name: "get_claude_md",
+    title: "Get CLAUDE.md",
+    description:
+      "A ready-made CLAUDE.md for a project: description, status, open tasks, pinned notes and the VibeWorks workflow. Useful as project context or to write it into the repository.",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId, locale }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      return claudeMdFor(project, locale);
+    },
+  },
+  {
+    name: "list_prompts",
+    title: "List prompts",
+    description: "The user's prompt library (saved instructions), optionally filtered by text or project. Use get_prompt for the full text.",
+    inputSchema: {
+      type: "object",
+      properties: { query: { type: "string" }, project: { ...S.project, description: "Only prompts for this project plus general ones" } },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const input = z.object({ query: z.string().trim().max(100).optional(), project: ref.optional() }).parse(args);
+      const projectId = input.project ? (await resolveProject(userId, input.project)).project.id : null;
+      const q = input.query?.toLowerCase();
+      const prompts = await db.prompt.findMany({
+        where: { userId, ...(projectId ? { OR: [{ projectId }, { projectId: null }] } : {}) },
+        include: { project: { select: { name: true } } },
+        orderBy: [{ uses: "desc" }, { updatedAt: "desc" }],
+        take: 200,
+      });
+      return {
+        prompts: prompts
+          .filter((p) => !q || [p.title, p.body, ...p.tags].some((s) => s.toLowerCase().includes(q)))
+          .map((p) => ({ id: p.id, title: p.title, tags: p.tags, project: p.project?.name ?? null, preview: truncate(p.body.replace(/\s+/g, " "), 160) })),
+      };
+    },
+  },
+  {
+    name: "get_prompt",
+    title: "Get prompt",
+    description: "Full text of a saved prompt (by id or exact title). With a project, placeholders like {{projekt}}, {{repo}}, {{live}} and {{summary}} are filled in.",
+    inputSchema: {
+      type: "object",
+      properties: { prompt: { type: "string", description: "Prompt id or exact title" }, project: { ...S.project, description: "Fill placeholders with this project" } },
+      required: ["prompt"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const value = ref.parse(args.prompt);
+      const prompt = await db.prompt.findFirst({ where: { userId, OR: [{ id: value }, { title: { equals: value, mode: "insensitive" } }] } });
+      if (!prompt) throw notFound(tk("prompts", "errors.notFound"));
+      const project = args.project ? (await resolveProject(userId, ref.parse(args.project))).project : null;
+      return { title: prompt.title, text: fillPrompt(prompt.body, project) };
     },
   },
   {

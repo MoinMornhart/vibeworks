@@ -213,6 +213,7 @@ Danach arbeitet Claude Code direkt mit deinen Projekten – ganz ohne Umweg übe
 | `list_tasks`, `get_task` | Aufgaben über alle Projekte – z. B. alles, was diese Woche fällig ist |
 | `create_task`, `update_task` | Aufgaben anlegen und nach *In Arbeit* oder *Erledigt* schieben – gespiegelte Issues laufen mit |
 | `create_task_in_projects` | Dieselbe Aufgabe in mehreren Projekten – ohne Angabe in allen mit Git |
+| `get_claude_md`, `list_prompts`, `get_prompt` | Fertige CLAUDE.md eines Projekts und deine Prompt-Bibliothek |
 | `update_project` | Status, Priorität, Fortschritt und Kurzbeschreibung |
 | `create_note`, `get_note` | Notizen am Projekt, z. B. ein Arbeitsprotokoll |
 | `search` | Volltextsuche über Notizen, Aufgaben und Docs |
@@ -303,7 +304,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
 - ✅ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge
 - ⏳ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
-- ⏳ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
+- ✅ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
 - ⏳ Ideen-Eingang per ntfy, E-Mail oder „Teilen“ vom Handy (PWA)
 - ⏳ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
 - ✅ Heute-Ansicht: höchstens fünf Aufgaben über alle Projekte

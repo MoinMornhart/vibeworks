@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const raw = await req.text();
   if (raw.length > MAX_BODY) return NextResponse.json(rpcError(null, RPC.INVALID_REQUEST, "Request too large"), { status: 413 });
 
-  const ctx: McpContext = { userId: auth.user.id };
+  const ctx: McpContext = { userId: auth.user.id, locale };
   const { status, body } = await handleBody(raw, ctx, {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,

@@ -13,6 +13,9 @@ import { useT } from "@/lib/i18n/client";
 
 export const OPEN_CAPTURE_EVENT = "vw:capture";
 const LAST_PROJECT_KEY = "vw.capture.project";
+// Sammelziele im Projektfeld: dieselbe Aufgabe in allen (oder allen Git-)Projekten
+const ALL = "__all__";
+const ALL_GIT = "__git__";
 
 /**
  * Das Formular der Schnellerfassung – im Dialog der Web-App und in der
@@ -57,7 +60,8 @@ export function CaptureForm({
         } catch {
           /* egal */
         }
-        setProjectId(r.projects.some((p) => p.id === last) ? last : (r.projects[0]?.id ?? ""));
+        const valid = r.projects.some((p) => p.id === last) || (last === ALL && r.projects.length > 0) || (last === ALL_GIT && r.projects.some((p) => p.repoUrl));
+        setProjectId(valid ? last : (r.projects[0]?.id ?? ""));
       })
       .catch(() => {});
   }, [active, reloadKey]);
@@ -74,9 +78,16 @@ export function CaptureForm({
         setCreated((c) => [{ key: res.project.id, label: t("capture.createdIdea", { name: res.project.name }), href: `/projects/${res.project.id}` }, ...c].slice(0, 5));
       } else {
         if (!projectId) throw new Error(t("capture.pickProject"));
-        const res = await api<{ task: { id: string; title: string } }>(`/api/projects/${projectId}/tasks`, { body: { title: value } });
-        const project = projects.find((p) => p.id === projectId);
-        setCreated((c) => [{ key: res.task.id, label: t("capture.createdTask", { title: res.task.title, project: project?.name ?? t("capture.project") }), href: `/projects/${projectId}` }, ...c].slice(0, 5));
+        if (projectId === ALL || projectId === ALL_GIT) {
+          const ids = projects.filter((p) => projectId === ALL || p.repoUrl).map((p) => p.id);
+          const res = await api<{ created: Array<{ id: string }> }>("/api/tasks/bulk", { body: { title: value, projectIds: ids } });
+          const key = res.created[0]?.id ?? `${Date.now()}`;
+          setCreated((c) => [{ key, label: t("capture.createdTaskMany", { title: value, n: res.created.length }), href: "/tasks" }, ...c].slice(0, 5));
+        } else {
+          const res = await api<{ task: { id: string; title: string } }>(`/api/projects/${projectId}/tasks`, { body: { title: value } });
+          const project = projects.find((p) => p.id === projectId);
+          setCreated((c) => [{ key: res.task.id, label: t("capture.createdTask", { title: res.task.title, project: project?.name ?? t("capture.project") }), href: `/projects/${projectId}` }, ...c].slice(0, 5));
+        }
         try {
           localStorage.setItem(LAST_PROJECT_KEY, projectId);
         } catch {
@@ -107,6 +118,11 @@ export function CaptureForm({
       {mode === "task" && (
         <select className="field" value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label={t("capture.project")}>
           {projects.length === 0 && <option value="">{t("capture.noProjects")}</option>}
+          {projects.length > 1 && <option value={ALL}>{t("capture.allProjects", { n: projects.length })}</option>}
+          {projects.filter((p) => p.repoUrl).length > 1 && (
+            <option value={ALL_GIT}>{t("capture.allGit", { n: projects.filter((p) => p.repoUrl).length })}</option>
+          )}
+          {projects.length > 1 && <option disabled>──────────</option>}
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}

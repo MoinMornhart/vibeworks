@@ -138,6 +138,7 @@ model User {
   apiTokens      ApiToken[]
   notifications  Notification[]
   taskFocus      TaskFocus[]
+  prompts        Prompt[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -280,6 +281,7 @@ model Project {
   members        ProjectMember[]
   accessRequests AccessRequest[]
   uptimeChecks   UptimeCheck[]
+  prompts        Prompt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -417,6 +419,24 @@ model ApiToken {
   hint       String
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Prompt-Bibliothek eines Kontos – allgemein oder an ein Projekt gebunden.
+model Prompt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title     String
+  /// Text mit Platzhaltern wie {{projekt}}, {{repo}}, {{live}}, {{summary}}
+  body      String
+  tags      String[] @default([])
+  uses      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }

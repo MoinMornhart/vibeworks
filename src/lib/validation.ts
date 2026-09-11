@@ -96,6 +96,17 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── Prompts ─────────────────────────────────────────────────
+
+export const promptSchema = z.object({
+  title: z.string().trim().min(1, tk("validation", "titleMissing")).max(120),
+  body: z.string().max(20_000).refine((v) => v.trim().length > 0, tk("prompts", "errors.bodyEmpty")),
+  tags: tagsSchema.default([]),
+  projectId: z.string().max(40).nullish().transform((v) => v || null),
+});
+
+export const promptUpdateSchema = promptSchema.partial();
+
 // ── Heute ───────────────────────────────────────────────────
 
 export const todayFocusSchema = z.object({ taskId: z.string().min(1).max(40) });

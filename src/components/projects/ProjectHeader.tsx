@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowLeft, CalendarPlus, Download, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarPlus, Download, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
 import { BuryDialog } from "@/components/grave/BuryDialog";
+import { ClaudeMdDialog } from "@/components/prompts/ClaudeMdDialog";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
 import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
@@ -56,6 +57,8 @@ export function ProjectHeader({
   const [notice, setNotice] = useState<string | null>(null);
   const tg = useT("grave");
   const [buryOpen, setBuryOpen] = useState(false);
+  const tp = useT("prompts");
+  const [mdOpen, setMdOpen] = useState(false);
 
   async function resurrect() {
     setError(null);
@@ -157,6 +160,7 @@ export function ProjectHeader({
               items={[
                 { label: td("templates.saveAs"), icon: LayoutTemplate, onClick: () => void saveTemplate() },
                 { label: td("export.project"), icon: Download, onClick: () => window.location.assign(`/api/projects/${p.id}/export`) },
+                { label: tp("claudeMd.menu"), icon: Bot, onClick: () => setMdOpen(true) },
                 ...(isOwner && !p.buriedAt ? [{ label: tg("bury.menu"), icon: Ghost, onClick: () => setBuryOpen(true) }] : []),
               ]}
             />
@@ -254,6 +258,7 @@ export function ProjectHeader({
         />
       )}
       {isOwner && <ShareDialog projectId={p.id} open={shareOpen} onClose={() => setShareOpen(false)} onPendingChange={setPending} />}
+      <ClaudeMdDialog projectId={p.id} name={p.name} open={mdOpen} onClose={() => setMdOpen(false)} />
       {isOwner && (
         <BuryDialog
           project={buryOpen ? { id: p.id, name: p.name } : null}
