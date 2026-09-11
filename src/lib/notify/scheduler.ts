@@ -5,6 +5,7 @@ import { getSettings } from "@/lib/settings";
 import { dayKeyToDate, diffDays, formatDue } from "@/lib/taskDates";
 import { formatMoney, INTERVALS, nextRenewal, RENEWAL_WARN_DAYS, type CostInterval } from "@/lib/costs";
 import { INTL_LOCALE } from "@/lib/i18n/config";
+import { pollNtfyInboxes } from "@/lib/inboxServer";
 import { addDaysKey } from "@/lib/weeks";
 import { dayKey, TIME_ZONE } from "@/lib/utils";
 import { eventsOf } from "./format";
@@ -122,6 +123,8 @@ export function startNotifyScheduler() {
     void runDigest().catch(log);
     void runRenewals().catch(log);
   };
+  // Ideen-Eingang: ntfy-Themen jede Minute abholen
+  setInterval(() => void pollNtfyInboxes().catch(log), 60_000).unref?.();
   setTimeout(tick, 30_000).unref?.();
   setInterval(tick, 10 * 60_000).unref?.();
 }

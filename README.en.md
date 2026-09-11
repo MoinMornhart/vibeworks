@@ -307,7 +307,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Activity heatmap across all projects, streaks and small achievements
 - ✅ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
 - ✅ Prompt library and a CLAUDE.md generator from description, notes and tasks
-- ⏳ Idea inbox via ntfy, email or "share" from your phone (PWA)
+- ✅ Idea inbox via "share" from your phone (PWA), a drop address (also for mail forwarding) or ntfy
 - ✅ Time tracking and focus timer per task, evaluated in the weekly review
 - ✅ Today view: plan tasks from all projects for the day and check them off
 - ✅ Dependency check: outdated packages and security alerts from the repository

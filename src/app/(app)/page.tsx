@@ -56,6 +56,7 @@ export default async function Dashboard() {
     db.project.count({ where: { ownerId: user.id, buriedAt: { not: null } } }),
     getT("grave"),
   ]);
+  const [inboxCount, ti] = await Promise.all([db.inboxItem.count({ where: { userId: user.id } }), getT("inbox")]);
   const sleeping = drowsy
     .map((p) => ({ id: p.id, name: p.name, accent: p.accent, since: lastSign(p.updatedAt, p.repoCache?.commits) }))
     .filter((p) => p.since < cutoff)
@@ -67,6 +68,11 @@ export default async function Dashboard() {
       <PendingRequests
         items={requests.map((r) => ({ id: r.id, projectId: r.project.id, projectName: r.project.name, name: displayNameOf(r.user), role: r.role }))}
       />
+      {inboxCount > 0 && (
+        <Link href="/inbox" className="glass fade-in mb-6 flex items-center gap-3 px-5 py-3 text-sm hover:text-accent-ink" data-testid="inbox-banner">
+          <span aria-hidden>📥</span> {ti("banner", { n: inboxCount })}
+        </Link>
+      )}
       <SleepingProjects items={sleeping} />
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />
       <SharedProjects

@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.8",
+    date: "2026-09-12",
+    title: "Ideen-Eingang",
+    titleEn: "Idea inbox",
+    changes: [
+      {
+        type: "neu",
+        text: "Ideen-Eingang (/inbox): Einfälle erst sammeln, später als Projekt anlegen, als Aufgabe anhängen oder verwerfen – mit Hinweis auf dem Dashboard",
+        en: "Idea inbox (/inbox): collect ideas first, later create a project, attach them as a task or discard them – with a hint on the dashboard",
+      },
+      {
+        type: "neu",
+        text: "Drei Wege hinein: „Teilen“ vom Handy (VibeWorks zum Startbildschirm hinzufügen), eine geheime Einwurf-Adresse für Kurzbefehle, Tasker oder Mail-Weiterleitungen, und ein ntfy-Thema, das jede Minute abgeholt wird",
+        en: "Three ways in: “Share” on your phone (add VibeWorks to your home screen), a secret drop address for Shortcuts, Tasker or mail forwarding, and an ntfy topic fetched every minute",
+      },
+      {
+        type: "besser",
+        text: "Profilmenü: Ideen-Eingang und Kosten sind jetzt direkt erreichbar",
+        en: "Profile menu: idea inbox and costs are now one click away",
+      },
+    ],
+  },
+  {
     version: "0.4.7",
     date: "2026-09-12",
     title: "Abhängigkeiten-Check",

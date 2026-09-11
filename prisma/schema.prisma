@@ -124,6 +124,12 @@ model User {
   /// Sprache der Oberfläche ("de" | "en") – null heißt: Browsersprache
   locale String?
 
+  /// Ideen-Eingang: geheimer Teil der Einwurf-Adresse /api/inbox/in/<token>
+  inboxToken     String? @unique
+  /// ntfy-Thema, das VibeWorks nach neuen Ideen abfragt, und die letzte gelesene Nachricht
+  inboxNtfyUrl   String?
+  inboxNtfySince String?
+
   sessions      Session[]
   passkeys      Passkey[]
   recoveryCodes RecoveryCode[]
@@ -140,6 +146,7 @@ model User {
   taskFocus      TaskFocus[]
   prompts        Prompt[]
   timeEntries    TimeEntry[]
+  inboxItems     InboxItem[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -428,6 +435,20 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Ideen-Eingang: schnell Eingeworfenes, später zu Projekt oder Aufgabe gemacht (dann gelöscht).
+model InboxItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  url       String?
+  /// share | webhook | ntfy | manual
+  source    String   @default("manual")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 /// Erfasste Zeit an einer Aufgabe – endedAt null heißt: läuft gerade (höchstens eine je Konto).

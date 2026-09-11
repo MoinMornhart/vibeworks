@@ -97,6 +97,30 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── Ideen-Eingang ───────────────────────────────────────────
+
+export const inboxAddSchema = z.object({
+  text: z.string().max(4000).refine((v) => v.trim().length > 0, tk("inbox", "errors.empty")),
+  url: z.string().trim().max(1000).nullish().transform((v) => (v && /^https?:\/\//i.test(v) ? v : null)),
+  source: z.enum(["manual", "share"]).default("manual"),
+});
+
+export const inboxActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("project") }),
+  z.object({ action: z.literal("task"), projectId: z.string().min(1).max(40) }),
+]);
+
+export const inboxSettingsSchema = z.object({
+  ntfyUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .nullish()
+    .transform((v) => v || null)
+    .refine((v) => v === null || /^https?:\/\/[^/\s]+\/[\w-]{1,64}\/?$/.test(v), tk("notify", "errors.badNtfyUrl")),
+  regenerate: z.boolean().default(false),
+});
+
 // ── Kosten ──────────────────────────────────────────────────
 
 const dayKeyOrNull = z

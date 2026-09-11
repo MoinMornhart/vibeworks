@@ -305,7 +305,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge
 - ✅ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
 - ✅ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
-- ⏳ Ideen-Eingang per ntfy, E-Mail oder „Teilen“ vom Handy (PWA)
+- ✅ Ideen-Eingang per „Teilen“ vom Handy (PWA), Einwurf-Adresse (auch für Mail-Weiterleitungen) oder ntfy
 - ✅ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
 - ✅ Heute-Ansicht: Aufgaben aus allen Projekten für den Tag vormerken und abhaken
 - ✅ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository

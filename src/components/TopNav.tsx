@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Search, Shield, Sun, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, Sun, UserRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -124,6 +124,12 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
               <p className="px-3 py-2 text-xs text-muted">{t("topNav.signedInAs")} <strong className="text-fg">{user.username}</strong></p>
               <Link role="menuitem" href="/account" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <UserRound size={15} /> {t("nav.account")}
+              </Link>
+              <Link role="menuitem" href="/inbox" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                <Inbox size={15} /> {t("nav.inbox")}
+              </Link>
+              <Link role="menuitem" href="/costs" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                <Wallet size={15} /> {t("nav.costs")}
               </Link>
               <Link role="menuitem" href="/design" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <Palette size={15} /> {t("nav.design")}

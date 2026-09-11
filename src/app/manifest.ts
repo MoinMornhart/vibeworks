@@ -16,5 +16,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: "#06061a",
     lang: locale,
     icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+    // Installiert (Startbildschirm) erscheint VibeWorks im „Teilen“-Menü – Ziel ist der Ideen-Eingang
+    share_target: { action: "/inbox/new", method: "get", params: { title: "title", text: "text", url: "url" } },
   };
 }
