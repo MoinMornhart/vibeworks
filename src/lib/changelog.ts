@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.9",
+    date: "2026-09-13",
+    title: "Öffentliches Portfolio",
+    titleEn: "Public portfolio",
+    changes: [
+      {
+        type: "neu",
+        text: "Mein Konto → Öffentliches Portfolio: einschalten, ein paar Sätze über dich schreiben, Projekte auswählen – die Seite /u/<name> zeigt sie ohne Anmeldung mit Stand, Tags und Links (Live, Code, Details)",
+        en: "My account → Public portfolio: switch it on, write a few lines about yourself, pick projects – the page /u/<name> shows them without signing in, with status, tags and links (live, code, details)",
+      },
+      {
+        type: "neu",
+        text: "Ausgeschaltet gibt es die Seite nicht; Notizen, Aufgaben und alles andere bleiben privat",
+        en: "When switched off, the page doesn't exist; notes, tasks and everything else stay private",
+      },
+    ],
+  },
+  {
     version: "0.4.8",
     date: "2026-09-12",
     title: "Ideen-Eingang",

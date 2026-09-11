@@ -19,6 +19,8 @@ import { serializeApiToken } from "@/lib/mcp/token";
 import { config } from "@/lib/config";
 import { InboxSection } from "@/components/account/InboxSection";
 import { inboxInfo } from "@/lib/inboxServer";
+import { PortfolioSection } from "@/components/account/PortfolioSection";
+import { portfolioView } from "@/lib/portfolio";
 import { getT } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -31,7 +33,7 @@ export default async function AccountPage() {
   if (!auth) redirect("/login");
   const { user, sessionId } = auth;
   const hasPassword = Boolean(user.passwordHash);
-  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady, apiTokens, inbox] = await Promise.all([
+  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady, apiTokens, inbox, portfolio] = await Promise.all([
     listSessions(user.id, sessionId),
     recoveryCodesLeft(user.id),
     db.passkey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
@@ -40,6 +42,7 @@ export default async function AccountPage() {
     smtpReady(),
     db.apiToken.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     inboxInfo(user.id),
+    portfolioView(user.id),
   ]);
   return (
     <AccountManager
@@ -59,6 +62,7 @@ export default async function AccountPage() {
       <GitConnectionsSection initial={connections} />
       <ApiTokensSection initial={apiTokens.map(serializeApiToken)} appUrl={config.appUrl} />
       <InboxSection initial={inbox} />
+      <PortfolioSection initial={portfolio} />
       <NotificationsSection initial={notificationView(notifications)} smtpReady={mailReady} isAdmin={user.role === "ADMIN"} />
       <DataSection />
     </AccountManager>

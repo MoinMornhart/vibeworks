@@ -311,7 +311,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Time tracking and focus timer per task, evaluated in the weekly review
 - ✅ Today view: plan tasks from all projects for the day and check them off
 - ✅ Dependency check: outdated packages and security alerts from the repository
-- ⏳ Public portfolio with selected projects
+- ✅ Public portfolio with selected projects
 
 **Website**
 

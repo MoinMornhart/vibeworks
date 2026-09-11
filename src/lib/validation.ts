@@ -97,6 +97,14 @@ export const projectCreateSchema = z.object({
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
+// ── Portfolio ───────────────────────────────────────────────
+
+export const portfolioSchema = z.object({
+  public: z.boolean(),
+  bio: z.string().max(1000).nullish().transform((v) => v?.trim() || null),
+  projectIds: z.array(z.string().max(40)).max(500).default([]),
+});
+
 // ── Ideen-Eingang ───────────────────────────────────────────
 
 export const inboxAddSchema = z.object({

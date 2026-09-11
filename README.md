@@ -309,7 +309,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
 - ✅ Heute-Ansicht: Aufgaben aus allen Projekten für den Tag vormerken und abhaken
 - ✅ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
-- ⏳ Öffentliches Portfolio mit ausgewählten Projekten
+- ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**
 

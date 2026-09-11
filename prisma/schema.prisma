@@ -130,6 +130,10 @@ model User {
   inboxNtfyUrl   String?
   inboxNtfySince String?
 
+  /// Öffentliches Portfolio unter /u/<username> – aus, bis man es einschaltet
+  portfolioPublic Boolean @default(false)
+  portfolioBio    String?
+
   sessions      Session[]
   passkeys      Passkey[]
   recoveryCodes RecoveryCode[]
@@ -279,6 +283,8 @@ model Project {
   epitaph            String?
   causeOfDeath       String?
   statusBeforeBurial ProjectStatus?
+  /// Im öffentlichen Portfolio des Besitzers zeigen
+  inPortfolio        Boolean @default(false)
   /// „Später fragen“ – bis dahin kein Hinweis auf dem Dashboard
   nudgeSnoozedUntil  DateTime?
 
