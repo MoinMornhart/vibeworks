@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +30,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/", label: "nav.dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "nav.tasks", icon: ListChecks },
+  { href: "/review", label: "nav.review", icon: CalendarRange },
   { href: "/docs", label: "nav.docs", icon: BookOpen },
   { href: "/design", label: "nav.design", icon: Palette },
   { href: "/admin", label: "nav.admin", icon: Shield, admin: true },

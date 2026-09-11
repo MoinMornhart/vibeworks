@@ -23,7 +23,8 @@ export const PUT = route<Params>(async (req, { params }) => {
   if (token !== project.shareToken) {
     await db.project.update({ where: { id: project.id }, data: { shareToken: token } });
     const summary = link === "off" ? "Öffentlichen Link abgeschaltet" : link === "renew" ? "Öffentlichen Link erneuert" : "Öffentlichen Link eingeschaltet";
-    await logActivity({ projectId: project.id, userId: user.id, kind: "PROJECT_UPDATED", summary });
+    const action = link === "off" ? "shareOff" : link === "renew" ? "shareRenew" : "shareOn";
+    await logActivity({ projectId: project.id, userId: user.id, kind: "PROJECT_UPDATED", summary, meta: { action } });
   }
   return json({ share: await shareState(project.id) });
 });

@@ -38,6 +38,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
     userId: user.id,
     kind: "PROJECT_UPDATED",
     summary: `Zugriffsanfrage von @${request.user.username} ${decision === "approve" ? "angenommen" : "abgelehnt"}`,
+    meta: { action: decision === "approve" ? "requestApproved" : "requestDenied", username: request.user.username },
   });
   return json({ share: await shareState(project.id) });
 });

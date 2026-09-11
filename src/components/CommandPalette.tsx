@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarRange as ReviewIcon, History as TimelineIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shield, StickyNote, UserRound } from "lucide-react";
@@ -136,6 +137,8 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     const areas = [
       { label: tr("nav.dashboard"), href: "/", icon: <LayoutDashboard size={16} /> },
       { label: tr("nav.tasks"), href: "/tasks", icon: <ListChecks size={16} /> },
+      { label: tr("nav.review"), href: "/review", icon: <ReviewIcon size={16} /> },
+      { label: tr("nav.timeline"), href: "/timeline", icon: <TimelineIcon size={16} /> },
       { label: tr("nav.docs"), href: "/docs", icon: <BookOpen size={16} /> },
       { label: tr("nav.design"), href: "/design", icon: <Palette size={16} /> },
       { label: tr("nav.account"), href: "/account", icon: <UserRound size={16} /> },

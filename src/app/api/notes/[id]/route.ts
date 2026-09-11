@@ -37,7 +37,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
     },
   });
   await touchProject(note.projectId);
-  await logActivity({ projectId: note.projectId, userId: user.id, kind: "NOTE_UPDATED", summary: `Notiz „${noteLabel(note)}“ bearbeitet` });
+  await logActivity({ projectId: note.projectId, userId: user.id, kind: "NOTE_UPDATED", summary: `Notiz „${noteLabel(note)}“ bearbeitet`, meta: { title: noteLabel(note) } });
   return json({ note: serializeNote(note) });
 });
 
@@ -46,6 +46,6 @@ export const DELETE = route<Params>(async (_req, { params }) => {
   const { id } = await params;
   const { note } = await requireNote(user.id, id, "EDITOR");
   await db.note.delete({ where: { id } });
-  await logActivity({ projectId: note.projectId, userId: user.id, kind: "NOTE_DELETED", summary: `Notiz „${noteLabel(note)}“ gelöscht` });
+  await logActivity({ projectId: note.projectId, userId: user.id, kind: "NOTE_DELETED", summary: `Notiz „${noteLabel(note)}“ gelöscht`, meta: { title: noteLabel(note) } });
   return json({ ok: true });
 });

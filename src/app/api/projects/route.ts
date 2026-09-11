@@ -37,7 +37,7 @@ export const POST = route(async (req) => {
     select: { id: true, name: true },
   });
   if (template) await applyTemplate(created.id, template);
-  await logActivity({ projectId: created.id, userId: user.id, kind: "PROJECT_CREATED", summary: `Projekt „${created.name}“ angelegt` });
+  await logActivity({ projectId: created.id, userId: user.id, kind: "PROJECT_CREATED", summary: `Projekt „${created.name}“ angelegt`, meta: { name: created.name } });
   const project = await db.project.findUniqueOrThrow({ where: { id: created.id }, select: projectListSelect });
   return json({ project: serializeProject(project) }, { status: 201 });
 });

@@ -23,6 +23,6 @@ export const POST = route<Params>(async (req, { params }) => {
   const input =await readBody(req, noteCreateSchema);
   const note = await db.note.create({ data: { ...input, projectId: id } });
   await touchProject(id);
-  await logActivity({ projectId: id, userId: user.id, kind: "NOTE_ADDED", summary: `Notiz „${noteLabel(note)}“ hinzugefügt` });
+  await logActivity({ projectId: id, userId: user.id, kind: "NOTE_ADDED", summary: `Notiz „${noteLabel(note)}“ hinzugefügt`, meta: { title: noteLabel(note) } });
   return json({ note: serializeNote(note) }, { status: 201 });
 });

@@ -48,7 +48,7 @@ export const DELETE = route<Params>(async (_req, { params }) => {
   const { id } = await params;
   const { task } = await requireTask(user.id, id, "EDITOR");
   await db.task.delete({ where: { id } });
-  await logActivity({ projectId: task.projectId, userId: user.id, kind: "TASK_DELETED", summary: `Aufgabe „${truncate(task.title, 60)}“ gelöscht` });
+  await logActivity({ projectId: task.projectId, userId: user.id, kind: "TASK_DELETED", summary: `Aufgabe „${truncate(task.title, 60)}“ gelöscht`, meta: { title: truncate(task.title, 60) } });
   const progress = await syncProjectProgress(task.projectId);
   after(() => closeIssueOfDeletedTask(task.projectId, task));
   return json({ ok: true, progress });

@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.5",
+    date: "2026-09-11",
+    title: "Wochenrückblick und Zeitleiste",
+    titleEn: "Weekly review and timeline",
+    changes: [
+      {
+        type: "neu",
+        text: "Wochenrückblick (Navigation → Rückblick): Kennzahlen der Woche, Erledigtes je Projekt, als Nächstes Fälliges, aktivste Projekte – mit Blättern zwischen den Wochen",
+        en: "Weekly review (navigation → Review): the week in numbers, completed tasks per project, what's due next, most active projects – with paging between weeks",
+      },
+      {
+        type: "neu",
+        text: "Zeitleiste über alle Projekte: Aufgaben, Notizen, Statuswechsel und Commits nach Tagen, nach Projekt filterbar",
+        en: "Timeline across all projects: tasks, notes, status changes and commits by day, filterable by project",
+      },
+      {
+        type: "besser",
+        text: "Verlaufseinträge erscheinen in der gewählten Sprache; der Verlauf je Projekt reicht jetzt 1000 statt 200 Einträge zurück",
+        en: "History entries appear in the chosen language; each project's history now goes back 1000 instead of 200 entries",
+      },
+    ],
+  },
+  {
     version: "0.3.4",
     date: "2026-09-11",
     title: "Projektvorlagen, Export und Import",

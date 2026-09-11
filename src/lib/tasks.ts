@@ -85,7 +85,7 @@ export async function transitionTask(
         userId,
         kind: "TASK_MOVED",
         summary: `Aufgabe „${truncate(updated.title, 60)}“: ${statusLabel(from)} → ${statusLabel(to)}`,
-        meta: { from, to, taskId: updated.id },
+        meta: { from, to, taskId: updated.id, title: truncate(updated.title, 60) },
       },
       client,
     );

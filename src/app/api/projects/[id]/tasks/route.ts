@@ -36,7 +36,7 @@ export const POST = route<Params>(async (req, { params }) => {
       position: await nextTaskPosition(db, id, input.status),
     },
   });
-  await logActivity({ projectId: id, userId: user.id, kind: "TASK_ADDED", summary: `Aufgabe „${truncate(task.title, 60)}“ angelegt` });
+  await logActivity({ projectId: id, userId: user.id, kind: "TASK_ADDED", summary: `Aufgabe „${truncate(task.title, 60)}“ angelegt`, meta: { title: truncate(task.title, 60), taskId: task.id } });
   await touchProject(id);
   const progress = await syncProjectProgress(id);
   after(() => pushTaskIssue(task.id));
