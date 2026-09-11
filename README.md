@@ -215,12 +215,30 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 
 ## 🗺️ Fahrplan
 
-- [x] **Etappe 1** – Anmeldung (Passwort, Passkeys, Zwei-Faktor), Mehrbenutzerbetrieb, Projekte,
-  Notizen, Aufgaben, Mini-Docs, persönliches Design, Proxmox-Installer und Auto-Update
-- [ ] **Etappe 2** – Git-Anbindung: ~~Commits~~ ✅, ~~Aufgaben ↔ Issues~~ ✅, ~~Projekte teilen~~ ✅,
-  CI-Status, Webhooks
-- [ ] **Etappe 3** – Wochenrückblick, Zeitleiste, Projektvorlagen, Import/Export,
-  Benachrichtigungen (ntfy, Webhook, E-Mail)
+✅ = fertig · ⏳ = kommt noch
+
+**Etappe 1 – Grundlagen** ✅
+
+- ✅ Anmeldung mit Passwort, Passkeys und Zwei-Faktor, Mehrbenutzerbetrieb
+- ✅ Projekte, Notizen, Aufgaben und Mini-Docs
+- ✅ Persönliches Design für jedes Konto
+- ✅ Proxmox-Installer, `update`-Befehl und Auto-Update
+
+**Etappe 2 – Git-Anbindung**
+
+- ✅ Commits auf der Projektseite
+- ✅ Aufgaben ↔ Issues (GitHub, GitLab, Gitea/Forgejo)
+- ✅ Git-Verbindungen fürs ganze Konto, Abgleich im Hintergrund
+- ✅ Projekte teilen
+- ⏳ CI-Status
+- ⏳ Webhooks
+
+**Etappe 3 – Überblick & Komfort**
+
+- ⏳ Wochenrückblick und Zeitleiste
+- ⏳ Projektvorlagen
+- ⏳ Import/Export
+- ⏳ Benachrichtigungen (ntfy, Webhook, E-Mail)
 
 ## 🙏 Danksagung
 

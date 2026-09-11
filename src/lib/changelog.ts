@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.2.9",
+    date: "2026-09-11",
+    title: "Übersichtlicher Fahrplan",
+    changes: [
+      { type: "besser", text: "README: Fahrplan als klare Liste mit ✅ (fertig) und ⏳ (kommt noch) – nichts mehr durchgestrichen" },
+    ],
+  },
+  {
     version: "0.2.8",
     date: "2026-09-10",
     title: "Git-Abgleich im Hintergrund",
