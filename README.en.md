@@ -151,6 +151,11 @@ working version.
 
 ## 🔀 Tasks ↔ issues & Claude Code
 
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Demo: a task is created via quick capture, becomes issue #4, Claude Code works through it via MCP, then it is done" width="840">
+  <br><sub>Task → issue → Claude → done (demo in German)</sub>
+</p>
+
 Add a repository to a project and VibeWorks shows its commits below the notes. With a Git
 connection (**My account → Git connections** – GitHub, GitLab or Gitea/Forgejo, self-hosted
 too) every task also becomes an issue automatically. The connection applies to all your projects
@@ -320,7 +325,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Landing page on GitHub Pages with a copyable install command – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/en/)
 - ⏳ Live demo with a read-only demo account
 - ✅ Docs pages in English and German
-- ⏳ Short demo GIF: task → issue → Claude → done
+- ✅ Short demo GIF: task → issue → Claude → done
 
 ## 📄 License
 

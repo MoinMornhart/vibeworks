@@ -152,6 +152,11 @@ Stand zurück.
 
 ## 🔀 Aufgaben ↔ Issues & Claude Code
 
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Vorführung: Aufgabe per Schnellerfassung anlegen, sie wird Issue #4, Claude Code arbeitet sie über MCP ab, danach ist sie erledigt" width="840">
+  <br><sub>Aufgabe → Issue → Claude → erledigt</sub>
+</p>
+
 Trägst du am Projekt ein Repository ein, zeigt VibeWorks dessen Commits unter den Notizen.
 Mit einer Git-Verbindung (**Mein Konto → Git-Verbindungen** – GitHub, GitLab oder Gitea/Forgejo,
 auch selbst gehostet) wird zusätzlich jede Aufgabe automatisch zum Issue. Die Verbindung gilt
@@ -318,7 +323,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Landingpage auf GitHub Pages mit Installationsbefehl zum Kopieren – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/)
 - ⏳ Live-Demo mit schreibgeschütztem Demo-Konto
 - ✅ Doku-Seiten auf Deutsch und Englisch
-- ⏳ Kurzes Vorführ-GIF: Aufgabe → Issue → Claude → erledigt
+- ✅ Kurzes Vorführ-GIF: Aufgabe → Issue → Claude → erledigt
 
 ## 📄 Lizenz
 

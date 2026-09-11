@@ -26,6 +26,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.1",
+    date: "2026-09-13",
+    title: "Vorführ-GIF",
+    titleEn: "Demo GIF",
+    changes: [
+      {
+        type: "neu",
+        text: "Kurze Vorführung im README und auf der Webseite: Aufgabe per Schnellerfassung → Issue → Claude Code arbeitet sie über MCP ab → erledigt",
+        en: "A short demo in the README and on the website: task via quick capture → issue → Claude Code works through it via MCP → done",
+      },
+    ],
+  },
+  {
     version: "0.5.0",
     date: "2026-09-13",
     title: "Webseite & Doku",
