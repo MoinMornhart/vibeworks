@@ -11,6 +11,8 @@ import { cn, dayKey } from "@/lib/utils";
 import { Feed } from "@/components/review/Feed";
 import { ActivityHeatmap } from "@/components/review/ActivityHeatmap";
 import { loadActivityStats } from "@/lib/activityStats";
+import { secondsByProject } from "@/lib/timeServer";
+import { WeekTime } from "@/components/time/WeekTime";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +35,11 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   const today = dayKey(new Date());
   const current = mondayOf(today);
   const monday = week && isDayKey(week) ? mondayOf(week) : current;
-  const [data, activity] = await Promise.all([
+  const [data, activity, weekTime, tm] = await Promise.all([
     loadWeek(user.id, locale, zonedMidnight(monday), zonedMidnight(addDaysKey(monday, 7)), today),
     loadActivityStats(user.id, today),
+    secondsByProject(user.id, zonedMidnight(monday), zonedMidnight(addDaysKey(monday, 7))),
+    getT("time"),
   ]);
 
   const range = new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "long", timeZone: "UTC" });
@@ -129,6 +133,8 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
               </ul>
             )}
           </section>
+
+          <WeekTime rows={weekTime} t={tm} />
 
           <section className="glass p-6" aria-labelledby="active-heading">
             <h2 id="active-heading" className="mb-4 text-lg font-semibold">{t("review.activeTitle")}</h2>

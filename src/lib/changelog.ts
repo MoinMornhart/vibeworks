@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.6",
+    date: "2026-09-12",
+    title: "Zeiterfassung & Fokus-Timer",
+    titleEn: "Time tracking & focus timer",
+    changes: [
+      {
+        type: "neu",
+        text: "Timer an jeder Aufgabe (Aufgabenliste, Heute): läuft oben in der Navigation und im Tab-Titel mit, ein Klick stoppt; ein neuer Start beendet den alten",
+        en: "Timer on every task (task list, Today): it runs in the navigation and the tab title, one click stops it; starting a new one ends the old one",
+      },
+      {
+        type: "neu",
+        text: "Fokus-Timer: 25 Minuten herunterzählen, danach „Fokus geschafft – Pause!“",
+        en: "Focus timer: counts down 25 minutes, then “Focus done – take a break!”",
+      },
+      {
+        type: "neu",
+        text: "Erfasste Zeit im Projektkopf, auf der Heute-Seite und je Projekt im Wochenrückblick; vergessene Timer zählen höchstens zwölf Stunden",
+        en: "Tracked time in the project header, on the Today page and per project in the weekly review; forgotten timers count at most twelve hours",
+      },
+    ],
+  },
+  {
     version: "0.4.5",
     date: "2026-09-12",
     title: "Kosten je Projekt",

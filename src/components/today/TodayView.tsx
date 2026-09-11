@@ -12,6 +12,8 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { INTL_LOCALE } from "@/lib/i18n/config";
 import { dayKeyToDate } from "@/lib/taskDates";
 import { MAX_FOCUS } from "@/lib/today";
+import { formatDuration } from "@/lib/time";
+import { TimerButtons } from "@/components/time/TimerPill";
 import { cn } from "@/lib/utils";
 
 function ProjectLink({ project }: { project: OverviewTask["project"] }) {
@@ -24,7 +26,21 @@ function ProjectLink({ project }: { project: OverviewTask["project"] }) {
 }
 
 /** Heute: bis zu fünf Aufgaben aus allen Projekten, dazu Vorschläge. */
-export function TodayView({ today, focus: initialFocus, suggestions: initialSuggestions, doneToday: initialDone }: { today: string; focus: OverviewTask[]; suggestions: OverviewTask[]; doneToday: number }) {
+export function TodayView({
+  today,
+  focus: initialFocus,
+  suggestions: initialSuggestions,
+  doneToday: initialDone,
+  timeToday = 0,
+}: {
+  today: string;
+  focus: OverviewTask[];
+  suggestions: OverviewTask[];
+  doneToday: number;
+  /** Heute erfasste Zeit in Sekunden */
+  timeToday?: number;
+}) {
+  const tm = useT("time");
   // Heute insgesamt erledigt – läuft beim Abhaken hier mit
   const [doneToday, setDoneToday] = useState(initialDone);
   const t = useT("today");
@@ -113,6 +129,7 @@ export function TodayView({ today, focus: initialFocus, suggestions: initialSugg
                   <ProjectLink project={task.project} />
                 </div>
                 {task.dueDate && <DueBadge dueDate={task.dueDate} done={isDone} today={today} />}
+                {!isDone && <TimerButtons taskId={task.id} focus onError={setError} />}
                 <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => void remove(task)} aria-label={t("remove")} title={t("remove")}>
                   <X size={15} />
                 </button>
@@ -151,7 +168,10 @@ export function TodayView({ today, focus: initialFocus, suggestions: initialSugg
       </section>
 
       <p className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-        <span>{t("doneToday", { n: doneToday })}</span>
+        <span>
+          {t("doneToday", { n: doneToday })}
+          {timeToday > 0 && <> · {tm("today", { d: formatDuration(timeToday) })}</>}
+        </span>
         <Link href="/tasks" className="btn btn-sm"><ListChecks size={14} /> {t("toTasks")}</Link>
       </p>
     </div>

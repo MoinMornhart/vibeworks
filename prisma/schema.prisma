@@ -139,6 +139,7 @@ model User {
   notifications  Notification[]
   taskFocus      TaskFocus[]
   prompts        Prompt[]
+  timeEntries    TimeEntry[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -283,6 +284,7 @@ model Project {
   uptimeChecks   UptimeCheck[]
   prompts        Prompt[]
   costs          ProjectCost[]
+  timeEntries    TimeEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -327,6 +329,7 @@ model Task {
   /// Letzter Fehler beim Spiegeln – wird beim nächsten Erfolg geleert
   issueError  String?
   focus       TaskFocus[]
+  timeEntries TimeEntry[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -422,6 +425,27 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Erfasste Zeit an einer Aufgabe – endedAt null heißt: läuft gerade (höchstens eine je Konto).
+model TimeEntry {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId       String?
+  task         Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  seconds      Int       @default(0)
+  /// Fokus-Timer: Ziel in Minuten (z. B. 25) – null bei der Stoppuhr
+  focusMinutes Int?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, endedAt])
+  @@index([projectId])
+  @@index([taskId])
 }
 
 /// Laufende oder einmalige Kosten eines Projekts (Hosting, Domain, KI-API …).

@@ -11,6 +11,7 @@ import { TASK_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
 import { cn, dayKey } from "@/lib/utils";
+import { TimerButtons } from "@/components/time/TimerPill";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
@@ -86,6 +87,7 @@ function TaskCard({
         <button type="button" onClick={() => onOpen(t)} disabled={readOnly} className="min-w-0 flex-1 px-1.5 pt-0.5 text-left text-sm leading-snug disabled:cursor-default">
           <span className={cn("break-words", done && "text-muted line-through")}>{t.title}</span>
         </button>
+        {!done && !overlay && <TimerButtons taskId={t.id} hoverOnly />}
       </div>
       {(t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">

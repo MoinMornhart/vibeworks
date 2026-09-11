@@ -7,6 +7,7 @@ import { addDaysKey, zonedMidnight } from "@/lib/weeks";
 import { dayKey } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 import { TodayView } from "@/components/today/TodayView";
+import { sumSeconds } from "@/lib/timeServer";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function TodayPage() {
   const user = await requirePageUser();
   const today = dayKey(new Date());
   await db.taskFocus.deleteMany({ where: { userId: user.id, day: { lt: today } } });
-  const [focus, candidates, doneToday] = await Promise.all([
+  const [focus, candidates, doneToday, timeToday] = await Promise.all([
     db.taskFocus.findMany({
       where: { userId: user.id, day: today },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
@@ -39,12 +40,14 @@ export default async function TodayPage() {
       take: 20,
     }),
     db.task.count({ where: { project: visibleTo(user.id), doneAt: { gte: zonedMidnight(today) } } }),
+    sumSeconds({ userId: user.id, from: zonedMidnight(today) }),
   ]);
   const chosen = new Set(focus.map((f) => f.taskId));
   return (
     <TodayView
       today={today}
       doneToday={doneToday}
+      timeToday={timeToday}
       focus={focus.map((f) => ({ ...serializeTask(f.task), project: f.task.project }))}
       suggestions={candidates
         .filter((t) => !chosen.has(t.id))

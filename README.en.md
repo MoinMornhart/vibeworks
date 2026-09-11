@@ -308,7 +308,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
 - ✅ Prompt library and a CLAUDE.md generator from description, notes and tasks
 - ⏳ Idea inbox via ntfy, email or "share" from your phone (PWA)
-- ⏳ Time tracking and focus timer per task, evaluated in the weekly review
+- ✅ Time tracking and focus timer per task, evaluated in the weekly review
 - ✅ Today view: at most five tasks across all projects
 - ⏳ Dependency check: outdated packages and security alerts from the repository
 - ⏳ Public portfolio with selected projects

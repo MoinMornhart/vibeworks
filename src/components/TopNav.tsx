@@ -9,6 +9,7 @@ import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { Logo } from "@/components/Logo";
+import { TimerPill } from "@/components/time/TimerPill";
 import { api } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import type { Key } from "@/lib/i18n/messages";
@@ -92,6 +93,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
             </li>
           ))}
         </ul>
+        <TimerPill />
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}

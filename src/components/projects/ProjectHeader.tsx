@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@prisma/client";
-import { ArrowLeft, Bot, CalendarPlus, Download, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
+import { formatDuration } from "@/lib/time";
+import { ArrowLeft, Bot, CalendarPlus, Download, Timer, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
 import { BuryDialog } from "@/components/grave/BuryDialog";
 import { ClaudeMdDialog } from "@/components/prompts/ClaudeMdDialog";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
@@ -28,7 +29,10 @@ export function ProjectHeader({
   pendingRequests = 0,
   openShare = false,
   analysis = null,
+  timeSeconds = 0,
 }: {
+  /** Erfasste Zeit am Projekt in Sekunden (alle Konten) */
+  timeSeconds?: number;
   initial: ProjectDetail;
   access?: ProjectAccess;
   ownerName?: string;
@@ -58,6 +62,7 @@ export function ProjectHeader({
   const tg = useT("grave");
   const [buryOpen, setBuryOpen] = useState(false);
   const tp = useT("prompts");
+  const tm = useT("time");
   const [mdOpen, setMdOpen] = useState(false);
 
   async function resurrect() {
@@ -187,6 +192,9 @@ export function ProjectHeader({
             </span>
           )}
           <span className="inline-flex items-center gap-1.5 text-muted"><CalendarPlus size={14} /> {t("header.created", { date: f.date(p.createdAt) })}</span>
+          {timeSeconds > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-muted" data-testid="project-time"><Timer size={14} /> {tm("tracked", { d: formatDuration(timeSeconds) })}</span>
+          )}
           <span className="inline-flex items-center gap-1.5 text-muted" suppressHydrationWarning><History size={14} /> {t("header.updated", { ago: f.ago(p.updatedAt) })}</span>
           {p.repoUrl && (
             <a href={p.repoUrl.startsWith("git@") ? undefined : p.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent-ink hover:underline">

@@ -20,6 +20,7 @@ import { liveStats } from "@/lib/monitor/stats";
 import { LivePanel } from "@/components/live/LivePanel";
 import { CostPanel } from "@/components/costs/CostPanel";
 import { serializeCost } from "@/lib/costs";
+import { sumSeconds } from "@/lib/timeServer";
 import { dayKey } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
@@ -60,7 +61,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access } = loaded;
   const { notes, tasks, costs, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
-  const live = project.liveUrl ? await liveStats(project.id) : null;
+  const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
   // falls der gespeicherte Wert noch aus der alten Berechnung stammt
@@ -86,6 +87,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         pendingRequests={isOwner ? accessRequests.length : 0}
         openShare={query.teilen === "1"}
         analysis={analysis}
+        timeSeconds={timeSeconds}
       />
       {project.liveUrl && live && (
         <LivePanel

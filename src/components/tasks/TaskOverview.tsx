@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { TaskStatus } from "@prisma/client";
 import { Check, CheckCheck, ListPlus, Repeat, Sun } from "lucide-react";
 import { BulkTaskDialog, type BulkProject } from "./BulkTaskDialog";
+import { TimerButtons } from "@/components/time/TimerPill";
 import type { TaskItem } from "@/lib/tasks";
 import { BUCKETS, bucketOf, recurrenceLabel, type Bucket } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
@@ -195,6 +196,7 @@ export function TaskOverview({ initial, today, allProjects = [], focusIds = [] }
                           ))}
                         </div>
                         {task.recurrence && <Repeat size={14} className="shrink-0 text-muted" aria-label={recurrenceLabel(task.recurrence, locale)} />}
+                        {!done && <TimerButtons taskId={task.id} onError={setError} />}
                         {!done && (
                           <button
                             type="button"
