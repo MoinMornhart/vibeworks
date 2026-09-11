@@ -4,19 +4,22 @@ import { useState } from "react";
 import { ClipboardCopy, Download, KeyRound, RefreshCw, ShieldCheck, ShieldOff, Smartphone } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 import { AccountSection } from "./AccountManager";
 
 type Mode = "idle" | "setup" | "codes" | "confirm-disable" | "confirm-regenerate";
 
 function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
+  const t = useT("account");
+  const tc = useT("common");
   const [saved, setSaved] = useState(false);
-  const text = `VibeWorks – Wiederherstellungscodes\nJeder Code gilt genau einmal.\n\n${codes.join("\n")}\n`;
+  const text = `${t("totp.codesFileHeader")}\n\n${codes.join("\n")}\n`;
 
   function download() {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "vibeworks-wiederherstellungscodes.txt";
+    a.download = t("totp.codesFileName");
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -24,7 +27,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   return (
     <div className="space-y-4">
       <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
-        Diese Codes werden <strong>nur jetzt</strong> angezeigt. Bewahre sie sicher auf – mit jedem kommst du einmal ohne Handy in dein Konto.
+        {t("totp.codesOnceBefore")}<strong>{t("totp.codesOnceStrong")}</strong>{t("totp.codesOnceAfter")}
       </p>
       <ol className="grid grid-cols-2 gap-2 font-mono text-sm sm:grid-cols-5">
         {codes.map((c) => (
@@ -32,19 +35,21 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
         ))}
       </ol>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn btn-sm" onClick={() => void navigator.clipboard?.writeText(text)}><ClipboardCopy size={14} /> Kopieren</button>
-        <button type="button" className="btn btn-sm" onClick={download}><Download size={14} /> Als Datei speichern</button>
+        <button type="button" className="btn btn-sm" onClick={() => void navigator.clipboard?.writeText(text)}><ClipboardCopy size={14} /> {tc("copy")}</button>
+        <button type="button" className="btn btn-sm" onClick={download}><Download size={14} /> {t("totp.saveAsFile")}</button>
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} className="accent-[var(--vw-accent)]" />
-        Ich habe die Codes sicher aufbewahrt
+        {t("totp.savedConfirm")}
       </label>
-      <button type="button" className="btn btn-primary btn-sm" disabled={!saved} onClick={onDone}>Fertig</button>
+      <button type="button" className="btn btn-primary btn-sm" disabled={!saved} onClick={onDone}>{t("totp.done")}</button>
     </div>
   );
 }
 
 export function TotpSection({ initial, hasPassword }: { initial: { enabled: boolean; recoveryLeft: number }; hasPassword: boolean }) {
+  const t = useT("account");
+  const tc = useT("common");
   const [enabled, setEnabled] = useState(initial.enabled);
   const [recoveryLeft, setRecoveryLeft] = useState(initial.recoveryLeft);
   const [mode, setMode] = useState<Mode>("idle");
@@ -111,23 +116,19 @@ export function TotpSection({ initial, hasPassword }: { initial: { enabled: bool
   };
 
   return (
-    <AccountSection
-      icon={<ShieldCheck size={18} />}
-      title="Zwei-Faktor-Anmeldung"
-      description="Zusätzlich zum Passwort ein Einmalcode aus einer Authenticator-App (z. B. Aegis, 2FAS, Google oder Microsoft Authenticator)."
-    >
+    <AccountSection icon={<ShieldCheck size={18} />} title={t("totp.title")} description={t("totp.description")}>
       {mode === "codes" ? (
         <RecoveryCodes codes={codes} onDone={() => reset()} />
       ) : mode === "setup" && setup ? (
         <form onSubmit={activate} className="space-y-4">
           <div className="flex flex-wrap items-start gap-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={setup.qr} alt="QR-Code für die Authenticator-App" width={200} height={200} className="rounded-xl bg-white p-2" />
+            <img src={setup.qr} alt={t("totp.qrAlt")} width={200} height={200} className="rounded-xl bg-white p-2" />
             <div className="min-w-0 flex-1 space-y-3 text-sm">
-              <p><strong>1.</strong> QR-Code mit der Authenticator-App scannen.</p>
-              <p className="text-muted">Oder den Schlüssel von Hand eingeben:</p>
+              <p><strong>1.</strong> {t("totp.step1")}</p>
+              <p className="text-muted">{t("totp.manualKey")}</p>
               <p className="break-all rounded-lg border bg-bg/40 px-3 py-2 font-mono tracking-wider">{setup.secret.match(/.{1,4}/g)?.join(" ")}</p>
-              <p><strong>2.</strong> Den angezeigten 6-stelligen Code eintragen:</p>
+              <p><strong>2.</strong> {t("totp.step2")}</p>
               <input
                 className="field max-w-40 text-center font-mono text-lg tracking-[0.3em]"
                 inputMode="numeric"
@@ -135,51 +136,51 @@ export function TotpSection({ initial, hasPassword }: { initial: { enabled: bool
                 maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                aria-label="Code aus der App"
+                aria-label={t("totp.codeLabel")}
                 autoFocus
               />
             </div>
           </div>
           <FormError message={error} />
           <div className="flex gap-2">
-            <button type="submit" className="btn btn-primary btn-sm" disabled={busy || code.length !== 6}><ShieldCheck size={14} /> Aktivieren</button>
-            <button type="button" className="btn btn-sm" onClick={() => reset()}>Abbrechen</button>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={busy || code.length !== 6}><ShieldCheck size={14} /> {t("totp.activate")}</button>
+            <button type="button" className="btn btn-sm" onClick={() => reset()}>{tc("cancel")}</button>
           </div>
         </form>
       ) : mode === "confirm-disable" || mode === "confirm-regenerate" ? (
         <form onSubmit={confirm} className="space-y-3">
-          <p className="text-sm">{mode === "confirm-disable" ? "Zum Abschalten bitte bestätigen." : "Neue Codes machen die bisherigen ungültig. Bitte bestätigen."}</p>
+          <p className="text-sm">{mode === "confirm-disable" ? t("totp.confirmDisable") : t("totp.confirmRegenerate")}</p>
           {hasPassword ? (
-            <input type="password" className="field max-w-sm" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" aria-label="Passwort" autoFocus />
+            <input type="password" className="field max-w-sm" placeholder={t("totp.passwordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" aria-label={t("totp.passwordPlaceholder")} autoFocus />
           ) : (
-            <input className="field max-w-40 text-center font-mono" inputMode="numeric" maxLength={6} placeholder="Code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} aria-label="Code aus der App" autoFocus />
+            <input className="field max-w-40 text-center font-mono" inputMode="numeric" maxLength={6} placeholder={t("totp.codePlaceholder")} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} aria-label={t("totp.codeLabel")} autoFocus />
           )}
           <FormError message={error} />
           <div className="flex gap-2">
             <button type="submit" className={mode === "confirm-disable" ? "btn btn-danger btn-sm" : "btn btn-primary btn-sm"} disabled={busy}>
-              {mode === "confirm-disable" ? <><ShieldOff size={14} /> Abschalten</> : <><RefreshCw size={14} /> Neue Codes erzeugen</>}
+              {mode === "confirm-disable" ? <><ShieldOff size={14} /> {t("totp.disable")}</> : <><RefreshCw size={14} /> {t("totp.regenerate")}</>}
             </button>
-            <button type="button" className="btn btn-sm" onClick={() => reset()}>Abbrechen</button>
+            <button type="button" className="btn btn-sm" onClick={() => reset()}>{tc("cancel")}</button>
           </div>
         </form>
       ) : enabled ? (
         <div className="space-y-4">
           <p className="flex items-center gap-2 text-sm">
-            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">Aktiv</span>
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">{t("totp.active")}</span>
             <span className={recoveryLeft <= 2 ? "text-amber-400" : "text-muted"}>
-              {recoveryLeft} von 10 Wiederherstellungscodes übrig{recoveryLeft <= 2 && " – bald neue erzeugen"}
+              {t("totp.codesLeft", { n: recoveryLeft })}{recoveryLeft <= 2 && t("totp.codesLow")}
             </span>
           </p>
           <div className="flex flex-wrap gap-2">
-            <button className="btn btn-sm" onClick={() => reset("confirm-regenerate")}><KeyRound size={14} /> Neue Wiederherstellungscodes</button>
-            <button className="btn btn-danger btn-sm" onClick={() => reset("confirm-disable")}><ShieldOff size={14} /> Abschalten</button>
+            <button className="btn btn-sm" onClick={() => reset("confirm-regenerate")}><KeyRound size={14} /> {t("totp.newCodes")}</button>
+            <button className="btn btn-danger btn-sm" onClick={() => reset("confirm-disable")}><ShieldOff size={14} /> {t("totp.disable")}</button>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-muted">Nicht eingerichtet. Mit einem zweiten Faktor hilft ein erratenes oder abgefangenes Passwort allein nicht weiter.</p>
+          <p className="text-sm text-muted">{t("totp.notSetUp")}</p>
           <FormError message={error} />
-          <button className="btn btn-primary btn-sm" onClick={startSetup} disabled={busy}><Smartphone size={14} /> Einrichten</button>
+          <button className="btn btn-primary btn-sm" onClick={startSetup} disabled={busy}><Smartphone size={14} /> {t("totp.setUp")}</button>
         </div>
       )}
     </AccountSection>

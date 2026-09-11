@@ -21,6 +21,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 // Spalten mit ziehbaren Karten – gemeinsame Grundlage für das Projekt-Kanban
 // und das Aufgabenbrett. Gezogen wird nur am Griff, damit Klicks auf die
@@ -56,6 +57,7 @@ export interface SortableColumnsProps<T extends { id: string }> {
 }
 
 function SortableItem({ id, label, render }: { id: string; label: string; render: (handle: ReactNode) => ReactNode }) {
+  const t = useT("shell");
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
   const handle = (
     <button
@@ -63,7 +65,7 @@ function SortableItem({ id, label, render }: { id: string; label: string; render
       ref={setActivatorNodeRef}
       {...attributes}
       {...listeners}
-      aria-label={`${label} verschieben`}
+      aria-label={t("dnd.move", { label })}
       className="cursor-grab touch-none rounded p-1 text-muted hover:text-fg active:cursor-grabbing"
     >
       <GripVertical size={16} />
@@ -98,9 +100,10 @@ export function SortableColumns<T extends { id: string }>({
   renderOverlay,
   renderColumn,
   limit = 0,
-  emptyText = "Hierher ziehen",
+  emptyText,
   className,
 }: SortableColumnsProps<T>) {
+  const t = useT("shell");
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   // Funktionen über eine Ref, damit neue Funktions-Instanzen je Render die
   // Spalten nicht ständig neu ableiten.
@@ -179,7 +182,7 @@ export function SortableColumns<T extends { id: string }>({
       onDragCancel={() => setActiveId(null)}
       accessibility={{
         screenReaderInstructions: {
-          draggable: "Leertaste zum Aufnehmen, Pfeiltasten zum Verschieben, Leertaste zum Ablegen, Escape zum Abbrechen.",
+          draggable: t("dnd.instructions"),
         },
       }}
     >
@@ -196,11 +199,11 @@ export function SortableColumns<T extends { id: string }>({
                 return it ? <SortableItem key={id} id={id} label={labelOf(it)} render={(h) => renderCard(it, h)} /> : null;
               })}
               {ids.length === 0 && (
-                <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed py-6 text-xs text-muted">{emptyText}</p>
+                <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed py-6 text-xs text-muted">{emptyText ?? t("dnd.emptyText")}</p>
               )}
               {hidden > 0 && (
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setExpanded((s) => new Set(s).add(c))}>
-                  {hidden} weitere anzeigen
+                  {t("dnd.showMore", { n: hidden })}
                 </button>
               )}
             </DropArea>

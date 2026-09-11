@@ -5,6 +5,7 @@ import { decrypt, randomToken, sha256 } from "@/lib/crypto";
 import { ApiError } from "@/lib/api";
 import { verifyPassword } from "./password";
 import { verifyTotp } from "./totp";
+import { tk } from "@/lib/i18n/messages";
 
 // Zwischenschritt zwischen Passwort und zweitem Faktor. Bewusst keine
 // halbe Sitzung: aus diesem Zustand entsteht nichts, was einer Anmeldung
@@ -72,11 +73,11 @@ export async function confirmIdentity(userId: string, input: { password?: string
   const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
   if (user.passwordHash) {
     const ok = input.password ? (await verifyPassword(input.password, user.passwordHash)).ok : false;
-    if (!ok) throw new ApiError(400, "Das Passwort stimmt nicht.", { password: "Stimmt nicht" });
+    if (!ok) throw new ApiError(400, tk("auth", "errors.wrongPassword"), { password: tk("auth", "errors.wrong") });
     return user;
   }
   if (!input.code || !(await checkTotpForUser(user, input.code))) {
-    throw new ApiError(400, "Der Code stimmt nicht.", { code: "Stimmt nicht" });
+    throw new ApiError(400, tk("auth", "errors.wrongCode"), { code: tk("auth", "errors.wrong") });
   }
   return user;
 }

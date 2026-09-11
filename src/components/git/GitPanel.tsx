@@ -20,7 +20,11 @@ import type { CommitInfo } from "@/lib/git/providers";
 import { guessProvider, parseRepoUrl, PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
-import { cn, timeAgo } from "@/lib/utils";
+import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
+import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
+import type { TFunction } from "@/lib/i18n/messages";
+import { cn } from "@/lib/utils";
+import { richText } from "./GitProviderFields";
 
 interface Access {
   tokenHint: string | null;
@@ -33,16 +37,20 @@ const STALE_MS = 5 * 60_000;
 const PAGE = 20;
 const CHART_DAYS = 30;
 
+// So legt der Server Commits ohne Nachricht bzw. ohne Autor ab (siehe parse.ts, providers.ts).
+const STORED_NO_MESSAGE = "(ohne Nachricht)";
+const STORED_UNKNOWN_AUTHOR = "unbekannt";
+
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-function dayLabel(key: string, today: Date): string {
+function dayLabel(key: string, today: Date, t: TFunction<"git">, locale: Locale): string {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (key === localDay(today)) return "Heute";
-  if (key === localDay(yesterday)) return "Gestern";
+  if (key === localDay(today)) return t("commits.today");
+  if (key === localDay(yesterday)) return t("commits.yesterday");
   const d = new Date(`${key}T12:00:00`);
-  return d.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
+  return d.toLocaleDateString(INTL_LOCALE[locale], { weekday: "short", day: "numeric", month: "long", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
 }
 
 function hue(name: string): number {
@@ -95,8 +103,11 @@ function CommitTitle({ text, issueBase }: { text: string; issueBase: string | nu
 }
 
 function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase: string | null; last: boolean }) {
+  const t = useT("git");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
-  const time = new Date(commit.date).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date(commit.date).toLocaleTimeString(INTL_LOCALE[locale], { hour: "2-digit", minute: "2-digit" });
+  const author = commit.author === STORED_UNKNOWN_AUTHOR ? t("commits.unknownAuthor") : commit.author;
   return (
     <li className="relative flex gap-3 pb-4">
       {!last && <span aria-hidden className="absolute left-4 top-9 bottom-0 w-px bg-fg/10" />}
@@ -104,7 +115,7 @@ function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase:
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           <p className="min-w-0 flex-1 break-words text-sm font-medium leading-snug">
-            <CommitTitle text={commit.title} issueBase={issueBase} />
+            {commit.title === STORED_NO_MESSAGE ? t("commits.noMessage") : <CommitTitle text={commit.title} issueBase={issueBase} />}
           </p>
           {commit.url ? (
             <a
@@ -112,7 +123,7 @@ function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase:
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 rounded-md border bg-bg/40 px-1.5 py-px font-mono text-[11px] text-muted transition hover:border-accent/50 hover:text-fg"
-              title="Commit öffnen"
+              title={t("commits.open")}
             >
               {commit.sha.slice(0, 7)}
             </a>
@@ -121,12 +132,12 @@ function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase:
           )}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted">
-          <span>{commit.author}</span>
+          <span>{author}</span>
           <span aria-hidden>·</span>
-          <time dateTime={commit.date} title={new Date(commit.date).toLocaleString("de-DE")}>{time}</time>
+          <time dateTime={commit.date} title={new Date(commit.date).toLocaleString(INTL_LOCALE[locale])}>{time}</time>
           {commit.body && (
             <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="inline-flex items-center gap-0.5 hover:text-fg">
-              Details <ChevronDown size={12} className={cn("transition", open && "rotate-180")} />
+              {t("commits.details")} <ChevronDown size={12} className={cn("transition", open && "rotate-180")} />
             </button>
           )}
         </div>
@@ -139,6 +150,8 @@ function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase:
 }
 
 function ActivityChart({ commits, today }: { commits: CommitInfo[]; today: Date }) {
+  const t = useT("git");
+  const locale = useLocale();
   const days = useMemo(() => {
     const counts = new Map<string, number>();
     for (const c of commits) {
@@ -149,22 +162,22 @@ function ActivityChart({ commits, today }: { commits: CommitInfo[]; today: Date 
       const d = new Date(today);
       d.setDate(today.getDate() - (CHART_DAYS - 1 - i));
       const key = localDay(d);
-      return { key, count: counts.get(key) ?? 0, label: d.toLocaleDateString("de-DE", { day: "numeric", month: "short" }) };
+      return { key, count: counts.get(key) ?? 0, label: d.toLocaleDateString(INTL_LOCALE[locale], { day: "numeric", month: "short" }) };
     });
-  }, [commits, today]);
+  }, [commits, today, locale]);
   const max = Math.max(1, ...days.map((d) => d.count));
   const total = days.reduce((s, d) => s + d.count, 0);
   return (
     <figure className="rounded-2xl border bg-bg/25 p-3">
       <figcaption className="mb-2 flex justify-between text-xs text-muted">
-        <span>Aktivität · letzte {CHART_DAYS} Tage</span>
-        <span className="tabular-nums">{total} Commit{total === 1 ? "" : "s"}</span>
+        <span>{t("chart.title", { days: CHART_DAYS })}</span>
+        <span className="tabular-nums">{t("chart.total", { n: total })}</span>
       </figcaption>
-      <div className="flex h-14 items-end gap-[3px]" role="img" aria-label={`${total} Commits in den letzten ${CHART_DAYS} Tagen`}>
+      <div className="flex h-14 items-end gap-[3px]" role="img" aria-label={t("chart.aria", { n: total, days: CHART_DAYS })}>
         {days.map((d) => (
           <div
             key={d.key}
-            title={`${d.label}: ${d.count} Commit${d.count === 1 ? "" : "s"}`}
+            title={t("chart.day", { date: d.label, n: d.count })}
             className={cn("flex-1 rounded-sm transition-all", d.count ? "bg-accent" : "bg-fg/10")}
             style={{ height: d.count ? `${Math.max(14, (d.count / max) * 100)}%` : "8%", opacity: d.count ? 0.45 + 0.55 * (d.count / max) : 1 }}
           />
@@ -183,12 +196,6 @@ function Stat({ icon: Icon, label, value, hint }: { icon: typeof Star; label: st
   );
 }
 
-const TOKEN_HELP: Record<GitProvider, string> = {
-  github: "GitHub: Token mit dem Recht „public_repo“ (bei privaten Repositories „repo“).",
-  gitlab: "GitLab: Projekt- oder Personal-Access-Token mit dem Scope „api“.",
-  gitea: "Gitea/Forgejo: Token mit „repository: read“ und „issue: write“.",
-};
-
 function AccessPanel({
   provider,
   access,
@@ -202,6 +209,8 @@ function AccessPanel({
   error: string | null;
   onSave: (body: { token?: string | null; issueSync?: boolean }) => void;
 }) {
+  const t = useT("git");
+  const tc = useT("common");
   const [token, setToken] = useState("");
   return (
     <div className="mb-5 space-y-4 rounded-2xl border bg-bg/30 p-4">
@@ -209,17 +218,16 @@ function AccessPanel({
         <p className="flex items-start gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
           <CircleDot size={16} className="mt-0.5 shrink-0 text-emerald-400" />
           <span>
-            <b>Konto-Token aktiv</b>
-            {access.accountToken.login && <> (@{access.accountToken.login})</>} – gilt für dieses Projekt. Ein eigenes Token brauchst du nur, wenn es einen anderen
-            Zugang braucht.
+            <b>{t("access.accountActive")}</b>
+            {access.accountToken.login && <> (@{access.accountToken.login})</>} {t("access.accountActiveHint")}
           </span>
         </p>
       ) : (
         !access.tokenHint && (
           <p className="text-sm text-muted">
-            Tipp: Ein Token unter{" "}
-            <a href="/account#git-zugang" className="text-accent-ink hover:underline">Mein Konto → Git-Verbindungen</a> gilt für alle deine Projekte auf dem Server –
-            GitHub, GitLab oder dein eigenes Gitea.
+            {richText(t("access.tip"), {
+              link: <a href="/account#git-zugang" className="text-accent-ink hover:underline">{t("access.tipLink")}</a>,
+            })}
           </p>
         )
       )}
@@ -231,7 +239,7 @@ function AccessPanel({
           setToken("");
         }}
       >
-        <label className="label" htmlFor="git-token">Zugangstoken</label>
+        <label className="label" htmlFor="git-token">{t("access.tokenLabel")}</label>
         <div className="flex flex-wrap gap-2">
           <input
             id="git-token"
@@ -239,14 +247,14 @@ function AccessPanel({
             autoComplete="off"
             spellCheck={false}
             className="field min-w-0 flex-1 font-mono"
-            placeholder={access.tokenHint ? `gespeichert: ${access.tokenHint}` : "Token einfügen …"}
+            placeholder={access.tokenHint ? t("access.tokenSaved", { hint: access.tokenHint }) : t("access.tokenPlaceholder")}
             value={token}
             onChange={(e) => setToken(e.target.value)}
             maxLength={500}
           />
-          <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !token.trim()}>Speichern</button>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !token.trim()}>{tc("save")}</button>
           {access.tokenHint && (
-            <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onSave({ token: null })}>Entfernen</button>
+            <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onSave({ token: null })}>{tc("remove")}</button>
           )}
         </div>
         {(provider === "github" || !provider) && (
@@ -256,19 +264,16 @@ function AccessPanel({
             rel="noopener noreferrer"
             className="btn btn-sm w-full justify-center sm:w-auto"
           >
-            <ExternalLink size={14} /> Token auf GitHub erstellen
+            <ExternalLink size={14} /> {t("access.createOnGithub")}
           </a>
         )}
         <p className="text-xs text-muted">
           {provider === "github" || !provider ? (
-            <>
-              Der Knopf öffnet GitHub mit allem vorausgefüllt: bei „Expiration“ eine Laufzeit wählen, unten auf <b>Generate token</b> klicken und den Token
-              (beginnt mit <code>ghp_</code>) hier einfügen. Für private Repositories zusätzlich den Haken bei „repo“ setzen.{" "}
-            </>
+            <>{richText(t("access.githubHelp"), { button: <b>Generate token</b>, prefix: <code>ghp_</code> })} </>
           ) : (
-            <>{TOKEN_HELP[provider]} </>
+            <>{t(`access.help.${provider}`)} </>
           )}
-          Das Token wird verschlüsselt gespeichert und nie wieder angezeigt.
+          {t("access.encrypted")}
         </p>
       </form>
 
@@ -281,11 +286,8 @@ function AccessPanel({
           onChange={(e) => onSave({ issueSync: e.target.checked })}
         />
         <span className="text-sm">
-          <span className="font-medium">Aufgaben automatisch als Issues anlegen</span>
-          <span className="block text-xs text-muted">
-            Jede Aufgabe wird zum Issue. Die Labels „in Arbeit“ und „blockiert“ sowie geschlossene Issues sortieren die Aufgabe hier in die passende Spalte – in beide
-            Richtungen. Gelöschte Aufgaben schließen ihr Issue als „nicht geplant“.
-          </span>
+          <span className="font-medium">{t("access.issueSync")}</span>
+          <span className="block text-xs text-muted">{t("access.issueSyncHint")}</span>
         </span>
       </label>
       <FormError message={error} />
@@ -309,6 +311,10 @@ export function GitPanel({
   /** owner: alles · member: abgleichen, kein Token · public: nur der gespeicherte Stand */
   mode?: "owner" | "member" | "public";
 }) {
+  const t = useT("git");
+  const f = useFormat();
+  const msg = useMsg();
+  const locale = useLocale();
   const canSync = mode !== "public";
   const canManage = mode === "owner";
   const router = useRouter();
@@ -395,14 +401,16 @@ export function GitPanel({
 
   // Den Token-Zustand kennt nur der Besitzer – alle anderen sehen die Zahl verknüpfter Issues.
   const hasToken = Boolean(access.tokenHint || access.accountToken);
-  const issueStat = !canManage ? (linked ? String(linked) : "–") : !hasToken ? "aus" : !access.issueSync ? "pausiert" : String(linked);
+  const issueStat = !canManage ? (linked ? String(linked) : "–") : !hasToken ? t("stats.issuesOff") : !access.issueSync ? t("stats.issuesPaused") : String(linked);
   const issueHint = !canManage
-    ? `${linked} Aufgaben mit Issue`
+    ? t("stats.linked", { n: linked })
     : !hasToken
-      ? "Für Issues ein Zugangstoken hinterlegen – am besten einmal unter „Mein Konto“"
+      ? t("stats.needToken")
       : !access.issueSync
-        ? "Spiegelung ist abgeschaltet"
-        : `${linked} Aufgaben mit Issue`;
+        ? t("stats.syncOff")
+        : t("stats.linked", { n: linked });
+  // Gespeicherte Fehler sind Übersetzungsschlüssel (ältere noch deutscher Text).
+  const cacheError = cache?.error ? msg(cache.error) : null;
 
   return (
     <section className="glass p-6 sm:p-8" aria-labelledby="git-heading">
@@ -412,13 +420,13 @@ export function GitPanel({
             <GitCommitHorizontal size={20} />
           </span>
           <div className="min-w-0">
-            <h2 id="git-heading" className="text-lg font-semibold">Git &amp; Updates</h2>
+            <h2 id="git-heading" className="text-lg font-semibold">{t("panel.title")}</h2>
             {cache?.fullName && cache.webUrl ? (
               <a href={cache.webUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 text-sm text-accent-ink hover:underline">
                 <span className="truncate">{cache.fullName}</span> <ExternalLink size={12} className="shrink-0" />
               </a>
             ) : (
-              <p className="text-sm text-muted">{repoUrl ? repoUrl.replace(/^https?:\/\//, "") : "Kein Repository verknüpft"}</p>
+              <p className="text-sm text-muted">{repoUrl ? repoUrl.replace(/^https?:\/\//, "") : t("panel.noRepo")}</p>
             )}
             {cache && !cache.error && (
               <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
@@ -433,17 +441,17 @@ export function GitPanel({
           <div className="flex items-center gap-2">
             {cache && (
               <span className="hidden text-xs text-muted sm:inline" suppressHydrationWarning>
-                {busy ? "gleicht ab …" : `Stand ${timeAgo(cache.fetchedAt)}`}
+                {busy ? t("panel.syncing") : t("panel.fetched", { ago: f.ago(cache.fetchedAt) })}
               </span>
             )}
             {canManage && (
               <button type="button" className={cn("btn btn-sm", showAccess && "chip-active")} onClick={() => setShowAccess((s) => !s)} aria-expanded={showAccess}>
-                <KeyRound size={14} /> Zugang
+                <KeyRound size={14} /> {t("panel.access")}
               </button>
             )}
             {canSync && (
-              <button type="button" className="btn btn-sm" onClick={() => void sync()} disabled={busy} aria-label="Jetzt abgleichen">
-                <RefreshCw size={14} className={cn(busy && "animate-spin")} /> <span className="hidden sm:inline">Abgleichen</span>
+              <button type="button" className="btn btn-sm" onClick={() => void sync()} disabled={busy} aria-label={t("panel.syncNow")}>
+                <RefreshCw size={14} className={cn(busy && "animate-spin")} /> <span className="hidden sm:inline">{t("panel.sync")}</span>
               </button>
             )}
           </div>
@@ -453,38 +461,37 @@ export function GitPanel({
       {!repoUrl ? (
         <div className="rounded-2xl border border-dashed px-5 py-8 text-center">
           <GitBranch className="mx-auto text-muted" size={26} />
-          <p className="mt-2 font-medium">Noch kein Repository</p>
+          <p className="mt-2 font-medium">{t("panel.emptyTitle")}</p>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-            Unter <span className="text-fg">Bearbeiten → Repository</span> eine Adresse von GitHub, GitLab oder Gitea eintragen – dann erscheinen hier die Commits, und
-            Aufgaben können automatisch zu Issues werden.
+            {richText(t("panel.emptyHint"), { path: <span className="text-fg">{t("panel.emptyPath")}</span> })}
           </p>
         </div>
       ) : (
         <>
           {showAccess && canManage && <AccessPanel provider={provider || null} access={access} busy={accessBusy || busy} error={accessError} onSave={(b) => void saveAccess(b)} />}
 
-          {(error || cache?.error) && (
+          {(error || cacheError) && (
             <p role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
               <TriangleAlert size={16} className="mt-0.5 shrink-0" />
               <span>
-                {error ?? cache?.error}
-                {commits.length > 0 && " Angezeigt wird der letzte erfolgreiche Stand."}
+                {error ?? cacheError}
+                {commits.length > 0 && ` ${t("panel.lastGood")}`}
               </span>
             </p>
           )}
           {issues?.error && !cache?.error && (
             <p role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
-              <CircleDot size={16} className="mt-0.5 shrink-0" /> <span>Issues: {issues.error}</span>
+              <CircleDot size={16} className="mt-0.5 shrink-0" /> <span>{t("panel.issuesError", { error: msg(issues.error) })}</span>
             </p>
           )}
 
           {commits.length > 0 && (
             <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_1.4fr]">
               <div className="grid grid-cols-2 gap-3">
-                <Stat icon={GitCommitHorizontal} label="Commits" value={commits.length >= 100 ? "100+" : String(commits.length)} />
-                <Stat icon={RefreshCw} label="Letzter Commit" value={today ? timeAgo(commits[0].date) : "…"} />
-                <Stat icon={Users} label="Mitwirkende" value={String(authors)} />
-                <Stat icon={CircleDot} label="Issues" value={issueStat} hint={issueHint} />
+                <Stat icon={GitCommitHorizontal} label={t("stats.commits")} value={commits.length >= 100 ? "100+" : String(commits.length)} />
+                <Stat icon={RefreshCw} label={t("stats.lastCommit")} value={today ? f.ago(commits[0].date) : "…"} />
+                <Stat icon={Users} label={t("stats.contributors")} value={String(authors)} />
+                <Stat icon={CircleDot} label={t("stats.issues")} value={issueStat} hint={issueHint} />
               </div>
               {today && <ActivityChart commits={commits} today={today} />}
             </div>
@@ -501,14 +508,14 @@ export function GitPanel({
             </div>
           )}
 
-          {cache && !cache.error && commits.length === 0 && <p className="text-sm text-muted">Das Repository hat noch keine Commits.</p>}
+          {cache && !cache.error && commits.length === 0 && <p className="text-sm text-muted">{t("panel.noCommits")}</p>}
 
           {today && groups.length > 0 && (
             <div className="space-y-5">
               {groups.map((g) => (
                 <div key={g.key}>
                   <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
-                    {dayLabel(g.key, today)}
+                    {dayLabel(g.key, today, t, locale)}
                     <span className="h-px flex-1 bg-fg/10" />
                     <span className="font-normal normal-case tabular-nums">{g.commits.length}</span>
                   </h3>
@@ -521,7 +528,7 @@ export function GitPanel({
               ))}
               {commits.length > shown && (
                 <button type="button" className="btn btn-sm w-full" onClick={() => setShown((n) => n + PAGE)}>
-                  Weitere Commits ({commits.length - shown})
+                  {t("panel.moreCommits", { n: commits.length - shown })}
                 </button>
               )}
             </div>

@@ -112,6 +112,9 @@ model User {
   /// Persönliches Design (Hintergrund, Farben, Modus, Glas) – siehe src/lib/theme.
   theme Json?
 
+  /// Sprache der Oberfläche ("de" | "en") – null heißt: Browsersprache
+  locale String?
+
   sessions      Session[]
   passkeys      Passkey[]
   recoveryCodes RecoveryCode[]

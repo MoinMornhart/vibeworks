@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, Palette, Search, Shield, UserRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { Logo } from "@/components/Logo";
 import { api } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
+import type { Key } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
 export interface NavUser {
@@ -18,17 +21,17 @@ export interface NavUser {
 
 interface NavItem {
   href: string;
-  label: string;
+  label: Key<"shell">;
   icon: LucideIcon;
   admin?: boolean;
 }
 
 const NAV: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tasks", label: "Aufgaben", icon: ListChecks },
-  { href: "/docs", label: "Docs", icon: BookOpen },
-  { href: "/design", label: "Design", icon: Palette },
-  { href: "/admin", label: "Admin", icon: Shield, admin: true },
+  { href: "/", label: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/tasks", label: "nav.tasks", icon: ListChecks },
+  { href: "/docs", label: "nav.docs", icon: BookOpen },
+  { href: "/design", label: "nav.design", icon: Palette },
+  { href: "/admin", label: "nav.admin", icon: Shield, admin: true },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -36,6 +39,8 @@ function isActive(pathname: string, href: string) {
 }
 
 export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
+  const t = useT("shell");
+  const tc = useT("common");
   const pathname = usePathname();
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -60,7 +65,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
 
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
-      <nav className="glass mx-auto flex max-w-7xl items-center gap-2 px-3 py-2 sm:gap-4 sm:px-4" aria-label="Hauptnavigation">
+      <nav className="glass mx-auto flex max-w-7xl items-center gap-2 px-3 py-2 sm:gap-4 sm:px-4" aria-label={t("nav.main")}>
         <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
           <Logo size={30} />
           <span className="hidden text-lg sm:inline">{appName}</span>
@@ -75,10 +80,10 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
                   "btn btn-ghost btn-sm",
                   isActive(pathname, item.href) && "bg-accent/15 text-fg",
                 )}
-                title={item.label}
+                title={t(item.label)}
               >
                 <item.icon size={16} />
-                <span className="hidden md:inline">{item.label}</span>
+                <span className="hidden md:inline">{t(item.label)}</span>
               </Link>
             </li>
           ))}
@@ -86,17 +91,17 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
-          aria-label="Schnellsuche öffnen"
-          title="Schnellsuche (Strg+K)"
+          aria-label={t("topNav.openSearch")}
+          title={t("topNav.searchTitle")}
         >
           <Search size={16} />
-          <kbd className="hidden rounded border px-1.5 text-[10px] text-muted lg:inline">Strg K</kbd>
+          <kbd className="hidden rounded border px-1.5 text-[10px] text-muted lg:inline">{t("topNav.searchKbd")}</kbd>
         </button>
         <button
           className="btn btn-ghost btn-icon btn-sm"
           onClick={() => window.dispatchEvent(new Event(OPEN_CAPTURE_EVENT))}
-          aria-label="Schnell erfassen"
-          title="Schnell erfassen"
+          aria-label={t("topNav.capture")}
+          title={t("topNav.capture")}
         >
           <Zap size={16} />
         </button>
@@ -109,17 +114,22 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
             <ChevronDown size={14} />
           </button>
           {menu && (
-            <div role="menu" className="glass-strong fade-in absolute right-0 mt-2 w-56 p-1.5">
-              <p className="px-3 py-2 text-xs text-muted">Angemeldet als <strong className="text-fg">{user.username}</strong></p>
+            <div role="menu" className="glass-strong fade-in absolute right-0 mt-2 w-60 p-1.5">
+              <p className="px-3 py-2 text-xs text-muted">{t("topNav.signedInAs")} <strong className="text-fg">{user.username}</strong></p>
               <Link role="menuitem" href="/account" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
-                <UserRound size={15} /> Mein Konto
+                <UserRound size={15} /> {t("nav.account")}
               </Link>
               <Link role="menuitem" href="/design" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
-                <Palette size={15} /> Design
+                <Palette size={15} /> {t("nav.design")}
               </Link>
+              {/* Sprachwahl überall erreichbar */}
+              <div className="flex flex-col gap-1.5 px-3 py-2">
+                <span className="flex items-center gap-2 text-xs text-muted"><Languages size={14} /> {tc("language.label")}</span>
+                <LanguageSwitch className="w-full [&>button]:flex-1 text-xs" />
+              </div>
               <div className="my-1 h-px bg-fg/10" />
               <button role="menuitem" className="btn btn-ghost btn-sm w-full justify-start" onClick={logout}>
-                <LogOut size={15} /> Abmelden
+                <LogOut size={15} /> {t("topNav.logout")}
               </button>
             </div>
           )}

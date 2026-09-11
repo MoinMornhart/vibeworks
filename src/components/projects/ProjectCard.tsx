@@ -5,7 +5,8 @@ import type { ProjectStatus } from "@prisma/client";
 import { ArrowDown, ArrowUp, Check, Flame, GitBranch, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
-import { cn, timeAgo } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 import { StatusSelect } from "./StatusSelect";
 
 export function accentGradient(accent: string, dir = "90deg"): string {
@@ -14,18 +15,21 @@ export function accentGradient(accent: string, dir = "90deg"): string {
 }
 
 export function PriorityBadge({ priority, compact = false }: { priority: number; compact?: boolean }) {
+  const t = useT("projects");
+  const ts = useT("status");
   if (priority === 2) return null;
   const map = {
-    1: { icon: ArrowDown, label: "Niedrig", cls: "text-muted" },
-    3: { icon: ArrowUp, label: "Hoch", cls: "text-amber-400" },
-    4: { icon: Flame, label: "Kritisch", cls: "text-red-400" },
+    1: { icon: ArrowDown, cls: "text-muted" },
+    3: { icon: ArrowUp, cls: "text-amber-400" },
+    4: { icon: Flame, cls: "text-red-400" },
   } as const;
   const p = map[priority as 1 | 3 | 4];
   if (!p) return null;
+  const label = ts(`priority.${String(priority) as "1" | "3" | "4"}`);
   return (
-    <span className={cn("inline-flex items-center gap-1", p.cls)} title={`Priorität: ${p.label}`}>
+    <span className={cn("inline-flex items-center gap-1", p.cls)} title={t("card.priority", { label })}>
       <p.icon size={13} />
-      {!compact && p.label}
+      {!compact && label}
     </span>
   );
 }
@@ -51,13 +55,14 @@ interface CardProps {
 }
 
 function SelectBox({ project, selected, selecting, onSelect }: Pick<CardProps, "project" | "selected" | "selecting" | "onSelect">) {
+  const t = useT("projects");
   if (!onSelect) return null;
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={Boolean(selected)}
-      aria-label={`${project.name} auswählen`}
+      aria-label={t("card.selectName", { name: project.name })}
       onClick={() => onSelect(project)}
       className={cn(
         "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition",
@@ -71,6 +76,8 @@ function SelectBox({ project, selected, selecting, onSelect }: Pick<CardProps, "
 }
 
 export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect, selected, selecting, index = 0 }: CardProps) {
+  const t = useT("projects");
+  const f = useFormat();
   return (
     <article
       className={cn("glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20", selected && "ring-2 ring-accent/60")}
@@ -85,14 +92,14 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
         <button
           onClick={() => onEdit(p)}
           className="btn btn-ghost btn-icon btn-sm opacity-0 transition group-hover:opacity-100 focus:opacity-100"
-          aria-label={`${p.name} bearbeiten`}
+          aria-label={t("card.editName", { name: p.name })}
         >
           <Pencil size={15} />
         </button>
         <button
           onClick={() => onFavorite(p)}
           aria-pressed={p.favorite}
-          aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"}
+          aria-label={p.favorite ? t("card.favoriteRemove") : t("card.favoriteAdd")}
           className="btn btn-ghost btn-icon btn-sm"
         >
           <Star size={16} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
@@ -102,12 +109,12 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
       {p.summary ? (
         <p className="mt-1 line-clamp-2 text-sm text-muted">{p.summary}</p>
       ) : (
-        <p className="mt-1 text-sm italic text-muted opacity-70">Noch keine Kurzbeschreibung</p>
+        <p className="mt-1 text-sm italic text-muted opacity-70">{t("card.noSummary")}</p>
       )}
 
       <div className="mt-4">
         <div className="mb-1 flex justify-between text-xs text-muted">
-          <span>Fortschritt</span>
+          <span>{t("card.progress")}</span>
           <span className="tabular-nums">{p.progress} %</span>
         </div>
         <ProgressBar value={p.progress} accent={p.accent} />
@@ -126,13 +133,13 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
         <div className="flex min-w-0 items-center gap-3 text-xs text-muted">
           <PriorityBadge priority={p.priority} compact />
           {p.tasks > 0 && (
-            <span className="inline-flex items-center gap-1" title="Aufgaben"><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
+            <span className="inline-flex items-center gap-1" title={t("card.tasks")}><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
           )}
           {p.notes > 0 && (
-            <span className="inline-flex items-center gap-1" title="Notizen"><StickyNote size={13} />{p.notes}</span>
+            <span className="inline-flex items-center gap-1" title={t("card.notes")}><StickyNote size={13} />{p.notes}</span>
           )}
-          {p.repoUrl && <GitBranch size={13} aria-label="Repository verknüpft" />}
-          <span suppressHydrationWarning className="truncate" title="Zuletzt geändert">{timeAgo(p.updatedAt)}</span>
+          {p.repoUrl && <GitBranch size={13} aria-label={t("card.repoLinked")} />}
+          <span suppressHydrationWarning className="truncate" title={t("card.lastUpdated")}>{f.ago(p.updatedAt)}</span>
         </div>
         <StatusSelect value={p.status} onChange={(s) => onStatus(p, s)} />
       </div>
@@ -141,6 +148,8 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
 }
 
 export function ProjectRow({ project: p, onStatus, onFavorite, onEdit, onSelect, selected, selecting }: CardProps) {
+  const t = useT("projects");
+  const f = useFormat();
   return (
     <div className={cn("glass group relative flex items-center gap-3 !rounded-xl px-3 py-2.5 hover:z-10 focus-within:z-20 sm:px-4", selected && "ring-2 ring-accent/60")}>
       <SelectBox project={p} selected={selected} selecting={selecting} onSelect={onSelect} />
@@ -153,14 +162,14 @@ export function ProjectRow({ project: p, onStatus, onFavorite, onEdit, onSelect,
         <ProgressBar value={p.progress} accent={p.accent} className="flex-1" />
         <span className="w-9 text-right text-xs tabular-nums text-muted">{p.progress}%</span>
       </div>
-      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title="Aufgaben"><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
-      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title="Notizen"><StickyNote size={13} />{p.notes}</span>
+      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title={t("card.tasks")}><ListChecks size={13} />{p.tasksDone}/{p.tasks}</span>
+      <span className="hidden w-10 items-center gap-1 text-xs text-muted md:inline-flex" title={t("card.notes")}><StickyNote size={13} />{p.notes}</span>
       <span className="hidden w-20 text-xs text-muted lg:inline"><PriorityBadge priority={p.priority} /></span>
-      <span suppressHydrationWarning className="hidden w-28 truncate text-xs text-muted lg:inline">{timeAgo(p.updatedAt)}</span>
-      <button onClick={() => onEdit(p)} className="btn btn-ghost btn-icon btn-sm hidden sm:inline-flex" aria-label={`${p.name} bearbeiten`}>
+      <span suppressHydrationWarning className="hidden w-28 truncate text-xs text-muted lg:inline">{f.ago(p.updatedAt)}</span>
+      <button onClick={() => onEdit(p)} className="btn btn-ghost btn-icon btn-sm hidden sm:inline-flex" aria-label={t("card.editName", { name: p.name })}>
         <Pencil size={14} />
       </button>
-      <button onClick={() => onFavorite(p)} aria-pressed={p.favorite} aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"} className="btn btn-ghost btn-icon btn-sm">
+      <button onClick={() => onFavorite(p)} aria-pressed={p.favorite} aria-label={p.favorite ? t("card.favoriteRemove") : t("card.favoriteAdd")} className="btn btn-ghost btn-icon btn-sm">
         <Star size={15} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
       </button>
       <StatusSelect value={p.status} onChange={(s) => onStatus(p, s)} />

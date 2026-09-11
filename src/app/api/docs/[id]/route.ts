@@ -3,13 +3,14 @@ import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { docUpdateSchema } from "@/lib/validation";
 import { findOwnDoc, loadTree, moveAmongSiblings, nextDocPosition, serializeDoc, serializeTreeItem, wouldCreateCycle } from "@/lib/docs";
+import { tk } from "@/lib/i18n/messages";
 
 type Params = { id: string };
 
 export const GET = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const doc = await findOwnDoc(user.id, (await params).id);
-  if (!doc) throw notFound("Seite nicht gefunden");
+  if (!doc) throw notFound(tk("docs", "errors.notFound"));
   return json({ doc: serializeDoc(doc) });
 });
 
@@ -17,7 +18,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const current = await findOwnDoc(user.id, id);
-  if (!current) throw notFound("Seite nicht gefunden");
+  if (!current) throw notFound(tk("docs", "errors.notFound"));
   // Lange Seiten sind erlaubt – großzügigeres Limit als sonst.
   const input = await readBody(req, docUpdateSchema, { maxBytes: 2 * 1024 * 1024 });
   let structural = false;
@@ -26,8 +27,8 @@ export const PATCH = route<Params>(async (req, { params }) => {
   // Inhalte meinen, nicht Aufräumen.
   if (input.parentId !== undefined && input.parentId !== current.parentId) {
     if (input.parentId) {
-      if (!(await findOwnDoc(user.id, input.parentId))) throw notFound("Übergeordnete Seite nicht gefunden");
-      if (await wouldCreateCycle(user.id, id, input.parentId)) throw new ApiError(400, "Eine Seite kann nicht unter sich selbst oder einer ihrer Unterseiten liegen.");
+      if (!(await findOwnDoc(user.id, input.parentId))) throw notFound(tk("docs", "errors.parentNotFound"));
+      if (await wouldCreateCycle(user.id, id, input.parentId)) throw new ApiError(400, tk("docs", "errors.cycle"));
     }
     const position = await nextDocPosition(user.id, input.parentId);
     await db.$executeRaw`UPDATE "Doc" SET "parentId" = ${input.parentId}, "position" = ${position} WHERE "id" = ${id}`;
@@ -58,6 +59,6 @@ export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const { count } = await db.doc.deleteMany({ where: { id, ownerId: user.id } });
-  if (!count) throw notFound("Seite nicht gefunden");
+  if (!count) throw notFound(tk("docs", "errors.notFound"));
   return json({ ok: true, tree: await loadTree(user.id) });
 });

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { tk } from "@/lib/i18n/messages";
 import { accessRequestSchema } from "@/lib/validation";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
@@ -16,8 +17,8 @@ export const POST = route<Params>(async (req, { params }) => {
     where: { shareToken: token },
     select: { id: true, ownerId: true, members: { where: { userId: user.id }, select: { userId: true } } },
   });
-  if (!project) throw notFound("Dieser Link ist nicht (mehr) gültig.");
-  if (project.ownerId === user.id || project.members.length) throw new ApiError(400, "Du hast bereits Zugriff auf dieses Projekt.");
+  if (!project) throw notFound(tk("share", "errors.invalidLink"));
+  if (project.ownerId === user.id || project.members.length) throw new ApiError(400, tk("share", "errors.alreadyAccess"));
 
   const { role, message } = await readBody(req, accessRequestSchema, { maxBytes: 4096 });
   await db.accessRequest.upsert({

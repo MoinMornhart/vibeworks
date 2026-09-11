@@ -5,8 +5,11 @@ import { fakeVerify, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
 import { startMfa } from "@/lib/auth/mfa";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { tk } from "@/lib/i18n/messages";
+import { getLocale } from "@/lib/i18n/server";
+import { INTL_LOCALE } from "@/lib/i18n/config";
 
-const GENERIC = "Benutzername oder Passwort ist falsch.";
+const GENERIC = tk("auth", "errors.badLogin");
 const MAX_FAILS = 8;
 const LOCK_MINUTES = 15;
 
@@ -40,9 +43,10 @@ export const POST = route(async (req) => {
 
   // Ab hier stimmt das Passwort – jetzt darf die Antwort genauer werden.
   if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
-    throw new ApiError(423, `Zu viele Fehlversuche – das Konto ist bis ${user.lockedUntil.toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" })} Uhr gesperrt.`);
+    const time = user.lockedUntil.toLocaleTimeString(INTL_LOCALE[await getLocale()], { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+    throw new ApiError(423, tk("auth", "errors.locked", { time }));
   }
-  if (!user.active) throw new ApiError(403, "Dieses Konto ist deaktiviert.");
+  if (!user.active) throw new ApiError(403, tk("auth", "errors.deactivated"));
 
   if (needsRehash) {
     await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.password) } });

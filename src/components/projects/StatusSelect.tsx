@@ -6,6 +6,7 @@ import type { ProjectStatus } from "@prisma/client";
 import { Check } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PROJECT_STATUSES } from "@/lib/status";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const MENU_WIDTH = 288;
@@ -24,6 +25,8 @@ export function StatusSelect({
   onChange: (status: ProjectStatus) => void;
   align?: "left" | "right";
 }) {
+  const t = useT("projects");
+  const ts = useT("status");
   const [open, setOpen] = useState(false);
   const [style, setStyle] = useState<CSSProperties>({});
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -87,13 +90,13 @@ export function StatusSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={open}
-        title="Status ändern"
+        title={t("statusSelect.change")}
       >
         <StatusBadge status={value} className="cursor-pointer transition hover:brightness-125" />
       </button>
       {open &&
         createPortal(
-          <ul ref={menuRef} role="listbox" aria-label="Status" style={style} className="glass-strong fade-in z-[60] p-1.5">
+          <ul ref={menuRef} role="listbox" aria-label={t("statusSelect.label")} style={style} className="glass-strong fade-in z-[60] p-1.5">
             {PROJECT_STATUSES.map((s) => (
               <li key={s.value}>
                 <button
@@ -108,8 +111,8 @@ export function StatusSelect({
                 >
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: `var(${s.cssVar})` }} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{s.label}</span>
-                    <span className="block text-xs text-muted">{s.hint}</span>
+                    <span className="block text-sm font-medium">{ts(`project.${s.value}`)}</span>
+                    <span className="block text-xs text-muted">{ts(`projectHint.${s.value}`)}</span>
                   </span>
                   {s.value === value && <Check size={15} className="mt-0.5 text-accent-ink" />}
                 </button>

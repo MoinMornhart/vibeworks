@@ -4,6 +4,7 @@ import { requireApiAdmin } from "@/lib/auth/guard";
 import { publicBuildInfo } from "@/lib/buildInfo";
 import { readUpdateStatus, requestUpdate, selfUpdateAvailable } from "@/lib/selfUpdate";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { tk } from "@/lib/i18n/messages";
 
 export const GET = route(async () => {
   await requireApiAdmin();
@@ -17,7 +18,7 @@ export const POST = route(async (req) => {
   limitOrThrow(`self-update:${admin.id}`, 20, 10 * MINUTE);
   const { action } = await readBody(req, z.object({ action: z.enum(["check", "update"]) }));
   if (!(await selfUpdateAvailable())) {
-    throw new ApiError(409, "Update per Knopfdruck ist auf dieser Installation nicht eingerichtet – bitte im Container „update“ ausführen.");
+    throw new ApiError(409, tk("admin", "errors.selfUpdateUnavailable"));
   }
   const requestedAt = new Date().toISOString();
   await requestUpdate(action);

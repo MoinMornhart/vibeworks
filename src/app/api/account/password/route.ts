@@ -5,20 +5,21 @@ import { passwordChangeSchema } from "@/lib/validation";
 import { checkPasswordPolicy, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { destroyAllSessions, startSession } from "@/lib/auth/session";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { tk } from "@/lib/i18n/messages";
 
 // Eigenes Passwort setzen oder wechseln. Wer schon eines hat, muss es
 // bestätigen. Danach sind alle Sitzungen ungültig – das eigene Gerät
 // bekommt sofort eine neue, bleibt also angemeldet.
 export const POST = route(async (req) => {
   const auth = await getAuth();
-  if (!auth) throw new ApiError(401, "Nicht angemeldet");
+  if (!auth) throw new ApiError(401, tk("errors", "notLoggedIn"));
   const { user } = auth;
   limitOrThrow(`password:${user.id}`, 10, 15 * MINUTE);
   const input = await readBody(req, passwordChangeSchema);
 
   if (user.passwordHash) {
     const ok = input.currentPassword ? (await verifyPassword(input.currentPassword, user.passwordHash)).ok : false;
-    if (!ok) throw new ApiError(400, "Das aktuelle Passwort stimmt nicht.", { currentPassword: "Stimmt nicht" });
+    if (!ok) throw new ApiError(400, tk("account", "errors.wrongPassword"), { currentPassword: tk("account", "errors.wrongShort") });
   }
   const policy = checkPasswordPolicy(input.newPassword, user.username);
   if (policy) throw new ApiError(400, policy, { newPassword: policy });

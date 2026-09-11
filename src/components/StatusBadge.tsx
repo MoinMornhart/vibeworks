@@ -1,8 +1,12 @@
+"use client";
+
 import type { ProjectStatus } from "@prisma/client";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status, className }: { status: ProjectStatus; className?: string }) {
+  const ts = useT("status");
   const s = PROJECT_STATUS_MAP[status];
   const c = `var(${s.cssVar})`;
   return (
@@ -15,7 +19,7 @@ export function StatusBadge({ status, className }: { status: ProjectStatus; clas
       }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: c }} />
-      {s.label}
+      {ts(`project.${status}`)}
     </span>
   );
 }

@@ -5,6 +5,7 @@ import { checkTotpForUser, clearMfa, MFA_MAX_ATTEMPTS, readMfaPending } from "@/
 import { consumeRecoveryCode, recoveryCodesLeft } from "@/lib/auth/recovery";
 import { startSession } from "@/lib/auth/session";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { tk } from "@/lib/i18n/messages";
 
 // Zweiter Schritt der Anmeldung: Einmalkennwort oder Wiederherstellungscode.
 export const POST = route(async (req) => {
@@ -12,21 +13,21 @@ export const POST = route(async (req) => {
   const input = await readBody(req, mfaLoginSchema);
 
   const pending = await readMfaPending();
-  if (!pending) throw new ApiError(401, "Die Anmeldung ist abgelaufen – bitte noch einmal mit Passwort anmelden.");
+  if (!pending) throw new ApiError(401, tk("auth", "errors.mfaExpired"));
   if (pending.attempts >= MFA_MAX_ATTEMPTS) {
     await clearMfa(pending.id);
-    throw new ApiError(401, "Zu viele Fehlversuche – bitte noch einmal mit Passwort anmelden.");
+    throw new ApiError(401, tk("auth", "errors.mfaTooMany"));
   }
   const { user } = pending;
   if (!user.active) {
     await clearMfa(pending.id);
-    throw new ApiError(403, "Dieses Konto ist deaktiviert.");
+    throw new ApiError(403, tk("auth", "errors.deactivated"));
   }
 
   const ok = input.code ? await checkTotpForUser(user, input.code) : await consumeRecoveryCode(user.id, input.recoveryCode!);
   if (!ok) {
     await db.mfaPending.update({ where: { id: pending.id }, data: { attempts: { increment: 1 } } });
-    throw new ApiError(401, input.code ? "Der Code stimmt nicht." : "Dieser Wiederherstellungscode ist ungültig oder schon verbraucht.");
+    throw new ApiError(401, input.code ? tk("auth", "errors.wrongCode") : tk("auth", "errors.badRecovery"));
   }
 
   await clearMfa(pending.id);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ProjectStatus } from "@prisma/client";
 import { CheckCheck, Minus, Plus, Star, StarOff, Tags, Trash2, X } from "lucide-react";
 import { PROJECT_STATUSES } from "@/lib/status";
+import { useT } from "@/lib/i18n/client";
 
 export type BulkAction =
   | { action: "status"; status: ProjectStatus }
@@ -26,6 +27,9 @@ export function BulkBar({
   onSelectAll: () => void;
   onClear: () => void;
 }) {
+  const t = useT("projects");
+  const ts = useT("status");
+  const tc = useT("common");
   const [busy, setBusy] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [tags, setTags] = useState("");
@@ -42,12 +46,12 @@ export function BulkBar({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-3 z-50 flex justify-center px-3" role="region" aria-label="Mehrfachauswahl">
+    <div className="fixed inset-x-0 bottom-3 z-50 flex justify-center px-3" role="region" aria-label={t("bulk.region")}>
       <div className="glass-strong fade-in flex max-w-full flex-wrap items-center gap-2 px-3 py-2">
-        <span className="px-1 text-sm font-medium tabular-nums">{count} ausgewählt</span>
+        <span className="px-1 text-sm font-medium tabular-nums">{t("bulk.selected", { n: count })}</span>
         {count < total && (
-          <button className="btn btn-ghost btn-sm" onClick={onSelectAll} title="Alle sichtbaren auswählen">
-            <CheckCheck size={15} /> <span className="hidden sm:inline">Alle ({total})</span>
+          <button className="btn btn-ghost btn-sm" onClick={onSelectAll} title={t("bulk.selectAllTitle")}>
+            <CheckCheck size={15} /> <span className="hidden sm:inline">{t("bulk.selectAll", { n: total })}</span>
           </button>
         )}
         <span className="mx-1 hidden h-6 w-px bg-fg/15 sm:block" />
@@ -56,34 +60,34 @@ export function BulkBar({
           value=""
           disabled={busy}
           onChange={(e) => e.target.value && void run({ action: "status", status: e.target.value as ProjectStatus })}
-          aria-label="Status setzen"
+          aria-label={t("bulk.setStatus")}
         >
-          <option value="">Status setzen …</option>
+          <option value="">{t("bulk.setStatusPlaceholder")}</option>
           {PROJECT_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <option key={s.value} value={s.value}>{ts(`project.${s.value}`)}</option>
           ))}
         </select>
         {tagsOpen ? (
           <span className="flex items-center gap-1">
-            <input className="field !min-h-8 !w-40 !py-1 text-sm" placeholder="tag, noch-einer" value={tags} onChange={(e) => setTags(e.target.value)} autoFocus aria-label="Tags" />
-            <button className="btn btn-sm" disabled={busy || !tags.trim()} onClick={() => void run({ action: "addTags", tags })} title="Tags ergänzen"><Plus size={14} /></button>
-            <button className="btn btn-sm" disabled={busy || !tags.trim()} onClick={() => void run({ action: "removeTags", tags })} title="Tags entfernen"><Minus size={14} /></button>
+            <input className="field !min-h-8 !w-40 !py-1 text-sm" placeholder={t("bulk.tagsPlaceholder")} value={tags} onChange={(e) => setTags(e.target.value)} autoFocus aria-label={t("bulk.tags")} />
+            <button className="btn btn-sm" disabled={busy || !tags.trim()} onClick={() => void run({ action: "addTags", tags })} title={t("bulk.addTags")}><Plus size={14} /></button>
+            <button className="btn btn-sm" disabled={busy || !tags.trim()} onClick={() => void run({ action: "removeTags", tags })} title={t("bulk.removeTags")}><Minus size={14} /></button>
           </span>
         ) : (
-          <button className="btn btn-sm" onClick={() => setTagsOpen(true)}><Tags size={14} /> Tags</button>
+          <button className="btn btn-sm" onClick={() => setTagsOpen(true)}><Tags size={14} /> {t("bulk.tags")}</button>
         )}
-        <button className="btn btn-sm" disabled={busy} onClick={() => void run({ action: "favorite", favorite: true })} title="Als Favorit markieren"><Star size={14} /></button>
-        <button className="btn btn-sm" disabled={busy} onClick={() => void run({ action: "favorite", favorite: false })} title="Favorit entfernen"><StarOff size={14} /></button>
+        <button className="btn btn-sm" disabled={busy} onClick={() => void run({ action: "favorite", favorite: true })} title={t("card.favoriteAdd")}><Star size={14} /></button>
+        <button className="btn btn-sm" disabled={busy} onClick={() => void run({ action: "favorite", favorite: false })} title={t("card.favoriteRemove")}><StarOff size={14} /></button>
         <button
           className="btn btn-danger btn-sm"
           disabled={busy}
           onClick={() => {
-            if (window.confirm(`${count} Projekt${count === 1 ? "" : "e"} mit allen Notizen und Aufgaben endgültig löschen?`)) void run({ action: "delete" });
+            if (window.confirm(t("bulk.confirmDelete", { n: count }))) void run({ action: "delete" });
           }}
         >
-          <Trash2 size={14} /> <span className="hidden sm:inline">Löschen</span>
+          <Trash2 size={14} /> <span className="hidden sm:inline">{tc("delete")}</span>
         </button>
-        <button className="btn btn-ghost btn-icon btn-sm" onClick={onClear} aria-label="Auswahl aufheben"><X size={16} /></button>
+        <button className="btn btn-ghost btn-icon btn-sm" onClick={onClear} aria-label={t("bulk.clear")}><X size={16} /></button>
       </div>
     </div>
   );

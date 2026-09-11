@@ -7,11 +7,14 @@ import { themeCss } from "@/lib/theme/css";
 import { currentUser } from "@/lib/auth/guard";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Background } from "@/components/background/Background";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { I18nProvider } from "@/lib/i18n/client";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("shell");
   return {
     title: { default: config.appName, template: `%s · ${config.appName}` },
-    description: "Kontrollzentrum für deine Vibe-Coding-Projekte",
+    description: t("meta.description"),
     applicationName: config.appName,
   };
 }
@@ -35,18 +38,20 @@ async function loadTheme() {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  const theme = await loadTheme();
+  const [theme, locale] = await Promise.all([loadTheme(), getLocale()]);
 
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <style id="vw-theme" nonce={nonce} dangerouslySetInnerHTML={{ __html: themeCss(theme) }} />
       </head>
       <body>
-        <ThemeProvider initial={theme}>
-          <Background />
-          {children}
-        </ThemeProvider>
+        <I18nProvider locale={locale}>
+          <ThemeProvider initial={theme}>
+            <Background />
+            {children}
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

@@ -9,8 +9,13 @@ import { AccountManager } from "@/components/account/AccountManager";
 import { TotpSection } from "@/components/account/TotpSection";
 import { PasskeySection } from "@/components/account/PasskeySection";
 import { GitConnectionsSection } from "@/components/account/GitConnectionsSection";
+import { LanguageSection } from "@/components/account/LanguageSection";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata = { title: "Mein Konto" };
+export async function generateMetadata() {
+  const t = await getT("account");
+  return { title: t("page.title") };
+}
 
 export default async function AccountPage() {
   const auth = await getAuth();
@@ -35,6 +40,7 @@ export default async function AccountPage() {
       }}
       sessions={sessions}
     >
+      <LanguageSection />
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
       <GitConnectionsSection initial={connections} />

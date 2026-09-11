@@ -1,0 +1,108 @@
+import type { Shape } from "../types";
+import { plural } from "../translate";
+
+// Namensraum „tasks“ – deutsche Fassung ist maßgeblich, die englische muss dieselbe Form haben.
+
+const de = {
+  board: {
+    title: "Aufgaben",
+    doneCount: "{done}/{total} erledigt",
+    fadedHint: "Erledigte und blockierte Aufgaben verschwinden nach {days} Tagen vom Board",
+    hideOlder: "Ältere ausblenden",
+    olderHidden: "{n} ältere ausgeblendet",
+    quickPlaceholder: "Neue Aufgabe … (Enter)",
+    quickLabel: "Neue Aufgabe",
+    quickSubmit: "Aufgabe anlegen",
+    withDetails: "Aufgabe mit Details anlegen",
+    withDetailsTitle: "Mit Details",
+    empty: "Keine Aufgaben",
+  },
+  card: {
+    reopen: "{title} wieder öffnen",
+    complete: "{title} erledigen",
+    openIssue: "Issue #{n} öffnen",
+    issueErrorTitle: "Issue: {error}",
+    issueErrorLabel: "Issue-Fehler: {error}",
+    hasDescription: "Hat eine Beschreibung",
+  },
+  dialog: {
+    editTitle: "Aufgabe bearbeiten",
+    newTitle: "Neue Aufgabe",
+    confirmDelete: "Aufgabe „{title}“ löschen?",
+    title: "Titel",
+    description: "Beschreibung",
+    descriptionPlaceholder: "Details, Links, Checklisten … (Markdown möglich)",
+    column: "Spalte",
+    dueDate: "Fällig am",
+    recurrence: "Wiederholung",
+    noRecurrence: "Keine",
+    labels: "Labels",
+    labelsPlaceholder: "bug, ui",
+    recurrenceHint: "Wandert die Aufgabe nach „Erledigt“, entsteht die nächste Fassung – gerechnet vom Fälligkeitsdatum, nicht vom Tag des Abhakens.",
+  },
+  overview: {
+    metaTitle: "Aufgaben",
+    title: "Aufgaben",
+    allDone: "Nichts offen – Zeit für die nächste Idee.",
+    summary: plural("{open} offen über {n} Projekt, nach Fälligkeit geordnet.", "{open} offen über {n} Projekte, nach Fälligkeit geordnet."),
+    showDone: "Erledigte zeigen",
+    filterProject: "Nach Projekt filtern",
+    allProjects: "Alle Projekte",
+    emptyFiltered: "Keine Aufgaben für diesen Filter",
+    emptyOpen: "Keine Aufgaben offen",
+    emptyHint: "Aufgaben legst du auf der Seite des jeweiligen Projekts an.",
+  },
+};
+
+const en: Shape<typeof de> = {
+  board: {
+    title: "Tasks",
+    doneCount: "{done}/{total} done",
+    fadedHint: "Done and blocked tasks disappear from the board after {days} days",
+    hideOlder: "Hide older",
+    olderHidden: "{n} older hidden",
+    quickPlaceholder: "New task … (Enter)",
+    quickLabel: "New task",
+    quickSubmit: "Create task",
+    withDetails: "Create task with details",
+    withDetailsTitle: "With details",
+    empty: "No tasks",
+  },
+  card: {
+    reopen: "Reopen {title}",
+    complete: "Complete {title}",
+    openIssue: "Open issue #{n}",
+    issueErrorTitle: "Issue: {error}",
+    issueErrorLabel: "Issue error: {error}",
+    hasDescription: "Has a description",
+  },
+  dialog: {
+    editTitle: "Edit task",
+    newTitle: "New task",
+    confirmDelete: "Delete task “{title}”?",
+    title: "Title",
+    description: "Description",
+    descriptionPlaceholder: "Details, links, checklists … (Markdown supported)",
+    column: "Column",
+    dueDate: "Due date",
+    recurrence: "Repeat",
+    noRecurrence: "None",
+    labels: "Labels",
+    labelsPlaceholder: "bug, ui",
+    recurrenceHint: "When the task moves to “Done”, the next occurrence is created – counted from the due date, not from the day you check it off.",
+  },
+  overview: {
+    metaTitle: "Tasks",
+    title: "Tasks",
+    allDone: "Nothing open – time for the next idea.",
+    summary: plural("{open} open across {n} project, sorted by due date.", "{open} open across {n} projects, sorted by due date."),
+    showDone: "Show completed",
+    filterProject: "Filter by project",
+    allProjects: "All projects",
+    emptyFiltered: "No tasks for this filter",
+    emptyOpen: "No open tasks",
+    emptyHint: "You create tasks on each project's page.",
+  },
+};
+
+export default { de, en };

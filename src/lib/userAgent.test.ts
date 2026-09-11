@@ -15,6 +15,6 @@ describe("describeUserAgent", () => {
   });
 
   it("kommt mit fehlendem User-Agent zurecht", () => {
-    expect(describeUserAgent(null).browser).toBe("Unbekannt");
+    expect(describeUserAgent(null).browser).toBe("");
   });
 });

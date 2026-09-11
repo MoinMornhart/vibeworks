@@ -1,3 +1,5 @@
+import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
+
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
@@ -36,32 +38,46 @@ export function truncate(text: string, max: number): string {
 
 export const TIME_ZONE = "Europe/Berlin";
 
-const dateFmt = new Intl.DateTimeFormat("de-DE", { timeZone: TIME_ZONE, day: "2-digit", month: "2-digit", year: "numeric" });
-const dateTimeFmt = new Intl.DateTimeFormat("de-DE", {
-  timeZone: TIME_ZONE,
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-export function formatDate(d: Date | string | null | undefined): string {
-  return d ? dateFmt.format(new Date(d)) : "–";
+// Formatierer je Sprache, einmal angelegt und wiederverwendet.
+const dateFmts = new Map<string, Intl.DateTimeFormat>();
+function dateFmt(locale: Locale, withTime: boolean): Intl.DateTimeFormat {
+  const id = `${locale}:${withTime}`;
+  let f = dateFmts.get(id);
+  if (!f) {
+    f = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+      timeZone: TIME_ZONE,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    });
+    dateFmts.set(id, f);
+  }
+  return f;
 }
 
-export function formatDateTime(d: Date | string | null | undefined): string {
-  return d ? dateTimeFmt.format(new Date(d)) : "–";
+export function formatDate(d: Date | string | null | undefined, locale: Locale = "de"): string {
+  return d ? dateFmt(locale, false).format(new Date(d)) : "–";
 }
 
-const rtf = new Intl.RelativeTimeFormat("de-DE", { numeric: "auto" });
+export function formatDateTime(d: Date | string | null | undefined, locale: Locale = "de"): string {
+  return d ? dateFmt(locale, true).format(new Date(d)) : "–";
+}
 
-/** „vor 3 Tagen“, „gerade eben“ … */
-export function timeAgo(d: Date | string | null | undefined, now = Date.now()): string {
+const rtfs = new Map<Locale, Intl.RelativeTimeFormat>();
+function rtfFor(locale: Locale): Intl.RelativeTimeFormat {
+  let r = rtfs.get(locale);
+  if (!r) rtfs.set(locale, (r = new Intl.RelativeTimeFormat(INTL_LOCALE[locale], { numeric: "auto" })));
+  return r;
+}
+
+/** „vor 3 Tagen“ / „3 days ago“, „gerade eben“ / „just now“ … */
+export function timeAgo(d: Date | string | null | undefined, now = Date.now(), locale: Locale = "de"): string {
   if (!d) return "–";
+  const rtf = rtfFor(locale);
   const diff = (new Date(d).getTime() - now) / 1000;
   const abs = Math.abs(diff);
-  if (abs < 45) return "gerade eben";
+  if (abs < 45) return locale === "en" ? "just now" : "gerade eben";
   const steps: Array<[number, Intl.RelativeTimeFormatUnit]> = [
     [60, "second"],
     [3600, "minute"],
@@ -75,7 +91,7 @@ export function timeAgo(d: Date | string | null | undefined, now = Date.now()): 
   for (const [limit, unit] of steps) {
     if (abs < limit) return rtf.format(Math.round(diff / divisors[unit]), unit);
   }
-  return formatDate(d);
+  return formatDate(d, locale);
 }
 
 /** Kalendertag „YYYY-MM-DD“ in Europe/Berlin. */

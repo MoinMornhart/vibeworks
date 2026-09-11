@@ -7,12 +7,13 @@ import { startSession } from "@/lib/auth/session";
 import { registrationOpen } from "@/lib/settings";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { optionalCredential } from "@/lib/git/token";
+import { tk } from "@/lib/i18n/messages";
 
 // Selbstregistrierung – nur im Mehrbenutzerbetrieb und nur, wenn der
 // Administrator sie freigeschaltet hat.
 export const POST = route(async (req) => {
   limitOrThrow(`register:${clientIp(req)}`, 5, 60 * MINUTE);
-  if (!(await registrationOpen())) throw new ApiError(403, "Die Registrierung ist geschlossen.");
+  if (!(await registrationOpen())) throw new ApiError(403, tk("auth", "errors.registrationClosed"));
 
   const input = await readBody(req, registerSchema);
   const policy = checkPasswordPolicy(input.password, input.username);
@@ -32,7 +33,7 @@ export const POST = route(async (req) => {
     await startSession(user.id, req);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ApiError(409, "Dieser Benutzername ist vergeben.", { username: "Vergeben" });
+      throw new ApiError(409, tk("auth", "errors.usernameTaken"), { username: tk("auth", "errors.taken") });
     }
     throw err;
   }

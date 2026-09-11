@@ -1,6 +1,7 @@
 import type { Prisma, RepoCache } from "@prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
+import { tk } from "@/lib/i18n/messages";
 import { parseRepoUrl } from "./parse";
 import { tokenCipherFor } from "./token";
 import { fetchRepository, GitError, type CommitInfo } from "./providers";
@@ -33,14 +34,15 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
       update: { error: message, fetchedAt: new Date() },
     });
 
-  if (!parsed) return fail("Die Repository-Adresse ist nicht lesbar – erwartet z. B. https://github.com/owner/name.");
+  // Fehler als Übersetzungsschlüssel speichern – die Oberfläche übersetzt sie beim Anzeigen.
+  if (!parsed) return fail(tk("git", "errors.badRepoUrl"));
   let token: string | null = null;
   const stored = await tokenCipherFor(project);
   if (stored) {
     try {
       token = decrypt(stored.cipher);
     } catch {
-      return fail("Das gespeicherte Token lässt sich nicht entschlüsseln (APP_SECRET geändert?) – bitte neu hinterlegen.");
+      return fail(tk("git", "errors.decrypt"));
     }
   }
 
@@ -59,6 +61,6 @@ export async function syncProjectRepository(project: { id: string; ownerId: stri
     };
     return await db.repoCache.upsert({ where: { projectId: project.id }, create: { projectId: project.id, ...data }, update: data });
   } catch (err) {
-    return fail(err instanceof GitError ? err.message : "Der Abgleich ist fehlgeschlagen.");
+    return fail(err instanceof GitError ? err.message : tk("git", "errors.syncFailed"));
   }
 }

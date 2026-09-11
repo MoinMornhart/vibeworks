@@ -1,6 +1,7 @@
 import type { Project, ProjectRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
+import { tk } from "@/lib/i18n/messages";
 
 // Wer darf was an einem Projekt?
 //   Besitzer   – alles, auch Teilen, Repository, Token und Löschen
@@ -32,12 +33,12 @@ export async function accessOf(userId: string, projectId: string): Promise<{ pro
 }
 
 function deny(min: ProjectAccess): never {
-  throw new ApiError(403, min === "OWNER" ? "Das darf nur der Besitzer des Projekts." : "Du darfst dieses Projekt nur ansehen.");
+  throw new ApiError(403, min === "OWNER" ? tk("projects", "errors.ownerOnly") : tk("projects", "errors.viewOnly"));
 }
 
 export async function requireProject(userId: string, projectId: string, min: ProjectAccess = "VIEWER") {
   const res = await accessOf(userId, projectId);
-  if (!res) throw notFound("Projekt nicht gefunden");
+  if (!res) throw notFound(tk("projects", "errors.notFound"));
   if (!canAccess(res.access, min)) deny(min);
   return res;
 }
@@ -45,7 +46,7 @@ export async function requireProject(userId: string, projectId: string, min: Pro
 export async function requireTask(userId: string, taskId: string, min: ProjectAccess = "VIEWER") {
   const task = await db.task.findUnique({ where: { id: taskId } });
   const res = task && (await accessOf(userId, task.projectId));
-  if (!task || !res) throw notFound("Aufgabe nicht gefunden");
+  if (!task || !res) throw notFound(tk("projects", "errors.taskNotFound"));
   if (!canAccess(res.access, min)) deny(min);
   return { task, ...res };
 }
@@ -53,7 +54,7 @@ export async function requireTask(userId: string, taskId: string, min: ProjectAc
 export async function requireNote(userId: string, noteId: string, min: ProjectAccess = "VIEWER") {
   const note = await db.note.findUnique({ where: { id: noteId } });
   const res = note && (await accessOf(userId, note.projectId));
-  if (!note || !res) throw notFound("Notiz nicht gefunden");
+  if (!note || !res) throw notFound(tk("projects", "errors.noteNotFound"));
   if (!canAccess(res.access, min)) deny(min);
   return { note, ...res };
 }

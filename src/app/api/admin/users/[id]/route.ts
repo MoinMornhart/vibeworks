@@ -7,6 +7,7 @@ import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { destroyAllSessions } from "@/lib/auth/session";
 import { removeUploadFile } from "@/lib/uploads";
 import { adminUserUpdateSchema } from "@/lib/validation";
+import { tk } from "@/lib/i18n/messages";
 
 type Params = { id: string };
 
@@ -14,7 +15,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const me = await requireApiAdmin();
   const { id } = await params;
   const target = await db.user.findUnique({ where: { id } });
-  if (!target) throw notFound("Konto nicht gefunden");
+  if (!target) throw notFound(tk("admin", "errors.accountNotFound"));
   const input = await readBody(req, adminUserUpdateSchema);
 
   const data: Prisma.UserUpdateInput = {};
@@ -24,16 +25,16 @@ export const PATCH = route<Params>(async (req, { params }) => {
 
   if (input.role && input.role !== target.role) {
     if (input.role === "USER" && target.active && (await isLastActiveAdmin(id))) {
-      throw new ApiError(400, "Der letzte aktive Administrator kann nicht herabgestuft werden.");
+      throw new ApiError(400, tk("admin", "errors.lastAdminDemote"));
     }
     data.role = input.role;
   }
 
   if (input.active !== undefined && input.active !== target.active) {
     if (!input.active) {
-      if (id === me.id) throw new ApiError(400, "Das eigene Konto kann nicht deaktiviert werden.");
+      if (id === me.id) throw new ApiError(400, tk("admin", "errors.ownDeactivate"));
       if (target.role === "ADMIN" && (await isLastActiveAdmin(id))) {
-        throw new ApiError(400, "Der letzte aktive Administrator kann nicht deaktiviert werden.");
+        throw new ApiError(400, tk("admin", "errors.lastAdminDeactivate"));
       }
       endSessions = true;
     }
@@ -61,11 +62,11 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const me = await requireApiAdmin();
   const { id } = await params;
-  if (id === me.id) throw new ApiError(400, "Das eigene Konto kann nicht gelöscht werden.");
+  if (id === me.id) throw new ApiError(400, tk("admin", "errors.ownDelete"));
   const target = await db.user.findUnique({ where: { id }, include: { uploads: { select: { id: true, ext: true } } } });
-  if (!target) throw notFound("Konto nicht gefunden");
+  if (!target) throw notFound(tk("admin", "errors.accountNotFound"));
   if (target.role === "ADMIN" && target.active && (await isLastActiveAdmin(id))) {
-    throw new ApiError(400, "Der letzte aktive Administrator kann nicht gelöscht werden.");
+    throw new ApiError(400, tk("admin", "errors.lastAdminDelete"));
   }
   // Projekte, Notizen, Aufgaben und Sitzungen gehen per Cascade mit; die
   // hochgeladenen Bilder liegen außerhalb der Datenbank.

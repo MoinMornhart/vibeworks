@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 import { FormError } from "@/components/ui/FormError";
 import { GitTokenOptional } from "./GitTokenOptional";
 import { EMPTY_GIT_CONNECTION, type GitConnectionForm } from "@/components/git/GitProviderFields";
+import { useT } from "@/lib/i18n/client";
 
 export function SetupForm() {
+  const t = useT("auth");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +27,7 @@ export function SetupForm() {
     setError(null);
     setFieldErrors({});
     if (password !== confirm) {
-      setFieldErrors({ confirm: "Die Passwörter stimmen nicht überein." });
+      setFieldErrors({ confirm: t("form.passwordMismatch") });
       return;
     }
     setBusy(true);
@@ -40,38 +42,38 @@ export function SetupForm() {
   }
 
   const modes = [
-    { value: "SINGLE" as const, icon: User, title: "Einzelbetrieb", text: "Genau ein Konto – deins." },
-    { value: "MULTI" as const, icon: Users, title: "Mehrbenutzer", text: "Mehrere Konten, strikt getrennte Daten." },
+    { value: "SINGLE" as const, icon: User, title: t("setup.singleTitle"), text: t("setup.singleText") },
+    { value: "MULTI" as const, icon: Users, title: t("setup.multiTitle"), text: t("setup.multiText") },
   ];
 
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label" htmlFor="username">Benutzername</label>
+          <label className="label" htmlFor="username">{t("form.username")}</label>
           <input id="username" className="field" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
           {fieldErrors.username && <p className="mt-1 text-xs text-red-400">{fieldErrors.username}</p>}
         </div>
         <div>
-          <label className="label" htmlFor="displayName">Anzeigename <span className="opacity-70">(optional)</span></label>
+          <label className="label" htmlFor="displayName">{t("form.displayName")} <span className="opacity-70">{t("form.optional")}</span></label>
           <input id="displayName" className="field" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </div>
       </div>
       <div>
-        <label className="label" htmlFor="password">Passwort</label>
+        <label className="label" htmlFor="password">{t("form.password")}</label>
         <input id="password" type="password" className="field" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <p className={cn("mt-1 text-xs", fieldErrors.password ? "text-red-400" : "text-muted")}>
-          {fieldErrors.password ?? "Mindestens 10 Zeichen – eine lange Passphrase ist besser als Sonderzeichen."}
+          {fieldErrors.password ?? t("setup.passwordHint")}
         </p>
       </div>
       <div>
-        <label className="label" htmlFor="confirm">Passwort wiederholen</label>
+        <label className="label" htmlFor="confirm">{t("form.passwordRepeat")}</label>
         <input id="confirm" type="password" className="field" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
         {fieldErrors.confirm && <p className="mt-1 text-xs text-red-400">{fieldErrors.confirm}</p>}
       </div>
 
       <fieldset>
-        <legend className="label">Betriebsart</legend>
+        <legend className="label">{t("setup.mode")}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {modes.map((m) => (
             <label
@@ -90,16 +92,16 @@ export function SetupForm() {
         {mode === "MULTI" && (
           <label className="mt-3 flex items-center gap-2 text-sm">
             <input type="checkbox" checked={allowRegistration} onChange={(e) => setAllowRegistration(e.target.checked)} className="accent-[var(--vw-accent)]" />
-            Selbstregistrierung erlauben
+            {t("setup.allowRegistration")}
           </label>
         )}
-        <p className="mt-2 text-xs text-muted">Lässt sich später jederzeit in den Admin-Einstellungen ändern.</p>
+        <p className="mt-2 text-xs text-muted">{t("setup.changeLater")}</p>
       </fieldset>
 
       <GitTokenOptional value={git} onChange={setGit} error={fieldErrors.gitToken} />
       <FormError message={error} />
       <button className="btn btn-primary w-full" disabled={busy}>
-        <Rocket size={16} /> {busy ? "Richte ein …" : "Einrichtung abschließen"}
+        <Rocket size={16} /> {busy ? t("setup.submitting") : t("setup.submit")}
       </button>
     </form>
   );

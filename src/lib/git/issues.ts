@@ -1,6 +1,7 @@
 import type { Task, TaskStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
+import { tk } from "@/lib/i18n/messages";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
@@ -42,12 +43,14 @@ export function statusFromIssue(issue: Pick<IssueRef, "closed" | "labels">): Tas
   return "TODO";
 }
 
+// Liefert einen Übersetzungsschlüssel – er landet in Task.issueError und wird beim Anzeigen übersetzt.
 function describe(err: unknown): string {
   if (err instanceof GitError) {
-    if (err.status === 403 || err.status === 404) return `${err.message} Das Token braucht Schreibrechte für Issues.`;
+    if (err.status === 403) return tk("git", "errors.issueForbidden");
+    if (err.status === 404) return tk("git", "errors.issueNotFound");
     return err.message;
   }
-  return "Das Issue ließ sich nicht spiegeln.";
+  return tk("git", "errors.issueFailed");
 }
 
 interface IssueContext {

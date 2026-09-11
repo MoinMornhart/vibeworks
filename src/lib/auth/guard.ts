@@ -33,13 +33,13 @@ export async function requirePageAdmin(): Promise<SessionUser> {
 
 export async function requireApiUser(): Promise<SessionUser> {
   const user = await currentUser();
-  if (!user) throw new ApiError(401, "Nicht angemeldet");
+  if (!user) throw new ApiError(401, "errors.notLoggedIn");
   return user;
 }
 
 export async function requireApiAdmin(): Promise<SessionUser> {
   const user = await requireApiUser();
-  if (user.role !== "ADMIN") throw new ApiError(403, "Nur für Administratoren");
+  if (user.role !== "ADMIN") throw new ApiError(403, "errors.adminOnly");
   return user;
 }
 

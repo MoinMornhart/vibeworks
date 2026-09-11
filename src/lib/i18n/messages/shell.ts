@@ -1,0 +1,169 @@
+import type { Shape } from "../types";
+
+// Namensraum „shell“ – deutsche Fassung ist maßgeblich, die englische muss dieselbe Form haben.
+// Rahmen der App: Navigation, Schnellsuche, Schnellerfassung, Änderungsverlauf,
+// gemeinsame UI-Bausteine und Fehlertexte des Client-Fetch-Helfers.
+
+const de = {
+  meta: {
+    description: "Kontrollzentrum für deine Vibe-Coding-Projekte",
+  },
+  nav: {
+    main: "Hauptnavigation",
+    dashboard: "Dashboard",
+    tasks: "Aufgaben",
+    docs: "Docs",
+    design: "Design",
+    admin: "Admin",
+    administration: "Administration",
+    account: "Mein Konto",
+  },
+  topNav: {
+    openSearch: "Schnellsuche öffnen",
+    searchTitle: "Schnellsuche (Strg+K)",
+    searchKbd: "Strg K",
+    capture: "Schnell erfassen",
+    signedInAs: "Angemeldet als",
+    logout: "Abmelden",
+  },
+  palette: {
+    label: "Schnellsuche",
+    placeholder: "Projekte, Notizen, Aufgaben, Docs …",
+    inputLabel: "Suchbegriff",
+    empty: "Nichts gefunden.",
+    hints: "↑↓ wählen · Enter öffnen · Esc schließen",
+    groups: {
+      projects: "Projekte",
+      recent: "Zuletzt bearbeitet",
+      notes: "Notizen",
+      tasks: "Aufgaben",
+      docs: "Docs",
+      areas: "Bereiche",
+    },
+  },
+  capture: {
+    title: "Schnell erfassen",
+    modeLabel: "Was erfassen?",
+    idea: "Idee",
+    task: "Aufgabe",
+    project: "Projekt",
+    noProjects: "Noch keine Projekte",
+    ideaPlaceholder: "Was ist die Idee?",
+    taskPlaceholder: "Was ist zu tun?",
+    hint: "Enter legt an – der Dialog bleibt offen.",
+    pickProject: "Bitte ein Projekt wählen.",
+    createdIdea: "Idee „{name}“",
+    createdTask: "Aufgabe „{title}“ in {project}",
+  },
+  changelog: {
+    version: "Version {version}",
+    title: "Was ist neu?",
+    installed: "Installiert:",
+    updateNo: "Update Nr. {n}",
+    dirty: "(mit lokalen Änderungen)",
+    commitDate: "vom {date}",
+    installedBadge: "installiert",
+    types: {
+      neu: "Neu",
+      besser: "Besser",
+      fix: "Behoben",
+    },
+  },
+  dnd: {
+    emptyText: "Hierher ziehen",
+    move: "{label} verschieben",
+    showMore: "{n} weitere anzeigen",
+    instructions: "Leertaste zum Aufnehmen, Pfeiltasten zum Verschieben, Leertaste zum Ablegen, Escape zum Abbrechen.",
+  },
+  markdown: {
+    image: "Bild",
+  },
+  api: {
+    httpError: "Fehler {status}",
+    aborted: "Abgebrochen",
+    network: "Verbindung fehlgeschlagen – bitte erneut versuchen.",
+  },
+};
+
+const en: Shape<typeof de> = {
+  meta: {
+    description: "Mission control for your vibe coding projects",
+  },
+  nav: {
+    main: "Main navigation",
+    dashboard: "Dashboard",
+    tasks: "Tasks",
+    docs: "Docs",
+    design: "Design",
+    admin: "Admin",
+    administration: "Administration",
+    account: "My account",
+  },
+  topNav: {
+    openSearch: "Open quick search",
+    searchTitle: "Quick search (Ctrl+K)",
+    searchKbd: "Ctrl K",
+    capture: "Quick capture",
+    signedInAs: "Signed in as",
+    logout: "Sign out",
+  },
+  palette: {
+    label: "Quick search",
+    placeholder: "Projects, notes, tasks, docs …",
+    inputLabel: "Search term",
+    empty: "Nothing found.",
+    hints: "↑↓ select · Enter open · Esc close",
+    groups: {
+      projects: "Projects",
+      recent: "Recently edited",
+      notes: "Notes",
+      tasks: "Tasks",
+      docs: "Docs",
+      areas: "Sections",
+    },
+  },
+  capture: {
+    title: "Quick capture",
+    modeLabel: "What to capture?",
+    idea: "Idea",
+    task: "Task",
+    project: "Project",
+    noProjects: "No projects yet",
+    ideaPlaceholder: "What's the idea?",
+    taskPlaceholder: "What needs to be done?",
+    hint: "Enter creates it – the dialog stays open.",
+    pickProject: "Please choose a project.",
+    createdIdea: "Idea “{name}”",
+    createdTask: "Task “{title}” in {project}",
+  },
+  changelog: {
+    version: "Version {version}",
+    title: "What's new?",
+    installed: "Installed:",
+    updateNo: "Update #{n}",
+    dirty: "(with local changes)",
+    commitDate: "from {date}",
+    installedBadge: "installed",
+    types: {
+      neu: "New",
+      besser: "Improved",
+      fix: "Fixed",
+    },
+  },
+  dnd: {
+    emptyText: "Drag here",
+    move: "Move {label}",
+    showMore: "Show {n} more",
+    instructions: "Press space to pick up, use the arrow keys to move, press space to drop, press Escape to cancel.",
+  },
+  markdown: {
+    image: "Image",
+  },
+  api: {
+    httpError: "Error {status}",
+    aborted: "Cancelled",
+    network: "Connection failed – please try again.",
+  },
+};
+
+export default { de, en };

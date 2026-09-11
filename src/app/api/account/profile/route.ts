@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { profileSchema } from "@/lib/validation";
+import { tk } from "@/lib/i18n/messages";
 
 export const PATCH = route(async (req) => {
   const user = await requireApiUser();
@@ -19,7 +20,7 @@ export const PATCH = route(async (req) => {
     return json({ profile: updated });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ApiError(409, "Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.", { email: "Vergeben" });
+      throw new ApiError(409, tk("account", "errors.emailTaken"), { email: tk("account", "errors.taken") });
     }
     throw err;
   }

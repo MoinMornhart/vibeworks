@@ -22,6 +22,7 @@ export const publicUserSelect = {
   role: true,
   active: true,
   theme: true,
+  locale: true,
   totpEnabledAt: true,
   passwordHash: true,
   createdAt: true,

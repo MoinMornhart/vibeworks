@@ -1,6 +1,7 @@
 import { lookup } from "node:dns/promises";
 import net from "node:net";
 import { config } from "@/lib/config";
+import { tk } from "@/lib/i18n/messages";
 
 // Schutz vor Server-Side Request Forgery: Adressen, die der Server abruft,
 // stammen vom Benutzer (Repository-Adresse). Vor jedem Abruf werden alle
@@ -37,19 +38,21 @@ export function isBlockedIp(ip: string, opts: { blockPrivate?: boolean; allowLoo
   return true;
 }
 
+// Meldungen sind Übersetzungsschlüssel – sie reisen über GitError/GitTokenError
+// bis in die Datenbank bzw. API-Antwort und werden erst dort übersetzt.
 export async function assertFetchable(url: URL): Promise<void> {
-  if (url.protocol !== "https:" && url.protocol !== "http:") throw new FetchBlockedError("Nur http- und https-Adressen sind erlaubt.");
-  if (url.username || url.password) throw new FetchBlockedError("Zugangsdaten gehören nicht in die Adresse.");
+  if (url.protocol !== "https:" && url.protocol !== "http:") throw new FetchBlockedError(tk("git", "errors.protocol"));
+  if (url.username || url.password) throw new FetchBlockedError(tk("git", "errors.credentialsInUrl"));
   const host = url.hostname.replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost")) {
-    if (!config.gitAllowLoopback) throw new FetchBlockedError("Adressen auf diesem Rechner sind gesperrt (GIT_ALLOW_LOOPBACK).");
+    if (!config.gitAllowLoopback) throw new FetchBlockedError(tk("git", "errors.loopback"));
     return;
   }
   const addresses = net.isIP(host) ? [host] : (await lookup(host, { all: true }).catch(() => [])).map((a) => a.address);
-  if (!addresses.length) throw new FetchBlockedError(`Der Name ${host} lässt sich nicht auflösen.`);
+  if (!addresses.length) throw new FetchBlockedError(tk("git", "errors.unresolvable", { host }));
   for (const ip of addresses) {
     if (isBlockedIp(ip, { blockPrivate: config.gitBlockPrivate, allowLoopback: config.gitAllowLoopback })) {
-      throw new FetchBlockedError(`Die Adresse ${host} (${ip}) ist aus Sicherheitsgründen gesperrt.`);
+      throw new FetchBlockedError(tk("git", "errors.blockedAddress", { host, ip }));
     }
   }
 }
@@ -82,5 +85,5 @@ export async function safeFetch(input: string, init: RequestInit & { timeoutMs?:
     }
     return res;
   }
-  throw new FetchBlockedError("Zu viele Weiterleitungen.");
+  throw new FetchBlockedError(tk("git", "errors.tooManyRedirects"));
 }

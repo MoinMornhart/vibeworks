@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { tk } from "@/lib/i18n/messages";
 import { requireProject } from "@/lib/access";
 import { shareState } from "@/lib/share";
 import { memberAddSchema } from "@/lib/validation";
@@ -16,8 +17,8 @@ export const POST = route<Params>(async (req, { params }) => {
   const { username, role } = await readBody(req, memberAddSchema);
 
   const target = await db.user.findFirst({ where: { username, active: true }, select: { id: true } });
-  if (!target) throw new ApiError(404, "Kein aktives Konto mit diesem Benutzernamen.", { username: "Unbekannt" });
-  if (target.id === project.ownerId) throw new ApiError(400, "Das Projekt gehört dir schon.", { username: "Das bist du" });
+  if (!target) throw new ApiError(404, tk("share", "errors.noAccount"), { username: tk("share", "errors.unknown") });
+  if (target.id === project.ownerId) throw new ApiError(400, tk("share", "errors.alreadyOwner"), { username: tk("share", "errors.thatsYou") });
 
   await db.projectMember.upsert({
     where: { projectId_userId: { projectId: project.id, userId: target.id } },

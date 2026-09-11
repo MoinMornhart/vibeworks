@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import { config } from "@/lib/config";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
@@ -15,6 +16,9 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
           <div className="mt-6">{children}</div>
         </section>
+        <div className="mt-4 flex justify-center">
+          <LanguageSwitch />
+        </div>
       </div>
     </main>
   );

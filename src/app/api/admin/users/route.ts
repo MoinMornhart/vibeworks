@@ -6,6 +6,7 @@ import { listUsers } from "@/lib/admin";
 import { getSettings } from "@/lib/settings";
 import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { adminUserCreateSchema } from "@/lib/validation";
+import { tk } from "@/lib/i18n/messages";
 
 export const GET = route(async () => {
   await requireApiAdmin();
@@ -15,7 +16,7 @@ export const GET = route(async () => {
 export const POST = route(async (req) => {
   await requireApiAdmin();
   if ((await getSettings()).mode !== "MULTI") {
-    throw new ApiError(409, "Weitere Konten gibt es nur im Mehrbenutzerbetrieb.");
+    throw new ApiError(409, tk("admin", "errors.multiOnly"));
   }
   const input = await readBody(req, adminUserCreateSchema);
   const policy = checkPasswordPolicy(input.password, input.username);
@@ -26,7 +27,7 @@ export const POST = route(async (req) => {
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ApiError(409, "Dieser Benutzername ist vergeben.", { username: "Vergeben" });
+      throw new ApiError(409, tk("admin", "errors.usernameTaken"), { username: tk("admin", "errors.taken") });
     }
     throw err;
   }

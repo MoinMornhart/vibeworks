@@ -5,6 +5,7 @@ import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { optionalCredential } from "@/lib/git/token";
+import { tk } from "@/lib/i18n/messages";
 
 // Legt beim allerersten Aufruf das Administratorkonto an. Danach gesperrt.
 export const POST = route(async (req) => {
@@ -20,7 +21,7 @@ export const POST = route(async (req) => {
   // Serializable: zwei gleichzeitige Einrichtungen dürfen nicht beide durchkommen.
   const user = await db.$transaction(
     async (tx) => {
-      if ((await tx.user.count()) > 0) throw new ApiError(409, "Die Einrichtung ist bereits abgeschlossen.");
+      if ((await tx.user.count()) > 0) throw new ApiError(409, tk("auth", "errors.setupDone"));
       const created = await tx.user.create({
         data: { username: input.username, displayName: input.displayName, passwordHash, role: "ADMIN", ...tokenData },
       });

@@ -3,10 +3,12 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { HEX_RE } from "@/lib/theme/color";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 // Kleine Bedienelemente für den Design-Editor.
 
 export function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
+  const t = useT("theme");
   const [text, setText] = useState(value);
   const id = useId();
   useEffect(() => setText(value), [value]);
@@ -18,7 +20,7 @@ export function ColorField({ label, value, onChange }: { label: string; value: s
           value={value}
           onChange={(e) => onChange(e.target.value.toLowerCase())}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          aria-label={`${label} wählen`}
+          aria-label={t("controls.pick", { label })}
         />
       </span>
       <div className="min-w-0 flex-1">

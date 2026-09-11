@@ -1,5 +1,7 @@
 # VibeWorks installieren
 
+<p><b>🇩🇪 Deutsch</b> · <a href="INSTALLATION.en.md">🇬🇧 English</a></p>
+
 VibeWorks läuft selbst gehostet auf einem eigenen Server. Am einfachsten ist ein
 Proxmox-VE-Container, der mit einem einzigen Befehl entsteht.
 

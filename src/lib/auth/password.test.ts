@@ -21,12 +21,12 @@ describe("Passwort-Hashing", () => {
 
 describe("Passwortregeln", () => {
   it.each([
-    ["kurz", "Mindestens"],
-    ["1234567890123", "Ziffern"],
-    ["abababababab", "verschiedene"],
-    ["abcdefghijkl", "durchlaufende"],
-    ["passwort123", "naheliegend"],
-    ["morni-ist-toll", "Benutzernamen"],
+    ["kurz", "policy.minLength"],
+    ["1234567890123", "policy.onlyDigits"],
+    ["abababababab", "policy.fewDistinct"],
+    ["abcdefghijkl", "policy.sequence"],
+    ["passwort123", "policy.common"],
+    ["morni-ist-toll", "policy.containsUsername"],
   ])("%s wird abgelehnt", (pw, grund) => {
     expect(checkPasswordPolicy(pw, "morni")).toContain(grund);
   });

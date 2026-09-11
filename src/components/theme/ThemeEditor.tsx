@@ -30,15 +30,15 @@ import {
   DEFAULT_STATUS_COLORS,
   DEFAULT_THEME,
   PALETTE_KEYS,
-  PALETTE_LABELS,
   resolveTheme,
   STATUS_KEYS,
   type Theme,
 } from "@/lib/theme";
-import { BACKGROUND_PRESET_INFO, GRADIENT_PRESETS } from "@/lib/theme/presets";
+import { GRADIENT_PRESETS } from "@/lib/theme/presets";
 import { contrast, hslToRgb, rgbToHex, shiftHue } from "@/lib/theme/color";
-import { PROJECT_STATUS_MAP, PROJECT_STATUSES } from "@/lib/status";
+import { PROJECT_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 export interface UploadInfo {
@@ -57,7 +57,17 @@ function exportable(theme: Theme): Theme {
   return t;
 }
 
+const GLASS_PRESETS = [
+  { id: "clear", opacity: 25, blur: 6 },
+  { id: "milk", opacity: 62, blur: 18 },
+  { id: "frost", opacity: 45, blur: 32 },
+  { id: "opaque", opacity: 100, blur: 0 },
+] as const;
+
 export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }) {
+  const t = useT("theme");
+  const tc = useT("common");
+  const ts = useT("status");
   const { saved, preview, commit } = useTheme();
   const [draft, setDraft] = useState<Theme>(() => clone(saved));
   const [uploads, setUploads] = useState(initialUploads);
@@ -107,7 +117,7 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       const res = await api<{ theme: Theme }>("/api/account/theme", { method: "PUT", body: { theme: draft } });
       commit(res.theme);
       setDraft(clone(res.theme));
-      setNotice("Design gespeichert.");
+      setNotice(t("page.saved"));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -118,7 +128,7 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
   async function uploadFile(file: File) {
     setError(null);
     if (file.size > 8 * 1024 * 1024) {
-      setError("Das Bild ist größer als 8 MB.");
+      setError(t("errors.imageTooLarge"));
       return;
     }
     setUploading(true);
@@ -127,14 +137,14 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       fd.append("file", file);
       const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: "same-origin" });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? `Fehler ${res.status}`);
+      if (!res.ok) throw new Error(data.error ?? t("page.errorStatus", { status: res.status }));
       setUploads((u) => [{ id: data.upload.id, size: data.upload.size, createdAt: data.upload.createdAt }, ...u]);
-      edit((t) => {
-        t.background.type = "image";
-        t.background.image.uploadId = data.upload.id;
+      edit((th) => {
+        th.background.type = "image";
+        th.background.image.uploadId = data.upload.id;
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("page.uploadFailed"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -142,15 +152,15 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
   }
 
   async function deleteUpload(id: string) {
-    if (!window.confirm("Dieses Bild endgültig löschen?")) return;
+    if (!window.confirm(t("page.confirmDeleteImage"))) return;
     try {
       const res = await api<{ theme: Theme | null }>(`/api/uploads/${id}`, { method: "DELETE" });
       setUploads((u) => u.filter((x) => x.id !== id));
       if (res.theme) commit(res.theme);
-      edit((t) => {
-        if (t.background.image.uploadId === id) {
-          t.background.image.uploadId = null;
-          if (t.background.type === "image") t.background.type = "preset";
+      edit((th) => {
+        if (th.background.image.uploadId === id) {
+          th.background.image.uploadId = null;
+          if (th.background.type === "image") th.background.type = "preset";
         }
       });
     } catch (e) {
@@ -170,31 +180,31 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       const theme = exportable(resolveTheme(parsed));
       setDraft(theme);
       setShareOpen(false);
-      setNotice("Design übernommen – zum Behalten speichern.");
+      setNotice(t("page.imported"));
     } catch {
-      setShareError("Das ist kein gültiges Design-JSON.");
+      setShareError(t("page.invalidJson"));
     }
   }
 
   const bg = draft.background;
   const palette = draft[paletteMode];
   const checks = [
-    { label: "Text auf Karten", ratio: contrast(palette.text, palette.surface), min: 4.5 },
-    { label: "Gedämpfter Text auf Karten", ratio: contrast(palette.muted, palette.surface), min: 4.5 },
-    { label: "Text auf Grundfarbe", ratio: contrast(palette.text, palette.bg), min: 4.5 },
-  ];
+    { id: "text", ratio: contrast(palette.text, palette.surface), min: 4.5 },
+    { id: "muted", ratio: contrast(palette.muted, palette.surface), min: 4.5 },
+    { id: "textOnBg", ratio: contrast(palette.text, palette.bg), min: 4.5 },
+  ] as const;
 
   return (
     <div className="fade-in">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Design</h1>
-          <p className="mt-1 text-muted">Gestalte {`VibeWorks`} so, wie es dir gefällt. Änderungen siehst du sofort – gespeichert wird erst auf Knopfdruck.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("page.title")}</h1>
+          <p className="mt-1 text-muted">{t("page.intro")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn btn-sm" onClick={openShare}><Share2 size={15} /> Teilen</button>
-          <button className="btn btn-sm" onClick={() => edit((t) => Object.assign(t, clone(DEFAULT_THEME)))}>
-            <RotateCcw size={15} /> Standard
+          <button className="btn btn-sm" onClick={openShare}><Share2 size={15} /> {t("page.share")}</button>
+          <button className="btn btn-sm" onClick={() => edit((th) => Object.assign(th, clone(DEFAULT_THEME)))}>
+            <RotateCcw size={15} /> {t("page.reset")}
           </button>
         </div>
       </header>
@@ -202,24 +212,24 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
           {/* ── Darstellung ─────────────────────────────── */}
-          <Section title="Darstellung" description="Hell, dunkel oder automatisch wie dein Betriebssystem.">
+          <Section title={t("mode.title")} description={t("mode.description")}>
             <Segmented
-              label="Modus"
+              label={t("mode.label")}
               value={draft.mode}
               onChange={(mode) => {
-                edit((t) => { t.mode = mode; });
+                edit((th) => { th.mode = mode; });
                 if (mode !== "system") setPaletteMode(mode);
               }}
               options={[
-                { value: "dark", label: "Dunkel", icon: <Moon size={15} /> },
-                { value: "light", label: "Hell", icon: <Sun size={15} /> },
-                { value: "system", label: "System", icon: <Monitor size={15} /> },
+                { value: "dark", label: t("mode.dark"), icon: <Moon size={15} /> },
+                { value: "light", label: t("mode.light"), icon: <Sun size={15} /> },
+                { value: "system", label: t("mode.system"), icon: <Monitor size={15} /> },
               ]}
             />
           </Section>
 
           {/* ── Farbschema ──────────────────────────────── */}
-          <Section title="Farbschema" description="Ein Startpunkt für alle Farben – danach lässt sich alles einzeln anpassen.">
+          <Section title={t("scheme.title")} description={t("scheme.description")}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {COLOR_SCHEMES.map((s) => {
                 const active = draft.scheme === s.id;
@@ -229,11 +239,11 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                     type="button"
                     aria-pressed={active}
                     onClick={() =>
-                      edit((t) => {
-                        t.scheme = s.id;
-                        t.accent = s.accent;
-                        t.dark = clone(s.dark);
-                        t.light = clone(s.light);
+                      edit((th) => {
+                        th.scheme = s.id;
+                        th.accent = s.accent;
+                        th.dark = clone(s.dark);
+                        th.light = clone(s.light);
                       })
                     }
                     className={cn("rounded-xl border p-2 text-left transition", active ? "border-accent ring-2 ring-accent/40" : "hover:border-accent/50")}
@@ -249,56 +259,56 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                       ))}
                     </div>
                     <span className="mt-1.5 flex items-center gap-1.5 text-sm font-medium">
-                      {active && <Check size={14} className="text-accent-ink" />} {s.name}
+                      {active && <Check size={14} className="text-accent-ink" />} {t(`schemes.${s.id}`)}
                     </span>
                   </button>
                 );
               })}
             </div>
-            {draft.scheme === "custom" && <p className="mt-3 text-xs text-muted">Eigene Anpassungen aktiv.</p>}
+            {draft.scheme === "custom" && <p className="mt-3 text-xs text-muted">{t("scheme.custom")}</p>}
           </Section>
 
           {/* ── Akzentfarbe ─────────────────────────────── */}
-          <Section title="Akzentfarbe" description="Für Knöpfe, Links, Fokusrahmen und – wenn gewünscht – die Hintergrund-Animation.">
+          <Section title={t("accent.title")} description={t("accent.description")}>
             <div className="flex flex-wrap gap-2">
               {ACCENT_SWATCHES.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  onClick={() => edit((t) => { t.accent = c; t.scheme = "custom"; })}
+                  onClick={() => edit((th) => { th.accent = c; th.scheme = "custom"; })}
                   className={cn("h-9 w-9 rounded-full border-2 transition hover:scale-110", draft.accent === c ? "border-fg" : "border-transparent")}
                   style={{ background: c }}
-                  aria-label={`Akzentfarbe ${c}`}
+                  aria-label={t("accent.swatch", { color: c })}
                   aria-pressed={draft.accent === c}
                 />
               ))}
               <button
                 type="button"
                 className="btn btn-icon rounded-full"
-                title="Zufällige Farbe"
-                aria-label="Zufällige Akzentfarbe"
-                onClick={() => edit((t) => { t.accent = rgbToHex(hslToRgb(Math.random() * 360, 0.75, 0.62)); t.scheme = "custom"; })}
+                title={t("accent.random")}
+                aria-label={t("accent.randomLabel")}
+                onClick={() => edit((th) => { th.accent = rgbToHex(hslToRgb(Math.random() * 360, 0.75, 0.62)); th.scheme = "custom"; })}
               >
                 <Dices size={16} />
               </button>
             </div>
             <div className="mt-4 max-w-xs">
-              <ColorField label="Eigene Farbe" value={draft.accent} onChange={(c) => edit((t) => { t.accent = c; t.scheme = "custom"; })} />
+              <ColorField label={t("accent.custom")} value={draft.accent} onChange={(c) => edit((th) => { th.accent = c; th.scheme = "custom"; })} />
             </div>
           </Section>
 
           {/* ── Palette ─────────────────────────────────── */}
           <Section
-            title="Palette"
-            description="Alle Flächen- und Textfarben, getrennt für Hell und Dunkel."
+            title={t("palette.title")}
+            description={t("palette.description")}
             actions={
               <Segmented
-                label="Palette bearbeiten"
+                label={t("palette.editLabel")}
                 value={paletteMode}
                 onChange={setPaletteMode}
                 options={[
-                  { value: "dark", label: "Dunkel", icon: <Moon size={14} /> },
-                  { value: "light", label: "Hell", icon: <Sun size={14} /> },
+                  { value: "dark", label: t("mode.dark"), icon: <Moon size={14} /> },
+                  { value: "light", label: t("mode.light"), icon: <Sun size={14} /> },
                 ]}
               />
             }
@@ -307,9 +317,9 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
               {PALETTE_KEYS.map((key) => (
                 <ColorField
                   key={key}
-                  label={PALETTE_LABELS[key]}
+                  label={t(`palette.keys.${key}`)}
                   value={palette[key]}
-                  onChange={(c) => edit((t) => { t[paletteMode][key] = c; t.scheme = "custom"; })}
+                  onChange={(c) => edit((th) => { th[paletteMode][key] = c; th.scheme = "custom"; })}
                 />
               ))}
             </div>
@@ -317,67 +327,62 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
               {checks.map((c) => {
                 const good = c.ratio >= c.min;
                 return (
-                  <li key={c.label} className="flex items-center justify-between gap-3">
-                    <span className="text-muted">{c.label}</span>
+                  <li key={c.id} className="flex items-center justify-between gap-3">
+                    <span className="text-muted">{t(`palette.checks.${c.id}`)}</span>
                     <span className={cn("font-mono text-xs", good ? "text-emerald-400" : "text-amber-400")}>
-                      {c.ratio.toFixed(1)} : 1 {good ? "✓" : "– schwer lesbar"}
+                      {c.ratio.toFixed(1)} : 1 {good ? "✓" : t("palette.hardToRead")}
                     </span>
                   </li>
                 );
               })}
             </ul>
             {paletteMode !== (draft.mode === "system" ? paletteMode : draft.mode) && (
-              <p className="mt-3 text-xs text-muted">Hinweis: Du bearbeitest gerade die {paletteMode === "dark" ? "dunkle" : "helle"} Palette, aktiv ist aber der {draft.mode === "dark" ? "Dunkel" : "Hell"}modus.</p>
+              <p className="mt-3 text-xs text-muted">{paletteMode === "dark" ? t("palette.editingDark") : t("palette.editingLight")}</p>
             )}
           </Section>
 
           {/* ── Statusfarben ────────────────────────────── */}
           <Section
-            title="Statusfarben"
-            description="Die Farben der Projektzustände auf Karten und im Kanban."
+            title={t("statusColors.title")}
+            description={t("statusColors.description")}
             actions={
-              <button className="btn btn-sm" onClick={() => edit((t) => { t.status = clone(DEFAULT_STATUS_COLORS); })}>
-                <RotateCcw size={14} /> Zurücksetzen
+              <button className="btn btn-sm" onClick={() => edit((th) => { th.status = clone(DEFAULT_STATUS_COLORS); })}>
+                <RotateCcw size={14} /> {t("statusColors.reset")}
               </button>
             }
           >
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {STATUS_KEYS.map((key) => (
-                <ColorField key={key} label={PROJECT_STATUS_MAP[key].label} value={draft.status[key]} onChange={(c) => edit((t) => { t.status[key] = c; })} />
+                <ColorField key={key} label={ts(`project.${key}`)} value={draft.status[key]} onChange={(c) => edit((th) => { th.status[key] = c; })} />
               ))}
             </div>
           </Section>
 
           {/* ── Glas ────────────────────────────────────── */}
-          <Section title="Glas-Effekt" description="Wie stark die Karten den Hintergrund durchscheinen lassen.">
+          <Section title={t("glass.title")} description={t("glass.description")}>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Slider label="Deckkraft der Karten" value={draft.glass.opacity} min={0} max={100} unit=" %" onChange={(v) => edit((t) => { t.glass.opacity = v; })} />
-              <Slider label="Unschärfe dahinter" value={draft.glass.blur} min={0} max={40} unit=" px" onChange={(v) => edit((t) => { t.glass.blur = v; })} />
+              <Slider label={t("glass.opacity")} value={draft.glass.opacity} min={0} max={100} unit=" %" onChange={(v) => edit((th) => { th.glass.opacity = v; })} />
+              <Slider label={t("glass.blur")} value={draft.glass.blur} min={0} max={40} unit=" px" onChange={(v) => edit((th) => { th.glass.blur = v; })} />
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {[
-                { label: "Klares Glas", opacity: 25, blur: 6 },
-                { label: "Milchglas", opacity: 62, blur: 18 },
-                { label: "Frost", opacity: 45, blur: 32 },
-                { label: "Deckend", opacity: 100, blur: 0 },
-              ].map((p) => (
-                <button key={p.label} className="btn btn-sm" onClick={() => edit((t) => { t.glass = { opacity: p.opacity, blur: p.blur }; })}>
-                  {p.label}
+              {GLASS_PRESETS.map((p) => (
+                <button key={p.id} className="btn btn-sm" onClick={() => edit((th) => { th.glass = { opacity: p.opacity, blur: p.blur }; })}>
+                  {t(`glass.presets.${p.id}`)}
                 </button>
               ))}
             </div>
           </Section>
 
           {/* ── Hintergrund ─────────────────────────────── */}
-          <Section title="Hintergrund" description="Eine animierte Vorlage, ein eigener Farbverlauf oder ein eigenes Bild.">
+          <Section title={t("background.title")} description={t("background.description")}>
             <Segmented
-              label="Art des Hintergrunds"
+              label={t("background.typeLabel")}
               value={bg.type}
-              onChange={(type) => edit((t) => { t.background.type = type; })}
+              onChange={(type) => edit((th) => { th.background.type = type; })}
               options={[
-                { value: "preset", label: "Vorlage" },
-                { value: "gradient", label: "Farbverlauf" },
-                { value: "image", label: "Eigenes Bild" },
+                { value: "preset", label: t("background.types.preset") },
+                { value: "gradient", label: t("background.types.gradient") },
+                { value: "image", label: t("background.types.image") },
               ]}
             />
 
@@ -389,13 +394,12 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                     const thumb = clone(draft);
                     thumb.background.type = "preset";
                     thumb.background.preset.id = id;
-                    const info = BACKGROUND_PRESET_INFO[id];
                     return (
                       <button
                         key={id}
                         type="button"
                         aria-pressed={selected}
-                        onClick={() => edit((t) => { t.background.preset.id = id; })}
+                        onClick={() => edit((th) => { th.background.preset.id = id; })}
                         onMouseEnter={() => setHoverPreset(id)}
                         onMouseLeave={() => setHoverPreset(null)}
                         onFocus={() => setHoverPreset(id)}
@@ -407,9 +411,9 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                         </div>
                         <div className="px-2.5 py-2">
                           <span className="flex items-center gap-1.5 text-sm font-medium">
-                            {selected && <Check size={14} className="text-accent-ink" />} {info.name}
+                            {selected && <Check size={14} className="text-accent-ink" />} {t(`backgrounds.${id}.name`)}
                           </span>
-                          <span className="line-clamp-1 text-xs text-muted">{info.hint}</span>
+                          <span className="line-clamp-1 text-xs text-muted">{t(`backgrounds.${id}.hint`)}</span>
                         </div>
                       </button>
                     );
@@ -417,24 +421,24 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Slider label="Tempo" value={bg.preset.speed} min={0} max={200} step={5} unit=" %" onChange={(v) => edit((t) => { t.background.preset.speed = v; })} />
-                  <Slider label="Intensität" value={bg.preset.intensity} min={10} max={100} unit=" %" onChange={(v) => edit((t) => { t.background.preset.intensity = v; })} />
+                  <Slider label={t("background.speed")} value={bg.preset.speed} min={0} max={200} step={5} unit=" %" onChange={(v) => edit((th) => { th.background.preset.speed = v; })} />
+                  <Slider label={t("background.intensity")} value={bg.preset.intensity} min={10} max={100} unit=" %" onChange={(v) => edit((th) => { th.background.preset.intensity = v; })} />
                 </div>
 
                 <Toggle
-                  label="Farben aus der Akzentfarbe ableiten"
-                  hint="Aus: drei eigene Farben für die Animation wählen"
+                  label={t("background.deriveColors")}
+                  hint={t("background.deriveHint")}
                   checked={bg.preset.colors === null}
                   onChange={(auto) =>
-                    edit((t) => {
-                      t.background.preset.colors = auto ? null : [t.accent, shiftHue(t.accent, 48), shiftHue(t.accent, -70)];
+                    edit((th) => {
+                      th.background.preset.colors = auto ? null : [th.accent, shiftHue(th.accent, 48), shiftHue(th.accent, -70)];
                     })
                   }
                 />
                 {bg.preset.colors && (
                   <div className="grid gap-4 sm:grid-cols-3">
                     {bg.preset.colors.map((c, i) => (
-                      <ColorField key={i} label={`Farbe ${i + 1}`} value={c} onChange={(v) => edit((t) => { t.background.preset.colors![i] = v; })} />
+                      <ColorField key={i} label={t("background.color", { n: i + 1 })} value={c} onChange={(v) => edit((th) => { th.background.preset.colors![i] = v; })} />
                     ))}
                   </div>
                 )}
@@ -445,19 +449,19 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
               <div className="mt-5 space-y-5">
                 <div className="h-24 rounded-xl border" style={{ backgroundImage: gradientCss(bg.gradient) }} />
                 <div>
-                  <p className="label">Vorlagen</p>
+                  <p className="label">{t("background.presetsLabel")}</p>
                   <div className="flex flex-wrap gap-2">
                     {GRADIENT_PRESETS.map((p) => (
                       <button
                         key={p.id}
                         type="button"
-                        title={p.name}
-                        aria-label={`Verlauf ${p.name}`}
+                        title={t(`gradients.${p.id}`)}
+                        aria-label={t("background.gradientLabel", { name: t(`gradients.${p.id}`) })}
                         onClick={() =>
-                          edit((t) => {
-                            t.background.gradient.kind = p.kind;
-                            t.background.gradient.angle = p.angle;
-                            t.background.gradient.stops = clone(p.stops);
+                          edit((th) => {
+                            th.background.gradient.kind = p.kind;
+                            th.background.gradient.angle = p.angle;
+                            th.background.gradient.stops = clone(p.stops);
                           })
                         }
                         className="h-10 w-16 rounded-lg border transition hover:scale-105"
@@ -467,30 +471,30 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                   </div>
                 </div>
                 <Segmented
-                  label="Verlaufsart"
+                  label={t("background.kindLabel")}
                   value={bg.gradient.kind}
-                  onChange={(kind) => edit((t) => { t.background.gradient.kind = kind; })}
+                  onChange={(kind) => edit((th) => { th.background.gradient.kind = kind; })}
                   options={[
-                    { value: "linear", label: "Linear" },
-                    { value: "radial", label: "Radial" },
-                    { value: "conic", label: "Konisch" },
+                    { value: "linear", label: t("background.kinds.linear") },
+                    { value: "radial", label: t("background.kinds.radial") },
+                    { value: "conic", label: t("background.kinds.conic") },
                   ]}
                 />
                 {bg.gradient.kind !== "radial" && (
-                  <Slider label="Winkel" value={bg.gradient.angle} min={0} max={360} unit="°" onChange={(v) => edit((t) => { t.background.gradient.angle = v; })} />
+                  <Slider label={t("background.angle")} value={bg.gradient.angle} min={0} max={360} unit="°" onChange={(v) => edit((th) => { th.background.gradient.angle = v; })} />
                 )}
                 <div className="space-y-4">
                   {bg.gradient.stops.map((s, i) => (
                     <div key={i} className="flex items-end gap-3">
                       <div className="grid flex-1 gap-3 sm:grid-cols-2">
-                        <ColorField label={`Farbe ${i + 1}`} value={s.color} onChange={(v) => edit((t) => { t.background.gradient.stops[i].color = v; })} />
-                        <Slider label="Position" value={s.pos} min={0} max={100} unit=" %" onChange={(v) => edit((t) => { t.background.gradient.stops[i].pos = v; })} />
+                        <ColorField label={t("background.color", { n: i + 1 })} value={s.color} onChange={(v) => edit((th) => { th.background.gradient.stops[i].color = v; })} />
+                        <Slider label={t("background.position")} value={s.pos} min={0} max={100} unit=" %" onChange={(v) => edit((th) => { th.background.gradient.stops[i].pos = v; })} />
                       </div>
                       <button
                         className="btn btn-ghost btn-icon"
-                        aria-label={`Farbe ${i + 1} entfernen`}
+                        aria-label={t("background.removeColor", { n: i + 1 })}
                         disabled={bg.gradient.stops.length <= 2}
-                        onClick={() => edit((t) => { t.background.gradient.stops.splice(i, 1); })}
+                        onClick={() => edit((th) => { th.background.gradient.stops.splice(i, 1); })}
                       >
                         <X size={16} />
                       </button>
@@ -500,18 +504,18 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                     className="btn btn-sm"
                     disabled={bg.gradient.stops.length >= 6}
                     onClick={() =>
-                      edit((t) => {
-                        const stops = t.background.gradient.stops;
+                      edit((th) => {
+                        const stops = th.background.gradient.stops;
                         stops.push({ color: shiftHue(stops[stops.length - 1].color, 40), pos: 100 });
                       })
                     }
                   >
-                    <Plus size={14} /> Farbe hinzufügen
+                    <Plus size={14} /> {t("background.addColor")}
                   </button>
                 </div>
-                <Toggle label="Verlauf animieren" checked={bg.gradient.animate} onChange={(v) => edit((t) => { t.background.gradient.animate = v; })} />
+                <Toggle label={t("background.animate")} checked={bg.gradient.animate} onChange={(v) => edit((th) => { th.background.gradient.animate = v; })} />
                 {bg.gradient.animate && (
-                  <Slider label="Tempo" value={bg.gradient.speed} min={10} max={200} step={5} unit=" %" onChange={(v) => edit((t) => { t.background.gradient.speed = v; })} />
+                  <Slider label={t("background.speed")} value={bg.gradient.speed} min={10} max={200} step={5} unit=" %" onChange={(v) => edit((th) => { th.background.gradient.speed = v; })} />
                 )}
               </div>
             )}
@@ -528,11 +532,11 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                   }}
                 >
                   <ImagePlus className="mx-auto text-muted" size={28} />
-                  <p className="mt-2 text-sm">Bild hierher ziehen oder</p>
+                  <p className="mt-2 text-sm">{t("background.dropHere")}</p>
                   <button className="btn btn-sm mt-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                    {uploading ? "Lade hoch …" : "Datei wählen"}
+                    {uploading ? t("background.uploading") : t("background.chooseFile")}
                   </button>
-                  <p className="mt-2 text-xs text-muted">PNG, JPEG, WebP, GIF oder AVIF · bis 8 MB · nur für dich sichtbar</p>
+                  <p className="mt-2 text-xs text-muted">{t("background.fileHint")}</p>
                   <input
                     ref={fileRef}
                     type="file"
@@ -551,14 +555,14 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                       const selected = bg.image.uploadId === u.id;
                       return (
                         <div key={u.id} className={cn("group relative aspect-video overflow-hidden rounded-lg border", selected && "border-accent ring-2 ring-accent/50")}>
-                          <button className="absolute inset-0" onClick={() => edit((t) => { t.background.image.uploadId = u.id; })} aria-label="Dieses Bild verwenden" aria-pressed={selected}>
+                          <button className="absolute inset-0" onClick={() => edit((th) => { th.background.image.uploadId = u.id; })} aria-label={t("background.useImage")} aria-pressed={selected}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={`/api/uploads/${u.id}`} alt="" className="h-full w-full object-cover" loading="lazy" />
                           </button>
                           <button
                             className="absolute right-1 top-1 rounded-md bg-black/60 p-1.5 text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
                             onClick={() => void deleteUpload(u.id)}
-                            aria-label="Bild löschen"
+                            aria-label={t("background.deleteImage")}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -572,42 +576,42 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
                 {bg.image.uploadId ? (
                   <div className="space-y-5">
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <Slider label="Unschärfe" value={bg.image.blur} min={0} max={30} unit=" px" onChange={(v) => edit((t) => { t.background.image.blur = v; })} />
-                      <Slider label="Abdunkeln / Aufhellen" value={bg.image.dim} min={0} max={90} unit=" %" onChange={(v) => edit((t) => { t.background.image.dim = v; })} />
+                      <Slider label={t("background.blur")} value={bg.image.blur} min={0} max={30} unit=" px" onChange={(v) => edit((th) => { th.background.image.blur = v; })} />
+                      <Slider label={t("background.dim")} value={bg.image.dim} min={0} max={90} unit=" %" onChange={(v) => edit((th) => { th.background.image.dim = v; })} />
                     </div>
                     <div className="flex flex-wrap gap-4">
                       <Segmented
-                        label="Anordnung"
+                        label={t("background.fitLabel")}
                         value={bg.image.fit}
-                        onChange={(fit) => edit((t) => { t.background.image.fit = fit; })}
+                        onChange={(fit) => edit((th) => { th.background.image.fit = fit; })}
                         options={[
-                          { value: "cover", label: "Füllen" },
-                          { value: "contain", label: "Einpassen" },
-                          { value: "tile", label: "Kacheln" },
+                          { value: "cover", label: t("background.fits.cover") },
+                          { value: "contain", label: t("background.fits.contain") },
+                          { value: "tile", label: t("background.fits.tile") },
                         ]}
                       />
                       <Segmented
-                        label="Ausrichtung"
+                        label={t("background.positionLabel")}
                         value={bg.image.position}
-                        onChange={(position) => edit((t) => { t.background.image.position = position; })}
+                        onChange={(position) => edit((th) => { th.background.image.position = position; })}
                         options={[
-                          { value: "center", label: "Mitte" },
-                          { value: "top", label: "Oben" },
-                          { value: "bottom", label: "Unten" },
-                          { value: "left", label: "Links" },
-                          { value: "right", label: "Rechts" },
+                          { value: "center", label: t("background.positions.center") },
+                          { value: "top", label: t("background.positions.top") },
+                          { value: "bottom", label: t("background.positions.bottom") },
+                          { value: "left", label: t("background.positions.left") },
+                          { value: "right", label: t("background.positions.right") },
                         ]}
                       />
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted">Noch kein Bild gewählt.</p>
+                  <p className="text-sm text-muted">{t("background.noImage")}</p>
                 )}
               </div>
             )}
 
             <div className="mt-6 border-t pt-5">
-              <Toggle label="Filmkorn" hint="Feines Rauschen über dem Hintergrund – verhindert Farbstreifen in Verläufen" checked={bg.grain} onChange={(v) => edit((t) => { t.background.grain = v; })} />
+              <Toggle label={t("background.grain")} hint={t("background.grainHint")} checked={bg.grain} onChange={(v) => edit((th) => { th.background.grain = v; })} />
             </div>
           </Section>
         </div>
@@ -615,20 +619,20 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
         {/* ── Vorschau ──────────────────────────────────── */}
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="glass space-y-4 p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted">Vorschau</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">{t("preview.title")}</p>
             <div className="glass lift overflow-hidden p-4">
               <div className="-mx-4 -mt-4 mb-3 h-1.5" style={{ background: "linear-gradient(90deg, var(--vw-accent), var(--vw-bg-2))" }} />
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold">Mein Projekt</h3>
+                <h3 className="font-semibold">{t("preview.project")}</h3>
                 <StatusBadge status="IN_PROGRESS" />
               </div>
-              <p className="mt-1 text-sm text-muted">Eine kurze Beschreibung für die Karte.</p>
+              <p className="mt-1 text-sm text-muted">{t("preview.description")}</p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-bg/60">
                 <div className="h-full rounded-full" style={{ width: "64%", background: "linear-gradient(90deg, var(--vw-accent), var(--vw-bg-2))" }} />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <span className="chip">nextjs</span>
-                <span className="chip chip-active">ki</span>
+                <span className="chip chip-active">{t("preview.tag")}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -637,12 +641,12 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button className="btn btn-primary btn-sm" type="button">Primär</button>
-              <button className="btn btn-sm" type="button">Sekundär</button>
+              <button className="btn btn-primary btn-sm" type="button">{t("preview.primary")}</button>
+              <button className="btn btn-sm" type="button">{t("preview.secondary")}</button>
             </div>
-            <input className="field" placeholder="Eingabefeld" aria-label="Beispiel-Eingabefeld" />
+            <input className="field" placeholder={t("preview.input")} aria-label={t("preview.inputLabel")} />
             <p className="text-sm">
-              Normaler Text · <span className="text-muted">gedämpft</span> · <span className="text-accent-ink underline">Link</span>
+              {t("preview.normal")} · <span className="text-muted">{t("preview.muted")}</span> · <span className="text-accent-ink underline">{t("preview.link")}</span>
             </p>
           </div>
         </aside>
@@ -652,15 +656,15 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       <div className={cn("sticky bottom-3 z-30 mt-6 transition-opacity", dirty || notice || error ? "opacity-100" : "pointer-events-none opacity-0")}>
         <div className="glass-strong flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <span className="text-sm">
-            {error ? <span className="text-red-400">{error}</span> : dirty ? "Ungespeicherte Änderungen – die Vorschau zeigt sie bereits." : notice}
+            {error ? <span className="text-red-400">{error}</span> : dirty ? t("saveBar.unsaved") : notice}
           </span>
           {dirty && (
             <div className="flex gap-2">
               <button className="btn btn-sm" onClick={() => setDraft(clone(saved))}>
-                <RotateCcw size={14} /> Verwerfen
+                <RotateCcw size={14} /> {t("saveBar.discard")}
               </button>
               <button className="btn btn-primary btn-sm" onClick={save} disabled={busy}>
-                <Save size={14} /> {busy ? "Speichere …" : "Speichern"}
+                <Save size={14} /> {busy ? tc("saving") : tc("save")}
               </button>
             </div>
           )}
@@ -670,23 +674,21 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
       <Modal
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        title="Design teilen"
+        title={t("shareModal.title")}
         size="lg"
         footer={
           <>
             <button className="btn btn-sm" onClick={() => void navigator.clipboard?.writeText(shareText)}>
-              <ClipboardCopy size={14} /> Kopieren
+              <ClipboardCopy size={14} /> {tc("copy")}
             </button>
             <button className="btn btn-primary btn-sm" onClick={importShare}>
-              <Download size={14} /> Übernehmen
+              <Download size={14} /> {t("shareModal.apply")}
             </button>
           </>
         }
       >
-        <p className="mb-3 text-sm text-muted">
-          Kopiere dieses JSON, um dein Design weiterzugeben – oder füge ein fremdes ein und übernimm es. Eigene Bilder sind nicht enthalten.
-        </p>
-        <textarea className="field min-h-72 font-mono text-xs" value={shareText} onChange={(e) => setShareText(e.target.value)} spellCheck={false} aria-label="Design als JSON" />
+        <p className="mb-3 text-sm text-muted">{t("shareModal.hint")}</p>
+        <textarea className="field min-h-72 font-mono text-xs" value={shareText} onChange={(e) => setShareText(e.target.value)} spellCheck={false} aria-label={t("shareModal.jsonLabel")} />
         <div className="mt-3">
           <FormError message={shareError} />
         </div>

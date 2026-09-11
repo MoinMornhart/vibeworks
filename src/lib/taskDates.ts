@@ -1,4 +1,6 @@
 import type { Recurrence, TaskStatus } from "@prisma/client";
+import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
+import { makeT } from "@/lib/i18n/messages";
 
 // Reine Datumslogik für Aufgaben – ohne Datenbank, also auch im Browser
 // nutzbar. Gerechnet wird auf Kalendertagen („YYYY-MM-DD“), nicht auf
@@ -11,8 +13,8 @@ export const RECURRENCES: Array<{ value: Recurrence; label: string }> = [
   { value: "MONTHLY", label: "Monatlich" },
 ];
 
-export function recurrenceLabel(r: Recurrence): string {
-  return RECURRENCES.find((x) => x.value === r)?.label ?? r;
+export function recurrenceLabel(r: Recurrence, locale: Locale = "de"): string {
+  return makeT(locale, "status")(`recurrence.${r}`);
 }
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -66,16 +68,23 @@ export function dueState(dueKey: string, todayKey: string): DueState {
   return d <= 3 ? "soon" : "later";
 }
 
-const shortDate = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const shortDates = new Map<Locale, Intl.DateTimeFormat>();
+function shortDate(locale: Locale): Intl.DateTimeFormat {
+  let f = shortDates.get(locale);
+  if (!f) shortDates.set(locale, (f = new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "2-digit", month: "2-digit", timeZone: "UTC" })));
+  return f;
+}
 
-export function formatDue(dueKey: string, todayKey: string): string {
+/** „heute“, „morgen“, „seit 3 Tagen“ … – in der Sprache der Oberfläche. */
+export function formatDue(dueKey: string, todayKey: string, locale: Locale = "de"): string {
+  const t = makeT(locale, "status");
   const d = diffDays(todayKey, dueKey);
-  if (d === 0) return "heute";
-  if (d === 1) return "morgen";
-  if (d === -1) return "gestern";
-  if (d < 0) return `seit ${-d} Tagen`;
-  if (d < 7) return `in ${d} Tagen`;
-  return shortDate.format(dayKeyToDate(dueKey));
+  if (d === 0) return t("due.today");
+  if (d === 1) return t("due.tomorrow");
+  if (d === -1) return t("due.yesterday");
+  if (d < 0) return t("due.overdue", { n: -d });
+  if (d < 7) return t("due.inDays", { n: d });
+  return shortDate(locale).format(dayKeyToDate(dueKey));
 }
 
 // ── Fächer für die projektübergreifende Aufgabenliste ───────

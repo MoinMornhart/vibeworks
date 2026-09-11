@@ -5,7 +5,7 @@ import { CircleCheck, CloudDownload, GitCommitHorizontal, Loader2, RefreshCw, Tr
 import type { PublicBuildInfo } from "@/lib/buildInfo";
 import type { UpdateStatus } from "@/lib/selfUpdate";
 import { api, errorMessage } from "@/lib/client/api";
-import { formatDateTime } from "@/lib/utils";
+import { useFormat, useLocale, useT } from "@/lib/i18n/client";
 
 interface UpdateResponse {
   available: boolean;
@@ -15,6 +15,9 @@ interface UpdateResponse {
 }
 
 export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
+  const t = useT("admin");
+  const f = useFormat();
+  const locale = useLocale();
   const [data, setData] = useState(initial);
   // Seit wann (Serverzeit) auf eine Antwort gewartet wird
   const [waiting, setWaiting] = useState<{ action: "check" | "update"; since: string; at: number } | null>(null);
@@ -25,6 +28,23 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
   const { status, installed, log } = data;
   const running = status?.state === "running";
   const fresh = (s: UpdateStatus | null, since: string) => Boolean(s && Date.parse(s.startedAt) >= Date.parse(since) - 5000);
+
+  // Das Update-Skript schreibt seine Meldungen auf Deutsch. In anderen
+  // Sprachen ergibt sich der Text aus Zustand und Exit-Code.
+  function statusText(s: UpdateStatus): string {
+    if (locale === "de") return s.message;
+    if (s.state === "busy") return t("update.status.busy");
+    if (s.state === "running") return t(s.action === "check" ? "update.status.checkRunning" : "update.status.updateRunning");
+    if (s.action === "check") {
+      if (s.state === "failed") return t("update.status.checkFailed");
+      return s.latest && s.latest.behind > 0 ? t("update.available", { version: s.latest.version }) : t("update.upToDate");
+    }
+    if (s.state === "done") return t("update.status.updateDone", { version: s.current?.version ?? installed.version });
+    if (s.exitCode === 3) return t("update.status.buildFailed");
+    if (s.exitCode === 4) return t("update.status.migrationFailed");
+    if (s.exitCode === 5) return t("update.status.rolledBack");
+    return t("update.status.failed", { code: s.exitCode ?? "?" });
+  }
 
   // Solange etwas läuft oder eine Anfrage offen ist: alle 1,5 s nachsehen.
   useEffect(() => {
@@ -42,7 +62,7 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
           }
         } else if (waiting && !fresh(next.status, waiting.since) && Date.now() - waiting.at > 30_000) {
           setWaiting(null);
-          setError("Der Update-Dienst reagiert nicht. Läuft vibeworks-control.path? Alternativ im Container „update“ ausführen.");
+          setError(t("update.noResponse"));
         }
       } catch {
         // Während des Neustarts ist die App kurz nicht erreichbar.
@@ -50,14 +70,14 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
       }
     }, 1500);
     return () => clearInterval(timer);
-  }, [waiting, running, installed.version]);
+  }, [waiting, running, installed.version, t]);
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [log]);
 
   async function send(action: "check" | "update") {
-    if (action === "update" && !window.confirm("Das neueste Update jetzt installieren? VibeWorks startet dabei kurz neu.")) return;
+    if (action === "update" && !window.confirm(t("update.confirm"))) return;
     setError(null);
     try {
       const res = await api<{ requestedAt: string }>("/api/admin/update", { body: { action } });
@@ -74,8 +94,8 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <span>Installiert: <strong className="font-mono">Version {installed.version}</strong></span>
-        {installed.count !== null && <span className="text-muted">Update Nr. {installed.count}</span>}
+        <span>{t("update.installed")} <strong className="font-mono">{t("update.version", { version: installed.version })}</strong></span>
+        {installed.count !== null && <span className="text-muted">{t("update.updateNo", { n: installed.count })}</span>}
         {installed.shortCommit && (
           <span className="inline-flex items-center gap-1 text-muted"><GitCommitHorizontal size={14} /><span className="font-mono">{installed.shortCommit}</span></span>
         )}
@@ -83,7 +103,7 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
 
       {!data.available ? (
         <p className="rounded-lg border bg-bg/30 px-3 py-2 text-sm text-muted">
-          Update per Knopfdruck gibt es bei Installation über den Proxmox-Installer. Er wird beim nächsten automatischen Update eingerichtet – bis dahin im Container <code className="rounded bg-fg/10 px-1.5 font-mono text-xs">update</code> ausführen.
+          {t("update.notAvailableBefore")}<code className="rounded bg-fg/10 px-1.5 font-mono text-xs">update</code>{t("update.notAvailableAfter")}
         </p>
       ) : (
         <>
@@ -92,8 +112,8 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
               <div className="rounded-xl border border-accent/40 bg-accent/10 p-4">
                 <p className="flex items-center gap-2 font-medium">
                   <CloudDownload size={18} className="text-accent-ink" />
-                  Update verfügbar: Version {latest.version}
-                  <span className="text-sm font-normal text-muted">({behind} {behind === 1 ? "neues Update" : "neue Updates"})</span>
+                  {t("update.available", { version: latest.version })}
+                  <span className="text-sm font-normal text-muted">({t("update.newUpdates", { n: behind })})</span>
                 </p>
                 <ul className="mt-2 space-y-1 text-sm">
                   {latest.commits.map((c) => (
@@ -103,7 +123,7 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
               </div>
             ) : (
               <p className="flex items-center gap-2 text-sm text-emerald-400">
-                <CircleCheck size={16} /> VibeWorks ist aktuell <span className="text-muted">(geprüft {status?.finishedAt ? formatDateTime(status.finishedAt) : ""})</span>
+                <CircleCheck size={16} /> {t("update.upToDate")} <span className="text-muted">{t("update.checked", { date: status?.finishedAt ? f.dateTime(status.finishedAt) : "" })}</span>
               </p>
             )
           )}
@@ -111,17 +131,17 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
           {busy && (
             <p className="flex items-center gap-2 text-sm">
               <Loader2 size={16} className="animate-spin text-accent-ink" />
-              {restarting ? "VibeWorks startet neu …" : running ? status?.message : waiting?.action === "check" ? "Suche nach Updates …" : "Update wird gestartet …"}
+              {restarting ? t("update.restarting") : running && status ? statusText(status) : waiting?.action === "check" ? t("update.searching") : t("update.starting")}
             </p>
           )}
 
           {!busy && status && (status.state === "failed" || status.state === "busy") && (
             <p className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              <TriangleAlert size={16} className="mt-0.5 shrink-0" /> {status.message}
+              <TriangleAlert size={16} className="mt-0.5 shrink-0" /> {statusText(status)}
             </p>
           )}
           {!busy && status?.action === "update" && status.state === "done" && (
-            <p className="flex items-center gap-2 text-sm text-emerald-400"><CircleCheck size={16} /> {status.message}</p>
+            <p className="flex items-center gap-2 text-sm text-emerald-400"><CircleCheck size={16} /> {statusText(status)}</p>
           )}
 
           {status?.action === "update" && log.length > 0 && (running || status.state === "failed" || restarting) && (
@@ -130,16 +150,16 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
 
           <div className="flex flex-wrap gap-2">
             <button className="btn btn-sm" onClick={() => void send("check")} disabled={busy}>
-              <RefreshCw size={14} /> Nach Updates suchen
+              <RefreshCw size={14} /> {t("update.check")}
             </button>
             <button className={behind > 0 ? "btn btn-primary btn-sm" : "btn btn-sm"} onClick={() => void send("update")} disabled={busy}>
-              <CloudDownload size={14} /> Neuestes Update installieren
+              <CloudDownload size={14} /> {t("update.install")}
             </button>
           </div>
         </>
       )}
       {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-      <p className="text-xs text-muted">Unabhängig davon prüft der Server alle 15 Minuten selbst. Vor jeder Migration wird die Datenbank gesichert; antwortet die neue Version nicht, wird automatisch zurückgerollt.</p>
+      <p className="text-xs text-muted">{t("update.footer")}</p>
     </div>
   );
 }

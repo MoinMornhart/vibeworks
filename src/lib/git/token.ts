@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ApiError } from "@/lib/api";
 import { encrypt } from "@/lib/crypto";
+import { tk } from "@/lib/i18n/messages";
 import { FetchBlockedError, safeFetch } from "@/lib/security/ssrf";
 import { DEFAULT_SERVER, normalizeServer, parseRepoUrl, PROVIDER_LABEL, tokenHint, type GitProvider } from "./parse";
 
@@ -40,7 +41,7 @@ export class GitTokenError extends Error {
 }
 
 /** Fragt beim Anbieter nach, wem das Token gehört – und prüft es damit zugleich. */
-export async function whoAmI(provider: GitProvider, baseUrl: string, token: string): Promise<string> {
+export async function whoAmI(provider: GitProvider, baseUrl: string, token: string): Promise<string | null> {
   const label = PROVIDER_LABEL[provider];
   const url =
     provider === "github"
@@ -58,24 +59,26 @@ export async function whoAmI(provider: GitProvider, baseUrl: string, token: stri
     res = await safeFetch(url, { headers: { Accept: "application/json", "User-Agent": "VibeWorks", ...auth } });
   } catch (err) {
     if (err instanceof FetchBlockedError) throw new GitTokenError(err.message, 400);
-    throw new GitTokenError(`${new URL(baseUrl).host} ist nicht erreichbar – stimmt die Adresse?`, 502);
+    throw new GitTokenError(tk("git", "errors.hostUnreachable", { host: new URL(baseUrl).host }), 502);
   }
-  if (res.status === 401 || res.status === 403) throw new GitTokenError(`${label} kennt dieses Token nicht – beim Kopieren etwas vergessen?`, 400);
-  if (res.status === 404) throw new GitTokenError(`Unter dieser Adresse läuft kein ${label}.`, 400);
-  if (!res.ok) throw new GitTokenError(`${label} antwortete mit HTTP ${res.status}.`, 502);
+  // Meldungen sind Übersetzungsschlüssel; route() übersetzt sie in die Sprache der Anfrage.
+  if (res.status === 401 || res.status === 403) throw new GitTokenError(tk("git", "errors.tokenUnknown", { provider: label }), 400);
+  if (res.status === 404) throw new GitTokenError(tk("git", "errors.noProvider", { provider: label }), 400);
+  if (!res.ok) throw new GitTokenError(tk("git", "errors.providerHttp", { provider: label, status: res.status }), 502);
   let data: { login?: string; username?: string };
   try {
     data = (await res.json()) as typeof data;
   } catch {
-    throw new GitTokenError(`Unter dieser Adresse läuft kein ${label}.`, 400);
+    throw new GitTokenError(tk("git", "errors.noProvider", { provider: label }), 400);
   }
-  return data.login ?? data.username ?? "unbekannt";
+  // Ohne Namen bleibt das Feld leer – die Oberfläche zeigt dann einfach keinen an.
+  return data.login ?? data.username ?? null;
 }
 
 /** Prüft das Token und liefert die Felder für db.gitCredential.create/upsert (ohne userId). */
 export async function credentialData(provider: GitProvider, server: string, token: string) {
   const norm = normalizeServer(server || DEFAULT_SERVER[provider]);
-  if (!norm) throw new GitTokenError("Die Serveradresse ist nicht lesbar – z. B. git.example.de oder https://git.example.de:3000", 400);
+  if (!norm) throw new GitTokenError(tk("git", "errors.badServer"), 400);
   const login = await whoAmI(provider, norm.baseUrl, token);
   return { provider, host: norm.hostPort, baseUrl: norm.baseUrl, cipher: encrypt(token), hint: tokenHint(token), login };
 }

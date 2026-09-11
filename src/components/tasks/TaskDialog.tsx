@@ -9,6 +9,7 @@ import type { TaskItem } from "@/lib/tasks";
 import { RECURRENCES } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
 import { ApiClientError, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 
 export interface TaskForm {
   title: string;
@@ -45,6 +46,9 @@ export function TaskDialog({
   onSave: (form: TaskForm) => Promise<void>;
   onDelete?: (task: TaskItem) => Promise<void>;
 }) {
+  const t = useT("tasks");
+  const tc = useT("common");
+  const ts = useT("status");
   const [form, setForm] = useState<TaskForm>(() => toForm(task, defaultStatus));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +80,7 @@ export function TaskDialog({
   }
 
   async function remove() {
-    if (!task || !onDelete || !window.confirm(`Aufgabe „${task.title}“ löschen?`)) return;
+    if (!task || !onDelete || !window.confirm(t("dialog.confirmDelete", { title: task.title }))) return;
     setBusy(true);
     try {
       await onDelete(task);
@@ -92,62 +96,62 @@ export function TaskDialog({
     <Modal
       open={open}
       onClose={onClose}
-      title={task ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
+      title={task ? t("dialog.editTitle") : t("dialog.newTitle")}
       footer={
         <>
           {task && onDelete && (
             <button type="button" className="btn btn-danger btn-sm mr-auto" onClick={remove} disabled={busy}>
-              <Trash2 size={14} /> Löschen
+              <Trash2 size={14} /> {tc("delete")}
             </button>
           )}
-          <button type="button" className="btn btn-sm" onClick={onClose}>Abbrechen</button>
+          <button type="button" className="btn btn-sm" onClick={onClose}>{tc("cancel")}</button>
           <button type="submit" form="task-form" className="btn btn-primary btn-sm" disabled={busy}>
-            <Save size={14} /> {busy ? "Speichere …" : task ? "Speichern" : "Anlegen"}
+            <Save size={14} /> {busy ? tc("saving") : task ? tc("save") : tc("create")}
           </button>
         </>
       }
     >
       <form id="task-form" onSubmit={submit} className="space-y-4">
         <div>
-          <label className="label" htmlFor="t-title">Titel</label>
+          <label className="label" htmlFor="t-title">{t("dialog.title")}</label>
           <input id="t-title" className="field" value={form.title} onChange={(e) => set("title", e.target.value)} required maxLength={200} autoFocus />
           {fieldErrors.title && <p className="mt-1 text-xs text-red-400">{fieldErrors.title}</p>}
         </div>
         <div>
-          <label className="label" htmlFor="t-desc">Beschreibung</label>
-          <textarea id="t-desc" className="field min-h-28" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Details, Links, Checklisten … (Markdown möglich)" maxLength={20000} />
+          <label className="label" htmlFor="t-desc">{t("dialog.description")}</label>
+          <textarea id="t-desc" className="field min-h-28" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={t("dialog.descriptionPlaceholder")} maxLength={20000} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="t-status">Spalte</label>
+            <label className="label" htmlFor="t-status">{t("dialog.column")}</label>
             <select id="t-status" className="field" value={form.status} onChange={(e) => set("status", e.target.value as TaskStatus)}>
               {TASK_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+                <option key={s.value} value={s.value}>{ts(`task.${s.value}`)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label" htmlFor="t-due">Fällig am</label>
+            <label className="label" htmlFor="t-due">{t("dialog.dueDate")}</label>
             <input id="t-due" type="date" className="field" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
             {fieldErrors.dueDate && <p className="mt-1 text-xs text-red-400">{fieldErrors.dueDate}</p>}
           </div>
           <div>
-            <label className="label" htmlFor="t-rec">Wiederholung</label>
+            <label className="label" htmlFor="t-rec">{t("dialog.recurrence")}</label>
             <select id="t-rec" className="field" value={form.recurrence} onChange={(e) => set("recurrence", e.target.value as Recurrence | "")}>
-              <option value="">Keine</option>
+              <option value="">{t("dialog.noRecurrence")}</option>
               {RECURRENCES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
+                <option key={r.value} value={r.value}>{ts(`recurrence.${r.value}`)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label" htmlFor="t-labels">Labels</label>
-            <input id="t-labels" className="field" value={form.labels} onChange={(e) => set("labels", e.target.value)} placeholder="bug, ui" />
+            <label className="label" htmlFor="t-labels">{t("dialog.labels")}</label>
+            <input id="t-labels" className="field" value={form.labels} onChange={(e) => set("labels", e.target.value)} placeholder={t("dialog.labelsPlaceholder")} />
           </div>
         </div>
         {form.recurrence && (
           <p className="text-xs text-muted">
-            Wandert die Aufgabe nach „Erledigt“, entsteht die nächste Fassung – gerechnet vom Fälligkeitsdatum, nicht vom Tag des Abhakens.
+            {t("dialog.recurrenceHint")}
           </p>
         )}
         <FormError message={error} />

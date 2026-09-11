@@ -5,8 +5,12 @@ import { config } from "@/lib/config";
 import { buildInfo, publicBuildInfo } from "@/lib/buildInfo";
 import { readUpdateStatus, selfUpdateAvailable } from "@/lib/selfUpdate";
 import { AdminManager } from "@/components/admin/AdminManager";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata = { title: "Administration" };
+export async function generateMetadata() {
+  const t = await getT("admin");
+  return { title: t("page.title") };
+}
 
 export default async function AdminPage() {
   const me = await requirePageAdmin();

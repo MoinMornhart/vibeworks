@@ -1,4 +1,6 @@
 import type { ProjectStatus, TaskStatus } from "@prisma/client";
+import type { Locale } from "@/lib/i18n/config";
+import { makeT } from "@/lib/i18n/messages";
 
 export const PROJECT_STATUSES: Array<{ value: ProjectStatus; label: string; hint: string; cssVar: string }> = [
   { value: "IDEA", label: "Idee", hint: "Noch ein Gedanke – nichts gebaut, nichts entschieden", cssVar: "--vw-status-idea" },
@@ -28,8 +30,9 @@ export const PRIORITIES = [
   { value: 4, label: "Kritisch" },
 ] as const;
 
-export function priorityLabel(p: number): string {
-  return PRIORITIES.find((x) => x.value === p)?.label ?? "Normal";
+export function priorityLabel(p: number, locale: Locale = "de"): string {
+  const key = String(PRIORITIES.some((x) => x.value === p) ? p : 2) as "1" | "2" | "3" | "4";
+  return makeT(locale, "status")(`priority.${key}`);
 }
 
 /** Akzentverläufe für Projektkarten. */

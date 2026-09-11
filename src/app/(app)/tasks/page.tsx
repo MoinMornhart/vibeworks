@@ -3,8 +3,12 @@ import { requirePageUser } from "@/lib/auth/guard";
 import { serializeTask } from "@/lib/tasks";
 import { dayKey } from "@/lib/utils";
 import { TaskOverview } from "@/components/tasks/TaskOverview";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata = { title: "Aufgaben" };
+export async function generateMetadata() {
+  const t = await getT("tasks");
+  return { title: t("overview.metaTitle") };
+}
 
 // Alle Aufgaben aus allen (nicht archivierten) Projekten, nach Fälligkeit.
 // Den heutigen Kalendertag bestimmt der Server – so laufen Server-Render

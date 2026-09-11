@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
 // /s/<token>: geteilte Projekte, auch ohne Anmeldung lesbar
-const PUBLIC_PATHS = ["/login", "/setup", "/register", "/s", "/api/auth", "/api/health", "/manifest.webmanifest"];
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/s", "/api/auth", "/api/health", "/api/locale", "/manifest.webmanifest"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

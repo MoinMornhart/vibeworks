@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { tk } from "@/lib/i18n/messages";
 import { requireProject } from "@/lib/access";
 import { shareState } from "@/lib/share";
 import { accessDecisionSchema } from "@/lib/validation";
@@ -19,7 +20,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
     where: { id: requestId, projectId: project.id, status: "PENDING" },
     include: { user: { select: { username: true } } },
   });
-  if (!request) throw notFound("Anfrage nicht gefunden");
+  if (!request) throw notFound(tk("share", "errors.requestNotFound"));
 
   await db.$transaction(async (tx) => {
     await tx.accessRequest.update({ where: { id: request.id }, data: { status: decision === "approve" ? "APPROVED" : "DENIED", decidedAt: new Date() } });

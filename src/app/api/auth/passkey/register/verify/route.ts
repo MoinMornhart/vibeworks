@@ -5,6 +5,8 @@ import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { consumeChallenge, defaultPasskeyName, relyingParty, serializePasskey } from "@/lib/auth/webauthn";
 import { passkeyRegisterSchema } from "@/lib/validation";
+import { tk } from "@/lib/i18n/messages";
+import { getLocale } from "@/lib/i18n/server";
 
 export const POST = route(async (req) => {
   const user = await requireApiUser();
@@ -21,9 +23,9 @@ export const POST = route(async (req) => {
       requireUserVerification: false,
     });
   } catch (err) {
-    throw new ApiError(400, `Der Passkey konnte nicht geprüft werden: ${err instanceof Error ? err.message : "unbekannter Fehler"}`);
+    throw new ApiError(400, err instanceof Error ? tk("auth", "errors.passkeyCheckFailed", { reason: err.message }) : tk("auth", "errors.passkeyCheckFailedUnknown"));
   }
-  if (!verification.verified) throw new ApiError(400, "Der Passkey konnte nicht bestätigt werden.");
+  if (!verification.verified) throw new ApiError(400, tk("auth", "errors.passkeyNotConfirmed"));
 
   const { credential } = verification.registrationInfo;
   try {
@@ -34,13 +36,13 @@ export const POST = route(async (req) => {
         publicKey: new Uint8Array(credential.publicKey),
         counter: credential.counter,
         transports: credential.transports ?? [],
-        name: name || defaultPasskeyName(req.headers.get("user-agent")),
+        name: name || defaultPasskeyName(req.headers.get("user-agent"), await getLocale()),
       },
     });
     return json({ passkey: serializePasskey(passkey) }, { status: 201 });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ApiError(409, "Dieser Passkey ist bereits registriert.");
+      throw new ApiError(409, tk("auth", "errors.passkeyExists"));
     }
     throw err;
   }

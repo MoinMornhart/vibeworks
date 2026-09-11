@@ -9,6 +9,7 @@ import { recoveryCodesLeft, replaceRecoveryCodes } from "@/lib/auth/recovery";
 import { confirmIdentity } from "@/lib/auth/mfa";
 import { confirmIdentitySchema, totpCodeSchema } from "@/lib/validation";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { tk } from "@/lib/i18n/messages";
 
 export const GET = route(async () => {
   const user = await requireApiUser();
@@ -20,7 +21,7 @@ export const GET = route(async () => {
 // den QR-Code nicht richtig eingelesen hat.
 export const POST = route(async () => {
   const user = await requireApiUser();
-  if (user.totpEnabledAt) throw new ApiError(409, "Zwei-Faktor ist bereits eingerichtet.");
+  if (user.totpEnabledAt) throw new ApiError(409, tk("account", "errors.totpAlreadySetUp"));
   const secret = generateTotpSecret();
   await db.user.update({ where: { id: user.id }, data: { totpSecret: encrypt(secret), totpLastStep: null } });
   const uri = otpauthUri(secret, user.username, config.appName);
@@ -34,10 +35,10 @@ export const PUT = route(async (req) => {
   limitOrThrow(`totp-setup:${user.id}`, 10, 10 * MINUTE);
   const { code } = await readBody(req, totpCodeSchema);
   const row = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { totpSecret: true, totpEnabledAt: true } });
-  if (row.totpEnabledAt) throw new ApiError(409, "Zwei-Faktor ist bereits eingerichtet.");
-  if (!row.totpSecret) throw new ApiError(400, "Bitte die Einrichtung neu starten.");
+  if (row.totpEnabledAt) throw new ApiError(409, tk("account", "errors.totpAlreadySetUp"));
+  if (!row.totpSecret) throw new ApiError(400, tk("account", "errors.totpRestart"));
   const step = verifyTotp(decrypt(row.totpSecret), code, null);
-  if (step === null) throw new ApiError(400, "Der Code stimmt nicht – Uhrzeit des Handys prüfen und den aktuellen Code eingeben.", { code: "Stimmt nicht" });
+  if (step === null) throw new ApiError(400, tk("account", "errors.totpWrongCode"), { code: tk("account", "errors.wrongShort") });
   await db.user.update({ where: { id: user.id }, data: { totpEnabledAt: new Date(), totpLastStep: step } });
   return json({ enabled: true, codes: await replaceRecoveryCodes(user.id) });
 });

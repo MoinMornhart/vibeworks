@@ -6,6 +6,7 @@ import { FormError } from "@/components/ui/FormError";
 import { EMPTY_GIT_CONNECTION, GitProviderFields, type GitConnectionForm } from "@/components/git/GitProviderFields";
 import { PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 import { AccountSection } from "./AccountManager";
 
 export interface GitConnectionItem {
@@ -18,6 +19,8 @@ export interface GitConnectionItem {
 }
 
 export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[] }) {
+  const t = useT("account");
+  const tc = useT("common");
   const [list, setList] = useState(initial);
   const [adding, setAdding] = useState(initial.length === 0);
   const [form, setForm] = useState<GitConnectionForm>(EMPTY_GIT_CONNECTION);
@@ -48,7 +51,7 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
   }
 
   async function remove(c: GitConnectionItem) {
-    if (!window.confirm(`Verbindung zu ${c.host} entfernen? Projekte dort können dann keine Issues mehr anlegen.`)) return;
+    if (!window.confirm(t("git.confirmRemove", { host: c.host }))) return;
     setError(null);
     try {
       const res = await api<{ connections: GitConnectionItem[] }>(`/api/account/git-credentials/${c.id}`, { method: "DELETE" });
@@ -60,11 +63,7 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
 
   return (
     <div id="git-zugang" className="scroll-mt-24">
-      <AccountSection
-        icon={<GitBranch size={18} />}
-        title="Git-Verbindungen"
-        description="Einmal verbinden, für alle Projekte: Commits auch aus privaten Repositories und Aufgaben automatisch als Issues. Geht mit GitHub, GitLab und Gitea/Forgejo – auch selbst gehostet."
-      >
+      <AccountSection icon={<GitBranch size={18} />} title={t("git.title")} description={t("git.description")}>
         {list.length > 0 && (
           <ul className="mb-4 space-y-2">
             {list.map((c) => (
@@ -73,12 +72,12 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="font-medium">
                     {PROVIDER_LABEL[c.provider]} · {c.host}
-                    {c.login && <> als <span className="text-accent-ink">@{c.login}</span></>}
+                    {c.login && <> {t("git.as")} <span className="text-accent-ink">@{c.login}</span></>}
                   </p>
                   <p className="font-mono text-xs text-muted">{c.hint}</p>
                 </div>
-                <button type="button" className="btn btn-sm hover:!text-red-400" onClick={() => void remove(c)} aria-label={`Verbindung zu ${c.host} entfernen`}>
-                  <Trash2 size={14} /> Entfernen
+                <button type="button" className="btn btn-sm hover:!text-red-400" onClick={() => void remove(c)} aria-label={t("git.removeLabel", { host: c.host })}>
+                  <Trash2 size={14} /> {tc("remove")}
                 </button>
               </li>
             ))}
@@ -98,19 +97,19 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
             />
             <div className="flex flex-wrap gap-2">
               <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !form.token.trim()}>
-                <Save size={14} /> {busy ? "Prüfe …" : "Verbinden"}
+                <Save size={14} /> {busy ? t("git.checking") : t("git.connect")}
               </button>
               {list.length > 0 && (
                 <button type="button" className="btn btn-sm" onClick={() => setAdding(false)}>
-                  <X size={14} /> Abbrechen
+                  <X size={14} /> {tc("cancel")}
                 </button>
               )}
             </div>
-            <p className="text-xs text-muted">Das Token wird beim Speichern beim Anbieter geprüft, verschlüsselt gespeichert und nie wieder vollständig angezeigt.</p>
+            <p className="text-xs text-muted">{t("git.tokenHint")}</p>
           </form>
         ) : (
           <button type="button" className="btn btn-sm" onClick={() => setAdding(true)}>
-            <Plus size={14} /> Verbindung hinzufügen
+            <Plus size={14} /> {t("git.add")}
           </button>
         )}
         <FormError message={error} />

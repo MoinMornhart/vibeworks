@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { z, ZodTypeAny } from "zod";
+import { msgKey } from "./i18n/translate";
 
 // Gemeinsamer Rahmen für alle API-Routen: CSRF-Prüfung bei schreibenden
 // Methoden, JSON-Body mit Größenlimit und Zod-Validierung, einheitliche
@@ -15,7 +16,9 @@ export class ApiError extends Error {
   }
 }
 
-export const notFound = (what = "Nicht gefunden") => new ApiError(404, what);
+// Meldungen dürfen Übersetzungsschlüssel sein ("projects.errors.notFound",
+// siehe tk()); route() übersetzt sie in die Sprache der Anfrage.
+export const notFound = (what = "errors.notFound") => new ApiError(404, what);
 
 export function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, init);
@@ -28,7 +31,7 @@ const MAX_BODY = 256 * 1024;
 export function assertSameOrigin(req: NextRequest) {
   const site = req.headers.get("sec-fetch-site");
   if (site && site !== "same-origin" && site !== "none") {
-    throw new ApiError(403, "Anfrage von fremder Herkunft abgewiesen");
+    throw new ApiError(403, "errors.foreignOrigin");
   }
   const origin = req.headers.get("origin");
   if (origin) {
@@ -39,7 +42,7 @@ export function assertSameOrigin(req: NextRequest) {
     } catch {
       /* ungültig → abweisen */
     }
-    if (!host || originHost !== host) throw new ApiError(403, "Anfrage von fremder Herkunft abgewiesen");
+    if (!host || originHost !== host) throw new ApiError(403, "errors.foreignOrigin");
   }
 }
 
@@ -47,32 +50,33 @@ export function assertSameOrigin(req: NextRequest) {
 export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S, opts: { maxBytes?: number } = {}): Promise<z.output<S>> {
   const type = req.headers.get("content-type") ?? "";
   if (!type.toLowerCase().startsWith("application/json")) {
-    throw new ApiError(415, "Erwartet Content-Type: application/json");
+    throw new ApiError(415, "errors.contentType");
   }
   const text = await req.text();
-  if (text.length > (opts.maxBytes ?? MAX_BODY)) throw new ApiError(413, "Anfrage zu groß");
+  if (text.length > (opts.maxBytes ?? MAX_BODY)) throw new ApiError(413, "errors.tooLarge");
   let raw: unknown;
   try {
     raw = text ? JSON.parse(text) : {};
   } catch {
-    throw new ApiError(400, "Ungültiges JSON");
+    throw new ApiError(400, "errors.invalidJson");
   }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path.join(".") || "_";
-      // Zods Standardtexte sind englisch – die häufigsten hier eindeutschen.
+      // Eigene Meldungen der Schemas sind Übersetzungsschlüssel (validation.*);
+      // für Zods englische Standardtexte gibt es allgemeine Schlüssel.
       const message =
         issue.code === "invalid_type" && issue.received === "undefined"
-          ? `Pflichtfeld fehlt: ${key}`
+          ? msgKey("errors.required", { field: key })
           : issue.code === "invalid_type"
-            ? `Ungültiger Wert: ${key}`
+            ? msgKey("errors.invalidValue", { field: key })
             : issue.message;
       fieldErrors[key] ??= message;
     }
     const first = Object.values(fieldErrors)[0];
-    throw new ApiError(400, first ?? "Ungültige Eingabe", fieldErrors);
+    throw new ApiError(400, first ?? "errors.invalidInput", fieldErrors);
   }
   return parsed.data;
 }
@@ -92,13 +96,19 @@ export function route<P = Record<string, never>>(fn: Handler<P>): Handler<P> {
       if (!SAFE_METHODS.has(req.method)) assertSameOrigin(req);
       return await fn(req, ctx);
     } catch (err) {
-      if (err instanceof ApiError) {
-        return json({ error: err.message, fieldErrors: err.fieldErrors }, { status: err.status });
-      }
       // redirect()/notFound() aus next/navigation durchreichen
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (!(err instanceof ApiError) && err && typeof err === "object" && "digest" in err) throw err;
+      // Erst hier laden: der Übersetzer braucht die Sitzung, die wiederum ApiError kennt.
+      const { translateForRequest } = await import("./i18n/server");
+      const tr = (text: string) => translateForRequest(text).catch(() => text);
+      if (err instanceof ApiError) {
+        const fieldErrors = err.fieldErrors
+          ? Object.fromEntries(await Promise.all(Object.entries(err.fieldErrors).map(async ([k, v]) => [k, await tr(v)] as const)))
+          : undefined;
+        return json({ error: await tr(err.message), fieldErrors }, { status: err.status });
+      }
       console.error("[api]", req.method, req.nextUrl.pathname, err);
-      return json({ error: "Interner Fehler" }, { status: 500 });
+      return json({ error: await tr("errors.internal") }, { status: 500 });
     }
   };
 }

@@ -9,6 +9,7 @@ import { serializeTask, TASK_ORDER } from "@/lib/tasks";
 import { serializeRepoCache } from "@/lib/git/sync";
 import { accountTokenFor } from "@/lib/git/token";
 import { getSettings } from "@/lib/settings";
+import { getT } from "@/lib/i18n/server";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
@@ -42,7 +43,7 @@ const loadProject = cache(async (id: string) => {
 
 export async function generateMetadata({ params }: Props) {
   const loaded = await loadProject((await params).id);
-  return { title: loaded?.project.name ?? "Projekt" };
+  return { title: loaded?.project.name ?? (await getT("projects"))("page.fallbackTitle") };
 }
 
 export default async function ProjectPage({ params, searchParams }: Props) {

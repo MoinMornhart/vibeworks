@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api";
+import { msgKey } from "@/lib/i18n/translate";
 
 // Einfache Ratenbegrenzung mit gleitendem Fenster im Arbeitsspeicher.
 // Reicht für eine einzelne Instanz; nach einem Neustart beginnt sie leer.
@@ -24,7 +25,7 @@ export function limitOrThrow(key: string, limit: number, windowMs: number) {
   const r = hit(key, limit, windowMs);
   if (!r.ok) {
     const minutes = Math.max(1, Math.ceil(r.retryAfter / 60));
-    throw new ApiError(429, `Zu viele Versuche. Bitte in ${minutes} Minute${minutes === 1 ? "" : "n"} erneut versuchen.`);
+    throw new ApiError(429, msgKey("errors.rateLimited", { n: minutes }));
   }
 }
 

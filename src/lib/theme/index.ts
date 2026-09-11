@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HEX_RE, shiftHue } from "./color";
+import { tk } from "../i18n/messages";
 
 // ─────────────────────────────────────────────────────────────
 //  Persönliches Design eines Kontos.
@@ -10,20 +11,14 @@ import { HEX_RE, shiftHue } from "./color";
 //  gültig, auch wenn neue Felder dazukommen.
 // ─────────────────────────────────────────────────────────────
 
-const hex = z.string().regex(HEX_RE, "Farbe muss #rrggbb sein");
+const hex = z.string().regex(HEX_RE, tk("theme", "errors.invalidColor"));
+
+// Anzeigenamen (Palette, Farbschemata, Hintergründe, Verläufe) stehen im
+// Übersetzungs-Namensraum „theme“ – nachgeschlagen über die jeweilige ID.
 
 export const PALETTE_KEYS = ["bg", "surface", "elevated", "text", "muted", "border"] as const;
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
 export type Palette = Record<PaletteKey, string>;
-
-export const PALETTE_LABELS: Record<PaletteKey, string> = {
-  bg: "Grundfarbe",
-  surface: "Karten",
-  elevated: "Dialoge & Menüs",
-  text: "Text",
-  muted: "Gedämpfter Text",
-  border: "Rahmen",
-};
 
 export const STATUS_KEYS = ["IDEA", "PLANNING", "OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"] as const;
 export type StatusKey = (typeof STATUS_KEYS)[number];
@@ -111,9 +106,10 @@ export type ThemeMode = Theme["mode"];
 
 // ── Farbschemata als Startpunkt ─────────────────────────────
 
+export type ColorSchemeId = "nebula" | "ocean" | "forest" | "ember" | "sunset" | "graphite" | "sakura";
+
 export interface ColorScheme {
-  id: string;
-  name: string;
+  id: ColorSchemeId;
   accent: string;
   dark: Palette;
   light: Palette;
@@ -122,49 +118,42 @@ export interface ColorScheme {
 export const COLOR_SCHEMES: ColorScheme[] = [
   {
     id: "nebula",
-    name: "Nebel",
     accent: "#8b5cf6",
     dark: { bg: "#06061a", surface: "#131430", elevated: "#1a1b3d", text: "#e8e9f8", muted: "#9ea6c2", border: "#2c2f5a" },
     light: { bg: "#f2f1fb", surface: "#ffffff", elevated: "#ffffff", text: "#17162b", muted: "#595d78", border: "#dcdaf0" },
   },
   {
     id: "ocean",
-    name: "Ozean",
     accent: "#38bdf8",
     dark: { bg: "#03101d", surface: "#0b1d31", elevated: "#10263f", text: "#e4f1fb", muted: "#98afc4", border: "#1f3a58" },
     light: { bg: "#eef6fb", surface: "#ffffff", elevated: "#ffffff", text: "#0d2233", muted: "#4f6679", border: "#d3e3ee" },
   },
   {
     id: "forest",
-    name: "Wald",
     accent: "#34d399",
     dark: { bg: "#04110c", surface: "#0d2019", elevated: "#122a21", text: "#e3f5ec", muted: "#96b3a6", border: "#1f3d31" },
     light: { bg: "#eef7f2", surface: "#ffffff", elevated: "#ffffff", text: "#10261c", muted: "#4d6a5c", border: "#d3e6db" },
   },
   {
     id: "ember",
-    name: "Glut",
     accent: "#fb7185",
     dark: { bg: "#14060b", surface: "#241017", elevated: "#2e141e", text: "#fbe8ec", muted: "#c2a0a9", border: "#472431" },
     light: { bg: "#fbf1f2", surface: "#ffffff", elevated: "#ffffff", text: "#2b1218", muted: "#7a535c", border: "#f0d9dd" },
   },
   {
     id: "sunset",
-    name: "Abendrot",
     accent: "#f59e0b",
     dark: { bg: "#120a04", surface: "#22160c", elevated: "#2b1c10", text: "#fbf0e2", muted: "#c0a88f", border: "#46321f" },
     light: { bg: "#fbf6ee", surface: "#ffffff", elevated: "#ffffff", text: "#2a1d0e", muted: "#735e47", border: "#eee2d0" },
   },
   {
     id: "graphite",
-    name: "Graphit",
     accent: "#a1a1aa",
     dark: { bg: "#09090b", surface: "#18181b", elevated: "#1f1f23", text: "#f4f4f5", muted: "#a1a1aa", border: "#2e2e33" },
     light: { bg: "#f4f4f5", surface: "#ffffff", elevated: "#ffffff", text: "#18181b", muted: "#5b5b63", border: "#e1e1e5" },
   },
   {
     id: "sakura",
-    name: "Sakura",
     accent: "#ec4899",
     dark: { bg: "#12060f", surface: "#22101d", elevated: "#2b1425", text: "#fbe7f3", muted: "#c19db2", border: "#48243c" },
     light: { bg: "#fdf2f8", surface: "#ffffff", elevated: "#ffffff", text: "#2a1022", muted: "#7a4f67", border: "#f5d5e7" },

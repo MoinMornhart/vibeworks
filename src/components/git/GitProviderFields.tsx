@@ -1,7 +1,9 @@
 "use client";
 
+import { Fragment, type ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import { DEFAULT_SERVER, newTokenUrl, normalizeServer, PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 export interface GitConnectionForm {
@@ -20,23 +22,43 @@ const PROVIDERS: Array<{ value: GitProvider; label: string }> = [
 
 const TOKEN_PREFIX: Record<GitProvider, string> = { github: "ghp_…", gitlab: "glpat-…", gitea: "Token" };
 
+/**
+ * Übersetzten Text mit Platzhaltern wie {link} oder {button} ausgeben und
+ * die Platzhalter durch React-Elemente ersetzen (Links, fette Knopfnamen …).
+ */
+export function richText(text: string, nodes: Record<string, ReactNode>): ReactNode {
+  return text.split(/(\{\w+\})/g).map((part, i) => {
+    const name = part.match(/^\{(\w+)\}$/)?.[1];
+    return <Fragment key={i}>{name && name in nodes ? nodes[name] : part}</Fragment>;
+  });
+}
+
 function Steps({ provider, link }: { provider: GitProvider; link: string | null }) {
+  const t = useT("git");
   const open = link ? (
     <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent-ink hover:underline">
-      {provider === "gitea" ? "Einstellungen → Anwendungen öffnen" : `Token-Seite von ${PROVIDER_LABEL[provider]} öffnen`} <ExternalLink size={11} />
+      {provider === "gitea" ? t("fields.openGiteaSettings") : t("fields.openTokenPage", { provider: PROVIDER_LABEL[provider] })} <ExternalLink size={11} />
     </a>
   ) : (
-    <span className="text-muted">Erst oben die Serveradresse eintragen – dann erscheint hier der Link</span>
+    <span className="text-muted">{t("fields.needServer")}</span>
   );
   const steps =
     provider === "github"
-      ? [<>{open} – Name und Recht „repo“ sind schon vorausgefüllt.</>, <>Bei „Expiration“ eine Laufzeit wählen, ganz unten auf <b>Generate token</b> klicken.</>, <>Den Token (beginnt mit <code>ghp_</code>) kopieren und hier einfügen.</>]
+      ? [
+          richText(t("fields.steps.github1"), { link: open }),
+          richText(t("fields.steps.github2"), { button: <b>Generate token</b> }),
+          richText(t("fields.steps.copy"), { prefix: <code>ghp_</code> }),
+        ]
       : provider === "gitlab"
-        ? [<>{open} – Name und Recht „api“ sind schon vorausgefüllt.</>, <>Ablaufdatum wählen und auf <b>Create personal access token</b> klicken.</>, <>Den Token (beginnt mit <code>glpat-</code>) kopieren und hier einfügen.</>]
+        ? [
+            richText(t("fields.steps.gitlab1"), { link: open }),
+            richText(t("fields.steps.gitlab2"), { button: <b>Create personal access token</b> }),
+            richText(t("fields.steps.copy"), { prefix: <code>glpat-</code> }),
+          ]
         : [
-            <>{open}.</>,
-            <>Unter „Token generieren“ einen Namen eingeben (z. B. VibeWorks) und die Berechtigungen <b>repository: Lesen</b> und <b>issue: Lesen und Schreiben</b> wählen.</>,
-            <>Auf <b>Token generieren</b> klicken, den Token kopieren und hier einfügen.</>,
+            richText(t("fields.steps.gitea1"), { link: open }),
+            richText(t("fields.steps.gitea2"), { read: <b>{t("fields.steps.giteaRead")}</b>, write: <b>{t("fields.steps.giteaWrite")}</b> }),
+            richText(t("fields.steps.gitea3"), { button: <b>{t("fields.steps.giteaButton")}</b> }),
           ];
   return (
     <ol className="list-decimal space-y-1 pl-5 text-xs text-muted">
@@ -62,6 +84,7 @@ export function GitProviderFields({
   error?: string;
   idPrefix?: string;
 }) {
+  const t = useT("git");
   const set = (patch: Partial<GitConnectionForm>) => onChange({ ...value, ...patch });
   const server = value.server || DEFAULT_SERVER[value.provider];
   const norm = normalizeServer(server);
@@ -69,7 +92,7 @@ export function GitProviderFields({
 
   return (
     <div className="space-y-3">
-      <div role="radiogroup" aria-label="Git-Anbieter" className="flex flex-wrap gap-2">
+      <div role="radiogroup" aria-label={t("fields.providerGroup")} className="flex flex-wrap gap-2">
         {PROVIDERS.map((p) => (
           <button
             key={p.value}
@@ -86,19 +109,19 @@ export function GitProviderFields({
 
       {value.provider !== "github" && (
         <div>
-          <label className="label" htmlFor={`${idPrefix}-server`}>Server</label>
+          <label className="label" htmlFor={`${idPrefix}-server`}>{t("fields.server")}</label>
           <input
             id={`${idPrefix}-server`}
             className="field"
             value={value.server}
             onChange={(e) => set({ server: e.target.value })}
-            placeholder={value.provider === "gitlab" ? "gitlab.com oder eigener Server" : "git.example.de, codeberg.org oder http://192.168.1.5:3000"}
+            placeholder={value.provider === "gitlab" ? t("fields.serverPlaceholderGitlab") : t("fields.serverPlaceholderGitea")}
             maxLength={300}
             autoComplete="off"
             spellCheck={false}
           />
           <p className="mt-1 text-xs text-muted">
-            {value.provider === "gitlab" ? "Leer lassen für gitlab.com." : "Adresse deiner Gitea- oder Forgejo-Instanz – auch selbst gehostet im Heimnetz."}
+            {value.provider === "gitlab" ? t("fields.serverHintGitlab") : t("fields.serverHintGitea")}
           </p>
         </div>
       )}
@@ -114,7 +137,7 @@ export function GitProviderFields({
         value={value.token}
         onChange={(e) => set({ token: e.target.value })}
         maxLength={500}
-        aria-label={`Token für ${PROVIDER_LABEL[value.provider]}`}
+        aria-label={t("fields.tokenLabel", { provider: PROVIDER_LABEL[value.provider] })}
         aria-invalid={Boolean(error)}
       />
       {error && <p className="text-xs text-red-400">{error}</p>}

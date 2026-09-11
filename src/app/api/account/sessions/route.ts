@@ -2,10 +2,11 @@ import { json, ApiError, route } from "@/lib/api";
 import { getAuth } from "@/lib/auth/guard";
 import { destroyAllSessions } from "@/lib/auth/session";
 import { listSessions } from "@/lib/account";
+import { tk } from "@/lib/i18n/messages";
 
 async function auth() {
   const a = await getAuth();
-  if (!a) throw new ApiError(401, "Nicht angemeldet");
+  if (!a) throw new ApiError(401, tk("errors", "notLoggedIn"));
   return a;
 }
 

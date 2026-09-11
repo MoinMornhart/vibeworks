@@ -9,14 +9,12 @@ import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
 import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
-import { formatDate, timeAgo } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
 import { accentGradient, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
 import { ProjectDialog } from "./ProjectDialog";
 import { Markdown } from "@/components/Markdown";
 import { ShareDialog } from "@/components/share/ShareDialog";
-
-const ROLE_LABEL: Record<ProjectAccess, string> = { OWNER: "Besitzer", EDITOR: "Bearbeiten", VIEWER: "Ansehen" };
 
 export function ProjectHeader({
   initial,
@@ -32,6 +30,10 @@ export function ProjectHeader({
   /** Teilen-Dialog gleich öffnen (Link aus dem Hinweis auf dem Dashboard) */
   openShare?: boolean;
 }) {
+  const t = useT("projects");
+  const ts = useT("status");
+  const tc = useT("common");
+  const f = useFormat();
   const router = useRouter();
   const isOwner = access === "OWNER";
   const canEdit = access !== "VIEWER";
@@ -58,7 +60,7 @@ export function ProjectHeader({
   }
 
   async function leave() {
-    if (!window.confirm(`„${p.name}“ verlassen? Du brauchst danach eine neue Einladung.`)) return;
+    if (!window.confirm(t("header.confirmLeave", { name: p.name }))) return;
     try {
       await api(`/api/projects/${p.id}/members/me`, { method: "DELETE" });
       router.push("/");
@@ -73,7 +75,7 @@ export function ProjectHeader({
   return (
     <div className="fade-in space-y-6">
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg">
-        <ArrowLeft size={15} /> Dashboard
+        <ArrowLeft size={15} /> {t("header.dashboard")}
       </Link>
 
       <section className="glass relative overflow-visible p-6 sm:p-8">
@@ -85,26 +87,26 @@ export function ProjectHeader({
           </div>
           <div className="flex flex-wrap items-center gap-1">
             {isOwner && (
-              <button onClick={() => void patch({ favorite: !p.favorite })} aria-pressed={p.favorite} aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"} className="btn btn-ghost btn-icon">
+              <button onClick={() => void patch({ favorite: !p.favorite })} aria-pressed={p.favorite} aria-label={p.favorite ? t("card.favoriteRemove") : t("card.favoriteAdd")} className="btn btn-ghost btn-icon">
                 <Star size={18} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
               </button>
             )}
             {isOwner && (
               <button className="btn btn-sm" onClick={() => setShareOpen(true)}>
-                <Share2 size={14} /> Teilen
+                <Share2 size={14} /> {t("header.share")}
                 {pending > 0 && (
-                  <span className="ml-0.5 rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent" aria-label={`${pending} offene Anfragen`}>{pending}</span>
+                  <span className="ml-0.5 rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent" aria-label={t("header.pendingRequests", { n: pending })}>{pending}</span>
                 )}
               </button>
             )}
             {canEdit && (
               <button className="btn btn-sm" onClick={() => setEditOpen(true)}>
-                <Pencil size={14} /> Bearbeiten
+                <Pencil size={14} /> {tc("edit")}
               </button>
             )}
             {!isOwner && (
-              <button className="btn btn-sm" onClick={() => void leave()} title="Projekt verlassen">
-                <LogOut size={14} /> Verlassen
+              <button className="btn btn-sm" onClick={() => void leave()} title={t("header.leaveTitle")}>
+                <LogOut size={14} /> {t("header.leave")}
               </button>
             )}
           </div>
@@ -115,17 +117,17 @@ export function ProjectHeader({
             <StatusSelect value={p.status} onChange={(s: ProjectStatus) => void patch({ status: s })} align="left" />
           ) : (
             <span className="chip !py-0.5" style={{ color: `var(${status.cssVar})` }}>
-              <span className="h-2 w-2 rounded-full" style={{ background: `var(${status.cssVar})` }} /> {status.label}
+              <span className="h-2 w-2 rounded-full" style={{ background: `var(${status.cssVar})` }} /> {ts(`project.${p.status}`)}
             </span>
           )}
           <PriorityBadge priority={p.priority} />
           {!isOwner && (
             <span className="inline-flex items-center gap-1.5 text-muted">
-              <Users size={14} /> geteilt von {ownerName ?? "–"} · {ROLE_LABEL[access]}
+              <Users size={14} /> {t("header.sharedBy", { name: ownerName ?? "–" })} · {t(`header.role.${access}`)}
             </span>
           )}
-          <span className="inline-flex items-center gap-1.5 text-muted"><CalendarPlus size={14} /> angelegt {formatDate(p.createdAt)}</span>
-          <span className="inline-flex items-center gap-1.5 text-muted" suppressHydrationWarning><History size={14} /> geändert {timeAgo(p.updatedAt)}</span>
+          <span className="inline-flex items-center gap-1.5 text-muted"><CalendarPlus size={14} /> {t("header.created", { date: f.date(p.createdAt) })}</span>
+          <span className="inline-flex items-center gap-1.5 text-muted" suppressHydrationWarning><History size={14} /> {t("header.updated", { ago: f.ago(p.updatedAt) })}</span>
           {p.repoUrl && (
             <a href={p.repoUrl.startsWith("git@") ? undefined : p.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent-ink hover:underline">
               <GitBranch size={14} /> {p.repoUrl.replace(/^https?:\/\//, "")} {!p.repoUrl.startsWith("git@") && <ExternalLink size={12} />}
@@ -135,7 +137,7 @@ export function ProjectHeader({
 
         <div className="mt-6 max-w-xl">
           <div className="mb-1.5 flex justify-between text-sm">
-            <span className="text-muted">Fortschritt</span>
+            <span className="text-muted">{t("header.progress")}</span>
             <span className="font-semibold tabular-nums">{p.progress} %</span>
           </div>
           <ProgressBar value={p.progress} accent={p.accent} className="!h-2.5" />
@@ -152,16 +154,16 @@ export function ProjectHeader({
       </section>
 
       <section className="glass p-6 sm:p-8">
-        <h2 className="mb-3 text-lg font-semibold">Beschreibung</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t("header.description")}</h2>
         {p.description ? (
           <Markdown>{p.description}</Markdown>
         ) : (
           <p className="text-muted">
-            Noch keine Beschreibung.
+            {t("header.noDescription")}
             {canEdit && (
               <>
                 {" "}
-                <button className="text-accent-ink hover:underline" onClick={() => setEditOpen(true)}>Jetzt ergänzen</button>
+                <button className="text-accent-ink hover:underline" onClick={() => setEditOpen(true)}>{t("header.addNow")}</button>
               </>
             )}
           </p>

@@ -22,7 +22,8 @@ import { Segmented, Toggle } from "@/components/theme/controls";
 import { AccountSection } from "@/components/account/AccountManager";
 import type { AdminUser } from "@/lib/admin";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
-import { cn, formatDate, formatDateTime, timeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
 import type { PublicBuildInfo } from "@/lib/buildInfo";
 import { CloudDownload } from "lucide-react";
 import { UpdatePanel } from "./UpdatePanel";
@@ -34,6 +35,8 @@ interface Settings {
 }
 
 function SettingsForm({ initial, userCount }: { initial: Settings; userCount: number }) {
+  const t = useT("admin");
+  const tc = useT("common");
   const [s, setS] = useState(initial);
   const [saved, setSaved] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -49,7 +52,7 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
       const res = await api<{ settings: Settings }>("/api/admin/settings", { method: "PATCH", body: s });
       setS(res.settings);
       setSaved(res.settings);
-      setNotice("Einstellungen gespeichert.");
+      setNotice(t("settings.saved"));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -60,36 +63,36 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
   return (
     <div className="space-y-5">
       <div>
-        <span className="label">Betriebsart</span>
+        <span className="label">{t("settings.mode")}</span>
         <Segmented
-          label="Betriebsart"
+          label={t("settings.mode")}
           value={s.mode}
           onChange={(mode) => setS({ ...s, mode })}
           options={[
-            { value: "SINGLE", label: "Einzelbetrieb", icon: <User size={14} /> },
-            { value: "MULTI", label: "Mehrbenutzer", icon: <Users size={14} /> },
+            { value: "SINGLE", label: t("settings.single"), icon: <User size={14} /> },
+            { value: "MULTI", label: t("settings.multi"), icon: <Users size={14} /> },
           ]}
         />
         <p className="mt-1.5 text-xs text-muted">
           {s.mode === "SINGLE"
             ? userCount > 1
-              ? `Es gibt ${userCount} Konten – für den Einzelbetrieb müssen alle bis auf eines gelöscht werden.`
-              : "Genau ein Konto, keine Registrierung, keine Benutzerliste."
-            : "Beliebig viele Konten mit strikt getrennten Daten."}
+              ? t("settings.singleTooMany", { n: userCount })
+              : t("settings.singleHint")
+            : t("settings.multiHint")}
         </p>
       </div>
       {s.mode === "MULTI" && (
         <div className="max-w-md">
           <Toggle
-            label="Selbstregistrierung erlauben"
-            hint="Jeder, der die Adresse kennt, kann sich ein Konto anlegen"
+            label={t("settings.allowRegistration")}
+            hint={t("settings.allowRegistrationHint")}
             checked={s.allowRegistration}
             onChange={(allowRegistration) => setS({ ...s, allowRegistration })}
           />
         </div>
       )}
       <div className="max-w-xs">
-        <label className="label" htmlFor="col-limit">Karten je Spalte im Aufgabenbrett</label>
+        <label className="label" htmlFor="col-limit">{t("settings.columnLimit")}</label>
         <input
           id="col-limit"
           type="number"
@@ -99,18 +102,20 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
           value={s.taskColumnLimit}
           onChange={(e) => setS({ ...s, taskColumnLimit: Math.max(0, Number(e.target.value) || 0) })}
         />
-        <p className="mt-1 text-xs text-muted">Was darüber hinausgeht, steht hinter „n weitere anzeigen“. 0 = keine Begrenzung.</p>
+        <p className="mt-1 text-xs text-muted">{t("settings.columnLimitHint")}</p>
       </div>
       <FormError message={error} />
       {notice && <p role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">{notice}</p>}
       <button className="btn btn-primary btn-sm" onClick={save} disabled={busy || !dirty}>
-        <Save size={14} /> {busy ? "Speichere …" : "Einstellungen speichern"}
+        <Save size={14} /> {busy ? tc("saving") : t("settings.save")}
       </button>
     </div>
   );
 }
 
 function CreateUserForm({ onCreated }: { onCreated: (users: AdminUser[]) => void }) {
+  const t = useT("admin");
+  const tc = useT("common");
   const [form, setForm] = useState({ username: "", displayName: "", password: "", role: "USER" as "USER" | "ADMIN" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,29 +140,32 @@ function CreateUserForm({ onCreated }: { onCreated: (users: AdminUser[]) => void
 
   return (
     <form onSubmit={submit} className="space-y-3 rounded-2xl border border-dashed p-4">
-      <p className="flex items-center gap-2 text-sm font-medium"><UserPlus size={15} /> Konto anlegen</p>
+      <p className="flex items-center gap-2 text-sm font-medium"><UserPlus size={15} /> {t("create.title")}</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <input className="field" placeholder="Benutzername" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required aria-label="Benutzername" autoComplete="off" />
+          <input className="field" placeholder={t("create.username")} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required aria-label={t("create.username")} autoComplete="off" />
           {fieldErrors.username && <p className="mt-1 text-xs text-red-400">{fieldErrors.username}</p>}
         </div>
-        <input className="field" placeholder="Anzeigename (optional)" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} aria-label="Anzeigename" />
+        <input className="field" placeholder={t("create.displayNamePlaceholder")} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} aria-label={t("create.displayName")} />
         <div>
-          <input type="password" className="field" placeholder="Startpasswort" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required aria-label="Startpasswort" autoComplete="new-password" />
+          <input type="password" className="field" placeholder={t("create.password")} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required aria-label={t("create.password")} autoComplete="new-password" />
           {fieldErrors.password && <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>}
         </div>
-        <select className="field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "USER" | "ADMIN" })} aria-label="Rolle">
-          <option value="USER">Benutzer</option>
-          <option value="ADMIN">Administrator</option>
+        <select className="field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "USER" | "ADMIN" })} aria-label={t("create.role")}>
+          <option value="USER">{t("roles.USER")}</option>
+          <option value="ADMIN">{t("roles.ADMIN")}</option>
         </select>
       </div>
       <FormError message={error} />
-      <button className="btn btn-sm" disabled={busy}><UserPlus size={14} /> {busy ? "Lege an …" : "Anlegen"}</button>
+      <button className="btn btn-sm" disabled={busy}><UserPlus size={14} /> {busy ? t("create.creating") : tc("create")}</button>
     </form>
   );
 }
 
 function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; onChange: (users: AdminUser[]) => void }) {
+  const t = useT("admin");
+  const tc = useT("common");
+  const f = useFormat();
   const [pwOpen, setPwOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +187,7 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
   }
 
   async function remove() {
-    if (!window.confirm(`Konto „${u.username}“ mit allen ${u.projects} Projekten, Notizen und Aufgaben endgültig löschen?`)) return;
+    if (!window.confirm(t("users.confirmDelete", { name: u.username, n: u.projects }))) return;
     setBusy(true);
     setError(null);
     try {
@@ -202,40 +210,40 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
             {u.displayName || u.username}
             <span className="font-normal text-muted">@{u.username}</span>
-            {u.role === "ADMIN" && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-accent-ink">Admin</span>}
-            {isMe && <span className="rounded-full bg-fg/10 px-2 py-0.5 text-[11px] text-muted">Du</span>}
-            {!u.active && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] text-red-400">Deaktiviert</span>}
-            {u.locked && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-400">Gesperrt</span>}
+            {u.role === "ADMIN" && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-accent-ink">{t("users.admin")}</span>}
+            {isMe && <span className="rounded-full bg-fg/10 px-2 py-0.5 text-[11px] text-muted">{t("users.you")}</span>}
+            {!u.active && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] text-red-400">{t("users.disabled")}</span>}
+            {u.locked && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-400">{t("users.locked")}</span>}
           </p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted" suppressHydrationWarning>
-            <span>{u.projects} Projekt{u.projects === 1 ? "" : "e"}</span>
+            <span>{t("users.projects", { n: u.projects })}</span>
             {u.passkeys > 0 && <span className="inline-flex items-center gap-1"><Fingerprint size={11} /> {u.passkeys}</span>}
             {u.twoFactor && <span className="inline-flex items-center gap-1"><ShieldCheck size={11} /> 2FA</span>}
-            <span>{u.lastLoginAt ? `zuletzt angemeldet ${timeAgo(u.lastLoginAt)}` : "noch nie angemeldet"}</span>
-            <span>seit {formatDate(u.createdAt)}</span>
+            <span>{u.lastLoginAt ? t("users.lastLogin", { ago: f.ago(u.lastLoginAt) }) : t("users.neverLoggedIn")}</span>
+            <span>{t("users.since", { date: f.date(u.createdAt) })}</span>
           </p>
         </div>
         <div className="flex flex-wrap gap-1">
           {u.locked && (
-            <button className="btn btn-sm" onClick={() => void patch({ unlock: true })} disabled={busy} title="Sperre aufheben"><LockOpen size={14} /></button>
+            <button className="btn btn-sm" onClick={() => void patch({ unlock: true })} disabled={busy} title={t("users.unlock")}><LockOpen size={14} /></button>
           )}
           <select
             className="field !min-h-8 !w-auto !py-1 text-xs"
             value={u.role}
             onChange={(e) => void patch({ role: e.target.value })}
             disabled={busy}
-            aria-label={`Rolle von ${u.username}`}
+            aria-label={t("users.roleOf", { name: u.username })}
           >
-            <option value="USER">Benutzer</option>
-            <option value="ADMIN">Administrator</option>
+            <option value="USER">{t("roles.USER")}</option>
+            <option value="ADMIN">{t("roles.ADMIN")}</option>
           </select>
-          <button className="btn btn-sm" onClick={() => setPwOpen(true)} disabled={busy} title="Passwort neu setzen"><KeyRound size={14} /></button>
+          <button className="btn btn-sm" onClick={() => setPwOpen(true)} disabled={busy} title={t("users.resetPassword")}><KeyRound size={14} /></button>
           {!isMe && (
             <>
-              <button className="btn btn-sm" onClick={() => void patch({ active: !u.active })} disabled={busy} title={u.active ? "Deaktivieren" : "Aktivieren"}>
+              <button className="btn btn-sm" onClick={() => void patch({ active: !u.active })} disabled={busy} title={u.active ? t("users.deactivate") : t("users.activate")}>
                 {u.active ? <Ban size={14} /> : <UserCheck size={14} />}
               </button>
-              <button className="btn btn-danger btn-sm" onClick={remove} disabled={busy} title="Löschen"><Trash2 size={14} /></button>
+              <button className="btn btn-danger btn-sm" onClick={remove} disabled={busy} title={tc("delete")}><Trash2 size={14} /></button>
             </>
           )}
         </div>
@@ -244,11 +252,11 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
       <Modal
         open={pwOpen}
         onClose={() => setPwOpen(false)}
-        title={`Neues Passwort für ${u.username}`}
+        title={t("users.newPasswordFor", { name: u.username })}
         size="sm"
         footer={
           <>
-            <button className="btn btn-sm" onClick={() => setPwOpen(false)}>Abbrechen</button>
+            <button className="btn btn-sm" onClick={() => setPwOpen(false)}>{tc("cancel")}</button>
             <button
               className="btn btn-primary btn-sm"
               disabled={busy || !password}
@@ -259,13 +267,13 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
                 }
               }}
             >
-              <KeyRound size={14} /> Setzen
+              <KeyRound size={14} /> {t("users.setPassword")}
             </button>
           </>
         }
       >
-        <p className="mb-3 text-sm text-muted">Alle Sitzungen des Kontos werden sofort beendet.</p>
-        <input type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Neues Passwort" autoComplete="new-password" aria-label="Neues Passwort" autoFocus />
+        <p className="mb-3 text-sm text-muted">{t("users.sessionsEnd")}</p>
+        <input type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("users.newPassword")} autoComplete="new-password" aria-label={t("users.newPassword")} autoFocus />
         {error && <div className="mt-3"><FormError message={error} /></div>}
       </Modal>
     </li>
@@ -287,20 +295,23 @@ export function AdminManager({
   appUrl: string;
   update: Parameters<typeof UpdatePanel>[0]["initial"];
 }) {
+  const t = useT("admin");
+  const f = useFormat();
   const [users, setUsers] = useState(initialUsers);
+  const source = build.source === "env" ? t("instance.sourceEnv") : build.source === "git" ? t("instance.sourceGit") : "package.json";
 
   return (
     <div className="fade-in space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Administration</h1>
-        <p className="mt-1 text-muted">Konten und Einstellungen der Instanz. Fremde Projekte sind auch hier nicht einsehbar.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("page.title")}</h1>
+        <p className="mt-1 text-muted">{t("page.intro")}</p>
       </header>
 
-      <AccountSection icon={<Settings2 size={18} />} title="Einstellungen">
+      <AccountSection icon={<Settings2 size={18} />} title={t("settings.title")}>
         <SettingsForm initial={initialSettings} userCount={users.length} />
       </AccountSection>
 
-      <AccountSection icon={<Users size={18} />} title="Konten" description={`${users.length} ${users.length === 1 ? "Konto" : "Konten"}`}>
+      <AccountSection icon={<Users size={18} />} title={t("users.title")} description={t("users.count", { n: users.length })}>
         <div className="space-y-4">
           <ul className="space-y-2">
             {users.map((u) => (
@@ -310,19 +321,19 @@ export function AdminManager({
           {initialSettings.mode === "MULTI" || users.length > 1 ? (
             <CreateUserForm onCreated={setUsers} />
           ) : (
-            <p className="text-xs text-muted">Weitere Konten gibt es im Mehrbenutzerbetrieb.</p>
+            <p className="text-xs text-muted">{t("users.moreInMulti")}</p>
           )}
         </div>
       </AccountSection>
 
-      <AccountSection icon={<Server size={18} />} title="Instanz">
+      <AccountSection icon={<Server size={18} />} title={t("instance.title")}>
         <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
-          <dt className="text-muted">Version</dt>
+          <dt className="text-muted">{t("instance.version")}</dt>
           <dd>
             <span className="font-mono">{build.version}</span>
-            {build.count !== null && <span className="text-muted"> · Update Nr. {build.count}</span>}
+            {build.count !== null && <span className="text-muted"> · {t("instance.updateNo", { n: build.count })}</span>}
           </dd>
-          <dt className="text-muted">Commit</dt>
+          <dt className="text-muted">{t("instance.commit")}</dt>
           <dd className="font-mono">
             {build.shortCommit ? (
               build.commitUrl ? (
@@ -331,19 +342,19 @@ export function AdminManager({
                 build.shortCommit
               )
             ) : (
-              "unbekannt"
+              t("instance.unknown")
             )}
-            {build.dirty && <span className="font-sans text-muted"> (mit lokalen Änderungen)</span>}
-            {build.commitDate && <span className="font-sans text-muted"> · {formatDateTime(build.commitDate)}</span>}
+            {build.dirty && <span className="font-sans text-muted"> {t("instance.dirty")}</span>}
+            {build.commitDate && <span className="font-sans text-muted"> · {f.dateTime(build.commitDate)}</span>}
           </dd>
-          <dt className="text-muted">Gebaut</dt>
-          <dd>{build.builtAt ? formatDateTime(build.builtAt) : "–"} <span className="text-muted">(Quelle: {build.source === "env" ? "update-Befehl" : build.source === "git" ? "Git" : "package.json"})</span></dd>
-          <dt className="text-muted">Adresse (APP_URL)</dt>
+          <dt className="text-muted">{t("instance.built")}</dt>
+          <dd>{build.builtAt ? f.dateTime(build.builtAt) : "–"} <span className="text-muted">{t("instance.source", { source })}</span></dd>
+          <dt className="text-muted">{t("instance.address")}</dt>
           <dd className="break-all font-mono">{appUrl}</dd>
         </dl>
       </AccountSection>
 
-      <AccountSection icon={<CloudDownload size={18} />} title="Updates" description="Das neueste Update direkt von hier aus holen und installieren.">
+      <AccountSection icon={<CloudDownload size={18} />} title={t("update.title")} description={t("update.description")}>
         <UpdatePanel initial={update} />
       </AccountSection>
     </div>

@@ -11,6 +11,8 @@
   <a href="LICENSE"><img alt="Lizenz MIT" src="https://img.shields.io/github/license/MoinMornhart/vibeworks?label=Lizenz&color=22d3ee&style=flat-square"></a>
 </p>
 
+<p><b>🇩🇪 Deutsch</b> · <a href="README.en.md">🇬🇧 English</a></p>
+
 **Projekte, Aufgaben, Notizen und Commits an einem Ort – auf deinem eigenen Server.**
 
 [Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Entwicklung](#%EF%B8%8F-entwicklung)
@@ -26,7 +28,8 @@
 Beim Vibe Coding entstehen schnell viele halbfertige Projekte: hier ein Repo, dort eine Idee,
 irgendwo eine Notiz. **VibeWorks** sammelt alles an einem Ort – Ideen, Status, Aufgaben,
 Notizen, Dokumentation und die Commits aus deinen Repositories. Es läuft auf deinem eigenen
-Proxmox-Server, aktualisiert sich selbst und sieht so aus, wie **du** willst.
+Proxmox-Server, aktualisiert sich selbst und sieht so aus, wie **du** willst – auf Deutsch oder
+Englisch, einstellbar für jedes Konto.
 
 ## ✨ Funktionen
 
@@ -148,8 +151,10 @@ Stand zurück.
 ## 🔀 Aufgaben ↔ Issues & Claude Code
 
 Trägst du am Projekt ein Repository ein, zeigt VibeWorks dessen Commits unter den Notizen.
-Mit einem Zugangstoken (Projektseite → **Git & Updates** → **Zugang**) wird zusätzlich jede
-Aufgabe automatisch zum Issue. Der Status wandert in beide Richtungen mit:
+Mit einer Git-Verbindung (**Mein Konto → Git-Verbindungen** – GitHub, GitLab oder Gitea/Forgejo,
+auch selbst gehostet) wird zusätzlich jede Aufgabe automatisch zum Issue. Die Verbindung gilt
+für alle deine Projekte auf diesem Server; der Server gleicht alle 5 Minuten selbst ab. Der
+Status wandert in beide Richtungen mit:
 
 | Spalte in VibeWorks | Issue im Repository |
 | --- | --- |
@@ -174,15 +179,19 @@ flowchart LR
 <details>
 <summary><b>Welches Token brauche ich?</b></summary>
 
+Die App zeigt beim Verbinden eine kurze Anleitung mit Link zur passenden Token-Seite:
+
 | Anbieter | Token |
 | --- | --- |
-| GitHub | Fine-grained Token nur für das Repository: *Contents: Read* und *Issues: Read and write* |
-| GitLab | Projekt- oder Personal-Access-Token mit dem Scope `api` |
-| Gitea / Forgejo | Token mit `repository: read` und `issue: write` |
+| GitHub | Klassisches Token mit dem Recht `repo` (der Link ist vorausgefüllt) |
+| GitLab | Personal-Access-Token mit dem Scope `api` |
+| Gitea / Forgejo | Token mit *repository: Lesen* und *issue: Lesen und Schreiben* |
 
-Für öffentliche Repositories ohne Issue-Spiegelung reicht es, die Adresse einzutragen – dann
-braucht es gar kein Token. Tokens werden mit AES-256-GCM verschlüsselt gespeichert und nie
-wieder angezeigt.
+Die Verbindung lässt sich schon bei der Registrierung eintragen oder später unter „Mein Konto“.
+Ein eigenes Token pro Projekt geht weiterhin (Projektseite → **Git & Updates** → **Zugang**).
+Für öffentliche Repositories ohne Issue-Spiegelung reicht die Adresse – dann braucht es gar kein
+Token. Tokens werden beim Speichern geprüft, mit AES-256-GCM verschlüsselt gespeichert und nie
+wieder vollständig angezeigt.
 
 </details>
 
@@ -222,6 +231,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Anmeldung mit Passwort, Passkeys und Zwei-Faktor, Mehrbenutzerbetrieb
 - ✅ Projekte, Notizen, Aufgaben und Mini-Docs
 - ✅ Persönliches Design für jedes Konto
+- ✅ Oberfläche auf Deutsch und Englisch
 - ✅ Proxmox-Installer, `update`-Befehl und Auto-Update
 
 **Etappe 2 – Git-Anbindung**
@@ -239,11 +249,6 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ⏳ Projektvorlagen
 - ⏳ Import/Export
 - ⏳ Benachrichtigungen (ntfy, Webhook, E-Mail)
-
-## 🙏 Danksagung
-
-Die Idee und der Funktionsumfang sind von [Nebula](https://git.wilde-server.de/florian.wilde/nebula)
-von Florian Wilde inspiriert. VibeWorks ist eine eigenständige Neuentwicklung.
 
 ## 📄 Lizenz
 

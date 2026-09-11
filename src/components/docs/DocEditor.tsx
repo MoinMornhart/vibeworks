@@ -20,7 +20,8 @@ import {
 import { Markdown } from "@/components/Markdown";
 import type { DocDetail, DocTreeItem } from "@/lib/docs";
 import { api, errorMessage } from "@/lib/client/api";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
 
 type Mode = "write" | "split" | "preview";
 type SaveState = "saved" | "dirty" | "saving" | "error";
@@ -51,6 +52,8 @@ export function DocEditor({
   onSaved: (item: DocTreeItem) => void;
   onCreateChild: () => void;
 }) {
+  const t = useT("docs");
+  const f = useFormat();
   const [title, setTitle] = useState(doc.title);
   const [icon, setIcon] = useState(doc.icon);
   const [content, setContent] = useState(doc.content);
@@ -75,7 +78,7 @@ export function DocEditor({
   }, []);
 
   saveRef.current = async () => {
-    const snapshot = { ...latest.current, title: latest.current.title.trim() || "Ohne Titel" };
+    const snapshot = { ...latest.current, title: latest.current.title.trim() || t("editor.untitled") };
     const json = JSON.stringify(latest.current);
     if (json === lastSaved.current) {
       setState("saved");
@@ -158,10 +161,10 @@ export function DocEditor({
     if (!ta) return;
     const { selectionStart: s, selectionEnd: e } = ta;
     const r =
-      kind === "bold" ? wrapSelection(content, s, e, "**", "**", "fett")
-      : kind === "italic" ? wrapSelection(content, s, e, "_", "_", "kursiv")
-      : kind === "code" ? (content.slice(s, e).includes("\n") ? wrapSelection(content, s, e, "```\n", "\n```", "code") : wrapSelection(content, s, e, "`", "`", "code"))
-      : kind === "link" ? wrapSelection(content, s, e, "[", "](https://)", "Linktext")
+      kind === "bold" ? wrapSelection(content, s, e, "**", "**", t("editor.samples.bold"))
+      : kind === "italic" ? wrapSelection(content, s, e, "_", "_", t("editor.samples.italic"))
+      : kind === "code" ? (content.slice(s, e).includes("\n") ? wrapSelection(content, s, e, "```\n", "\n```", t("editor.samples.code")) : wrapSelection(content, s, e, "`", "`", t("editor.samples.code")))
+      : kind === "link" ? wrapSelection(content, s, e, "[", "](https://)", t("editor.samples.link"))
       : kind === "h2" ? prefixLines(content, s, e, "## ")
       : kind === "list" ? prefixLines(content, s, e, "- ")
       : kind === "check" ? prefixLines(content, s, e, "- [ ] ")
@@ -177,27 +180,27 @@ export function DocEditor({
   const byId = useMemo(() => new Map(tree.map((t) => [t.id, t])), [tree]);
   const path: DocTreeItem[] = [];
   for (let p = doc.parentId ? byId.get(doc.parentId) : undefined; p && path.length < 20; p = p.parentId ? byId.get(p.parentId) : undefined) path.unshift(p);
-  const children = tree.filter((t) => t.parentId === doc.id).sort((a, b) => a.position - b.position);
+  const children = tree.filter((d) => d.parentId === doc.id).sort((a, b) => a.position - b.position);
 
   const words = content.trim() ? content.trim().split(/\s+/).length : 0;
   const tools = [
-    { k: "bold" as const, icon: Bold, label: "Fett" },
-    { k: "italic" as const, icon: Italic, label: "Kursiv" },
-    { k: "h2" as const, icon: Heading2, label: "Überschrift" },
-    { k: "list" as const, icon: List, label: "Liste" },
-    { k: "check" as const, icon: ListChecks, label: "Checkliste" },
-    { k: "quote" as const, icon: Quote, label: "Zitat" },
-    { k: "code" as const, icon: Code, label: "Code" },
-    { k: "link" as const, icon: Link2, label: "Link" },
+    { k: "bold" as const, icon: Bold, label: t("editor.tools.bold") },
+    { k: "italic" as const, icon: Italic, label: t("editor.tools.italic") },
+    { k: "h2" as const, icon: Heading2, label: t("editor.tools.h2") },
+    { k: "list" as const, icon: List, label: t("editor.tools.list") },
+    { k: "check" as const, icon: ListChecks, label: t("editor.tools.check") },
+    { k: "quote" as const, icon: Quote, label: t("editor.tools.quote") },
+    { k: "code" as const, icon: Code, label: t("editor.tools.code") },
+    { k: "link" as const, icon: Link2, label: t("editor.tools.link") },
   ];
 
   const stateText =
-    state === "saving" ? "Speichert …" : state === "dirty" ? "Ungespeichert" : state === "error" ? "Nicht gespeichert" : `Gespeichert ${timeAgo(savedAt)}`;
+    state === "saving" ? t("editor.state.saving") : state === "dirty" ? t("editor.state.dirty") : state === "error" ? t("editor.state.error") : t("editor.state.saved", { ago: f.ago(savedAt) });
 
   return (
     <article className="glass flex min-h-[70vh] flex-col p-5 sm:p-7">
-      <nav className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted" aria-label="Pfad">
-        <Link href="/docs" className="hover:text-fg">Docs</Link>
+      <nav className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted" aria-label={t("editor.breadcrumb")}>
+        <Link href="/docs" className="hover:text-fg">{t("tree.title")}</Link>
         {path.map((p) => (
           <span key={p.id} className="inline-flex items-center gap-1">
             <ChevronRight size={12} />
@@ -208,7 +211,7 @@ export function DocEditor({
 
       <div className="flex items-start gap-3">
         <div className="relative">
-          <button type="button" onClick={() => setEmojiOpen((o) => !o)} className="flex h-12 w-12 items-center justify-center rounded-xl text-3xl hover:bg-fg/10" aria-label="Symbol wählen" title="Symbol wählen">
+          <button type="button" onClick={() => setEmojiOpen((o) => !o)} className="flex h-12 w-12 items-center justify-center rounded-xl text-3xl hover:bg-fg/10" aria-label={t("editor.chooseIcon")} title={t("editor.chooseIcon")}>
             {icon || "📄"}
           </button>
           {emojiOpen && (
@@ -216,7 +219,7 @@ export function DocEditor({
               {EMOJIS.map((e) => (
                 <button key={e} type="button" className="rounded p-1 text-xl hover:bg-fg/10" onClick={() => { change({ icon: e }); setEmojiOpen(false); }}>{e}</button>
               ))}
-              <button type="button" className="col-span-8 mt-1 rounded px-2 py-1 text-xs text-muted hover:bg-fg/10" onClick={() => { change({ icon: null }); setEmojiOpen(false); }}>Kein Symbol</button>
+              <button type="button" className="col-span-8 mt-1 rounded px-2 py-1 text-xs text-muted hover:bg-fg/10" onClick={() => { change({ icon: null }); setEmojiOpen(false); }}>{t("editor.noIcon")}</button>
             </div>
           )}
         </div>
@@ -224,25 +227,25 @@ export function DocEditor({
           className="min-w-0 flex-1 bg-transparent py-1.5 text-3xl font-bold tracking-tight outline-none placeholder:text-muted/60"
           value={title}
           onChange={(e) => change({ title: e.target.value })}
-          placeholder="Ohne Titel"
+          placeholder={t("editor.untitled")}
           maxLength={200}
-          aria-label="Titel der Seite"
+          aria-label={t("editor.titleLabel")}
         />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-y py-2">
-        <div className="flex flex-wrap gap-0.5" role="toolbar" aria-label="Formatierung">
-          {tools.map((t) => (
-            <button key={t.k} type="button" className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg disabled:opacity-40" onClick={() => format(t.k)} title={t.label} aria-label={t.label} disabled={mode === "preview"}>
-              <t.icon size={16} />
+        <div className="flex flex-wrap gap-0.5" role="toolbar" aria-label={t("editor.toolbar")}>
+          {tools.map((tool) => (
+            <button key={tool.k} type="button" className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg disabled:opacity-40" onClick={() => format(tool.k)} title={tool.label} aria-label={tool.label} disabled={mode === "preview"}>
+              <tool.icon size={16} />
             </button>
           ))}
         </div>
-        <div role="radiogroup" aria-label="Ansicht" className="ml-auto flex rounded-lg border bg-bg/40 p-0.5">
+        <div role="radiogroup" aria-label={t("editor.view")} className="ml-auto flex rounded-lg border bg-bg/40 p-0.5">
           {([
-            ["write", PencilLine, "Schreiben"],
-            ["split", Columns2, "Geteilt"],
-            ["preview", Eye, "Vorschau"],
+            ["write", PencilLine, t("editor.modes.write")],
+            ["split", Columns2, t("editor.modes.split")],
+            ["preview", Eye, t("editor.modes.preview")],
           ] as const).map(([m, Icon, label]) => (
             <button
               key={m}
@@ -280,14 +283,14 @@ export function DocEditor({
                 format("italic");
               }
             }}
-            placeholder={"Schreib los – Markdown wird unterstützt.\n\n## Überschrift\n- Liste\n- [ ] Checkliste\n\n**fett**, _kursiv_, `code`, [Link](https://…)"}
-            aria-label="Inhalt der Seite"
+            placeholder={t("editor.contentPlaceholder")}
+            aria-label={t("editor.contentLabel")}
             spellCheck
           />
         )}
         {mode !== "write" && (
           <div className={cn("min-w-0 overflow-auto rounded-xl", mode === "split" && "border p-4 lg:max-h-[75vh]")}>
-            {content.trim() ? <Markdown>{content}</Markdown> : <p className="text-sm text-muted">Noch leer.</p>}
+            {content.trim() ? <Markdown>{content}</Markdown> : <p className="text-sm text-muted">{t("editor.emptyPreview")}</p>}
           </div>
         )}
       </div>
@@ -297,14 +300,14 @@ export function DocEditor({
           {stateText}
           {error && ` – ${error}`}
           {" · "}
-          {words} {words === 1 ? "Wort" : "Wörter"} · Strg+S speichert sofort
+          {t("editor.words", { n: words })} · {t("editor.saveHint")}
         </span>
       </div>
 
-      <section className="mt-6 border-t pt-4" aria-label="Unterseiten">
+      <section className="mt-6 border-t pt-4" aria-label={t("editor.children.label")}>
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-muted">Unterseiten {children.length > 0 && <span className="font-normal">{children.length}</span>}</h2>
-          <button className="btn btn-ghost btn-sm" onClick={onCreateChild}><Plus size={14} /> Unterseite</button>
+          <h2 className="text-sm font-semibold text-muted">{t("editor.children.label")} {children.length > 0 && <span className="font-normal">{children.length}</span>}</h2>
+          <button className="btn btn-ghost btn-sm" onClick={onCreateChild}><Plus size={14} /> {t("editor.children.add")}</button>
         </div>
         {children.length > 0 && (
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">

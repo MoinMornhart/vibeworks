@@ -2,6 +2,8 @@ import type { AuthenticatorTransportFuture, WebAuthnCredential } from "@simplewe
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 import { describeUserAgent } from "@/lib/userAgent";
+import { makeT } from "@/lib/i18n/messages";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 
 // Passkeys (WebAuthn). Die Relying-Party-ID ist der Hostname aus APP_URL –
 // Passkeys sind daran gebunden. Wer den Hostnamen später ändert, muss sie
@@ -40,9 +42,9 @@ export function toCredential(p: { credentialId: string; publicKey: Uint8Array; c
 }
 
 /** Vorschlag für einen Namen, falls keiner angegeben wurde: „Edge auf Windows“. */
-export function defaultPasskeyName(userAgent: string | null): string {
+export function defaultPasskeyName(userAgent: string | null, locale: Locale = DEFAULT_LOCALE): string {
   const d = describeUserAgent(userAgent);
-  return d.os ? `${d.browser} auf ${d.os}` : "Passkey";
+  return d.os ? makeT(locale, "auth")("passkey.defaultName", { browser: d.browser, os: d.os }) : "Passkey";
 }
 
 export function serializePasskey(p: { id: string; name: string | null; createdAt: Date; lastUsedAt: Date | null; transports: string[] }) {

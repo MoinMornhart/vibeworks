@@ -9,6 +9,7 @@ import { FormError } from "@/components/ui/FormError";
 import { Segmented } from "@/components/theme/controls";
 import type { ProjectListItem } from "@/lib/projects";
 import { api, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 
 export const OPEN_CAPTURE_EVENT = "vw:capture";
 const LAST_PROJECT_KEY = "vw.capture.project";
@@ -16,6 +17,8 @@ const LAST_PROJECT_KEY = "vw.capture.project";
 // Schnellerfassung: ein Feld, Enter, fertig. Der Dialog bleibt offen und
 // leert nur das Feld – wer eine Idee notiert, hat oft gleich die nächste.
 export function QuickCapture() {
+  const t = useT("shell");
+  const tc = useT("common");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"idea" | "task">("idea");
@@ -60,12 +63,12 @@ export function QuickCapture() {
     try {
       if (mode === "idea") {
         const res = await api<{ project: ProjectListItem }>("/api/projects", { body: { name: value, status: "IDEA" } });
-        setCreated((c) => [{ key: res.project.id, label: `Idee „${res.project.name}“`, href: `/projects/${res.project.id}` }, ...c].slice(0, 5));
+        setCreated((c) => [{ key: res.project.id, label: t("capture.createdIdea", { name: res.project.name }), href: `/projects/${res.project.id}` }, ...c].slice(0, 5));
       } else {
-        if (!projectId) throw new Error("Bitte ein Projekt wählen.");
+        if (!projectId) throw new Error(t("capture.pickProject"));
         const res = await api<{ task: { id: string; title: string } }>(`/api/projects/${projectId}/tasks`, { body: { title: value } });
         const project = projects.find((p) => p.id === projectId);
-        setCreated((c) => [{ key: res.task.id, label: `Aufgabe „${res.task.title}“ in ${project?.name ?? "Projekt"}`, href: `/projects/${projectId}` }, ...c].slice(0, 5));
+        setCreated((c) => [{ key: res.task.id, label: t("capture.createdTask", { title: res.task.title, project: project?.name ?? t("capture.project") }), href: `/projects/${projectId}` }, ...c].slice(0, 5));
         try {
           localStorage.setItem(LAST_PROJECT_KEY, projectId);
         } catch {
@@ -83,20 +86,20 @@ export function QuickCapture() {
   }
 
   return (
-    <Modal open={open} onClose={() => setOpen(false)} title={<span className="flex items-center gap-2"><Zap size={18} className="text-accent-ink" /> Schnell erfassen</span>}>
+    <Modal open={open} onClose={() => setOpen(false)} title={<span className="flex items-center gap-2"><Zap size={18} className="text-accent-ink" /> {t("capture.title")}</span>}>
       <form onSubmit={submit} className="space-y-4">
         <Segmented
-          label="Was erfassen?"
+          label={t("capture.modeLabel")}
           value={mode}
           onChange={setMode}
           options={[
-            { value: "idea", label: "Idee", icon: <Lightbulb size={14} /> },
-            { value: "task", label: "Aufgabe", icon: <ListChecks size={14} /> },
+            { value: "idea", label: t("capture.idea"), icon: <Lightbulb size={14} /> },
+            { value: "task", label: t("capture.task"), icon: <ListChecks size={14} /> },
           ]}
         />
         {mode === "task" && (
-          <select className="field" value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label="Projekt">
-            {projects.length === 0 && <option value="">Noch keine Projekte</option>}
+          <select className="field" value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label={t("capture.project")}>
+            {projects.length === 0 && <option value="">{t("capture.noProjects")}</option>}
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -105,17 +108,17 @@ export function QuickCapture() {
         <input
           ref={inputRef}
           className="field text-base"
-          placeholder={mode === "idea" ? "Was ist die Idee?" : "Was ist zu tun?"}
+          placeholder={mode === "idea" ? t("capture.ideaPlaceholder") : t("capture.taskPlaceholder")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={mode === "idea" ? 120 : 200}
           autoFocus
-          aria-label={mode === "idea" ? "Idee" : "Aufgabe"}
+          aria-label={mode === "idea" ? t("capture.idea") : t("capture.task")}
         />
         <FormError message={error} />
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs text-muted">Enter legt an – der Dialog bleibt offen.</span>
-          <button className="btn btn-primary btn-sm" disabled={busy || !text.trim()}><Zap size={14} /> Anlegen</button>
+          <span className="text-xs text-muted">{t("capture.hint")}</span>
+          <button className="btn btn-primary btn-sm" disabled={busy || !text.trim()}><Zap size={14} /> {tc("create")}</button>
         </div>
         {created.length > 0 && (
           <ul className="space-y-1 border-t pt-3">

@@ -21,6 +21,7 @@ import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useAutoRefresh } from "@/lib/client/useAutoRefresh";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { ProjectCard, ProjectRow } from "./ProjectCard";
 import { ProjectDialog } from "./ProjectDialog";
@@ -33,26 +34,28 @@ import type { SearchResult } from "@/lib/search";
 type View = "grid" | "list" | "grouped" | "kanban";
 type Sort = "updated" | "created" | "name" | "progress" | "priority" | "status";
 
-const SORTS: Array<{ value: Sort; label: string; cmp: (a: ProjectListItem, b: ProjectListItem) => number }> = [
-  { value: "updated", label: "Zuletzt geändert", cmp: (a, b) => b.updatedAt.localeCompare(a.updatedAt) },
-  { value: "created", label: "Neueste zuerst", cmp: (a, b) => b.createdAt.localeCompare(a.createdAt) },
-  { value: "name", label: "Name", cmp: (a, b) => a.name.localeCompare(b.name, "de") },
-  { value: "progress", label: "Fortschritt", cmp: (a, b) => b.progress - a.progress },
-  { value: "priority", label: "Priorität", cmp: (a, b) => b.priority - a.priority || b.updatedAt.localeCompare(a.updatedAt) },
+// Beschriftungen kommen aus dem Namensraum „projects“ (sort.*).
+const SORTS: Array<{ value: Sort; cmp: (a: ProjectListItem, b: ProjectListItem) => number }> = [
+  { value: "updated", cmp: (a, b) => b.updatedAt.localeCompare(a.updatedAt) },
+  { value: "created", cmp: (a, b) => b.createdAt.localeCompare(a.createdAt) },
+  { value: "name", cmp: (a, b) => a.name.localeCompare(b.name, "de") },
+  { value: "progress", cmp: (a, b) => b.progress - a.progress },
+  { value: "priority", cmp: (a, b) => b.priority - a.priority || b.updatedAt.localeCompare(a.updatedAt) },
   // Reihenfolge der Status von der Idee bis Fertig (Archiviert zuletzt),
   // innerhalb eines Status die zuletzt geänderten zuerst.
-  { value: "status", label: "Status (Idee → Fertig)", cmp: (a, b) => statusRank(a.status) - statusRank(b.status) || b.updatedAt.localeCompare(a.updatedAt) },
+  { value: "status", cmp: (a, b) => statusRank(a.status) - statusRank(b.status) || b.updatedAt.localeCompare(a.updatedAt) },
 ];
 
 function statusRank(status: ProjectStatus): number {
   return PROJECT_STATUSES.findIndex((s) => s.value === status);
 }
 
-const VIEWS: Array<{ value: View; label: string; icon: typeof LayoutGrid }> = [
-  { value: "grid", label: "Raster", icon: LayoutGrid },
-  { value: "list", label: "Liste", icon: List },
-  { value: "grouped", label: "Nach Status", icon: Rows3 },
-  { value: "kanban", label: "Kanban", icon: Columns3 },
+// Beschriftungen kommen aus dem Namensraum „projects“ (view.*).
+const VIEWS: Array<{ value: View; icon: typeof LayoutGrid }> = [
+  { value: "grid", icon: LayoutGrid },
+  { value: "list", icon: List },
+  { value: "grouped", icon: Rows3 },
+  { value: "kanban", icon: Columns3 },
 ];
 
 const STORAGE_KEY = "vw.board";
@@ -72,6 +75,8 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: typeof Layers; lab
 }
 
 export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]; greeting: string }) {
+  const t = useT("projects");
+  const ts = useT("status");
   const [projects, setProjects] = useState(initial);
   const [query, setQuery] = useState("");
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
@@ -264,34 +269,34 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Hallo, <span className="gradient-text">{greeting}</span>
+            {t("board.hello")} <span className="gradient-text">{greeting}</span>
           </h1>
           <p className="mt-1 text-muted">
-            {stats.total === 0 ? "Zeit für die erste Idee." : `${stats.total} Projekt${stats.total === 1 ? "" : "e"} im Blick.`}
+            {stats.total === 0 ? t("board.firstIdea") : t("board.inView", { n: stats.total })}
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setDialog({ project: null })}>
-          <Plus size={17} /> Neues Projekt
+          <Plus size={17} /> {t("board.newProject")}
         </button>
       </header>
 
       {projects.length > 0 && (
         <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatCard icon={Layers} label="Projekte" value={stats.total} hint={`Ø ${stats.avg} %`} />
-          <StatCard icon={Lightbulb} label="Ideen" value={stats.ideas} />
-          <StatCard icon={Hammer} label="In Entwicklung" value={stats.building} />
-          <StatCard icon={CircleCheck} label="Fertig" value={stats.done} />
-          <StatCard icon={GitBranch} label="Mit Repository" value={stats.repos} />
+          <StatCard icon={Layers} label={t("board.stats.projects")} value={stats.total} hint={t("board.stats.avg", { n: stats.avg })} />
+          <StatCard icon={Lightbulb} label={t("board.stats.ideas")} value={stats.ideas} />
+          <StatCard icon={Hammer} label={t("board.stats.building")} value={stats.building} />
+          <StatCard icon={CircleCheck} label={t("board.stats.done")} value={stats.done} />
+          <StatCard icon={GitBranch} label={t("board.stats.repos")} value={stats.repos} />
         </div>
       )}
 
       {projects.length === 0 ? (
         <div className="glass fade-in flex flex-col items-center px-6 py-16 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/15 text-accent-ink"><FolderPlus size={30} /></span>
-          <h2 className="mt-4 text-xl font-semibold">Noch keine Projekte</h2>
-          <p className="mt-1 max-w-md text-muted">Ein Projekt braucht nur einen Namen. Beschreibung, Repository und Tags lassen sich jederzeit nachtragen.</p>
+          <h2 className="mt-4 text-xl font-semibold">{t("board.empty.title")}</h2>
+          <p className="mt-1 max-w-md text-muted">{t("board.empty.text")}</p>
           <button className="btn btn-primary mt-6" onClick={() => setDialog({ project: null })}>
-            <Plus size={17} /> Erstes Projekt anlegen
+            <Plus size={17} /> {t("board.empty.create")}
           </button>
         </div>
       ) : (
@@ -301,33 +306,33 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 className="field !border-transparent !bg-transparent pl-9"
-                placeholder="Suchen nach Name, Beschreibung, Tag …"
+                placeholder={t("board.searchPlaceholder")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                aria-label="Projekte durchsuchen"
+                aria-label={t("board.searchLabel")}
               />
             </div>
             <select
               className="field !w-auto"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              aria-label="Sortierung"
+              aria-label={t("board.sortLabel")}
               disabled={view === "kanban"}
-              title={view === "kanban" ? "Im Kanban bestimmt die Reihenfolge das Ziehen" : undefined}
+              title={view === "kanban" ? t("board.sortKanbanHint") : undefined}
             >
               {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+                <option key={s.value} value={s.value}>{t(`sort.${s.value}`)}</option>
               ))}
             </select>
-            <div role="radiogroup" aria-label="Ansicht" className="flex rounded-xl border bg-bg/40 p-1">
+            <div role="radiogroup" aria-label={t("board.viewLabel")} className="flex rounded-xl border bg-bg/40 p-1">
               {VIEWS.map((v) => (
                 <button
                   key={v.value}
                   role="radio"
                   aria-checked={view === v.value}
                   onClick={() => setView(v.value)}
-                  title={v.label}
-                  aria-label={v.label}
+                  title={t(`view.${v.value}`)}
+                  aria-label={t(`view.${v.value}`)}
                   className={cn("rounded-lg p-1.5 transition", view === v.value ? "bg-accent text-on-accent" : "text-muted hover:text-fg")}
                 >
                   <v.icon size={17} />
@@ -338,20 +343,20 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
               className={cn("btn btn-sm", showArchived && "chip-active")}
               aria-pressed={showArchived}
               onClick={() => setShowArchived((s) => !s)}
-              title="Archivierte Projekte zeigen"
+              title={t("board.archivedTitle")}
             >
-              <Archive size={15} /> <span className="hidden sm:inline">Archiv</span>
+              <Archive size={15} /> <span className="hidden sm:inline">{t("board.archive")}</span>
             </button>
           </div>
 
           <div className="mb-5 flex flex-wrap gap-2">
             <button className={cn("chip", !statuses.length && "chip-active")} onClick={() => setStatuses([])}>
-              Alle <span className="tabular-nums opacity-70">{base.length}</span>
+              {t("board.all")} <span className="tabular-nums opacity-70">{base.length}</span>
             </button>
             {PROJECT_STATUSES.filter((s) => showArchived || s.value !== "ARCHIVED").map((s) => (
               <button key={s.value} className={cn("chip", statuses.includes(s.value) && "chip-active")} onClick={() => toggleStatus(s.value)} aria-pressed={statuses.includes(s.value)}>
                 <span className="h-2 w-2 rounded-full" style={{ background: `var(${s.cssVar})` }} />
-                {s.label} <span className="tabular-nums opacity-70">{counts[s.value] ?? 0}</span>
+                {ts(`project.${s.value}`)} <span className="tabular-nums opacity-70">{counts[s.value] ?? 0}</span>
               </button>
             ))}
           </div>
@@ -361,8 +366,8 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
           {hits && (hits.notes.length > 0 || hits.tasks.length > 0) && (
             <div className="glass mb-5 grid gap-4 p-4 md:grid-cols-2">
               {([
-                ["Treffer in Notizen", hits.notes.map((n) => ({ id: n.id, title: n.title, snippet: n.snippet, projectId: n.projectId, projectName: n.projectName }))],
-                ["Treffer in Aufgaben", hits.tasks.map((t) => ({ id: t.id, title: t.title, snippet: t.snippet, projectId: t.projectId, projectName: t.projectName }))],
+                [t("board.hitsNotes"), hits.notes.map((n) => ({ id: n.id, title: n.title, snippet: n.snippet, projectId: n.projectId, projectName: n.projectName }))],
+                [t("board.hitsTasks"), hits.tasks.map((t) => ({ id: t.id, title: t.title, snippet: t.snippet, projectId: t.projectId, projectName: t.projectName }))],
               ] as const).map(([label, list]) =>
                 list.length === 0 ? null : (
                   <section key={label} aria-label={label}>
@@ -388,9 +393,9 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
             <KanbanBoard projects={base} statuses={kanbanColumns} onReorder={reorder} onFavorite={handlers.onFavorite} onEdit={handlers.onEdit} />
           ) : visible.length === 0 ? (
             <div className="glass px-6 py-12 text-center">
-              <p className="font-medium">Keine Treffer</p>
-              <p className="mt-1 text-sm text-muted">Suche oder Filter lockern.</p>
-              <button className="btn btn-sm mt-4" onClick={() => { setQuery(""); setStatuses([]); }}>Filter zurücksetzen</button>
+              <p className="font-medium">{t("board.noHits")}</p>
+              <p className="mt-1 text-sm text-muted">{t("board.noHitsHint")}</p>
+              <button className="btn btn-sm mt-4" onClick={() => { setQuery(""); setStatuses([]); }}>{t("board.resetFilters")}</button>
             </div>
           ) : view === "grid" ? (
             grid(visible)
@@ -409,7 +414,7 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
                   <section key={s.value}>
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ background: `var(${s.cssVar})` }} />
-                      {s.label} <span className="font-normal">{list.length}</span>
+                      {ts(`project.${s.value}`)} <span className="font-normal">{list.length}</span>
                     </h2>
                     {grid(list)}
                   </section>

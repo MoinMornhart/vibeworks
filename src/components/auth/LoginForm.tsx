@@ -6,8 +6,10 @@ import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/br
 import { ArrowLeft, Fingerprint, LogIn, ShieldCheck } from "lucide-react";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
+import { useT } from "@/lib/i18n/client";
 
 export function LoginForm({ next, allowRegistration }: { next: string; allowRegistration: boolean }) {
+  const t = useT("auth");
   const [step, setStep] = useState<"password" | "mfa">("password");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
         err instanceof ApiClientError
           ? err.message
           : err instanceof Error && err.name === "NotAllowedError"
-            ? "Abgebrochen – oder auf diesem Gerät gibt es keinen Passkey für diese Seite."
+            ? t("login.passkeyCancelled")
             : errorMessage(err),
       );
       setBusy(false);
@@ -73,7 +75,7 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
       setError(errorMessage(err));
       setBusy(false);
       // Abgelaufen oder zu viele Versuche: zurück zum Passwort
-      if (err instanceof ApiClientError && err.status === 401 && /Passwort anmelden/.test(err.message)) {
+      if (err instanceof ApiClientError && err.status === 401 && [t("errors.mfaExpired"), t("errors.mfaTooMany")].includes(err.message)) {
         setStep("password");
         setCode("");
       }
@@ -85,10 +87,10 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
       <form onSubmit={submitCode} className="space-y-4">
         <p className="flex items-start gap-2 text-sm text-muted">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-accent-ink" />
-          {useRecovery ? "Gib einen deiner Wiederherstellungscodes ein. Jeder gilt nur einmal." : "Gib den 6-stelligen Code aus deiner Authenticator-App ein."}
+          {useRecovery ? t("mfa.hintRecovery") : t("mfa.hintApp")}
         </p>
         {useRecovery ? (
-          <input className="field text-center font-mono tracking-widest" placeholder="xxxxx-xxxxx" value={code} onChange={(e) => setCode(e.target.value)} autoFocus aria-label="Wiederherstellungscode" autoComplete="off" />
+          <input className="field text-center font-mono tracking-widest" placeholder="xxxxx-xxxxx" value={code} onChange={(e) => setCode(e.target.value)} autoFocus aria-label={t("mfa.recoveryLabel")} autoComplete="off" />
         ) : (
           <input
             className="field text-center font-mono text-2xl tracking-[0.4em]"
@@ -98,19 +100,19 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             autoFocus
-            aria-label="Code aus der App"
+            aria-label={t("mfa.appCodeLabel")}
           />
         )}
         <FormError message={error} />
         <button className="btn btn-primary w-full" disabled={busy || (!useRecovery && code.length !== 6) || (useRecovery && !code.trim())}>
-          <ShieldCheck size={16} /> {busy ? "Prüfe …" : "Bestätigen"}
+          <ShieldCheck size={16} /> {busy ? t("mfa.checking") : t("mfa.confirm")}
         </button>
         <div className="flex flex-wrap justify-between gap-2 text-sm">
           <button type="button" className="inline-flex items-center gap-1 text-muted hover:text-fg" onClick={() => { setStep("password"); setCode(""); setError(null); }}>
-            <ArrowLeft size={14} /> Zurück
+            <ArrowLeft size={14} /> {t("mfa.back")}
           </button>
           <button type="button" className="text-accent-ink hover:underline" onClick={() => { setUseRecovery((v) => !v); setCode(""); setError(null); }}>
-            {useRecovery ? "Code aus der App verwenden" : "Wiederherstellungscode verwenden"}
+            {useRecovery ? t("mfa.useApp") : t("mfa.useRecovery")}
           </button>
         </div>
       </form>
@@ -120,30 +122,30 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
   return (
     <form onSubmit={submitPassword} className="space-y-4">
       <div>
-        <label className="label" htmlFor="username">Benutzername</label>
+        <label className="label" htmlFor="username">{t("form.username")}</label>
         <input id="username" className="field" autoComplete="username" autoFocus value={username} onChange={(e) => setUsername(e.target.value)} required />
       </div>
       <div>
-        <label className="label" htmlFor="password">Passwort</label>
+        <label className="label" htmlFor="password">{t("form.password")}</label>
         <input id="password" type="password" className="field" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       <FormError message={error} />
       <button className="btn btn-primary w-full" disabled={busy}>
-        <LogIn size={16} /> {busy ? "Anmelden …" : "Anmelden"}
+        <LogIn size={16} /> {busy ? t("login.submitting") : t("login.submit")}
       </button>
       {passkeys && (
         <>
           <div className="flex items-center gap-3 text-xs text-muted" aria-hidden>
-            <span className="h-px flex-1 bg-fg/15" /> oder <span className="h-px flex-1 bg-fg/15" />
+            <span className="h-px flex-1 bg-fg/15" /> {t("login.or")} <span className="h-px flex-1 bg-fg/15" />
           </div>
           <button type="button" className="btn w-full" onClick={passkeyLogin} disabled={busy}>
-            <Fingerprint size={16} /> Mit Passkey anmelden
+            <Fingerprint size={16} /> {t("login.passkey")}
           </button>
         </>
       )}
       {allowRegistration && (
         <p className="text-center text-sm text-muted">
-          Noch kein Konto? <Link href="/register" className="text-accent-ink hover:underline">Registrieren</Link>
+          {t("login.noAccount")} <Link href="/register" className="text-accent-ink hover:underline">{t("login.register")}</Link>
         </p>
       )}
     </form>

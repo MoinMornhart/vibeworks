@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 // Barrierearmer Dialog: Esc und Klick auf den Hintergrund schließen, der
 // Fokus springt hinein und beim Schließen zurück, Tab bleibt im Dialog.
@@ -23,6 +24,7 @@ export function Modal({
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
 }) {
+  const t = useT("common");
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   // onClose über eine Ref: Eltern übergeben meist eine Inline-Funktion. Hinge
@@ -93,7 +95,7 @@ export function Modal({
       >
         <div className="flex items-center justify-between gap-4 border-b px-5 py-4">
           <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
-          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Schließen"><X size={18} /></button>
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t("close")}><X size={18} /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex flex-wrap justify-end gap-2 border-t px-5 py-3">{footer}</div>}

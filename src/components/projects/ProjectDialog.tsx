@@ -9,6 +9,7 @@ import { Segmented, Slider, Toggle } from "@/components/theme/controls";
 import type { ProjectListItem } from "@/lib/projects";
 import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 interface Form {
@@ -57,6 +58,9 @@ export function ProjectDialog({
   /** Löschen, Repository und Favorit – nur für den Besitzer, nicht für Bearbeiter geteilter Projekte */
   ownerControls?: boolean;
 }) {
+  const t = useT("projects");
+  const ts = useT("status");
+  const tc = useT("common");
   const editing = Boolean(project);
   const [form, setForm] = useState<Form>(() => toForm(project));
   const [busy, setBusy] = useState(false);
@@ -102,7 +106,7 @@ export function ProjectDialog({
   }
 
   async function remove() {
-    if (!project || !window.confirm(`„${project.name}“ mit allen Notizen und Aufgaben endgültig löschen?`)) return;
+    if (!project || !window.confirm(t("dialog.confirmDelete", { name: project.name }))) return;
     setBusy(true);
     try {
       await api(`/api/projects/${project.id}`, { method: "DELETE" });
@@ -119,60 +123,60 @@ export function ProjectDialog({
     <Modal
       open={open}
       onClose={onClose}
-      title={editing ? "Projekt bearbeiten" : "Neues Projekt"}
+      title={editing ? t("dialog.titleEdit") : t("dialog.titleNew")}
       size="lg"
       footer={
         <>
           {editing && ownerControls && (
             <button type="button" className="btn btn-danger btn-sm mr-auto" onClick={remove} disabled={busy}>
-              <Trash2 size={14} /> Löschen
+              <Trash2 size={14} /> {tc("delete")}
             </button>
           )}
-          <button type="button" className="btn btn-sm" onClick={onClose}>Abbrechen</button>
+          <button type="button" className="btn btn-sm" onClick={onClose}>{tc("cancel")}</button>
           <button type="submit" form="project-form" className="btn btn-primary btn-sm" disabled={busy}>
-            <Save size={14} /> {busy ? "Speichere …" : editing ? "Speichern" : "Anlegen"}
+            <Save size={14} /> {busy ? tc("saving") : editing ? tc("save") : tc("create")}
           </button>
         </>
       }
     >
       <form id="project-form" onSubmit={submit} className="space-y-4">
         <div>
-          <label className="label" htmlFor="p-name">Name</label>
-          <input id="p-name" className="field" value={form.name} onChange={(e) => set("name", e.target.value)} required maxLength={120} autoFocus placeholder="Eine Idee genügt – alles andere später" />
+          <label className="label" htmlFor="p-name">{t("dialog.name")}</label>
+          <input id="p-name" className="field" value={form.name} onChange={(e) => set("name", e.target.value)} required maxLength={120} autoFocus placeholder={t("dialog.namePlaceholder")} />
           {fieldErrors.name && <p className="mt-1 text-xs text-red-400">{fieldErrors.name}</p>}
         </div>
         <div>
-          <label className="label" htmlFor="p-summary">Kurzbeschreibung</label>
-          <input id="p-summary" className="field" value={form.summary} onChange={(e) => set("summary", e.target.value)} maxLength={240} placeholder="Ein Satz für die Karte" />
+          <label className="label" htmlFor="p-summary">{t("dialog.summary")}</label>
+          <input id="p-summary" className="field" value={form.summary} onChange={(e) => set("summary", e.target.value)} maxLength={240} placeholder={t("dialog.summaryPlaceholder")} />
         </div>
         <div>
-          <label className="label" htmlFor="p-desc">Beschreibung {loadingDetails && <span className="opacity-70">(lädt …)</span>}</label>
-          <textarea id="p-desc" className="field min-h-32" value={form.description} onChange={(e) => set("description", e.target.value)} maxLength={20000} placeholder="Ideenskizze, Ziele, offene Fragen … (Markdown möglich)" />
+          <label className="label" htmlFor="p-desc">{t("dialog.description")} {loadingDetails && <span className="opacity-70">{t("dialog.loading")}</span>}</label>
+          <textarea id="p-desc" className="field min-h-32" value={form.description} onChange={(e) => set("description", e.target.value)} maxLength={20000} placeholder={t("dialog.descriptionPlaceholder")} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="p-status">Status</label>
+            <label className="label" htmlFor="p-status">{t("dialog.status")}</label>
             <select id="p-status" className="field" value={form.status} onChange={(e) => set("status", e.target.value as ProjectStatus)}>
               {PROJECT_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label} – {s.hint}</option>
+                <option key={s.value} value={s.value}>{ts(`project.${s.value}`)} – {ts(`projectHint.${s.value}`)}</option>
               ))}
             </select>
           </div>
           <div>
-            <span className="label">Priorität</span>
+            <span className="label">{t("dialog.priority")}</span>
             <Segmented
-              label="Priorität"
+              label={t("dialog.priority")}
               value={String(form.priority)}
               onChange={(v) => set("priority", Number(v))}
-              options={PRIORITIES.map((p) => ({ value: String(p.value), label: p.label }))}
+              options={PRIORITIES.map((p) => ({ value: String(p.value), label: ts(`priority.${String(p.value) as "1" | "2" | "3" | "4"}`) }))}
             />
           </div>
         </div>
 
         <div className="space-y-3">
           <Slider
-            label={form.progressFromTasks ? "Fortschritt (aus Aufgaben)" : "Fortschritt"}
+            label={form.progressFromTasks ? t("dialog.progressFromTasks") : t("dialog.progress")}
             value={form.progress}
             min={0}
             max={100}
@@ -182,40 +186,43 @@ export function ProjectDialog({
             disabled={form.progressFromTasks}
           />
           <Toggle
-            label="Fortschritt aus Aufgaben berechnen"
-            hint="Anteil erledigter Aufgaben – der Regler ist dann gesperrt"
+            label={t("dialog.progressToggle")}
+            hint={t("dialog.progressToggleHint")}
             checked={form.progressFromTasks}
             onChange={(v) => set("progressFromTasks", v)}
           />
         </div>
 
         <div>
-          <span className="label">Akzentfarbe</span>
+          <span className="label">{t("dialog.accent")}</span>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(PROJECT_ACCENTS).map(([key, a]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => set("accent", key)}
-                aria-pressed={form.accent === key}
-                aria-label={a.label}
-                title={a.label}
-                className={cn("h-8 w-8 rounded-full border-2 transition hover:scale-110", form.accent === key ? "border-fg" : "border-transparent")}
-                style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }}
-              />
-            ))}
+            {Object.entries(PROJECT_ACCENTS).map(([key, a]) => {
+              const label = ts(`accent.${key}` as Parameters<typeof ts>[0]);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => set("accent", key)}
+                  aria-pressed={form.accent === key}
+                  aria-label={label}
+                  title={label}
+                  className={cn("h-8 w-8 rounded-full border-2 transition hover:scale-110", form.accent === key ? "border-fg" : "border-transparent")}
+                  style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }}
+                />
+              );
+            })}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="p-tags">Tags</label>
-            <input id="p-tags" className="field" value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="nextjs, ki, spiel" />
-            <p className="mt-1 text-xs text-muted">Kommagetrennt, bis zu 12</p>
+            <label className="label" htmlFor="p-tags">{t("dialog.tags")}</label>
+            <input id="p-tags" className="field" value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder={t("dialog.tagsPlaceholder")} />
+            <p className="mt-1 text-xs text-muted">{t("dialog.tagsHint")}</p>
           </div>
           {ownerControls && (
             <div>
-              <label className="label" htmlFor="p-repo">Repository</label>
+              <label className="label" htmlFor="p-repo">{t("dialog.repo")}</label>
               <input id="p-repo" className="field" value={form.repoUrl} onChange={(e) => set("repoUrl", e.target.value)} placeholder="https://github.com/…" />
               {fieldErrors.repoUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.repoUrl}</p>}
             </div>
@@ -224,7 +231,7 @@ export function ProjectDialog({
 
         {ownerControls && (
           <button type="button" onClick={() => set("favorite", !form.favorite)} aria-pressed={form.favorite} className="btn btn-sm">
-            <Star size={15} className={form.favorite ? "fill-amber-400 text-amber-400" : ""} /> {form.favorite ? "Favorit" : "Als Favorit markieren"}
+            <Star size={15} className={form.favorite ? "fill-amber-400 text-amber-400" : ""} /> {form.favorite ? t("dialog.favorite") : t("dialog.markFavorite")}
           </button>
         )}
 

@@ -6,9 +6,10 @@ import type { Recurrence, TaskStatus } from "@prisma/client";
 import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
-import { dueState, FADE_AFTER_DAYS, formatDue, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
+import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
+import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
 import { cn, dayKey } from "@/lib/utils";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
 
@@ -27,10 +28,16 @@ const DUE_CLASS: Record<DueState, string> = {
 };
 
 export function DueBadge({ dueDate, done, today }: { dueDate: string; done: boolean; today: string }) {
+  const ts = useT("status");
+  const f = useFormat();
   const state = dueState(dueDate, today);
   return (
-    <span suppressHydrationWarning className={cn("inline-flex items-center rounded-md border px-1.5 py-px text-[11px]", done ? "text-muted" : DUE_CLASS[state])} title={`Fällig am ${dueDate.split("-").reverse().join(".")}`}>
-      {formatDue(dueDate, today)}
+    <span
+      suppressHydrationWarning
+      className={cn("inline-flex items-center rounded-md border px-1.5 py-px text-[11px]", done ? "text-muted" : DUE_CLASS[state])}
+      title={ts("due.title", { date: f.date(dayKeyToDate(dueDate)) })}
+    >
+      {f.due(dueDate, today)}
     </span>
   );
 }
@@ -52,7 +59,12 @@ function TaskCard({
   onToggle: (t: TaskItem) => void;
   readOnly?: boolean;
 }) {
+  const tr = useT("tasks");
+  const msg = useMsg();
+  const locale = useLocale();
   const done = t.status === "DONE";
+  // Gespeicherte Issue-Fehler sind Übersetzungsschlüssel (ältere noch deutscher Text).
+  const issueError = t.issueError ? msg(t.issueError) : null;
   return (
     <article className={cn("glass group !rounded-xl p-2.5", done && "opacity-75", overlay && "rotate-1 shadow-2xl ring-2 ring-accent/60")}>
       <div className="flex items-start gap-1">
@@ -61,7 +73,7 @@ function TaskCard({
           type="button"
           role="checkbox"
           aria-checked={done}
-          aria-label={done ? `${t.title} wieder öffnen` : `${t.title} erledigen`}
+          aria-label={done ? tr("card.reopen", { title: t.title }) : tr("card.complete", { title: t.title })}
           onClick={() => onToggle(t)}
           disabled={readOnly}
           className={cn(
@@ -83,19 +95,19 @@ function TaskCard({
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-px font-mono text-[11px] transition hover:border-accent/50 hover:text-fg"
-              title={`Issue #${t.issueNumber} öffnen`}
+              title={tr("card.openIssue", { n: t.issueNumber })}
             >
               <CircleDot size={11} /> #{t.issueNumber}
             </a>
           )}
-          {t.issueError && (
-            <span className="text-amber-400" title={`Issue: ${t.issueError}`} aria-label={`Issue-Fehler: ${t.issueError}`}>
+          {issueError && (
+            <span className="text-amber-400" title={tr("card.issueErrorTitle", { error: issueError })} aria-label={tr("card.issueErrorLabel", { error: issueError })}>
               <TriangleAlert size={12} />
             </span>
           )}
           {t.dueDate && <DueBadge dueDate={t.dueDate} done={done} today={today} />}
-          {t.recurrence && <Repeat size={12} aria-label={recurrenceLabel(t.recurrence)} />}
-          {t.description && <AlignLeft size={12} aria-label="Hat eine Beschreibung" />}
+          {t.recurrence && <Repeat size={12} aria-label={recurrenceLabel(t.recurrence, locale)} />}
+          {t.description && <AlignLeft size={12} aria-label={tr("card.hasDescription")} />}
           {t.labels.slice(0, 3).map((l) => (
             <span key={l} className="rounded-md bg-fg/10 px-1.5 text-[11px]">{l}</span>
           ))}
@@ -125,6 +137,8 @@ export function TaskBoard({
   /** Betrachter: kein Anlegen, Ziehen oder Abhaken */
   readOnly?: boolean;
 }) {
+  const t = useT("tasks");
+  const ts = useT("status");
   const router = useRouter();
   const [tasks, setTasks] = useState(initial);
   // Nach router.refresh() (Schnellerfassung, abgeleiteter Fortschritt) gilt der Serverstand.
@@ -240,9 +254,9 @@ export function TaskBoard({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 id="tasks-heading" className="flex items-center gap-2 text-lg font-semibold">
-            <ListChecks size={18} className="text-accent-ink" /> Aufgaben
+            <ListChecks size={18} className="text-accent-ink" /> {t("board.title")}
             {tasks.length > 0 && (
-              <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{done}/{tasks.length} erledigt</span>
+              <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{t("board.doneCount", { done, total: tasks.length })}</span>
             )}
           </h2>
           {fadedCount > 0 && (
@@ -251,18 +265,18 @@ export function TaskBoard({
               className={cn("chip !py-0.5 text-xs", showFaded && "chip-active")}
               onClick={() => setShowFaded((s) => !s)}
               aria-pressed={showFaded}
-              title={`Erledigte und blockierte Aufgaben verschwinden nach ${FADE_AFTER_DAYS} Tagen vom Board`}
+              title={t("board.fadedHint", { days: FADE_AFTER_DAYS })}
             >
               {showFaded ? <EyeOff size={12} /> : <Eye size={12} />}
-              {showFaded ? "Ältere ausblenden" : `${fadedCount} ältere ausgeblendet`}
+              {showFaded ? t("board.hideOlder") : t("board.olderHidden", { n: fadedCount })}
             </button>
           )}
         </div>
         {!readOnly && (
         <form onSubmit={quickAdd} className="flex w-full gap-2 sm:w-auto">
-          <input className="field sm:w-72" placeholder="Neue Aufgabe … (Enter)" value={quick} onChange={(e) => setQuick(e.target.value)} maxLength={200} aria-label="Neue Aufgabe" />
-          <button type="submit" className="btn btn-icon shrink-0" aria-label="Aufgabe anlegen" disabled={!quick.trim()}><Plus size={16} /></button>
-          <button type="button" className="btn btn-icon shrink-0" aria-label="Aufgabe mit Details anlegen" title="Mit Details" onClick={() => setDialog({ task: null, status: "TODO" })}>
+          <input className="field sm:w-72" placeholder={t("board.quickPlaceholder")} value={quick} onChange={(e) => setQuick(e.target.value)} maxLength={200} aria-label={t("board.quickLabel")} />
+          <button type="submit" className="btn btn-icon shrink-0" aria-label={t("board.quickSubmit")} disabled={!quick.trim()}><Plus size={16} /></button>
+          <button type="button" className="btn btn-icon shrink-0" aria-label={t("board.withDetails")} title={t("board.withDetailsTitle")} onClick={() => setDialog({ task: null, status: "TODO" })}>
             <SlidersHorizontal size={15} />
           </button>
         </form>
@@ -279,16 +293,16 @@ export function TaskBoard({
         labelOf={(t) => t.title}
         onReorder={reorder}
         limit={limit}
-        emptyText="Keine Aufgaben"
+        emptyText={t("board.empty")}
         renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderColumn={(status, count, body) => {
-          const meta = TASK_STATUSES.find((s) => s.value === status)!;
+          const label = ts(`task.${status as TaskStatus}`);
           return (
-            <div className="flex min-w-0 flex-col rounded-2xl border bg-bg/25 p-2.5" aria-label={meta.label} role="group">
+            <div className="flex min-w-0 flex-col rounded-2xl border bg-bg/25 p-2.5" aria-label={label} role="group">
               <h3 className="mb-2.5 flex items-center gap-2 px-1 text-sm font-semibold">
                 <span className="h-2 w-2 rounded-full" style={{ background: COLUMN_COLOR[status as TaskStatus] }} />
-                {meta.label}
+                {label}
                 <span className="ml-auto text-xs font-normal tabular-nums text-muted">{count}</span>
               </h3>
               {body}

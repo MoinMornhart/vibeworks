@@ -7,18 +7,17 @@ import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
 import type { ShareState } from "@/lib/share";
 import { api, errorMessage } from "@/lib/client/api";
-import { cn, timeAgo } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 
-const ROLES: Array<{ value: ProjectRole; label: string }> = [
-  { value: "VIEWER", label: "Ansehen" },
-  { value: "EDITOR", label: "Bearbeiten" },
-];
+const ROLES: ProjectRole[] = ["VIEWER", "EDITOR"];
 
 function RoleSelect({ value, onChange, disabled, label }: { value: ProjectRole; onChange: (r: ProjectRole) => void; disabled?: boolean; label: string }) {
+  const t = useT("share");
   return (
     <select className="field !w-auto !py-1.5 text-sm" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as ProjectRole)} aria-label={label}>
       {ROLES.map((r) => (
-        <option key={r.value} value={r.value}>{r.label}</option>
+        <option key={r} value={r}>{t(`role.${r}`)}</option>
       ))}
     </select>
   );
@@ -43,6 +42,9 @@ export function ShareDialog({
   onClose: () => void;
   onPendingChange?: (count: number) => void;
 }) {
+  const t = useT("share");
+  const tc = useT("common");
+  const f = useFormat();
   const [share, setShare] = useState<ShareState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function ShareDialog({
   const setLink = (link: "on" | "off" | "renew") => run(() => api(`/api/projects/${projectId}/share`, { method: "PUT", body: { link } }));
   const setMemberRole = (userId: string, r: ProjectRole) => run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "PATCH", body: { role: r } }));
   const removeMember = (userId: string, name: string) => {
-    if (window.confirm(`${name} aus dem Projekt entfernen?`)) void run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "DELETE" }));
+    if (window.confirm(t("dialog.confirmRemove", { name }))) void run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "DELETE" }));
   };
   const decide = (id: string, decision: "approve" | "deny", r?: ProjectRole) =>
     run(() => api(`/api/projects/${projectId}/requests/${id}`, { method: "PATCH", body: { decision, role: r } }));
@@ -111,41 +113,38 @@ export function ShareDialog({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Projekt teilen" size="lg">
+    <Modal open={open} onClose={onClose} title={t("dialog.title")} size="lg">
       <div className="space-y-6">
         <section aria-labelledby="share-link">
-          <h3 id="share-link" className="mb-1 flex items-center gap-2 font-semibold"><Globe size={16} className="text-accent-ink" /> Öffentlicher Link</h3>
-          <p className="mb-3 text-sm text-muted">
-            Jeder mit dem Link sieht das Projekt – auch ohne Konto: Beschreibung, Aufgaben und Commits. Notizen bleiben privat. Angemeldete Besucher können
-            Zugriff anfragen.
-          </p>
+          <h3 id="share-link" className="mb-1 flex items-center gap-2 font-semibold"><Globe size={16} className="text-accent-ink" /> {t("dialog.linkTitle")}</h3>
+          <p className="mb-3 text-sm text-muted">{t("dialog.linkText")}</p>
           {share?.shareToken ? (
             <div className="space-y-2">
               <div className="flex gap-2">
-                <input ref={linkRef} readOnly value={url} className="field min-w-0 flex-1 font-mono text-xs" aria-label="Öffentlicher Link" onFocus={(e) => e.target.select()} />
+                <input ref={linkRef} readOnly value={url} className="field min-w-0 flex-1 font-mono text-xs" aria-label={t("dialog.linkLabel")} onFocus={(e) => e.target.select()} />
                 <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={() => void copy()}>
-                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Kopiert" : "Kopieren"}
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? tc("copied") : tc("copy")}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void setLink("renew")} title="Der alte Link funktioniert danach nicht mehr">
-                  <RefreshCw size={14} /> Neuer Link
+                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void setLink("renew")} title={t("dialog.renewTitle")}>
+                  <RefreshCw size={14} /> {t("dialog.renew")}
                 </button>
                 <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => void setLink("off")}>
-                  <Link2Off size={14} /> Link abschalten
+                  <Link2Off size={14} /> {t("dialog.disable")}
                 </button>
               </div>
             </div>
           ) : (
             <button type="button" className="btn btn-primary btn-sm" disabled={busy || !share} onClick={() => void setLink("on")}>
-              <Globe size={14} /> Link erstellen
+              <Globe size={14} /> {t("dialog.create")}
             </button>
           )}
         </section>
 
         {share && share.requests.length > 0 && (
           <section aria-labelledby="share-requests" className="rounded-2xl border border-accent/40 bg-accent/5 p-4">
-            <h3 id="share-requests" className="mb-3 font-semibold">Anfragen <span className="text-sm font-normal text-muted">{share.requests.length}</span></h3>
+            <h3 id="share-requests" className="mb-3 font-semibold">{t("dialog.requests")} <span className="text-sm font-normal text-muted">{share.requests.length}</span></h3>
             <ul className="space-y-3">
               {share.requests.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-start gap-3">
@@ -153,16 +152,16 @@ export function ShareDialog({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{r.name} <span className="font-normal text-muted">@{r.username}</span></p>
                     <p className="text-xs text-muted" suppressHydrationWarning>
-                      möchte {r.role === "EDITOR" ? "bearbeiten" : "ansehen"} · {timeAgo(r.createdAt)}
+                      {t(`dialog.wants.${r.role}`)} · {f.ago(r.createdAt)}
                     </p>
                     {r.message && <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-bg/40 px-2 py-1 text-sm">{r.message}</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <RoleSelect label={`Rolle für ${r.name}`} value={decisionRole[r.id] ?? r.role} onChange={(v) => setDecisionRole((d) => ({ ...d, [r.id]: v }))} disabled={busy} />
+                    <RoleSelect label={t("dialog.roleFor", { name: r.name })} value={decisionRole[r.id] ?? r.role} onChange={(v) => setDecisionRole((d) => ({ ...d, [r.id]: v }))} disabled={busy} />
                     <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void decide(r.id, "approve", decisionRole[r.id] ?? r.role)}>
-                      <Check size={14} /> Annehmen
+                      <Check size={14} /> {t("dialog.approve")}
                     </button>
-                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void decide(r.id, "deny")}>Ablehnen</button>
+                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void decide(r.id, "deny")}>{t("dialog.deny")}</button>
                   </div>
                 </li>
               ))}
@@ -171,8 +170,8 @@ export function ShareDialog({
         )}
 
         <section aria-labelledby="share-members">
-          <h3 id="share-members" className="mb-3 flex items-center gap-2 font-semibold"><Users size={16} className="text-accent-ink" /> Mitglieder</h3>
-          {share && share.members.length === 0 && <p className="mb-3 text-sm text-muted">Noch niemand. Füge ein Konto hinzu oder nimm eine Anfrage an.</p>}
+          <h3 id="share-members" className="mb-3 flex items-center gap-2 font-semibold"><Users size={16} className="text-accent-ink" /> {t("dialog.members")}</h3>
+          {share && share.members.length === 0 && <p className="mb-3 text-sm text-muted">{t("dialog.noMembers")}</p>}
           {share && share.members.length > 0 && (
             <ul className="mb-4 divide-y divide-fg/10 rounded-2xl border">
               {share.members.map((m) => (
@@ -182,8 +181,8 @@ export function ShareDialog({
                     <p className="truncate text-sm font-medium">{m.name}</p>
                     <p className="truncate text-xs text-muted">@{m.username}</p>
                   </div>
-                  <RoleSelect label={`Rolle von ${m.name}`} value={m.role} onChange={(v) => void setMemberRole(m.userId, v)} disabled={busy} />
-                  <button type="button" className="btn btn-ghost btn-icon btn-sm hover:!text-red-400" disabled={busy} onClick={() => removeMember(m.userId, m.name)} aria-label={`${m.name} entfernen`} title="Entfernen">
+                  <RoleSelect label={t("dialog.roleOf", { name: m.name })} value={m.role} onChange={(v) => void setMemberRole(m.userId, v)} disabled={busy} />
+                  <button type="button" className="btn btn-ghost btn-icon btn-sm hover:!text-red-400" disabled={busy} onClick={() => removeMember(m.userId, m.name)} aria-label={t("dialog.removeName", { name: m.name })} title={tc("remove")}>
                     <Trash2 size={15} />
                   </button>
                 </li>
@@ -193,20 +192,20 @@ export function ShareDialog({
           <form onSubmit={addMember} className="flex flex-wrap gap-2">
             <input
               className="field min-w-0 flex-1"
-              placeholder="Benutzername"
+              placeholder={t("dialog.usernamePlaceholder")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               maxLength={64}
-              aria-label="Benutzername des Kontos"
+              aria-label={t("dialog.usernameLabel")}
               autoComplete="off"
             />
-            <RoleSelect label="Rolle" value={role} onChange={setRole} disabled={busy} />
+            <RoleSelect label={t("dialog.role")} value={role} onChange={setRole} disabled={busy} />
             <button type="submit" className="btn btn-sm" disabled={busy || !username.trim()}>
-              <UserPlus size={14} /> Hinzufügen
+              <UserPlus size={14} /> {tc("add")}
             </button>
           </form>
           <p className={cn("mt-2 text-xs text-muted")}>
-            <b>Ansehen</b>: nur lesen · <b>Bearbeiten</b>: Aufgaben, Notizen, Status und Beschreibung ändern. Repository, Token, Teilen und Löschen bleiben bei dir.
+            <b>{t("role.VIEWER")}</b>: {t("dialog.viewerHelp")} · <b>{t("role.EDITOR")}</b>: {t("dialog.editorHelp")}
           </p>
         </section>
 

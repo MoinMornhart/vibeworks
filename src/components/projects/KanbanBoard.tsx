@@ -6,7 +6,8 @@ import type { ProjectStatus } from "@prisma/client";
 import { ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
-import { cn, timeAgo } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import { accentGradient, PriorityBadge, ProgressBar } from "./ProjectCard";
 
@@ -16,6 +17,8 @@ interface Handlers {
 }
 
 function KanbanCard({ project: p, handle, overlay, onFavorite, onEdit }: { project: ProjectListItem; handle?: ReactNode; overlay?: boolean } & Handlers) {
+  const t = useT("projects");
+  const f = useFormat();
   return (
     <article className={cn("glass group relative !rounded-xl p-3", overlay && "rotate-1 shadow-2xl ring-2 ring-accent/60")}>
       <div className="absolute inset-y-0 left-0 w-1 rounded-l-xl" style={{ background: accentGradient(p.accent, "180deg") }} />
@@ -24,10 +27,10 @@ function KanbanCard({ project: p, handle, overlay, onFavorite, onEdit }: { proje
         <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 pt-0.5 font-medium leading-snug hover:text-accent-ink">
           <span className="line-clamp-2 break-words">{p.name}</span>
         </Link>
-        <button onClick={() => onEdit(p)} className="rounded p-1 text-muted opacity-0 transition hover:text-fg group-hover:opacity-100 focus:opacity-100" aria-label={`${p.name} bearbeiten`}>
+        <button onClick={() => onEdit(p)} className="rounded p-1 text-muted opacity-0 transition hover:text-fg group-hover:opacity-100 focus:opacity-100" aria-label={t("card.editName", { name: p.name })}>
           <Pencil size={13} />
         </button>
-        <button onClick={() => onFavorite(p)} aria-pressed={p.favorite} aria-label={p.favorite ? "Favorit entfernen" : "Als Favorit markieren"} className="rounded p-1">
+        <button onClick={() => onFavorite(p)} aria-pressed={p.favorite} aria-label={p.favorite ? t("card.favoriteRemove") : t("card.favoriteAdd")} className="rounded p-1">
           <Star size={14} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
         </button>
       </div>
@@ -38,9 +41,9 @@ function KanbanCard({ project: p, handle, overlay, onFavorite, onEdit }: { proje
       </div>
       <div className="mt-2 flex items-center gap-2.5 pl-8 text-[11px] text-muted">
         <PriorityBadge priority={p.priority} compact />
-        {p.tasks > 0 && <span className="inline-flex items-center gap-1" title="Aufgaben erledigt"><ListChecks size={12} />{p.tasksDone}/{p.tasks}</span>}
+        {p.tasks > 0 && <span className="inline-flex items-center gap-1" title={t("card.tasksDone")}><ListChecks size={12} />{p.tasksDone}/{p.tasks}</span>}
         {p.notes > 0 && <span className="inline-flex items-center gap-1"><StickyNote size={12} />{p.notes}</span>}
-        <span suppressHydrationWarning className="ml-auto truncate">{timeAgo(p.updatedAt)}</span>
+        <span suppressHydrationWarning className="ml-auto truncate">{f.ago(p.updatedAt)}</span>
       </div>
     </article>
   );
@@ -60,6 +63,7 @@ export function KanbanBoard({
   statuses: ProjectStatus[];
   onReorder: (status: ProjectStatus, ids: string[]) => void;
 } & Handlers) {
+  const ts = useT("status");
   return (
     <SortableColumns
       items={projects}
@@ -72,11 +76,12 @@ export function KanbanBoard({
       renderOverlay={(p) => <KanbanCard project={p} overlay onFavorite={onFavorite} onEdit={onEdit} />}
       renderColumn={(status, count, body) => {
         const meta = PROJECT_STATUS_MAP[status as ProjectStatus];
+        const label = ts(`project.${status as ProjectStatus}`);
         return (
-          <section className="glass flex w-[17.5rem] shrink-0 snap-start flex-col !rounded-2xl p-3 sm:w-80" aria-label={meta.label}>
+          <section className="glass flex w-[17.5rem] shrink-0 snap-start flex-col !rounded-2xl p-3 sm:w-80" aria-label={label}>
             <h2 className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: `var(${meta.cssVar})` }} />
-              {meta.label}
+              {label}
               <span className="ml-auto rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{count}</span>
             </h2>
             {body}

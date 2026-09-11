@@ -3,13 +3,14 @@
 // Bibliothek: exakte Versionsnummern braucht hier niemand.
 
 export interface DeviceInfo {
+  /** Leer, wenn kein User-Agent vorliegt – die Oberfläche zeigt dann „Unbekannter Browser“ in ihrer Sprache. */
   browser: string;
   os: string;
   mobile: boolean;
 }
 
 export function describeUserAgent(ua: string | null | undefined): DeviceInfo {
-  if (!ua) return { browser: "Unbekannt", os: "", mobile: false };
+  if (!ua) return { browser: "", os: "", mobile: false };
   const browser = /Edg(e|A|iOS)?\//.test(ua)
     ? "Edge"
     : /OPR\/|Opera/.test(ua)

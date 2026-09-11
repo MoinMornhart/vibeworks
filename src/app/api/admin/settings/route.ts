@@ -3,6 +3,7 @@ import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiAdmin } from "@/lib/auth/guard";
 import { getSettings } from "@/lib/settings";
 import { adminSettingsSchema } from "@/lib/validation";
+import { tk } from "@/lib/i18n/messages";
 
 function view(s: Awaited<ReturnType<typeof getSettings>>) {
   return { mode: s.mode, allowRegistration: s.allowRegistration, taskColumnLimit: s.taskColumnLimit };
@@ -21,7 +22,7 @@ export const PATCH = route(async (req) => {
 
   // Einzelbetrieb heißt genau ein Konto – sonst würden Konten ausgesperrt.
   if (mode === "SINGLE" && current.mode !== "SINGLE" && (await db.user.count()) > 1) {
-    throw new ApiError(409, "Im Einzelbetrieb gibt es genau ein Konto. Bitte zuerst die übrigen Konten löschen.");
+    throw new ApiError(409, tk("admin", "errors.singleModeTooMany"));
   }
 
   const updated = await db.settings.update({

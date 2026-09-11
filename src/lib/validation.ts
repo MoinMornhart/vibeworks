@@ -1,20 +1,21 @@
 import { z } from "zod";
 import { PROJECT_ACCENTS } from "./status";
 import { normalizeTags } from "./utils";
+import { tk } from "./i18n/messages";
 
 export const usernameSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .min(3, "Benutzername: mindestens 3 Zeichen")
-  .max(32, "Benutzername: höchstens 32 Zeichen")
-  .regex(/^[a-z0-9._-]+$/, "Benutzername: nur a–z, 0–9, Punkt, Binde- und Unterstrich");
+  .min(3, tk("validation", "username.min"))
+  .max(32, tk("validation", "username.max"))
+  .regex(/^[a-z0-9._-]+$/, tk("validation", "username.chars"));
 
-const password = z.string().min(1, "Passwort fehlt").max(256);
+const password = z.string().min(1, tk("validation", "passwordMissing")).max(256);
 const displayName = z.string().trim().max(60).optional().transform((v) => v || undefined);
 
 export const loginSchema = z.object({
-  username: z.string().trim().toLowerCase().min(1, "Benutzername fehlt").max(64),
+  username: z.string().trim().toLowerCase().min(1, tk("validation", "username.missing")).max(64),
   password,
 });
 
@@ -25,8 +26,8 @@ const optionalGitConnection = {
   gitToken: z
     .string()
     .trim()
-    .max(500, "Das Token ist zu lang")
-    .regex(/^[\x21-\x7e]*$/, "Das Token enthält ungültige Zeichen")
+    .max(500, tk("validation", "token.tooLong"))
+    .regex(/^[\x21-\x7e]*$/, tk("validation", "token.invalidChars"))
     .optional()
     .transform((v) => v || null),
   gitProvider: gitProviderSchema.default("github"),
@@ -67,10 +68,10 @@ const repoUrlSchema = z
   .max(500)
   .nullish()
   .transform((v) => v || null)
-  .refine((v) => v === null || /^(https?:\/\/|git@)[^\s]+$/.test(v), "Bitte eine Repository-Adresse (https://… oder git@…)");
+  .refine((v) => v === null || /^(https?:\/\/|git@)[^\s]+$/.test(v), tk("validation", "repoUrl"));
 
 export const projectCreateSchema = z.object({
-  name: z.string().trim().min(1, "Name fehlt").max(120, "Name: höchstens 120 Zeichen"),
+  name: z.string().trim().min(1, tk("validation", "nameMissing")).max(120, tk("validation", "nameMax120")),
   summary: optionalText(240),
   description: optionalText(20_000),
   status: projectStatusSchema.default("IDEA"),
@@ -90,9 +91,9 @@ export const repoAccessSchema = z.object({
   token: z
     .string()
     .trim()
-    .min(8, "Das Token ist zu kurz")
-    .max(500, "Das Token ist zu lang")
-    .regex(/^[\x21-\x7e]+$/, "Das Token enthält ungültige Zeichen")
+    .min(8, tk("validation", "token.tooShort"))
+    .max(500, tk("validation", "token.tooLong"))
+    .regex(/^[\x21-\x7e]+$/, tk("validation", "token.invalidChars"))
     .nullable()
     .optional(),
   issueSync: z.boolean().optional(),
@@ -101,13 +102,13 @@ export const repoAccessSchema = z.object({
 export const gitCredentialSchema = z.object({
   provider: gitProviderSchema,
   // Leer = Standardserver des Anbieters (github.com, gitlab.com)
-  server: z.string().trim().max(300, "Adresse zu lang").default(""),
+  server: z.string().trim().max(300, tk("validation", "serverTooLong")).default(""),
   token: z
     .string()
     .trim()
-    .min(8, "Das Token ist zu kurz")
-    .max(500, "Das Token ist zu lang")
-    .regex(/^[\x21-\x7e]+$/, "Das Token enthält ungültige Zeichen"),
+    .min(8, tk("validation", "token.tooShort"))
+    .max(500, tk("validation", "token.tooLong"))
+    .regex(/^[\x21-\x7e]+$/, tk("validation", "token.invalidChars")),
 });
 
 // ── Teilen ──────────────────────────────────────────────────
@@ -117,7 +118,7 @@ export const projectRoleSchema = z.enum(["VIEWER", "EDITOR"]);
 export const shareLinkSchema = z.object({ link: z.enum(["on", "off", "renew"]) });
 
 export const memberAddSchema = z.object({
-  username: z.string().trim().toLowerCase().min(1, "Benutzername fehlt").max(64),
+  username: z.string().trim().toLowerCase().min(1, tk("validation", "username.missing")).max(64),
   role: projectRoleSchema.default("VIEWER"),
 });
 
@@ -150,7 +151,7 @@ export const projectBulkSchema = z.discriminatedUnion("action", [
 
 export const noteCreateSchema = z.object({
   title: optionalText(200),
-  content: z.string().max(50_000, "Notiz: höchstens 50 000 Zeichen").refine((v) => v.trim().length > 0, "Die Notiz ist leer"),
+  content: z.string().max(50_000, tk("validation", "note.tooLong")).refine((v) => v.trim().length > 0, tk("validation", "note.empty")),
   pinned: z.boolean().default(false),
 });
 
@@ -158,7 +159,7 @@ export const noteUpdateSchema = z.object({
   // .optional() außen: ein fehlender Titel bleibt undefined („nicht ändern“)
   // und wird nicht zu null („Titel löschen“).
   title: optionalText(200).optional(),
-  content: z.string().max(50_000).refine((v) => v.trim().length > 0, "Die Notiz ist leer").optional(),
+  content: z.string().max(50_000).refine((v) => v.trim().length > 0, tk("validation", "note.empty")).optional(),
   pinned: z.boolean().optional(),
 });
 
@@ -171,8 +172,8 @@ const dueDateSchema = z
   .union([
     z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum als JJJJ-MM-TT")
-      .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), "Ungültiges Datum"),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, tk("validation", "date.format"))
+      .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), tk("validation", "date.invalid")),
     z.literal(""),
   ])
   .nullish()
@@ -181,7 +182,7 @@ const dueDateSchema = z
 const labelsSchema = z.union([z.array(z.string().max(40)).max(30), z.string().max(500)]).transform((t) => normalizeTags(t, 8));
 
 export const taskCreateSchema = z.object({
-  title: z.string().trim().min(1, "Titel fehlt").max(200, "Titel: höchstens 200 Zeichen"),
+  title: z.string().trim().min(1, tk("validation", "titleMissing")).max(200, tk("validation", "titleMax200")),
   description: optionalText(20_000),
   status: taskStatusSchema.default("TODO"),
   dueDate: dueDateSchema,
@@ -191,7 +192,7 @@ export const taskCreateSchema = z.object({
 
 // Alles außen .optional(): Fehlendes heißt „nicht ändern“, nicht „leeren“.
 export const taskUpdateSchema = z.object({
-  title: z.string().trim().min(1, "Titel fehlt").max(200).optional(),
+  title: z.string().trim().min(1, tk("validation", "titleMissing")).max(200).optional(),
   description: optionalText(20_000).optional(),
   status: taskStatusSchema.optional(),
   dueDate: dueDateSchema.optional(),
@@ -210,7 +211,7 @@ export const profileSchema = z.object({
   displayName: z
     .string()
     .trim()
-    .max(60, "Anzeigename: höchstens 60 Zeichen")
+    .max(60, tk("validation", "displayNameMax60"))
     .nullish()
     .transform((v) => v || null)
     .optional(),
@@ -221,18 +222,18 @@ export const profileSchema = z.object({
     .max(200)
     .nullish()
     .transform((v) => v || null)
-    .refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Bitte eine gültige E-Mail-Adresse")
+    .refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), tk("validation", "emailInvalid"))
     .optional(),
 });
 
 export const passwordChangeSchema = z.object({
   currentPassword: z.string().max(256).optional(),
-  newPassword: z.string().min(1, "Neues Passwort fehlt").max(256),
+  newPassword: z.string().min(1, tk("validation", "newPasswordMissing")).max(256),
 });
 
 // ── Zwei-Faktor ─────────────────────────────────────────────
 
-export const totpCodeSchema = z.object({ code: z.string().trim().min(1, "Code fehlt").max(20) });
+export const totpCodeSchema = z.object({ code: z.string().trim().min(1, tk("validation", "codeMissing")).max(20) });
 
 export const confirmIdentitySchema = z.object({
   password: z.string().max(256).optional(),
@@ -244,7 +245,7 @@ export const mfaLoginSchema = z
     code: z.string().trim().max(20).optional(),
     recoveryCode: z.string().trim().max(40).optional(),
   })
-  .refine((v) => v.code || v.recoveryCode, "Code fehlt");
+  .refine((v) => v.code || v.recoveryCode, tk("validation", "codeMissing"));
 
 // ── Passkeys ────────────────────────────────────────────────
 
@@ -267,14 +268,14 @@ export const passkeyRegisterSchema = z.object({
 
 export const passkeyLoginSchema = z.object({ response: webauthnResponseSchema });
 
-export const passkeyRenameSchema = z.object({ name: z.string().trim().min(1, "Name fehlt").max(60, "Höchstens 60 Zeichen") });
+export const passkeyRenameSchema = z.object({ name: z.string().trim().min(1, tk("validation", "nameMissing")).max(60, tk("validation", "max60Chars")) });
 
 // ── Administration ──────────────────────────────────────────
 
 export const adminSettingsSchema = z.object({
   mode: z.enum(["SINGLE", "MULTI"]).optional(),
   allowRegistration: z.boolean().optional(),
-  taskColumnLimit: z.number().int().min(0, "Mindestens 0").max(500, "Höchstens 500").optional(),
+  taskColumnLimit: z.number().int().min(0, tk("validation", "min0")).max(500, tk("validation", "max500")).optional(),
 });
 
 export const adminUserCreateSchema = z.object({
@@ -316,7 +317,7 @@ export const docCreateSchema = z.object({
 
 // Außen .optional(): Fehlendes heißt „nicht ändern“.
 export const docUpdateSchema = z.object({
-  title: z.string().trim().min(1, "Titel fehlt").max(200, "Titel: höchstens 200 Zeichen").optional(),
+  title: z.string().trim().min(1, tk("validation", "titleMissing")).max(200, tk("validation", "titleMax200")).optional(),
   icon: z
     .string()
     .trim()
@@ -324,7 +325,7 @@ export const docUpdateSchema = z.object({
     .nullish()
     .transform((v) => v || null)
     .optional(),
-  content: z.string().max(1_000_000, "Höchstens eine Million Zeichen").optional(),
+  content: z.string().max(1_000_000, tk("validation", "maxMillionChars")).optional(),
   parentId: z.string().max(40).nullable().optional(),
   move: z.enum(["up", "down"]).optional(),
   pinned: z.boolean().optional(),

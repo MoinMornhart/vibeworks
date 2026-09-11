@@ -1,4 +1,5 @@
 import { safeFetch, FetchBlockedError } from "@/lib/security/ssrf";
+import { tk } from "@/lib/i18n/messages";
 import { guessProvider, splitCommitMessage, type GitProvider, type ParsedRepo } from "./parse";
 
 // Zugriff auf GitHub, GitLab und Gitea/Forgejo über deren HTTP-APIs:
@@ -32,14 +33,16 @@ export interface CommitInfo {
 
 const COMMIT_LIMIT = 100;
 
+// Meldungen sind Übersetzungsschlüssel – sie landen in RepoCache.error bzw.
+// Task.issueError und werden erst beim Anzeigen in die Sprache übersetzt.
 function explain(status: number): string {
-  if (status === 401) return "Das Zugangstoken ist ungültig oder abgelaufen (HTTP 401).";
-  if (status === 403) return "Kein Zugriff – Rate-Limit erreicht oder dem Token fehlen Rechte (HTTP 403). Mit Token ist das Limit deutlich höher.";
-  if (status === 404) return "Repository nicht gefunden (HTTP 404). Bei privaten Repositories ein Zugangstoken hinterlegen.";
-  if (status === 410) return "Issues sind in diesem Repository abgeschaltet (HTTP 410).";
-  if (status === 422) return "Das Git-System hat die Daten abgelehnt (HTTP 422).";
-  if (status === 429) return "Zu viele Anfragen an das Git-System (HTTP 429) – später erneut versuchen.";
-  return `Das Git-System antwortete mit HTTP ${status}.`;
+  if (status === 401) return tk("git", "errors.unauthorized");
+  if (status === 403) return tk("git", "errors.forbidden");
+  if (status === 404) return tk("git", "errors.notFound");
+  if (status === 410) return tk("git", "errors.issuesDisabled");
+  if (status === 422) return tk("git", "errors.rejected");
+  if (status === 429) return tk("git", "errors.tooManyRequests");
+  return tk("git", "errors.http", { status });
 }
 
 async function request<T>(method: string, url: string, headers: Record<string, string>, body?: unknown): Promise<T> {
@@ -57,15 +60,15 @@ async function request<T>(method: string, url: string, headers: Record<string, s
     });
   } catch (err) {
     if (err instanceof FetchBlockedError) throw new GitError(err.message);
-    if (err instanceof Error && err.name === "TimeoutError") throw new GitError("Das Git-System antwortet nicht (Zeitüberschreitung).");
-    throw new GitError("Das Git-System ist nicht erreichbar.");
+    if (err instanceof Error && err.name === "TimeoutError") throw new GitError(tk("git", "errors.timeout"));
+    throw new GitError(tk("git", "errors.unreachable"));
   }
   if (!res.ok) throw new GitError(explain(res.status), res.status);
   try {
     const text = await res.text();
     return (text ? JSON.parse(text) : undefined) as T; // 204 bei DELETE
   } catch {
-    throw new GitError("Die Antwort des Git-Systems war kein JSON – ist die Adresse richtig?");
+    throw new GitError(tk("git", "errors.notJson"));
   }
 }
 

@@ -5,7 +5,7 @@ import { KeyRound, LogOut, Monitor, Save, ShieldCheck, Smartphone, UserRound } f
 import { FormError } from "@/components/ui/FormError";
 import type { SessionItem } from "@/lib/account";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
-import { formatDateTime, timeAgo } from "@/lib/utils";
+import { useFormat, useT } from "@/lib/i18n/client";
 
 export interface AccountProfile {
   username: string;
@@ -34,6 +34,8 @@ function Notice({ text }: { text: string | null }) {
 }
 
 function ProfileForm({ profile }: { profile: AccountProfile }) {
+  const t = useT("account");
+  const tc = useT("common");
   const [displayName, setDisplayName] = useState(profile.displayName ?? "");
   const [email, setEmail] = useState(profile.email ?? "");
   const [busy, setBusy] = useState(false);
@@ -47,7 +49,7 @@ function ProfileForm({ profile }: { profile: AccountProfile }) {
     setNotice(null);
     try {
       await api("/api/account/profile", { method: "PATCH", body: { displayName, email } });
-      setNotice("Profil gespeichert.");
+      setNotice(t("profile.saved"));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -59,26 +61,28 @@ function ProfileForm({ profile }: { profile: AccountProfile }) {
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <span className="label">Benutzername</span>
+          <span className="label">{t("profile.username")}</span>
           <p className="field flex items-center text-muted">{profile.username}</p>
         </div>
         <div>
-          <label className="label" htmlFor="a-display">Anzeigename</label>
+          <label className="label" htmlFor="a-display">{t("profile.displayName")}</label>
           <input id="a-display" className="field" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={60} placeholder={profile.username} />
         </div>
         <div className="sm:col-span-2">
-          <label className="label" htmlFor="a-email">E-Mail <span className="opacity-70">(optional)</span></label>
+          <label className="label" htmlFor="a-email">{t("profile.email")} <span className="opacity-70">({tc("optional")})</span></label>
           <input id="a-email" type="email" className="field" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} autoComplete="email" />
         </div>
       </div>
       <FormError message={error} />
       <Notice text={notice} />
-      <button className="btn btn-primary btn-sm" disabled={busy}><Save size={14} /> {busy ? "Speichere …" : "Profil speichern"}</button>
+      <button className="btn btn-primary btn-sm" disabled={busy}><Save size={14} /> {busy ? tc("saving") : t("profile.save")}</button>
     </form>
   );
 }
 
 function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
+  const t = useT("account");
+  const tc = useT("common");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -93,7 +97,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
     setNotice(null);
     setFieldErrors({});
     if (next !== confirm) {
-      setFieldErrors({ confirm: "Die Passwörter stimmen nicht überein." });
+      setFieldErrors({ confirm: t("password.mismatch") });
       return;
     }
     setBusy(true);
@@ -102,7 +106,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       setCurrent("");
       setNext("");
       setConfirm("");
-      setNotice("Passwort geändert. Alle anderen Geräte wurden abgemeldet.");
+      setNotice(t("password.changed"));
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
       setError(errorMessage(err));
@@ -115,32 +119,34 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
     <form onSubmit={submit} className="space-y-4">
       {hasPassword && (
         <div className="max-w-sm">
-          <label className="label" htmlFor="pw-current">Aktuelles Passwort</label>
+          <label className="label" htmlFor="pw-current">{t("password.current")}</label>
           <input id="pw-current" type="password" className="field" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
           {fieldErrors.currentPassword && <p className="mt-1 text-xs text-red-400">{fieldErrors.currentPassword}</p>}
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label" htmlFor="pw-new">Neues Passwort</label>
+          <label className="label" htmlFor="pw-new">{t("password.new")}</label>
           <input id="pw-new" type="password" className="field" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" required />
           {fieldErrors.newPassword && <p className="mt-1 text-xs text-red-400">{fieldErrors.newPassword}</p>}
         </div>
         <div>
-          <label className="label" htmlFor="pw-confirm">Wiederholen</label>
+          <label className="label" htmlFor="pw-confirm">{t("password.repeat")}</label>
           <input id="pw-confirm" type="password" className="field" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
           {fieldErrors.confirm && <p className="mt-1 text-xs text-red-400">{fieldErrors.confirm}</p>}
         </div>
       </div>
-      <p className="text-xs text-muted">Mindestens 10 Zeichen. Eine lange Passphrase ist sicherer als Sonderzeichen.</p>
+      <p className="text-xs text-muted">{t("password.hint")}</p>
       <FormError message={error} />
       <Notice text={notice} />
-      <button className="btn btn-primary btn-sm" disabled={busy}><KeyRound size={14} /> {busy ? "Speichere …" : hasPassword ? "Passwort ändern" : "Passwort setzen"}</button>
+      <button className="btn btn-primary btn-sm" disabled={busy}><KeyRound size={14} /> {busy ? tc("saving") : hasPassword ? t("password.change") : t("password.set")}</button>
     </form>
   );
 }
 
 function SessionList({ initial }: { initial: SessionItem[] }) {
+  const t = useT("account");
+  const f = useFormat();
   const [sessions, setSessions] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -164,16 +170,16 @@ function SessionList({ initial }: { initial: SessionItem[] }) {
             <span className="text-muted">{s.mobile ? <Smartphone size={20} /> : <Monitor size={20} />}</span>
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                {s.browser}{s.os && ` auf ${s.os}`}
-                {s.current && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent-ink">Dieses Gerät</span>}
+                {s.browser ? (s.os ? t("sessions.device", { browser: s.browser, os: s.os }) : s.browser) : t("sessions.unknownBrowser")}
+                {s.current && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent-ink">{t("sessions.thisDevice")}</span>}
               </p>
               <p className="text-xs text-muted" suppressHydrationWarning>
-                {s.ip ?? "IP unbekannt"} · zuletzt aktiv {timeAgo(s.lastSeenAt)} · angemeldet {formatDateTime(s.createdAt)}
+                {t("sessions.meta", { ip: s.ip ?? t("sessions.unknownIp"), seen: f.ago(s.lastSeenAt), created: f.dateTime(s.createdAt) })}
               </p>
             </div>
             {!s.current && (
               <button className="btn btn-sm" onClick={() => void run(`/api/account/sessions/${s.id}`)}>
-                <LogOut size={14} /> Abmelden
+                <LogOut size={14} /> {t("sessions.signOut")}
               </button>
             )}
           </li>
@@ -181,29 +187,31 @@ function SessionList({ initial }: { initial: SessionItem[] }) {
       </ul>
       <FormError message={error} />
       <button className="btn btn-sm" disabled={others === 0} onClick={() => void run("/api/account/sessions")}>
-        <ShieldCheck size={14} /> Überall sonst abmelden {others > 0 && `(${others})`}
+        <ShieldCheck size={14} /> {t("sessions.signOutOthers")} {others > 0 && `(${others})`}
       </button>
     </div>
   );
 }
 
 export function AccountManager({ profile, sessions, children }: { profile: AccountProfile; sessions: SessionItem[]; children?: ReactNode }) {
+  const t = useT("account");
+  const f = useFormat();
   return (
     <div className="fade-in space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Mein Konto</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("page.title")}</h1>
         <p className="mt-1 text-muted">
-          {profile.role === "ADMIN" ? "Administrator" : "Konto"} seit {formatDateTime(profile.createdAt).split(",")[0]}
+          {t(profile.role === "ADMIN" ? "page.roleAdmin" : "page.roleUser", { date: f.date(profile.createdAt) })}
         </p>
       </header>
-      <AccountSection icon={<UserRound size={18} />} title="Profil">
+      <AccountSection icon={<UserRound size={18} />} title={t("profile.title")}>
         <ProfileForm profile={profile} />
       </AccountSection>
-      <AccountSection icon={<KeyRound size={18} />} title="Passwort" description="Ein neues Passwort meldet alle anderen Geräte ab.">
+      <AccountSection icon={<KeyRound size={18} />} title={t("password.title")} description={t("password.description")}>
         <PasswordForm hasPassword={profile.hasPassword} />
       </AccountSection>
       {children}
-      <AccountSection icon={<Monitor size={18} />} title="Aktive Sitzungen" description="Wo du gerade angemeldet bist.">
+      <AccountSection icon={<Monitor size={18} />} title={t("sessions.title")} description={t("sessions.description")}>
         <SessionList initial={sessions} />
       </AccountSection>
     </div>

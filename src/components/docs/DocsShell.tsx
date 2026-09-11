@@ -8,14 +8,22 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Modal } from "@/components/ui/Modal";
 import type { DocDetail, DocTreeItem } from "@/lib/docs";
 import { api, errorMessage } from "@/lib/client/api";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useFormat, useLocale, useT } from "@/lib/i18n/client";
+import { INTL_LOCALE } from "@/lib/i18n/config";
 import { DocEditor } from "./DocEditor";
 
 const EXPANDED_KEY = "vw.docs.expanded";
 
-const sortItems = (a: DocTreeItem, b: DocTreeItem) => a.position - b.position || a.title.localeCompare(b.title, "de");
-
 export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc: DocDetail | null }) {
+  const t = useT("docs");
+  const tc = useT("common");
+  const f = useFormat();
+  const locale = useLocale();
+  const sortItems = useCallback(
+    (a: DocTreeItem, b: DocTreeItem) => a.position - b.position || a.title.localeCompare(b.title, INTL_LOCALE[locale]),
+    [locale],
+  );
   const router = useRouter();
   const [tree, setTree] = useState(initialTree);
   const [filter, setFilter] = useState("");
@@ -36,7 +44,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
     }
     for (const list of map.values()) list.sort(sortItems);
     return map;
-  }, [tree, byId]);
+  }, [tree, byId, sortItems]);
 
   const descendants = useCallback(
     (id: string): string[] => (byParent.get(id) ?? []).flatMap((c) => [c.id, ...descendants(c.id)]),
@@ -72,7 +80,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
   async function create(parentId: string | null) {
     setError(null);
     try {
-      const res = await api<{ doc: DocDetail; item: DocTreeItem }>("/api/docs", { body: { parentId } });
+      const res = await api<{ doc: DocDetail; item: DocTreeItem }>("/api/docs", { body: { parentId, title: t("tree.defaultTitle") } });
       setTree((t) => [...t, res.item]);
       if (parentId) setExpanded((s) => new Set(s).add(parentId));
       setTreeOpen(false);
@@ -94,7 +102,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
 
   async function remove(item: DocTreeItem) {
     const sub = descendants(item.id).length;
-    if (!window.confirm(`„${item.title}“${sub ? ` samt ${sub} Unterseite${sub === 1 ? "" : "n"}` : ""} endgültig löschen?`)) return;
+    if (!window.confirm(sub ? t("tree.confirmDeleteWithChildren", { title: item.title, n: sub }) : t("tree.confirmDelete", { title: item.title }))) return;
     setError(null);
     try {
       const res = await api<{ tree: DocTreeItem[] }>(`/api/docs/${item.id}`, { method: "DELETE" });
@@ -123,7 +131,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
                   type="button"
                   onClick={() => kids.length && toggle(item.id)}
                   className="flex h-7 w-6 shrink-0 items-center justify-center"
-                  aria-label={kids.length ? (open ? "Zuklappen" : "Aufklappen") : undefined}
+                  aria-label={kids.length ? (open ? t("tree.collapse") : t("tree.expand")) : undefined}
                   tabIndex={kids.length ? 0 : -1}
                 >
                   {kids.length ? open ? <ChevronDown size={14} /> : <ChevronRight size={14} /> : <span className="h-1 w-1 rounded-full bg-fg/25" />}
@@ -132,17 +140,17 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
                   <span className="shrink-0">{item.icon || "📄"}</span>
                   <span className="truncate">{item.title}</span>
                 </Link>
-                <button type="button" onClick={() => void create(item.id)} className="rounded p-1 opacity-0 transition hover:bg-fg/10 group-hover:opacity-100 focus:opacity-100" aria-label={`Unterseite von ${item.title} anlegen`} title="Unterseite anlegen">
+                <button type="button" onClick={() => void create(item.id)} className="rounded p-1 opacity-0 transition hover:bg-fg/10 group-hover:opacity-100 focus:opacity-100" aria-label={t("tree.addChildOf", { title: item.title })} title={t("tree.addChild")}>
                   <Plus size={14} />
                 </button>
                 <ActionMenu
-                  label={`Aktionen für ${item.title}`}
+                  label={t("tree.actions", { title: item.title })}
                   className="opacity-0 group-hover:opacity-100 focus:opacity-100 aria-expanded:opacity-100"
                   items={[
-                    { label: "Nach oben", icon: ArrowUp, disabled: index === 0, onClick: () => void patchStructure(item, { move: "up" }) },
-                    { label: "Nach unten", icon: ArrowDown, disabled: index === items.length - 1, onClick: () => void patchStructure(item, { move: "down" }) },
-                    { label: "Verschieben …", icon: FolderInput, onClick: () => { setMoving(item); setMoveTarget(item.parentId ?? ""); } },
-                    { label: "Löschen", icon: Trash2, danger: true, onClick: () => void remove(item) },
+                    { label: t("tree.moveUp"), icon: ArrowUp, disabled: index === 0, onClick: () => void patchStructure(item, { move: "up" }) },
+                    { label: t("tree.moveDown"), icon: ArrowDown, disabled: index === items.length - 1, onClick: () => void patchStructure(item, { move: "down" }) },
+                    { label: t("tree.move"), icon: FolderInput, onClick: () => { setMoving(item); setMoveTarget(item.parentId ?? ""); } },
+                    { label: tc("delete"), icon: Trash2, danger: true, onClick: () => void remove(item) },
                   ]}
                 />
               </div>
@@ -155,7 +163,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
   }
 
   const q = filter.trim().toLowerCase();
-  const matches = q ? tree.filter((t) => t.title.toLowerCase().includes(q)).sort(sortItems) : [];
+  const matches = q ? tree.filter((d) => d.title.toLowerCase().includes(q)).sort(sortItems) : [];
 
   // Ziele beim Verschieben: alles außer der Seite selbst und ihren Unterseiten
   const moveOptions = useMemo(() => {
@@ -177,42 +185,42 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
 
   return (
     <div className="fade-in grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
-      <aside className={cn("glass flex-col p-3 lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:self-start", treeOpen ? "flex" : "hidden")} aria-label="Seiten">
+      <aside className={cn("glass flex-col p-3 lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:self-start", treeOpen ? "flex" : "hidden")} aria-label={t("tree.label")}>
         <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <Link href="/docs" className="flex items-center gap-2 font-semibold"><BookOpen size={17} className="text-accent-ink" /> Docs</Link>
-          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => void create(null)} aria-label="Neue Seite" title="Neue Seite"><Plus size={16} /></button>
+          <Link href="/docs" className="flex items-center gap-2 font-semibold"><BookOpen size={17} className="text-accent-ink" /> {t("tree.title")}</Link>
+          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => void create(null)} aria-label={t("tree.newPage")} title={t("tree.newPage")}><Plus size={16} /></button>
         </div>
         <div className="relative mb-2">
           <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input className="field !min-h-8 !py-1 pl-8 text-sm" placeholder="Seiten filtern" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Seiten filtern" />
+          <input className="field !min-h-8 !py-1 pl-8 text-sm" placeholder={t("tree.filter")} value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t("tree.filter")} />
         </div>
         <nav className="min-h-0 flex-1 overflow-y-auto pr-0.5">
           {q ? (
             matches.length ? (
               <ul>
-                {matches.map((t) => (
-                  <li key={t.id}>
-                    <Link href={`/docs/${t.id}`} onClick={() => setTreeOpen(false)} className={cn("flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm", doc?.id === t.id ? "bg-accent/15" : "text-muted hover:bg-fg/5 hover:text-fg")}>
-                      <span>{t.icon || "📄"}</span>
-                      <span className="truncate">{t.title}</span>
+                {matches.map((d) => (
+                  <li key={d.id}>
+                    <Link href={`/docs/${d.id}`} onClick={() => setTreeOpen(false)} className={cn("flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm", doc?.id === d.id ? "bg-accent/15" : "text-muted hover:bg-fg/5 hover:text-fg")}>
+                      <span>{d.icon || "📄"}</span>
+                      <span className="truncate">{d.title}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="px-2 py-4 text-xs text-muted">Keine Seite passt.</p>
+              <p className="px-2 py-4 text-xs text-muted">{t("tree.noMatch")}</p>
             )
           ) : tree.length ? (
             renderNodes(null, 0)
           ) : (
-            <p className="px-2 py-4 text-xs text-muted">Noch keine Seiten.</p>
+            <p className="px-2 py-4 text-xs text-muted">{t("tree.empty")}</p>
           )}
         </nav>
       </aside>
 
       <section className="min-w-0 space-y-3">
         <button className="btn btn-sm lg:hidden" onClick={() => setTreeOpen((o) => !o)} aria-expanded={treeOpen}>
-          <PanelLeft size={15} /> {treeOpen ? "Seiten ausblenden" : "Seiten"}
+          <PanelLeft size={15} /> {treeOpen ? t("tree.hide") : t("tree.show")}
         </button>
         {error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
         {doc ? (
@@ -220,25 +228,25 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
         ) : tree.length === 0 ? (
           <div className="glass flex flex-col items-center px-6 py-16 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/15 text-accent-ink"><BookOpen size={30} /></span>
-            <h1 className="mt-4 text-2xl font-bold">Deine Mini-Docs</h1>
-            <p className="mt-2 max-w-md text-muted">Notizen, Anleitungen, Ideen – als Seiten mit beliebig tiefen Unterseiten, geschrieben in Markdown und automatisch gespeichert.</p>
-            <button className="btn btn-primary mt-6" onClick={() => void create(null)}><Plus size={17} /> Erste Seite anlegen</button>
+            <h1 className="mt-4 text-2xl font-bold">{t("home.welcomeTitle")}</h1>
+            <p className="mt-2 max-w-md text-muted">{t("home.welcomeText")}</p>
+            <button className="btn btn-primary mt-6" onClick={() => void create(null)}><Plus size={17} /> {t("home.createFirst")}</button>
           </div>
         ) : (
           <div className="glass p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h1 className="text-2xl font-bold">Docs</h1>
-              <button className="btn btn-primary btn-sm" onClick={() => void create(null)}><Plus size={15} /> Neue Seite</button>
+              <h1 className="text-2xl font-bold">{t("home.title")}</h1>
+              <button className="btn btn-primary btn-sm" onClick={() => void create(null)}><Plus size={15} /> {t("tree.newPage")}</button>
             </div>
-            <h2 className="mb-3 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">Zuletzt bearbeitet</h2>
+            <h2 className="mb-3 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">{t("home.recent")}</h2>
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {recent.map((t) => (
-                <li key={t.id}>
-                  <Link href={`/docs/${t.id}`} className="lift flex items-center gap-3 rounded-xl border bg-bg/20 p-3">
-                    <span className="text-2xl">{t.icon || "📄"}</span>
+              {recent.map((d) => (
+                <li key={d.id}>
+                  <Link href={`/docs/${d.id}`} className="lift flex items-center gap-3 rounded-xl border bg-bg/20 p-3">
+                    <span className="text-2xl">{d.icon || "📄"}</span>
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">{t.title}</span>
-                      <span className="block text-xs text-muted" suppressHydrationWarning>{timeAgo(t.updatedAt)}</span>
+                      <span className="block truncate font-medium">{d.title}</span>
+                      <span className="block text-xs text-muted" suppressHydrationWarning>{f.ago(d.updatedAt)}</span>
                     </span>
                   </Link>
                 </li>
@@ -251,11 +259,11 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
       <Modal
         open={moving !== null}
         onClose={() => setMoving(null)}
-        title={`„${moving?.title ?? ""}“ verschieben`}
+        title={t("move.title", { title: moving?.title ?? "" })}
         size="sm"
         footer={
           <>
-            <button className="btn btn-sm" onClick={() => setMoving(null)}>Abbrechen</button>
+            <button className="btn btn-sm" onClick={() => setMoving(null)}>{tc("cancel")}</button>
             <button
               className="btn btn-primary btn-sm"
               onClick={() => {
@@ -263,14 +271,14 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
                 setMoving(null);
               }}
             >
-              <FolderInput size={14} /> Verschieben
+              <FolderInput size={14} /> {t("move.submit")}
             </button>
           </>
         }
       >
-        <label className="label" htmlFor="move-target">Neue Elternseite</label>
+        <label className="label" htmlFor="move-target">{t("move.parent")}</label>
         <select id="move-target" className="field" value={moveTarget} onChange={(e) => setMoveTarget(e.target.value)}>
-          <option value="">Oberste Ebene</option>
+          <option value="">{t("move.root")}</option>
           {moveOptions.map((o) => (
             <option key={o.id} value={o.id}>{o.label}</option>
           ))}

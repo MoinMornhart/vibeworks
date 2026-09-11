@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
+import { tk } from "@/lib/i18n/messages";
 import { requireProject, visibleTo } from "@/lib/access";
 import { projectUpdateSchema } from "@/lib/validation";
 import { nextPosition, projectListSelect, serializeProject, uniqueSlug } from "@/lib/projects";
@@ -21,7 +22,7 @@ async function loadDetail(ownerId: string, id: string) {
 export const GET = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const project = await loadDetail(user.id, (await params).id);
-  if (!project) throw notFound("Projekt nicht gefunden");
+  if (!project) throw notFound(tk("projects", "errors.notFound"));
   return json({ project });
 });
 
@@ -33,7 +34,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
   // Repository (samt Token) und Favorit gehören dem Besitzer.
   const ownerOnly =
     (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) || (input.favorite !== undefined && input.favorite !== current.favorite);
-  if (ownerOnly && access !== "OWNER") throw new ApiError(403, "Repository und Favorit ändert nur der Besitzer des Projekts.");
+  if (ownerOnly && access !== "OWNER") throw new ApiError(403, tk("projects", "errors.ownerFields"));
 
   const data: Record<string, unknown> = { ...input };
   // Slug und Spaltenposition beziehen sich auf das Board des Besitzers.
@@ -74,6 +75,6 @@ export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const { count } = await db.project.deleteMany({ where: { id, ownerId: user.id } });
-  if (!count) throw notFound("Projekt nicht gefunden");
+  if (!count) throw notFound(tk("projects", "errors.notFound"));
   return json({ ok: true });
 });

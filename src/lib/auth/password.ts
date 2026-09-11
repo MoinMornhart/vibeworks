@@ -1,4 +1,5 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import { tk } from "@/lib/i18n/messages";
 
 // Passwort-Hashing mit scrypt (OWASP: N=2^17, r=8, p=1). Die Parameter
 // stehen im Hash selbst, ältere Hashes bleiben also prüfbar und werden bei
@@ -63,15 +64,15 @@ function isSequence(s: string): boolean {
 
 export const PASSWORD_MIN = 10;
 
-/** null = in Ordnung, sonst eine verständliche Begründung. */
+/** null = in Ordnung, sonst eine verständliche Begründung als Übersetzungsschlüssel (auth.policy.*). */
 export function checkPasswordPolicy(password: string, username?: string): string | null {
-  if (password.length < PASSWORD_MIN) return `Mindestens ${PASSWORD_MIN} Zeichen.`;
-  if (password.length > 256) return "Höchstens 256 Zeichen.";
+  if (password.length < PASSWORD_MIN) return tk("auth", "policy.minLength", { n: PASSWORD_MIN });
+  if (password.length > 256) return tk("auth", "policy.maxLength", { n: 256 });
   const lower = password.toLowerCase();
-  if (/^\d+$/.test(password)) return "Nicht nur Ziffern.";
-  if (new Set(password).size < 5) return "Zu wenige verschiedene Zeichen.";
-  if (isSequence(lower)) return "Keine durchlaufende Zeichenfolge.";
-  if (COMMON.has(lower) || COMMON.has(lower.replace(/[\d!?.]+$/, ""))) return "Dieses Passwort ist zu naheliegend.";
-  if (username && username.length >= 3 && lower.includes(username.toLowerCase())) return "Das Passwort darf den Benutzernamen nicht enthalten.";
+  if (/^\d+$/.test(password)) return tk("auth", "policy.onlyDigits");
+  if (new Set(password).size < 5) return tk("auth", "policy.fewDistinct");
+  if (isSequence(lower)) return tk("auth", "policy.sequence");
+  if (COMMON.has(lower) || COMMON.has(lower.replace(/[\d!?.]+$/, ""))) return tk("auth", "policy.common");
+  if (username && username.length >= 3 && lower.includes(username.toLowerCase())) return tk("auth", "policy.containsUsername");
   return null;
 }

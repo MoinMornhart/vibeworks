@@ -7,6 +7,7 @@ import type { ProjectListItem } from "@/lib/projects";
 import type { SearchResult } from "@/lib/search";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 import { Highlight } from "./Highlight";
 
 export const OPEN_PALETTE_EVENT = "vw:palette";
@@ -23,6 +24,7 @@ interface Item {
 // Schnellsuche mit Strg+K / Cmd+K. Die Projektliste wird beim ersten Öffnen
 // geholt und behalten; Notizen und Aufgaben sucht der Server im Volltext.
 export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
+  const tr = useT("shell");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -94,7 +96,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     for (const p of matching) {
       list.push({
         key: `p-${p.id}`,
-        group: q ? "Projekte" : "Zuletzt bearbeitet",
+        group: q ? tr("palette.groups.projects") : tr("palette.groups.recent"),
         label: p.name,
         hint: p.summary ?? undefined,
         icon: <FolderKanban size={16} />,
@@ -104,7 +106,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     for (const n of result?.notes ?? []) {
       list.push({
         key: `n-${n.id}`,
-        group: "Notizen",
+        group: tr("palette.groups.notes"),
         label: <>{n.title ? `${n.title} · ` : ""}<span className="text-muted">{n.projectName}</span></>,
         hint: <Highlight text={n.snippet} />,
         icon: <StickyNote size={16} />,
@@ -114,7 +116,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     for (const t of result?.tasks ?? []) {
       list.push({
         key: `t-${t.id}`,
-        group: "Aufgaben",
+        group: tr("palette.groups.tasks"),
         label: <>{t.title} · <span className="text-muted">{t.projectName}</span></>,
         hint: <Highlight text={t.snippet} />,
         icon: <ListChecks size={16} />,
@@ -124,7 +126,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     for (const d of result?.docs ?? []) {
       list.push({
         key: `d-${d.id}`,
-        group: "Docs",
+        group: tr("palette.groups.docs"),
         label: <>{d.icon ? `${d.icon} ` : ""}{d.title}</>,
         hint: <Highlight text={d.snippet} />,
         icon: <BookOpen size={16} />,
@@ -132,16 +134,16 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
       });
     }
     const areas = [
-      { label: "Dashboard", href: "/", icon: <LayoutDashboard size={16} /> },
-      { label: "Aufgaben", href: "/tasks", icon: <ListChecks size={16} /> },
-      { label: "Docs", href: "/docs", icon: <BookOpen size={16} /> },
-      { label: "Design", href: "/design", icon: <Palette size={16} /> },
-      { label: "Mein Konto", href: "/account", icon: <UserRound size={16} /> },
-      ...(isAdmin ? [{ label: "Administration", href: "/admin", icon: <Shield size={16} /> }] : []),
+      { label: tr("nav.dashboard"), href: "/", icon: <LayoutDashboard size={16} /> },
+      { label: tr("nav.tasks"), href: "/tasks", icon: <ListChecks size={16} /> },
+      { label: tr("nav.docs"), href: "/docs", icon: <BookOpen size={16} /> },
+      { label: tr("nav.design"), href: "/design", icon: <Palette size={16} /> },
+      { label: tr("nav.account"), href: "/account", icon: <UserRound size={16} /> },
+      ...(isAdmin ? [{ label: tr("nav.administration"), href: "/admin", icon: <Shield size={16} /> }] : []),
     ].filter((a) => !q || a.label.toLowerCase().includes(q));
-    for (const a of areas) list.push({ key: `a-${a.href}`, group: "Bereiche", ...a });
+    for (const a of areas) list.push({ key: `a-${a.href}`, group: tr("palette.groups.areas"), ...a });
     return list;
-  }, [projects, result, query, isAdmin]);
+  }, [projects, result, query, isAdmin, tr]);
 
   useEffect(() => setActive(0), [query]);
   useEffect(() => {
@@ -176,7 +178,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center px-3 pt-[10vh]" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden />
-      <div role="dialog" aria-modal="true" aria-label="Schnellsuche" className="glass-strong fade-in relative flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label={tr("palette.label")} className="glass-strong fade-in relative flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden">
         <div className="flex items-center gap-3 border-b px-4">
           <Search size={18} className="shrink-0 text-muted" />
           <input
@@ -184,18 +186,18 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Projekte, Notizen, Aufgaben, Docs …"
+            placeholder={tr("palette.placeholder")}
             className="h-14 w-full bg-transparent text-base outline-none placeholder:text-muted"
             role="combobox"
             aria-expanded="true"
             aria-controls="palette-list"
             aria-activedescendant={items[active] ? `palette-${items[active].key}` : undefined}
-            aria-label="Suchbegriff"
+            aria-label={tr("palette.inputLabel")}
           />
           <kbd className="hidden rounded border px-1.5 py-0.5 text-[11px] text-muted sm:inline">Esc</kbd>
         </div>
         <ul id="palette-list" ref={listRef} role="listbox" className="overflow-y-auto p-2">
-          {items.length === 0 && <li className="px-3 py-8 text-center text-sm text-muted">Nichts gefunden.</li>}
+          {items.length === 0 && <li className="px-3 py-8 text-center text-sm text-muted">{tr("palette.empty")}</li>}
           {items.map((item, i) => {
             const header = item.group !== lastGroup ? item.group : null;
             lastGroup = item.group;
@@ -221,7 +223,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
             );
           })}
         </ul>
-        <p className="border-t px-4 py-2 text-[11px] text-muted">↑↓ wählen · Enter öffnen · Esc schließen</p>
+        <p className="border-t px-4 py-2 text-[11px] text-muted">{tr("palette.hints")}</p>
       </div>
     </div>
   );
