@@ -1,0 +1,70 @@
+# Windows-App: baut bei jeder neuen Version in desktop/package.json den
+# Installer und legt ihn in das feste Release „desktop-latest“. Von dort holt
+# die App ihre Updates (electron-updater, generic provider). Das Release ist
+# als Vorabversion markiert und stört so kein anderes „neuestes Release“.
+name: Windows-App
+
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Neue Version?
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          published=$(gh release download desktop-latest -p latest.yml -O - 2>/dev/null | sed -n 's/^version: //p' || true)
+          echo "Veröffentlicht: ${published:-keine} · im Repo: $version"
+          if [ "$version" = "$published" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Abhängigkeiten
+        if: steps.version.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Installer bauen
+        if: steps.version.outputs.skip != 'true'
+        run: npx electron-builder --win --publish never
+
+      - name: Veröffentlichen
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          notes="Windows-Installer für VibeWorks – einfach herunterladen und ausführen. Die App aktualisiert sich danach selbst.
+
+          Windows installer for VibeWorks – download and run it. The app updates itself afterwards."
+          if ! gh release view desktop-latest >/dev/null 2>&1; then
+            gh release create desktop-latest --prerelease --title "VibeWorks für Windows $VERSION" --notes "$notes"
+          fi
+          gh release upload desktop-latest dist/VibeWorks-Setup.exe dist/VibeWorks-Setup.exe.blockmap dist/latest.yml --clobber
+          gh release edit desktop-latest --title "VibeWorks für Windows $VERSION"

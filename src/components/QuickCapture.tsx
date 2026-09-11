@@ -14,13 +14,26 @@ import { useT } from "@/lib/i18n/client";
 export const OPEN_CAPTURE_EVENT = "vw:capture";
 const LAST_PROJECT_KEY = "vw.capture.project";
 
-// Schnellerfassung: ein Feld, Enter, fertig. Der Dialog bleibt offen und
-// leert nur das Feld – wer eine Idee notiert, hat oft gleich die nächste.
-export function QuickCapture() {
+/**
+ * Das Formular der Schnellerfassung – im Dialog der Web-App und in der
+ * Windows-App (/capture). Ein Feld, Enter, fertig: danach bleibt es offen und
+ * leert nur das Feld – wer eine Idee notiert, hat oft gleich die nächste.
+ */
+export function CaptureForm({
+  active,
+  reloadKey = 0,
+  hint,
+  onLinkClick,
+}: {
+  active: boolean;
+  /** Erhöhen, um Projekte neu zu laden und die Liste zu leeren (Windows-App beim Einblenden) */
+  reloadKey?: number;
+  hint?: string;
+  onLinkClick?: (href: string, e: React.MouseEvent) => void;
+}) {
   const t = useT("shell");
   const tc = useT("common");
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"idea" | "task">("idea");
   const [text, setText] = useState("");
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
@@ -31,15 +44,10 @@ export function QuickCapture() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const onOpen = () => setOpen(true);
-    window.addEventListener(OPEN_CAPTURE_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_CAPTURE_EVENT, onOpen);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
+    if (!active) return;
     setCreated([]);
     setError(null);
+    inputRef.current?.focus();
     api<{ projects: ProjectListItem[] }>("/api/projects")
       .then((r) => {
         setProjects(r.projects);
@@ -52,7 +60,7 @@ export function QuickCapture() {
         setProjectId(r.projects.some((p) => p.id === last) ? last : (r.projects[0]?.id ?? ""));
       })
       .catch(() => {});
-  }, [open]);
+  }, [active, reloadKey]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,51 +94,66 @@ export function QuickCapture() {
   }
 
   return (
+    <form onSubmit={submit} className="space-y-4">
+      <Segmented
+        label={t("capture.modeLabel")}
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "idea", label: t("capture.idea"), icon: <Lightbulb size={14} /> },
+          { value: "task", label: t("capture.task"), icon: <ListChecks size={14} /> },
+        ]}
+      />
+      {mode === "task" && (
+        <select className="field" value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label={t("capture.project")}>
+          {projects.length === 0 && <option value="">{t("capture.noProjects")}</option>}
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      )}
+      <input
+        ref={inputRef}
+        className="field text-base"
+        placeholder={mode === "idea" ? t("capture.ideaPlaceholder") : t("capture.taskPlaceholder")}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        maxLength={mode === "idea" ? 120 : 200}
+        autoFocus
+        aria-label={mode === "idea" ? t("capture.idea") : t("capture.task")}
+      />
+      <FormError message={error} />
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted">{hint ?? t("capture.hint")}</span>
+        <button className="btn btn-primary btn-sm" disabled={busy || !text.trim()}><Zap size={14} /> {tc("create")}</button>
+      </div>
+      {created.length > 0 && (
+        <ul className="space-y-1 border-t pt-3">
+          {created.map((c) => (
+            <li key={c.key} className="flex items-center gap-2 text-sm">
+              <Check size={14} className="shrink-0 text-emerald-400" />
+              <Link href={c.href} className="truncate hover:text-accent-ink" onClick={(e) => onLinkClick?.(c.href, e)}>{c.label}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </form>
+  );
+}
+
+export function QuickCapture() {
+  const t = useT("shell");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_CAPTURE_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CAPTURE_EVENT, onOpen);
+  }, []);
+
+  return (
     <Modal open={open} onClose={() => setOpen(false)} title={<span className="flex items-center gap-2"><Zap size={18} className="text-accent-ink" /> {t("capture.title")}</span>}>
-      <form onSubmit={submit} className="space-y-4">
-        <Segmented
-          label={t("capture.modeLabel")}
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "idea", label: t("capture.idea"), icon: <Lightbulb size={14} /> },
-            { value: "task", label: t("capture.task"), icon: <ListChecks size={14} /> },
-          ]}
-        />
-        {mode === "task" && (
-          <select className="field" value={projectId} onChange={(e) => setProjectId(e.target.value)} aria-label={t("capture.project")}>
-            {projects.length === 0 && <option value="">{t("capture.noProjects")}</option>}
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
-        <input
-          ref={inputRef}
-          className="field text-base"
-          placeholder={mode === "idea" ? t("capture.ideaPlaceholder") : t("capture.taskPlaceholder")}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={mode === "idea" ? 120 : 200}
-          autoFocus
-          aria-label={mode === "idea" ? t("capture.idea") : t("capture.task")}
-        />
-        <FormError message={error} />
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs text-muted">{t("capture.hint")}</span>
-          <button className="btn btn-primary btn-sm" disabled={busy || !text.trim()}><Zap size={14} /> {tc("create")}</button>
-        </div>
-        {created.length > 0 && (
-          <ul className="space-y-1 border-t pt-3">
-            {created.map((c) => (
-              <li key={c.key} className="flex items-center gap-2 text-sm">
-                <Check size={14} className="shrink-0 text-emerald-400" />
-                <Link href={c.href} className="truncate hover:text-accent-ink" onClick={() => setOpen(false)}>{c.label}</Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </form>
+      <CaptureForm active={open} onLinkClick={() => setOpen(false)} />
     </Modal>
   );
 }

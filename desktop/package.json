@@ -1,0 +1,61 @@
+{
+  "name": "vibeworks-desktop",
+  "productName": "VibeWorks",
+  "version": "0.0.1",
+  "description": "VibeWorks für Windows – eigenes Fenster, Tray, Schnellerfassung und Windows-Benachrichtigungen",
+  "author": "MoinMornhart",
+  "license": "MIT",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "de.moinmornhart.vibeworks",
+    "productName": "VibeWorks",
+    "copyright": "MIT · MoinMornhart",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "VibeWorks-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "VibeWorks",
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/MoinMornhart/vibeworks/releases/download/desktop-latest"
+      }
+    ]
+  },
+  "allowScripts": {
+    "electron@44.3.0": true
+  }
+}

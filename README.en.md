@@ -15,7 +15,7 @@
 
 **Projects, tasks, notes and commits in one place – on your own server.**
 
-[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Development](#%EF%B8%8F-development)
+[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Windows app](#-windows-app) · [Development](#%EF%B8%8F-development)
 
 <br>
 
@@ -222,6 +222,20 @@ and write down what you did as a note." Claude acts with your permissions, and e
 up in the project's activity log. Only a hash of each key is stored; you can revoke keys at any time.
 Other MCP clients connect to `/api/mcp` via Streamable HTTP with the same header.
 
+## 🪟 Windows app
+
+**[⬇️ Download VibeWorks-Setup.exe](https://github.com/MoinMornhart/vibeworks/releases/download/desktop-latest/VibeWorks-Setup.exe)** –
+run it, enter your server's address, sign in. The app updates itself afterwards.
+
+- **Its own window** instead of a browser tab, with a Start menu entry
+- **Tray next to the clock** – closing keeps the app running in the background (can be turned off)
+- **Quick capture with <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>** – jot down an idea or task from any program
+- **Windows notifications** for due tasks, red CI, access requests and everything else from *My account → Notifications*
+
+The installer is not signed (yet): on first launch Windows says "Windows protected your PC" – click
+**More info → Run anyway**. The code lives in [`desktop/`](desktop/); GitHub Actions builds the
+installer for every new app version.
+
 ## 🛠️ Development
 
 ```bash
@@ -283,6 +297,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 **Stage 4 – AI, monitoring & fun**
 
 - ✅ VibeWorks as an MCP server for Claude Code – tasks, notes and docs right from Claude
+- ✅ Windows app with tray, quick capture via shortcut, Windows notifications and auto-update
 - ⏳ Live monitoring: availability, response time, SSL expiry, uptime bar and an automatic screenshot as cover image
 - ⏳ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
 - ⏳ Activity heatmap across all projects, streaks and small achievements

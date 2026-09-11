@@ -15,7 +15,7 @@
 
 **Projekte, Aufgaben, Notizen und Commits an einem Ort – auf deinem eigenen Server.**
 
-[Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Entwicklung](#%EF%B8%8F-entwicklung)
+[Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Windows-App](#-windows-app) · [Entwicklung](#%EF%B8%8F-entwicklung)
 
 <br>
 
@@ -223,6 +223,20 @@ jede Änderung steht im Verlauf des Projekts. Von jedem Schlüssel wird nur ein 
 kannst ihn jederzeit widerrufen. Andere MCP-Clients verbinden sich per Streamable HTTP mit
 `/api/mcp` und demselben Header.
 
+## 🪟 Windows-App
+
+**[⬇️ VibeWorks-Setup.exe herunterladen](https://github.com/MoinMornhart/vibeworks/releases/download/desktop-latest/VibeWorks-Setup.exe)** –
+ausführen, Adresse deines Servers eintragen, anmelden. Die App aktualisiert sich danach selbst.
+
+- **Eigenes Fenster** statt Browser-Tab, mit Startmenü-Eintrag
+- **Tray neben der Uhr** – Schließen lässt die App im Hintergrund weiterlaufen (abschaltbar)
+- **Schnellerfassung mit <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>** – aus jedem Programm heraus eine Idee oder Aufgabe festhalten
+- **Windows-Benachrichtigungen** für fällige Aufgaben, rote CI, Zugriffsanfragen und alles andere aus *Mein Konto → Benachrichtigungen*
+
+Der Installer ist (noch) nicht signiert: Beim ersten Start meldet Windows „Der Computer wurde durch
+Windows geschützt“ – dann auf **Weitere Informationen → Trotzdem ausführen** klicken. Der Code liegt
+in [`desktop/`](desktop/); GitHub Actions baut bei jeder neuen App-Version den Installer.
+
 ## 🛠️ Entwicklung
 
 ```bash
@@ -281,6 +295,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 **Stufe 4 – KI, Überwachung & Spaß**
 
 - ✅ VibeWorks als MCP-Server für Claude Code – Aufgaben, Notizen und Docs direkt aus Claude heraus
+- ✅ Windows-App mit Tray, Schnellerfassung per Tastenkürzel, Windows-Benachrichtigungen und Auto-Update
 - ⏳ Live-Überwachung: Erreichbarkeit, Antwortzeit, SSL-Ablauf, Uptime-Balken und automatischer Screenshot als Titelbild
 - ⏳ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
 - ⏳ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge

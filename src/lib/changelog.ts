@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.3.9",
+    date: "2026-09-11",
+    title: "VibeWorks für Windows",
+    titleEn: "VibeWorks for Windows",
+    changes: [
+      {
+        type: "neu",
+        text: "Windows-App zum Herunterladen: eigenes Fenster, Tray neben der Uhr, Schnellerfassung mit Strg+Alt+V aus jedem Programm und automatische Updates",
+        en: "Windows app to download: its own window, tray next to the clock, quick capture with Ctrl+Alt+V from any program and automatic updates",
+      },
+      {
+        type: "neu",
+        text: "Benachrichtigungen kommen in der Windows-App als Windows-Meldung – der Test-Knopf funktioniert jetzt auch ganz ohne ntfy, Webhook oder E-Mail",
+        en: "Notifications show up in the Windows app as Windows notifications – the test button now also works without ntfy, webhook or email",
+      },
+      {
+        type: "neu",
+        text: "Schnellerfassung als eigene Seite (/capture) für das kleine Fenster der App",
+        en: "Quick capture as its own page (/capture) for the app's small window",
+      },
+    ],
+  },
+  {
     version: "0.3.8",
     date: "2026-09-11",
     title: "Claude Code direkt anbinden (MCP-Server)",

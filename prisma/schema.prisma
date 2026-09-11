@@ -136,6 +136,7 @@ model User {
   accessRequests AccessRequest[]
   gitCredentials GitCredential[]
   apiTokens      ApiToken[]
+  notifications  Notification[]
   templates      ProjectTemplate[]
   notificationSettings NotificationSettings?
 
@@ -390,6 +391,20 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Posteingang der Benachrichtigungen – die Windows-App holt ihn ab; nach 30 Tagen gelöscht.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     String
+  title     String
+  message   String
+  url       String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 /// Benachrichtigungen eines Kontos: Kanäle und Anlässe

@@ -56,6 +56,8 @@ const de = {
     pickProject: "Bitte ein Projekt wählen.",
     createdIdea: "Idee „{name}“",
     createdTask: "Aufgabe „{title}“ in {project}",
+    desktopHint: "Enter legt an · Esc schließt",
+    close: "Schließen",
   },
   changelog: {
     version: "Version {version}",
@@ -139,6 +141,8 @@ const en: Shape<typeof de> = {
     pickProject: "Please choose a project.",
     createdIdea: "Idea “{name}”",
     createdTask: "Task “{title}” in {project}",
+    desktopHint: "Enter creates · Esc closes",
+    close: "Close",
   },
   changelog: {
     version: "Version {version}",

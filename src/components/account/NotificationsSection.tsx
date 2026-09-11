@@ -144,13 +144,14 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
           <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
             <Save size={14} /> {t("save")}
           </button>
-          <button type="button" className="btn btn-sm" disabled={busy || (!form.ntfyUrl && !form.webhookUrl && !form.email)} onClick={() => void test()}>
+          <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void test()}>
             <Send size={14} /> {busy ? t("testing") : t("test")}
           </button>
         </div>
 
         {notice && <p role="status" className="text-sm text-emerald-400">{notice}</p>}
-        {results && (
+        {results && results.length === 0 && <p role="status" className="text-sm text-emerald-400">{t("testInbox")}</p>}
+        {results && results.length > 0 && (
           <ul className="space-y-1 text-sm" aria-live="polite">
             {results.map((r) => (
               <li key={r.channel} className={r.ok ? "flex items-start gap-2 text-emerald-400" : "flex items-start gap-2 text-red-400"}>

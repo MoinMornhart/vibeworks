@@ -1,19 +1,21 @@
 import { db } from "@/lib/db";
-import { ApiError, json, route } from "@/lib/api";
+import { json, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
-import { appLink, deliver, notificationView } from "@/lib/notify";
+import { appLink, deliver, hasChannel, notificationView, storeInbox } from "@/lib/notify";
+import type { Notice } from "@/lib/notify/format";
 import { getT } from "@/lib/i18n/server";
-import { tk } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
-// Testnachricht an alle eingetragenen Kanäle – mit Ergebnis je Kanal.
+// Testnachricht: immer in den Posteingang (Windows-App), dazu an alle
+// eingetragenen Kanäle – mit Ergebnis je Kanal.
 export const POST = route(async () => {
   const user = await requireApiUser();
   limitOrThrow(`notify-test:${user.id}`, 10, 10 * MINUTE);
   const s = await db.notificationSettings.findUnique({ where: { userId: user.id } });
-  if (!s || (!s.ntfyUrl && !s.webhookUrl && !s.email)) throw new ApiError(400, tk("notify", "errors.noChannel"));
   const t = await getT("notify");
-  const results = await deliver(s, { event: "test", title: t("events.test.title"), message: t("events.test.message"), url: appLink("/account") });
+  const notice: Notice = { event: "test", title: t("events.test.title"), message: t("events.test.message"), url: appLink("/account") };
+  await storeInbox(user.id, notice);
+  const results = s && hasChannel(s) ? await deliver(s, notice) : [];
   const fresh = await db.notificationSettings.findUnique({ where: { userId: user.id } });
   return json({ results, settings: notificationView(fresh) });
 });

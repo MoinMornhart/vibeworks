@@ -58,14 +58,28 @@ export async function deliver(s: NotificationSettings, notice: Notice): Promise<
   return results;
 }
 
-/** Ein Konto über einen Anlass benachrichtigen – sofern es ihn eingeschaltet und einen Kanal hat. */
+/** Posteingang – die Windows-App holt ihn ab und zeigt daraus Windows-Meldungen. */
+export async function storeInbox(userId: string, n: Notice): Promise<void> {
+  await db.notification.create({ data: { userId, event: n.event, title: n.title.slice(0, 300), message: n.message.slice(0, 4000), url: n.url } });
+}
+
+export const hasChannel = (s: NotificationSettings) => Boolean(s.ntfyUrl || s.webhookUrl || s.email);
+
+/**
+ * Ein Konto über einen Anlass benachrichtigen – sofern es ihn nicht
+ * ausgeschaltet hat: immer in den Posteingang, dazu an die eingetragenen Kanäle.
+ */
 export async function notifyUser(userId: string, event: NotifyEvent, build: (t: TFunction<"notify">, locale: Locale) => Notice): Promise<void> {
   try {
-    const s = await db.notificationSettings.findUnique({ where: { userId }, include: { user: { select: { locale: true, active: true } } } });
-    if (!s || !s.user.active || !eventsOf(s.events)[event]) return;
-    if (!s.ntfyUrl && !s.webhookUrl && !s.email) return;
-    const locale: Locale = isLocale(s.user.locale) ? s.user.locale : "de";
-    await deliver(s, build(makeT(locale, "notify"), locale));
+    const [s, user] = await Promise.all([
+      db.notificationSettings.findUnique({ where: { userId } }),
+      db.user.findUnique({ where: { id: userId }, select: { locale: true, active: true } }),
+    ]);
+    if (!user?.active || (s && !eventsOf(s.events)[event])) return;
+    const locale: Locale = isLocale(user.locale) ? user.locale : "de";
+    const notice = build(makeT(locale, "notify"), locale);
+    await storeInbox(userId, notice);
+    if (s && hasChannel(s)) await deliver(s, notice);
   } catch (err) {
     console.error("[notify]", event, err);
   }

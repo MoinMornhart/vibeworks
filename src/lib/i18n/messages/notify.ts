@@ -6,7 +6,7 @@ import { plural } from "../translate";
 const de = {
   section: {
     title: "Benachrichtigungen",
-    description: "VibeWorks meldet sich, wenn etwas passiert – per Push aufs Handy (ntfy), an einen Webhook (z. B. Discord) oder per E-Mail.",
+    description: "VibeWorks meldet sich, wenn etwas passiert – per Push aufs Handy (ntfy), an einen Webhook (z. B. Discord) oder per E-Mail. Die Windows-App zeigt alles zusätzlich als Windows-Meldung.",
   },
   ntfy: {
     label: "ntfy – Push aufs Handy",
@@ -38,6 +38,7 @@ const de = {
   saved: "Gespeichert.",
   test: "Test senden",
   testing: "Sende …",
+  testInbox: "Im Posteingang – die Windows-App zeigt sie gleich als Windows-Meldung.",
   testOk: "{channel}: angekommen",
   testFailed: "{channel}: {error}",
   lastError: "Letzter Fehler ({channel}): {error}",
@@ -85,7 +86,7 @@ const de = {
 const en: Shape<typeof de> = {
   section: {
     title: "Notifications",
-    description: "VibeWorks lets you know when something happens – as a push to your phone (ntfy), to a webhook (e.g. Discord) or by email.",
+    description: "VibeWorks lets you know when something happens – as a push to your phone (ntfy), to a webhook (e.g. Discord) or by email. The Windows app also shows everything as a Windows notification.",
   },
   ntfy: {
     label: "ntfy – push to your phone",
@@ -117,6 +118,7 @@ const en: Shape<typeof de> = {
   saved: "Saved.",
   test: "Send test",
   testing: "Sending …",
+  testInbox: "In the inbox – the Windows app shows it as a Windows notification in a moment.",
   testOk: "{channel}: delivered",
   testFailed: "{channel}: {error}",
   lastError: "Last error ({channel}): {error}",
