@@ -282,6 +282,7 @@ model Project {
   accessRequests AccessRequest[]
   uptimeChecks   UptimeCheck[]
   prompts        Prompt[]
+  costs          ProjectCost[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -421,6 +422,27 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Laufende oder einmalige Kosten eines Projekts (Hosting, Domain, KI-API …).
+model ProjectCost {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  amountCents Int
+  currency    String   @default("EUR")
+  /// MONTHLY | YEARLY | ONCE
+  interval    String   @default("MONTHLY")
+  /// Nächste Verlängerung "YYYY-MM-DD" – rückt nach dem Termin von selbst weiter
+  renewsOn    String?
+  note        String?
+  /// Für welche Verlängerung schon gewarnt wurde
+  notifiedFor String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 /// Prompt-Bibliothek eines Kontos – allgemein oder an ein Projekt gebunden.

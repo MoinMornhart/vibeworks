@@ -33,6 +33,7 @@ const de = {
     issueClosed: "Aufgaben wurden per Git erledigt (Issue geschlossen)",
     ciFailed: "Die CI eines Projekts ist fehlgeschlagen",
     siteDown: "Eine Live-Seite fällt aus, ist wieder da oder ihr Zertifikat läuft bald ab",
+    renewal: "Eine Verlängerung steht an (z. B. Domain) – zwei Wochen vorher",
     updated: "VibeWorks wurde aktualisiert",
   },
   save: "Speichern",
@@ -74,6 +75,10 @@ const de = {
     sslExpiring: {
       title: "Zertifikat läuft ab: {project}",
       message: plural("Das SSL-Zertifikat von {host} läuft in {n} Tag ab.", "Das SSL-Zertifikat von {host} läuft in {n} Tagen ab."),
+    },
+    renewal: {
+      title: "Verlängerung: {name} ({project})",
+      message: plural("Am {date} – in {n} Tag – für {amount}.", "Am {date} – in {n} Tagen – für {amount}."),
     },
     test: { title: "Test von VibeWorks", message: "Wenn du das liest, kommt der Kanal an. 🎉" },
   },
@@ -120,6 +125,7 @@ const en: Shape<typeof de> = {
     issueClosed: "Tasks were completed via Git (issue closed)",
     ciFailed: "A project's CI failed",
     siteDown: "A live site goes down, comes back or its certificate is about to expire",
+    renewal: "A renewal is coming up (e.g. a domain) – two weeks ahead",
     updated: "VibeWorks was updated",
   },
   save: "Save",
@@ -161,6 +167,10 @@ const en: Shape<typeof de> = {
     sslExpiring: {
       title: "Certificate expiring: {project}",
       message: plural("The SSL certificate of {host} expires in {n} day.", "The SSL certificate of {host} expires in {n} days."),
+    },
+    renewal: {
+      title: "Renewal: {name} ({project})",
+      message: plural("On {date} – in {n} day – for {amount}.", "On {date} – in {n} days – for {amount}."),
     },
     test: { title: "Test from VibeWorks", message: "If you can read this, the channel works. 🎉" },
   },

@@ -303,7 +303,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Live-Überwachung: Erreichbarkeit, Antwortzeit, SSL-Ablauf und Uptime-Balken
 - ✅ Projekt-Friedhof: Anstupsen nach 30 Tagen Ruhe, Grabstein mit Lebensdauer – und Wiederbelebung
 - ✅ Aktivitäts-Heatmap über alle Projekte, Streaks und kleine Erfolge
-- ⏳ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
+- ✅ Kosten je Projekt (Hosting, Domain, KI-APIs) mit Warnung vor Domain-Ablauf
 - ✅ Prompt-Bibliothek und CLAUDE.md-Generator aus Beschreibung, Notizen und Aufgaben
 - ⏳ Ideen-Eingang per ntfy, E-Mail oder „Teilen“ vom Handy (PWA)
 - ⏳ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick

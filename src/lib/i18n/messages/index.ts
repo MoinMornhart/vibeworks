@@ -25,11 +25,12 @@ import grave from "./grave";
 import today from "./today";
 import stats from "./stats";
 import prompts from "./prompts";
+import costs from "./costs";
 
 // Alle Übersetzungen, nach Namensräumen. Übersetzungsdateien importieren nur
 // ../types und ../translate – nie App-Code, sonst entstehen Zirkelbezüge.
 
-export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts };
+export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs };
 
 export type Namespace = keyof typeof MESSAGES;
 export type Key<N extends Namespace> = Leaves<(typeof MESSAGES)[N]["de"]>;

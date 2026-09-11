@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.5",
+    date: "2026-09-12",
+    title: "Kosten je Projekt",
+    titleEn: "Costs per project",
+    changes: [
+      {
+        type: "neu",
+        text: "Projektseite → Kosten: Hosting, Domain, KI-API & Co. monatlich, jährlich oder einmalig eintragen, mit Summen pro Monat und Jahr",
+        en: "Project page → Costs: add hosting, domain, AI APIs & co. monthly, yearly or one-off, with totals per month and year",
+      },
+      {
+        type: "neu",
+        text: "Übersicht /costs: alle Kosten je Währung, anstehende Verlängerungen der nächsten 60 Tage und je Projekt",
+        en: "Overview /costs: all costs per currency, renewals in the next 60 days and per project",
+      },
+      {
+        type: "neu",
+        text: "Zwei Wochen vor einer Verlängerung (z. B. Domain) kommt eine Benachrichtigung; vergangene Termine rücken von selbst weiter",
+        en: "Two weeks before a renewal (e.g. a domain) you get a notification; past dates move on by themselves",
+      },
+    ],
+  },
+  {
     version: "0.4.4",
     date: "2026-09-12",
     title: "Prompt-Bibliothek & CLAUDE.md",

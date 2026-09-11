@@ -3,6 +3,7 @@ import { PROJECT_ACCENTS } from "./status";
 import { normalizeTags } from "./utils";
 import { tk } from "./i18n/messages";
 import { CAUSES } from "./grave";
+import { CURRENCIES, INTERVALS } from "./costs";
 
 export const usernameSchema = z
   .string()
@@ -95,6 +96,29 @@ export const projectCreateSchema = z.object({
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();
+
+// ── Kosten ──────────────────────────────────────────────────
+
+const dayKeyOrNull = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => v || null)
+  .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), tk("validation", "invalidDate"));
+
+export const costSchema = z.object({
+  name: z.string().trim().min(1, tk("validation", "nameMissing")).max(80),
+  // „12,99“ oder 12.99 – gespeichert in Cent
+  amount: z
+    .union([z.number(), z.string()])
+    .transform((v) => Number(String(v).trim().replace(/\s/g, "").replace(",", ".")))
+    .refine((v) => Number.isFinite(v) && v >= 0 && v <= 10_000_000, tk("costs", "errors.amount"))
+    .transform((v) => Math.round(v * 100)),
+  currency: z.enum(CURRENCIES).default("EUR"),
+  interval: z.enum(INTERVALS).default("MONTHLY"),
+  renewsOn: dayKeyOrNull,
+  note: z.string().trim().max(500).nullish().transform((v) => v || null),
+});
 
 // ── Prompts ─────────────────────────────────────────────────
 

@@ -21,6 +21,7 @@ const de = {
   liveUrl: "Bitte eine Adresse mit http:// oder https://",
   serverTooLong: "Adresse zu lang",
   nameMissing: "Name fehlt",
+  invalidDate: "Bitte ein Datum im Format JJJJ-MM-TT.",
   nameMax120: "Name: höchstens 120 Zeichen",
   note: {
     tooLong: "Notiz: höchstens 50 000 Zeichen",
@@ -59,6 +60,7 @@ const en: Shape<typeof de> = {
   liveUrl: "Please enter an address starting with http:// or https://",
   serverTooLong: "Address too long",
   nameMissing: "Name is missing",
+  invalidDate: "Please enter a date as YYYY-MM-DD.",
   nameMax120: "Name: at most 120 characters",
   note: {
     tooLong: "Note: at most 50,000 characters",

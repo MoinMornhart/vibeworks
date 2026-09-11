@@ -305,7 +305,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Live monitoring: availability, response time, SSL expiry and uptime bar
 - ✅ Project graveyard: a nudge after 30 quiet days, a tombstone with lifespan – and resurrection
 - ✅ Activity heatmap across all projects, streaks and small achievements
-- ⏳ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
+- ✅ Costs per project (hosting, domain, AI APIs) with a warning before a domain expires
 - ✅ Prompt library and a CLAUDE.md generator from description, notes and tasks
 - ⏳ Idea inbox via ntfy, email or "share" from your phone (PWA)
 - ⏳ Time tracking and focus timer per task, evaluated in the weekly review

@@ -18,6 +18,8 @@ import { AutoRefresh } from "@/lib/client/useAutoRefresh";
 import { analyzeProgress, progressInput } from "@/lib/progress";
 import { liveStats } from "@/lib/monitor/stats";
 import { LivePanel } from "@/components/live/LivePanel";
+import { CostPanel } from "@/components/costs/CostPanel";
+import { serializeCost } from "@/lib/costs";
 import { dayKey } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
@@ -40,6 +42,7 @@ const loadProject = cache(async (id: string) => {
       accessRequests: { where: { status: "PENDING" }, select: { id: true } },
       notes: { orderBy: NOTE_ORDER },
       tasks: { orderBy: TASK_ORDER },
+      costs: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!project) return null;
@@ -56,7 +59,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
   const { project, access } = loaded;
-  const { notes, tasks, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const live = project.liveUrl ? await liveStats(project.id) : null;
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
@@ -103,6 +106,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       )}
       <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={readOnly} />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={readOnly} />
+      <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={!readOnly} />
       <GitPanel
         projectId={project.id}
         repoUrl={project.repoUrl}

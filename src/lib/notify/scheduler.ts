@@ -2,7 +2,9 @@ import { db } from "@/lib/db";
 import { visibleTo } from "@/lib/access";
 import { CHANGELOG } from "@/lib/changelog";
 import { getSettings } from "@/lib/settings";
-import { dayKeyToDate, formatDue } from "@/lib/taskDates";
+import { dayKeyToDate, diffDays, formatDue } from "@/lib/taskDates";
+import { formatMoney, INTERVALS, nextRenewal, RENEWAL_WARN_DAYS, type CostInterval } from "@/lib/costs";
+import { INTL_LOCALE } from "@/lib/i18n/config";
 import { addDaysKey } from "@/lib/weeks";
 import { dayKey, TIME_ZONE } from "@/lib/utils";
 import { eventsOf } from "./format";
@@ -69,6 +71,46 @@ export async function runVersionCheck(): Promise<void> {
   }
 }
 
+/**
+ * Kosten: vergangene Verlängerungen auf den nächsten Termin schieben und zwei
+ * Wochen vorher einmal warnen (je Termin höchstens eine Meldung).
+ */
+export async function runRenewals(now = new Date()): Promise<number> {
+  const today = dayKey(now);
+  const costs = await db.projectCost.findMany({
+    where: { renewsOn: { not: null }, project: { buriedAt: null } },
+    include: { project: { select: { id: true, name: true, ownerId: true } } },
+  });
+  let warned = 0;
+  for (const c of costs) {
+    const interval = (INTERVALS as readonly string[]).includes(c.interval) ? (c.interval as CostInterval) : "MONTHLY";
+    let renewsOn = c.renewsOn!;
+    let notifiedFor = c.notifiedFor;
+    const next = nextRenewal(renewsOn, interval, today)!;
+    if (next !== renewsOn) {
+      renewsOn = next;
+      notifiedFor = null;
+      await db.projectCost.update({ where: { id: c.id }, data: { renewsOn, notifiedFor: null } });
+    }
+    if (interval === "ONCE") continue;
+    const days = diffDays(today, renewsOn);
+    if (days < 0 || days > RENEWAL_WARN_DAYS || notifiedFor === renewsOn) continue;
+    await db.projectCost.update({ where: { id: c.id }, data: { notifiedFor: renewsOn } });
+    await notifyUser(c.project.ownerId, "renewal", (t, locale) => ({
+      event: "renewal",
+      title: t("events.renewal.title", { name: c.name, project: c.project.name }),
+      message: t("events.renewal.message", {
+        date: new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(dayKeyToDate(renewsOn)),
+        n: days,
+        amount: formatMoney(c.amountCents, c.currency, locale),
+      }),
+      url: appLink(`/projects/${c.project.id}`),
+    }));
+    warned++;
+  }
+  return warned;
+}
+
 const g = globalThis as typeof globalThis & { __vwNotifyScheduler?: boolean };
 
 export function startNotifyScheduler() {
@@ -76,7 +118,10 @@ export function startNotifyScheduler() {
   g.__vwNotifyScheduler = true;
   const log = (err: unknown) => console.error("[notify]", err);
   setTimeout(() => void runVersionCheck().catch(log), 15_000).unref?.();
-  const tick = () => void runDigest().catch(log);
+  const tick = () => {
+    void runDigest().catch(log);
+    void runRenewals().catch(log);
+  };
   setTimeout(tick, 30_000).unref?.();
   setInterval(tick, 10 * 60_000).unref?.();
 }
