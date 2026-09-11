@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { DemoLogin } from "@/components/auth/DemoLogin";
+import { config } from "@/lib/config";
 import { isSetupDone, registrationOpen } from "@/lib/settings";
 import { currentUser } from "@/lib/auth/guard";
 import { safeNext } from "@/lib/validation";
@@ -20,6 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const t = await getT("auth");
   return (
     <AuthShell title={t("login.title")} subtitle={t("login.subtitle")}>
+      {config.demoMode && <DemoLogin next={next} />}
       <LoginForm next={next} allowRegistration={await registrationOpen()} />
     </AuthShell>
   );

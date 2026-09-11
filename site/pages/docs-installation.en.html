@@ -16,6 +16,8 @@
     <tr><td>Network</td><td><code>vmbr0</code>, DHCP</td></tr>
   </table>
   <p><b>Advanced</b> mode lets you set everything individually: container ID, hostname, resources, static IP, VLAN, storage and a root password.</p>
+  <h3>Demo instance</h3>
+  <p>Pick <b>Demo-Instanz</b> in the menu (or prefix <code>VIBEWORKS_DEMO=1</code>): VibeWorks then creates sample projects by itself, visitors get in with “Open the demo” without a password, everything is read-only, and the demo starts over every night. It only resets while the instance knows nothing but the demo account – an instance with real accounts stays untouched.</p>
 
   <h2>Without Proxmox (Debian 12/13, Ubuntu 24.04)</h2>
   <div class="code"><code id="c2">apt-get update &amp;&amp; apt-get install -y curl

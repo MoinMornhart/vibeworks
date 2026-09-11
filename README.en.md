@@ -323,7 +323,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 **Website**
 
 - ✅ Landing page on GitHub Pages with a copyable install command – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/en/)
-- ⏳ Live demo with a read-only demo account
+- ✅ Demo mode with a read-only demo account, sample data and a nightly reset ([demo instance](docs/INSTALLATION.en.md#demo-instance))
+- ⏳ Public live demo
 - ✅ Docs pages in English and German
 - ✅ Short demo GIF: task → issue → Claude → done
 

@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.2",
+    date: "2026-09-13",
+    title: "Demo-Modus",
+    titleEn: "Demo mode",
+    changes: [
+      {
+        type: "neu",
+        text: "Demo-Instanz mit DEMO_MODE=true: Besucher kommen mit „Demo ansehen“ ohne Passwort hinein, alles ist schreibgeschützt, Beispielprojekte entstehen von selbst und jede Nacht neu",
+        en: "Demo instance with DEMO_MODE=true: visitors get in with “Open the demo” without a password, everything is read-only, sample projects are created automatically and afresh every night",
+      },
+      {
+        type: "neu",
+        text: "Der Proxmox-Installer bietet „Demo-Instanz“ als dritte Wahl (oder VIBEWORKS_DEMO=1)",
+        en: "The Proxmox installer offers “Demo-Instanz” as a third choice (or VIBEWORKS_DEMO=1)",
+      },
+    ],
+  },
+  {
     version: "0.5.1",
     date: "2026-09-13",
     title: "Vorführ-GIF",

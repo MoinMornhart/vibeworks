@@ -16,6 +16,8 @@ set -euo pipefail
 VIBEWORKS_REPO="${VIBEWORKS_REPO:-https://github.com/MoinMornhart/vibeworks.git}"
 REF_EXPLICIT="${VIBEWORKS_REF:-}"
 VIBEWORKS_REF="${VIBEWORKS_REF:-main}"
+# 1 = Demo-Instanz: setzt DEMO_MODE=true in der .env
+VIBEWORKS_DEMO="${VIBEWORKS_DEMO:-0}"
 
 BASE_DIR="/opt/vibeworks"
 REPO_DIR="$BASE_DIR/repo"
@@ -210,6 +212,10 @@ else
   env_ensure APP_SECRET "$(openssl rand -hex 32)"
   env_ensure DATABASE_URL "postgresql://${DB_USER}:${DB_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
   env_ensure DATA_DIR "$DATA_DIR"
+fi
+if [[ "$VIBEWORKS_DEMO" == "1" ]]; then
+  env_ensure DEMO_MODE true
+  ok "Demo-Modus eingeschaltet (DEMO_MODE=true)."
 fi
 chown "$APP_USER:$APP_USER" "$ENV_FILE"
 chmod 0600 "$ENV_FILE"

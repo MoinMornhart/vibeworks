@@ -56,7 +56,7 @@ export function SharedProjects({ projects }: { projects: SharedProjectCard[] }) 
       <h2 id="shared-heading" className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
         <Users size={15} /> {t("shared.heading")} <span className="font-normal">{projects.length}</span>
       </h2>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {projects.map((p) => {
           const accent = PROJECT_ACCENTS[p.accent] ?? PROJECT_ACCENTS.violet;
           const status = PROJECT_STATUS_MAP[p.status];

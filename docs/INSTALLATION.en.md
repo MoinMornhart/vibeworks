@@ -50,6 +50,26 @@ VIBEWORKS_REF=dev bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMo
 
 `VIBEWORKS_REPO` sets a different Git repository (for example a fork).
 
+### Demo instance
+
+Pick “Demo-Instanz” in the menu or prefix the command with `VIBEWORKS_DEMO=1`:
+
+```bash
+VIBEWORKS_DEMO=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/proxmox.sh)"
+```
+
+This sets `DEMO_MODE=true` in the `.env` (doing it by hand works the same, then
+`systemctl restart vibeworks`). Then:
+
+- The app creates a demo account with sample projects on start – no setup page.
+- On the sign-in page, **Open the demo** gets you in without a password.
+- Everything is read-only: the server rejects changes, and a bar above every page says so.
+- Every night at 3 am the sample data is created afresh.
+
+It only resets while the instance knows nothing but the demo account. If `DEMO_MODE` is
+switched on by mistake on an instance with real accounts, nothing gets deleted there – it is
+just read-only.
+
 ## Installing without Proxmox (Debian 12/13, Ubuntu 24.04)
 
 On a fresh system as root:

@@ -52,6 +52,10 @@ export const config = {
   get gitBlockPrivate(): boolean {
     return process.env.GIT_BLOCK_PRIVATE === "true";
   },
+  /** Demo-Instanz: alles schreibgeschützt, Beispieldaten, jede Nacht neu angelegt. */
+  get demoMode(): boolean {
+    return process.env.DEMO_MODE === "true";
+  },
   get secureCookies() {
     return this.appUrl.startsWith("https://");
   },

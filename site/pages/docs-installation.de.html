@@ -16,6 +16,8 @@
     <tr><td>Netzwerk</td><td><code>vmbr0</code>, DHCP</td></tr>
   </table>
   <p>Im Modus <b>Erweitert</b> lässt sich alles einzeln einstellen: Container-ID, Hostname, Ressourcen, statische IP, VLAN, Storage und ein Root-Passwort.</p>
+  <h3>Demo-Instanz</h3>
+  <p>Im Menü <b>Demo-Instanz</b> wählen (oder <code>VIBEWORKS_DEMO=1</code> voranstellen): VibeWorks legt dann selbst Beispielprojekte an, Besucher kommen mit „Demo ansehen“ ohne Passwort hinein, alles ist schreibgeschützt, und jede Nacht beginnt die Demo von vorn. Zurückgesetzt wird nur, solange die Instanz ausschließlich das Demo-Konto kennt – eine Instanz mit echten Konten bleibt unangetastet.</p>
 
   <h2>Ohne Proxmox (Debian 12/13, Ubuntu 24.04)</h2>
   <div class="code"><code id="c2">apt-get update &amp;&amp; apt-get install -y curl

@@ -257,7 +257,7 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
   const toggleStatus = (s: ProjectStatus) => setStatuses((list) => (list.includes(s) ? list.filter((x) => x !== s) : [...list, s]));
 
   const grid = (list: ProjectListItem[]) => (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {list.map((p, i) => (
         <ProjectCard key={p.id} project={p} index={i} {...handlers} {...selection(p)} />
       ))}

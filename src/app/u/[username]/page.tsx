@@ -78,7 +78,7 @@ export default async function PortfolioPage({ params }: Props) {
       {projects.length === 0 ? (
         <p className="glass px-6 py-14 text-center text-muted">{t("page.empty")}</p>
       ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const status = PROJECT_STATUS_MAP[p.status];
             const accent = PROJECT_ACCENTS[p.accent] ?? PROJECT_ACCENTS.violet;

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { z, ZodTypeAny } from "zod";
 import { msgKey } from "./i18n/translate";
+import { config } from "./config";
+import { demoAllows } from "./demoGuard";
 
 // Gemeinsamer Rahmen für alle API-Routen: CSRF-Prüfung bei schreibenden
 // Methoden, JSON-Body mit Größenlimit und Zod-Validierung, einheitliche
@@ -94,6 +96,8 @@ export function route<P = Record<string, never>>(fn: Handler<P>): Handler<P> {
   return async (req, ctx) => {
     try {
       if (!SAFE_METHODS.has(req.method)) assertSameOrigin(req);
+      // Demo-Instanz: schreibgeschützt bis auf An-/Abmelden und Sprache
+      if (config.demoMode && !demoAllows(req.method, req.nextUrl.pathname)) throw new ApiError(403, "errors.demoReadOnly");
       return await fn(req, ctx);
     } catch (err) {
       // redirect()/notFound() aus next/navigation durchreichen

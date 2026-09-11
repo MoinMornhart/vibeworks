@@ -11,11 +11,13 @@
 #    VIBEWORKS_REF    Branch/Tag/Commit (Standard: main)
 #    VIBEWORKS_REPO   Git-Repository (Standard: GitHub-Repo von VibeWorks)
 #    VIBEWORKS_RAW    Basis-URL für Rohdateien (Standard: aus dem Repo abgeleitet)
+#    VIBEWORKS_DEMO   1 = Demo-Instanz (schreibgeschützt, Beispieldaten, nachts neu)
 # =============================================================================
 set -euo pipefail
 
 VIBEWORKS_REPO="${VIBEWORKS_REPO:-https://github.com/MoinMornhart/vibeworks.git}"
 VIBEWORKS_REF="${VIBEWORKS_REF:-main}"
+VIBEWORKS_DEMO="${VIBEWORKS_DEMO:-0}"
 if [[ -z "${VIBEWORKS_RAW:-}" ]]; then
   if [[ "$VIBEWORKS_REPO" =~ github\.com[/:]([^/]+)/([^/]+)$ ]]; then
     VIBEWORKS_RAW="https://raw.githubusercontent.com/${BASH_REMATCH[1]}/${BASH_REMATCH[2]%.git}/${VIBEWORKS_REF}"
@@ -155,11 +157,14 @@ CT_PASSWORD=""
 ADVANCED=0
 
 MODE="$(whiptail --backtitle "$BACKTITLE" --title "$TITLE" --menu \
-  "Wie soll VibeWorks installiert werden?" 14 70 2 \
+  "Wie soll VibeWorks installiert werden?" 15 74 3 \
   "standard"  "Standard-Installation (empfohlen)" \
   "erweitert" "Erweitert – alle Einstellungen selbst wählen" \
+  "demo"      "Demo-Instanz – schreibgeschützt, mit Beispieldaten" \
   3>&1 1>&2 2>&3)" || cancelled
 [[ "$MODE" == "erweitert" ]] && ADVANCED=1
+[[ "$MODE" == "demo" ]] && VIBEWORKS_DEMO=1
+[[ "$VIBEWORKS_DEMO" == "1" ]] && CT_HOSTNAME="vibeworks-demo"
 
 if [[ $ADVANCED -eq 1 ]]; then
   while true; do
@@ -220,6 +225,8 @@ ROOT_STORAGE="$(pick_storage rootdir local-lvm "$ADVANCED" "Storage für die Con
 NET_DESC="DHCP"
 [[ "$CT_IP" != "dhcp" ]] && NET_DESC="$CT_IP, Gateway $CT_GW"
 [[ -n "$CT_VLAN" ]] && NET_DESC+=", VLAN $CT_VLAN"
+DEMO_DESC="nein"
+[[ "$VIBEWORKS_DEMO" == "1" ]] && DEMO_DESC="ja – schreibgeschützt, Beispieldaten jede Nacht neu"
 
 whiptail --backtitle "$BACKTITLE" --title "$TITLE" --yesno "VibeWorks wird mit diesen Einstellungen installiert:
 
@@ -230,8 +237,9 @@ whiptail --backtitle "$BACKTITLE" --title "$TITLE" --yesno "VibeWorks wird mit d
   Netzwerk:       $CT_BRIDGE, $NET_DESC
   Template von:   $TPL_STORAGE
   Stand:          $VIBEWORKS_REF
+  Demo-Modus:     $DEMO_DESC
 
-Fortfahren?" 20 72 || cancelled
+Fortfahren?" 21 72 || cancelled
 
 header
 
@@ -331,6 +339,7 @@ step "Installiere VibeWorks im Container (Build dauert einige Minuten)"
 pct exec "$CTID" -- env \
   VIBEWORKS_REF="$VIBEWORKS_REF" \
   VIBEWORKS_REPO="$VIBEWORKS_REPO" \
+  VIBEWORKS_DEMO="$VIBEWORKS_DEMO" \
   LC_ALL=C.UTF-8 \
   bash -c "curl -fsSL '${VIBEWORKS_RAW}/install/vibeworks-install.sh' | bash" \
   || die "Die Installation im Container ist fehlgeschlagen."
@@ -373,5 +382,9 @@ printf '  Adresse:     %s%s%s\n\n' "$C_BOLD" "$APP_URL" "$C_RESET"
 printf '  Auf dem Host:    update · update --status · vibeworks domain <adresse> · vibeworks help\n'
 printf '  Im Container:    update   (hinein mit: vibeworks shell  bzw.  pct enter %s)\n' "$CTID"
 printf '  Auto-Update:     alle 15 Minuten, abschalten mit: vibeworks auto off\n\n'
+if [[ "$VIBEWORKS_DEMO" == "1" ]]; then
+  printf '  %sDemo-Modus:%s      an – Besucher kommen mit „Demo ansehen“ auf der Anmeldeseite hinein,\n' "$C_BOLD" "$C_RESET"
+  printf '                   alles ist schreibgeschützt, die Beispieldaten entstehen jede Nacht neu.\n\n'
+fi
 printf '%sHinweis:%s Passkeys funktionieren nur über HTTPS oder localhost – für Passkeys einen\n' "$C_YELLOW" "$C_RESET"
 printf 'Reverse Proxy mit Zertifikat davorsetzen und APP_URL anpassen (/opt/vibeworks/shared/.env).\n\n'

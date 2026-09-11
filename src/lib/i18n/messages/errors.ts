@@ -17,6 +17,7 @@ const de = {
   invalidValue: "Ungültiger Wert: {field}",
   internal: "Interner Fehler",
   rateLimited: plural("Zu viele Versuche. Bitte in {n} Minute erneut versuchen.", "Zu viele Versuche. Bitte in {n} Minuten erneut versuchen."),
+  demoReadOnly: "Das ist eine Demo – hier lässt sich nichts ändern. Installiere VibeWorks selbst, um alles auszuprobieren.",
 };
 
 const en: Shape<typeof de> = {
@@ -32,6 +33,7 @@ const en: Shape<typeof de> = {
   invalidValue: "Invalid value: {field}",
   internal: "Internal error",
   rateLimited: plural("Too many attempts. Please try again in {n} minute.", "Too many attempts. Please try again in {n} minutes."),
+  demoReadOnly: "This is a demo – nothing can be changed here. Install VibeWorks yourself to try everything.",
 };
 
 export default { de, en };

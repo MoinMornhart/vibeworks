@@ -147,7 +147,7 @@ export default async function SharedProjectPage({ params }: Props) {
           {t("public.tasks")}
           {project.tasks.length > 0 && <span className="rounded-full bg-fg/10 px-2 text-xs font-normal tabular-nums text-muted">{t("public.doneCount", { done, total: project.tasks.length })}</span>}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {TASK_STATUSES.map((s) => {
             const list = tasks.filter((t) => t.status === s.value);
             const label = ts(`task.${s.value}`);

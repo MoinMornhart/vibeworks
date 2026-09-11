@@ -321,7 +321,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 **Webseite**
 
 - ✅ Landingpage auf GitHub Pages mit Installationsbefehl zum Kopieren – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/)
-- ⏳ Live-Demo mit schreibgeschütztem Demo-Konto
+- ✅ Demo-Modus mit schreibgeschütztem Demo-Konto, Beispieldaten und nächtlichem Reset ([Demo-Instanz](docs/INSTALLATION.md#demo-instanz))
+- ⏳ Öffentliche Live-Demo
 - ✅ Doku-Seiten auf Deutsch und Englisch
 - ✅ Kurzes Vorführ-GIF: Aufgabe → Issue → Claude → erledigt
 

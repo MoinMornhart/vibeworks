@@ -239,7 +239,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
               <button className="btn btn-primary btn-sm" onClick={() => void create(null)}><Plus size={15} /> {t("tree.newPage")}</button>
             </div>
             <h2 className="mb-3 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">{t("home.recent")}</h2>
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {recent.map((d) => (
                 <li key={d.id}>
                   <Link href={`/docs/${d.id}`} className="lift flex items-center gap-3 rounded-xl border bg-bg/20 p-3">

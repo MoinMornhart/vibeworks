@@ -58,7 +58,7 @@ export function Graveyard({ graves }: { graves: Grave[] }) {
           <p className="mt-1 text-sm text-muted">{t("page.emptyHint")}</p>
         </div>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {graves.map((g) => (
             <li key={g.id} data-testid="grave" className="glass relative flex flex-col items-center overflow-hidden rounded-b-2xl rounded-t-[7rem] px-6 pb-6 pt-10 text-center">
               <div className="absolute inset-x-0 top-0 h-1 opacity-60" style={{ background: accentGradient(g.accent) }} />

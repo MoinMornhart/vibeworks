@@ -136,7 +136,7 @@ export function PromptLibrary({ initial, projects }: { initial: PromptItem[]; pr
       ) : visible.length === 0 ? (
         <p className="text-sm text-muted">{t("page.noHits")}</p>
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {visible.map((p) => (
             <li key={p.id} data-testid="prompt" className="glass flex flex-col p-5">
               <div className="flex items-start gap-2">
