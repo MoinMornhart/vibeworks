@@ -6,6 +6,7 @@ out/
 next-env.d.ts
 .vibeworks-build.json
 desktop/dist/
+_site/
 
 # Umgebung – enthält Geheimnisse
 .env

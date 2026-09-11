@@ -1,0 +1,72 @@
+<!-- {"path":"en/index.html","lang":"en","alt":"index.html","title":"VibeWorks – the control center for your vibe coding projects","description":"Self-hosted on Proxmox: projects, tasks, notes, commits, CI and Claude Code in one place – with a Windows app and auto-update."} -->
+<section class="hero">
+  <img class="banner" src="{{base}}assets/banner.en.svg" alt="VibeWorks – the self-hosted control center for your vibe coding projects" width="1200" height="300">
+  <h1>Your vibe coding projects.<br><span class="grad">In one place. On your server.</span></h1>
+  <p class="lead">Ideas, tasks, notes, commits, CI and Claude Code – VibeWorks gathers everything in one app that runs on your Proxmox and updates itself.</p>
+  <div class="cta">
+    <a class="btn primary" href="#install">Install on Proxmox</a>
+    <a class="btn" href="https://github.com/MoinMornhart/vibeworks/releases/download/desktop-latest/VibeWorks-Setup.exe">⬇️ Windows app</a>
+    <a class="btn" href="{{base}}en/docs/">Read the docs</a>
+  </div>
+</section>
+
+<section id="install" class="card">
+  <h2>Installed in a minute</h2>
+  <p>Run it on the Proxmox VE host – the installer creates a Debian container, installs everything and sets up automatic updates.</p>
+  <div class="code"><code id="cmd">bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/proxmox.sh)"</code><button class="copy" data-copy="#cmd">Copy</button></div>
+  <p class="small">Works without Proxmox too – a Debian or Ubuntu server is enough. <a href="{{base}}en/docs/installation.html">Installation guide →</a></p>
+</section>
+
+<section id="features">
+  <h2 class="center">What's inside</h2>
+  <div class="grid">
+    <article class="feature"><span>🗂️</span><h3>Projects</h3><p>Grid, list or kanban, status from idea to done. Progress can determine itself – from tasks, commits, CI and planning.</p></article>
+    <article class="feature"><span>🔀</span><h3>Tasks ↔ issues</h3><p>Tasks become issues on GitHub, GitLab or Gitea and sync back. Commits, CI status and a dependency check come with it.</p></article>
+    <article class="feature"><span>🤖</span><h3>Claude Code</h3><p>VibeWorks is an MCP server: Claude reads and completes your tasks, writes notes and docs – plus a CLAUDE.md generator and a prompt library.</p></article>
+    <article class="feature"><span>🪟</span><h3>Windows app</h3><p>Its own window, tray, quick capture with Ctrl+Alt+V from any program and Windows notifications. Updates itself.</p></article>
+    <article class="feature"><span>☀️</span><h3>Today &amp; focus</h3><p>Plan tasks from all projects for the day, track time, 25-minute focus timer. The weekly review shows where the time went.</p></article>
+    <article class="feature"><span>🔥</span><h3>Review</h3><p>An activity grid over the whole year, streaks, small achievements and a timeline across all projects.</p></article>
+    <article class="feature"><span>🌐</span><h3>Live monitoring</h3><p>Checks the finished site every 5 minutes: availability, response time, SSL expiry – with a notification when something goes down.</p></article>
+    <article class="feature"><span>💶</span><h3>Costs</h3><p>Hosting, domain, AI APIs per project – totals per month and year, a warning two weeks before every renewal.</p></article>
+    <article class="feature"><span>📥</span><h3>Idea inbox</h3><p>Drop ideas via “share” on your phone, a drop address or ntfy – sort them into projects or tasks later.</p></article>
+    <article class="feature"><span>🔔</span><h3>Notifications</h3><p>Due tasks, red CI, outages, access requests – via ntfy to your phone, webhook (Discord, Slack) or email.</p></article>
+    <article class="feature"><span>🪦</span><h3>Project graveyard</h3><p>Whatever has slept for 30 days asks: carry on or bury – with a tombstone, last words and resurrection.</p></article>
+    <article class="feature"><span>🖼️</span><h3>Portfolio &amp; sharing</h3><p>Share projects via link, invite people – and show selected projects as a public portfolio.</p></article>
+    <article class="feature"><span>🎨</span><h3>Your design</h3><p>Animated backgrounds, your own colors, light or dark, glass effect – per account. English and German.</p></article>
+    <article class="feature"><span>🔐</span><h3>Secure</h3><p>Passkeys, two-factor, CSP, CSRF and SSRF protection, encrypted tokens. Your data stays on your server.</p></article>
+    <article class="feature"><span>🚀</span><h3>Low maintenance</h3><p>One command installs everything, updates arrive every 15 minutes – with backup, health check and automatic rollback.</p></article>
+  </div>
+</section>
+
+<section>
+  <h2 class="center">What it looks like</h2>
+  <figure class="big"><img src="{{base}}screenshots/en/dashboard.png" alt="Dashboard with project cards, statistics and filters" loading="lazy" width="1440" height="1000"><figcaption>Dashboard</figcaption></figure>
+  <div class="grid two">
+    <figure><img src="{{base}}screenshots/en/project.png" alt="Project page" loading="lazy"><figcaption>Project page</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/tasks.png" alt="Task board" loading="lazy"><figcaption>Task board</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/git.png" alt="Git and updates" loading="lazy"><figcaption>Git &amp; updates</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/design.png" alt="Design editor" loading="lazy"><figcaption>Your own design</figcaption></figure>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Working with Claude Code</h2>
+  <ol class="steps">
+    <li><b>Create a task</b> – in VibeWorks, via quick capture or from the idea inbox.</li>
+    <li><b>Connect Claude</b> – one API key, one command: <code>claude mcp add …</code></li>
+    <li><b>“Work through the open tasks”</b> – Claude fetches the tasks, sets them to “In progress”, implements them and checks them off.</li>
+    <li><b>Everything stays visible</b> – history, issues, commits and CI follow along.</li>
+  </ol>
+  <a class="btn" href="{{base}}en/docs/claude.html">Set up Claude Code →</a>
+</section>
+
+<section>
+  <h2 class="center">Docs</h2>
+  <div class="grid docgrid">
+    <a class="feature" href="{{base}}en/docs/installation.html"><span>🚀</span><h3>Installation</h3><p>Proxmox, Debian, updates, backups, HTTPS.</p></a>
+    <a class="feature" href="{{base}}en/docs/git.html"><span>🔀</span><h3>Git &amp; issues</h3><p>Connection, issues, webhooks, CI, dependencies.</p></a>
+    <a class="feature" href="{{base}}en/docs/claude.html"><span>🤖</span><h3>Claude Code</h3><p>MCP server, CLAUDE.md, prompts.</p></a>
+    <a class="feature" href="{{base}}en/docs/windows.html"><span>🪟</span><h3>Windows app</h3><p>Download, tray, quick capture, updates.</p></a>
+    <a class="feature" href="{{base}}en/docs/features.html"><span>✨</span><h3>All features</h3><p>Today, time, costs, inbox, live, graveyard …</p></a>
+  </div>
+</section>

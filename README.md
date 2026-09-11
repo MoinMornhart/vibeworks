@@ -15,6 +15,8 @@
 
 **Projekte, Aufgaben, Notizen und Commits an einem Ort – auf deinem eigenen Server.**
 
+🌐 **[Webseite & Doku](https://moinmornhart.github.io/vibeworks/)**
+
 [Funktionen](#-funktionen) · [Screenshots](#-screenshots) · [Installation](#-installation-auf-proxmox) · [Aufgaben ↔ Issues](#-aufgaben--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Windows-App](#-windows-app) · [Entwicklung](#%EF%B8%8F-entwicklung)
 
 <br>
@@ -313,9 +315,9 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 
 **Webseite**
 
-- ⏳ Landingpage auf GitHub Pages mit Installationsbefehl zum Kopieren
+- ✅ Landingpage auf GitHub Pages mit Installationsbefehl zum Kopieren – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/)
 - ⏳ Live-Demo mit schreibgeschütztem Demo-Konto
-- ⏳ Doku-Seiten auf Deutsch und Englisch
+- ✅ Doku-Seiten auf Deutsch und Englisch
 - ⏳ Kurzes Vorführ-GIF: Aufgabe → Issue → Claude → erledigt
 
 ## 📄 Lizenz

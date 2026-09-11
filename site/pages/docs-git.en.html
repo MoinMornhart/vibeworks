@@ -1,0 +1,39 @@
+<!-- {"path":"en/docs/git.html","lang":"en","alt":"docs/git.html","title":"Git & issues – VibeWorks docs","description":"Connect GitHub, GitLab or Gitea: commits, tasks as issues, webhooks, CI and dependency check."} -->
+<article class="doc">
+  <p class="crumbs"><a href="./">Docs</a> / Git &amp; issues</p>
+  <h1>Git &amp; issues</h1>
+  <p>Add a repository address to a project – VibeWorks then shows commits, CI status and dependencies. With a Git connection, tasks also become issues.</p>
+
+  <h2>Git connection</h2>
+  <p>Under <b>My account → Git connections</b> you add a token once; it applies to all your projects on that server. Self-hosted GitLab and Gitea/Forgejo work the same way.</p>
+  <table>
+    <tr><th>Provider</th><th>Token</th></tr>
+    <tr><td>GitHub</td><td>Classic token with <code>repo</code> and <code>admin:repo_hook</code> (for webhooks)</td></tr>
+    <tr><td>GitLab</td><td>Personal access token with <code>api</code></td></tr>
+    <tr><td>Gitea / Forgejo</td><td>Token with <i>repository: read</i> and <i>issue: read and write</i></td></tr>
+  </table>
+  <p>Tokens are verified when saved, encrypted with AES-256-GCM and never shown in full again. Public repositories without issue mirroring need no token at all.</p>
+
+  <h2>Tasks ↔ issues</h2>
+  <p>Every task becomes an issue, and the status travels both ways:</p>
+  <table>
+    <tr><th>Column in VibeWorks</th><th>Issue in the repository</th></tr>
+    <tr><td>Open</td><td>open</td></tr>
+    <tr><td>In progress</td><td>open, label <code>in Arbeit</code></td></tr>
+    <tr><td>Blocked</td><td>open, label <code>blockiert</code></td></tr>
+    <tr><td>Done</td><td>closed</td></tr>
+  </table>
+  <p>The two labels keep their German names so German and English accounts can share a repository. A commit with <code>Fixes #12</code> closes the issue – on the next sync the task jumps to “Done”. The server syncs every 5 minutes, instantly with a webhook.</p>
+
+  <h2>Webhooks</h2>
+  <p>Project page → <b>Git &amp; updates</b> → <b>Access</b> → set up the webhook. Pushes, issues and CI results then arrive without delay.</p>
+
+  <h2>CI status</h2>
+  <p>GitHub Actions, GitLab pipelines and Gitea Actions of the main branch show up as a dot on the project card and in the Git section. If CI fails, you can get a notification.</p>
+
+  <h2>Dependency check</h2>
+  <p>If there is a <code>package.json</code> in the repository, VibeWorks compares every dependency once a day with the latest npm version (major, minor, patch) and asks the npm advisory database for known vulnerabilities – the same source as <code>npm audit</code>. “Check now” works any time.</p>
+
+  <h2>One task for many projects</h2>
+  <p>Tasks → <b>For several projects</b> (or “All with Git” in quick capture): the same task, e.g. “Update dependencies”, lands in every selected project – including its issue.</p>
+</article>

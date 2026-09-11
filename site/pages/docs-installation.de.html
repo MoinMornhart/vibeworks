@@ -1,0 +1,48 @@
+<!-- {"path":"docs/installation.html","lang":"de","alt":"en/docs/installation.html","title":"Installation – VibeWorks Doku","description":"VibeWorks auf Proxmox oder Debian installieren, aktualisieren und sichern."} -->
+<article class="doc">
+  <p class="crumbs"><a href="./">Doku</a> / Installation</p>
+  <h1>Installation</h1>
+  <p>VibeWorks läuft selbst gehostet. Am einfachsten ist ein Proxmox-VE-Container, der mit einem einzigen Befehl entsteht.</p>
+
+  <h2>Schnellstart auf Proxmox VE 8/9</h2>
+  <p>In der Shell des Proxmox-Hosts (als root) ausführen:</p>
+  <div class="code"><code id="c1">bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/proxmox.sh)"</code><button class="copy" data-copy="#c1">Kopieren</button></div>
+  <p>Der Installer prüft den Host, fragt nach <b>Standard</b> oder <b>Erweitert</b>, legt einen unprivilegierten Debian-Container an, installiert darin Node.js, PostgreSQL und VibeWorks und richtet das Auto-Update ein. Am Ende zeigt er die Adresse an, zum Beispiel <code>http://192.168.1.50:3000</code>.</p>
+  <table>
+    <tr><th>Einstellung</th><th>Standard</th></tr>
+    <tr><td>System</td><td>Debian 13 (sonst 12), unprivilegiert</td></tr>
+    <tr><td>CPU / RAM</td><td>2 Kerne / 3 GB (der Build braucht viel Speicher)</td></tr>
+    <tr><td>Festplatte</td><td>10 GB</td></tr>
+    <tr><td>Netzwerk</td><td><code>vmbr0</code>, DHCP</td></tr>
+  </table>
+  <p>Im Modus <b>Erweitert</b> lässt sich alles einzeln einstellen: Container-ID, Hostname, Ressourcen, statische IP, VLAN, Storage und ein Root-Passwort.</p>
+
+  <h2>Ohne Proxmox (Debian 12/13, Ubuntu 24.04)</h2>
+  <div class="code"><code id="c2">apt-get update &amp;&amp; apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-install.sh | bash</code><button class="copy" data-copy="#c2">Kopieren</button></div>
+  <p>Das Skript lässt sich gefahrlos erneut ausführen – ein zweiter Lauf repariert die Installation, ohne Daten zu überschreiben. Die Einstellungen stehen in <code>/opt/vibeworks/shared/.env</code>.</p>
+
+  <h2>Updates</h2>
+  <p>Alle 15 Minuten schaut der Server selbst nach neuen Versionen. Jede Version wird in einem eigenen Ordner gebaut; umgeschaltet wird erst, wenn der Build klappt und die App danach gesund antwortet. Vor jeder Datenbank-Migration entsteht ein Backup, und schlägt der Health-Check fehl, geht es automatisch zurück auf die vorige Version.</p>
+  <table>
+    <tr><th>Befehl</th><th>Wirkung</th></tr>
+    <tr><td><code>update</code></td><td>Neueste Version installieren (fragt vorher)</td></tr>
+    <tr><td><code>update --status</code></td><td>Version, Releases, Auto-Update, Dienst</td></tr>
+    <tr><td><code>update --rollback</code></td><td>Zurück zur vorherigen Version</td></tr>
+    <tr><td><code>update --auto-off</code> / <code>--auto-on</code></td><td>Automatische Updates aus- bzw. einschalten</td></tr>
+    <tr><td><code>update --domain &lt;adresse&gt;</code></td><td>Adresse (<code>APP_URL</code>) ändern und neu starten</td></tr>
+  </table>
+  <p>Auf dem Proxmox-Host richtet der Installer zusätzlich den Befehl <code>vibeworks</code> ein (Kurzform <code>update</code>): <code>status</code>, <code>update</code>, <code>rollback</code>, <code>domain</code>, <code>logs</code>, <code>shell</code>, <code>repair</code> – ohne erst in den Container zu wechseln. Im Admin-Bereich der App gibt es außerdem den Knopf „Neuestes Update installieren“.</p>
+
+  <h2>Backups</h2>
+  <p>Datenbank-Sicherungen liegen unter <code>/opt/vibeworks/shared/data/backups/</code> (die letzten 10), Uploads unter <code>/opt/vibeworks/shared/data/uploads/</code>. Ein Proxmox-Backup des ganzen Containers lohnt sich zusätzlich. Unter Mein Konto → Daten kannst du deine Projekte außerdem als JSON exportieren.</p>
+
+  <h2>HTTPS und Passkeys</h2>
+  <p>Passkeys funktionieren nur über HTTPS. Setze einen Reverse Proxy mit Zertifikat davor, zum Beispiel Caddy:</p>
+  <div class="code"><code id="c3">vibeworks.example.de {
+    reverse_proxy 192.168.1.50:3000
+}</code><button class="copy" data-copy="#c3">Kopieren</button></div>
+  <p>Danach die neue Adresse eintragen: <code>vibeworks domain https://vibeworks.example.de</code> auf dem Host.</p>
+
+  <p class="note">Alle Einzelheiten – Verzeichnisse, Umgebungsvariablen, Deinstallation – stehen in <a href="https://github.com/MoinMornhart/vibeworks/blob/main/docs/INSTALLATION.md">docs/INSTALLATION.md</a>.</p>
+</article>

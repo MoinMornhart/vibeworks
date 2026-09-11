@@ -1,0 +1,48 @@
+<!-- {"path":"en/docs/installation.html","lang":"en","alt":"docs/installation.html","title":"Installation – VibeWorks docs","description":"Install, update and back up VibeWorks on Proxmox or Debian."} -->
+<article class="doc">
+  <p class="crumbs"><a href="./">Docs</a> / Installation</p>
+  <h1>Installation</h1>
+  <p>VibeWorks is self-hosted. The easiest way is a Proxmox VE container created with a single command.</p>
+
+  <h2>Quick start on Proxmox VE 8/9</h2>
+  <p>Run this in the shell of the Proxmox host (as root):</p>
+  <div class="code"><code id="c1">bash -c "$(curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/proxmox.sh)"</code><button class="copy" data-copy="#c1">Copy</button></div>
+  <p>The installer checks the host, asks for <b>Default</b> or <b>Advanced</b>, creates an unprivileged Debian container, installs Node.js, PostgreSQL and VibeWorks inside it and sets up auto-update. At the end it shows the address, for example <code>http://192.168.1.50:3000</code>.</p>
+  <table>
+    <tr><th>Setting</th><th>Default</th></tr>
+    <tr><td>System</td><td>Debian 13 (otherwise 12), unprivileged</td></tr>
+    <tr><td>CPU / RAM</td><td>2 cores / 3 GB (the build needs a lot of memory)</td></tr>
+    <tr><td>Disk</td><td>10 GB</td></tr>
+    <tr><td>Network</td><td><code>vmbr0</code>, DHCP</td></tr>
+  </table>
+  <p><b>Advanced</b> mode lets you set everything individually: container ID, hostname, resources, static IP, VLAN, storage and a root password.</p>
+
+  <h2>Without Proxmox (Debian 12/13, Ubuntu 24.04)</h2>
+  <div class="code"><code id="c2">apt-get update &amp;&amp; apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/MoinMornhart/vibeworks/main/install/vibeworks-install.sh | bash</code><button class="copy" data-copy="#c2">Copy</button></div>
+  <p>The script can safely run again – a second run repairs the installation without overwriting data. Settings live in <code>/opt/vibeworks/shared/.env</code>.</p>
+
+  <h2>Updates</h2>
+  <p>Every 15 minutes the server checks for new versions by itself. Each version is built in its own directory; it only switches over once the build succeeds and the app answers healthy. A backup is made before every database migration, and if the health check fails it automatically rolls back to the previous version.</p>
+  <table>
+    <tr><th>Command</th><th>Effect</th></tr>
+    <tr><td><code>update</code></td><td>Install the latest version (asks first)</td></tr>
+    <tr><td><code>update --status</code></td><td>Version, releases, auto-update, service</td></tr>
+    <tr><td><code>update --rollback</code></td><td>Back to the previous version</td></tr>
+    <tr><td><code>update --auto-off</code> / <code>--auto-on</code></td><td>Turn automatic updates off or on</td></tr>
+    <tr><td><code>update --domain &lt;address&gt;</code></td><td>Change the address (<code>APP_URL</code>) and restart</td></tr>
+  </table>
+  <p>On the Proxmox host the installer also sets up the <code>vibeworks</code> command (short: <code>update</code>): <code>status</code>, <code>update</code>, <code>rollback</code>, <code>domain</code>, <code>logs</code>, <code>shell</code>, <code>repair</code> – without switching into the container. The admin area in the app also has an “Install latest update” button.</p>
+
+  <h2>Backups</h2>
+  <p>Database backups are kept in <code>/opt/vibeworks/shared/data/backups/</code> (the last 10), uploads in <code>/opt/vibeworks/shared/data/uploads/</code>. A Proxmox backup of the whole container is worthwhile on top. Under My account → Data you can also export your projects as JSON.</p>
+
+  <h2>HTTPS and passkeys</h2>
+  <p>Passkeys only work over HTTPS. Put a reverse proxy with a certificate in front, for example Caddy:</p>
+  <div class="code"><code id="c3">vibeworks.example.com {
+    reverse_proxy 192.168.1.50:3000
+}</code><button class="copy" data-copy="#c3">Copy</button></div>
+  <p>Then set the new address: <code>vibeworks domain https://vibeworks.example.com</code> on the host.</p>
+
+  <p class="note">All the details – directories, environment variables, uninstalling – are in <a href="https://github.com/MoinMornhart/vibeworks/blob/main/docs/INSTALLATION.en.md">docs/INSTALLATION.en.md</a>.</p>
+</article>

@@ -1,0 +1,35 @@
+<!-- {"path":"en/docs/claude.html","lang":"en","alt":"docs/claude.html","title":"Claude Code – VibeWorks docs","description":"VibeWorks as an MCP server for Claude Code: setup, tools, CLAUDE.md generator and prompt library."} -->
+<article class="doc">
+  <p class="crumbs"><a href="./">Docs</a> / Claude Code</p>
+  <h1>Claude Code</h1>
+  <p>VibeWorks is an MCP server. Claude Code (or any other MCP client) works directly with your projects, tasks, notes and docs – with your permissions.</p>
+
+  <h2>Setup</h2>
+  <ol class="steps">
+    <li>In VibeWorks, create a key under <b>My account → Claude Code &amp; API keys</b>.</li>
+    <li>Copy the command shown and run it in a terminal – it looks like this:</li>
+  </ol>
+  <div class="code"><code id="c1">claude mcp add --scope user --transport http vibeworks https://vibeworks.example.com/api/mcp --header "Authorization: Bearer vw_…"</code><button class="copy" data-copy="#c1">Copy</button></div>
+  <p>With <code>--scope user</code> the connection applies in all your repositories. Other MCP clients connect to <code>/api/mcp</code> via Streamable HTTP with the same header. Keys can be revoked any time; only a hash is stored.</p>
+
+  <h2>What Claude can do with it</h2>
+  <table>
+    <tr><th>Tool</th><th>What it does</th></tr>
+    <tr><td><code>list_projects</code>, <code>get_project</code></td><td>Projects with status, open tasks, notes and repository</td></tr>
+    <tr><td><code>list_tasks</code>, <code>get_task</code></td><td>Tasks across all projects – e.g. everything due this week</td></tr>
+    <tr><td><code>create_task</code>, <code>update_task</code></td><td>Create tasks and move them to “In progress” or “Done” – issues follow</td></tr>
+    <tr><td><code>create_task_in_projects</code></td><td>The same task in several projects, by default in all linked to Git</td></tr>
+    <tr><td><code>update_project</code></td><td>Status, priority, progress, summary</td></tr>
+    <tr><td><code>create_note</code>, <code>get_note</code></td><td>Notes on a project, e.g. a work log</td></tr>
+    <tr><td><code>search</code></td><td>Full-text search across notes, tasks and docs</td></tr>
+    <tr><td><code>list_docs</code>, <code>get_doc</code>, <code>create_doc</code>, <code>update_doc</code></td><td>Read and write docs</td></tr>
+    <tr><td><code>get_claude_md</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>A project's CLAUDE.md and your prompt library</td></tr>
+  </table>
+  <p>Try: <i>“Which tasks are open in VibeWorks?”</i> or <i>“Work through the open tasks of project X and write down what you did as a note.”</i> Every change shows up in the project's activity log.</p>
+
+  <h2>Generate a CLAUDE.md</h2>
+  <p>Project → <b>More actions → Generate CLAUDE.md</b>: description, status, open tasks, pinned notes and the VibeWorks workflow in one file. Adjust, copy or download it and put it into the repository's root – Claude Code reads it on every start.</p>
+
+  <h2>Prompt library</h2>
+  <p>Under <b>Prompts</b> you collect proven instructions. Placeholders like <code>{{project}}</code>, <code>{{repo}}</code>, <code>{{live}}</code> and <code>{{summary}}</code> are filled in by a chosen project when copying. “Add examples” creates five templates – from code review to “Work through open tasks”.</p>
+</article>

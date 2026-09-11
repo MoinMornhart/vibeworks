@@ -1,0 +1,35 @@
+<!-- {"path":"docs/claude.html","lang":"de","alt":"en/docs/claude.html","title":"Claude Code – VibeWorks Doku","description":"VibeWorks als MCP-Server für Claude Code: einrichten, Werkzeuge, CLAUDE.md-Generator und Prompt-Bibliothek."} -->
+<article class="doc">
+  <p class="crumbs"><a href="./">Doku</a> / Claude Code</p>
+  <h1>Claude Code</h1>
+  <p>VibeWorks ist ein MCP-Server. Claude Code (oder ein anderer MCP-Client) arbeitet damit direkt mit deinen Projekten, Aufgaben, Notizen und Docs – mit deinen Rechten.</p>
+
+  <h2>Einrichten</h2>
+  <ol class="steps">
+    <li>In VibeWorks unter <b>Mein Konto → Claude Code &amp; API-Schlüssel</b> einen Schlüssel erstellen.</li>
+    <li>Den angezeigten Befehl kopieren und im Terminal ausführen – er sieht so aus:</li>
+  </ol>
+  <div class="code"><code id="c1">claude mcp add --scope user --transport http vibeworks https://vibeworks.example.de/api/mcp --header "Authorization: Bearer vw_…"</code><button class="copy" data-copy="#c1">Kopieren</button></div>
+  <p>Mit <code>--scope user</code> gilt die Verbindung in allen deinen Repositories. Andere MCP-Clients verbinden sich per Streamable HTTP mit <code>/api/mcp</code> und demselben Header. Schlüssel lassen sich jederzeit widerrufen; gespeichert wird nur ein Hash.</p>
+
+  <h2>Was Claude damit kann</h2>
+  <table>
+    <tr><th>Werkzeug</th><th>Was es tut</th></tr>
+    <tr><td><code>list_projects</code>, <code>get_project</code></td><td>Projekte mit Status, offenen Aufgaben, Notizen und Repository</td></tr>
+    <tr><td><code>list_tasks</code>, <code>get_task</code></td><td>Aufgaben über alle Projekte – z. B. alles, was diese Woche fällig ist</td></tr>
+    <tr><td><code>create_task</code>, <code>update_task</code></td><td>Aufgaben anlegen und nach „In Arbeit“ oder „Erledigt“ schieben – Issues laufen mit</td></tr>
+    <tr><td><code>create_task_in_projects</code></td><td>Dieselbe Aufgabe in mehreren Projekten, ohne Angabe in allen mit Git</td></tr>
+    <tr><td><code>update_project</code></td><td>Status, Priorität, Fortschritt, Kurzbeschreibung</td></tr>
+    <tr><td><code>create_note</code>, <code>get_note</code></td><td>Notizen am Projekt, z. B. ein Arbeitsprotokoll</td></tr>
+    <tr><td><code>search</code></td><td>Volltextsuche über Notizen, Aufgaben und Docs</td></tr>
+    <tr><td><code>list_docs</code>, <code>get_doc</code>, <code>create_doc</code>, <code>update_doc</code></td><td>Docs lesen und schreiben</td></tr>
+    <tr><td><code>get_claude_md</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>CLAUDE.md eines Projekts und deine Prompt-Bibliothek</td></tr>
+  </table>
+  <p>Probier zum Beispiel: <i>„Welche Aufgaben sind in VibeWorks offen?“</i> oder <i>„Arbeite die offenen Aufgaben von Projekt X ab und halte fest, was du gemacht hast, als Notiz.“</i> Jede Änderung steht im Verlauf des Projekts.</p>
+
+  <h2>CLAUDE.md erzeugen</h2>
+  <p>Projekt → <b>Weitere Aktionen → CLAUDE.md erzeugen</b>: Beschreibung, Stand, offene Aufgaben, angepinnte Notizen und die Arbeitsweise mit VibeWorks in einer Datei. Anpassen, kopieren oder herunterladen und ins Hauptverzeichnis des Repositorys legen – Claude Code liest sie bei jedem Start.</p>
+
+  <h2>Prompt-Bibliothek</h2>
+  <p>Unter <b>Prompts</b> sammelst du bewährte Anweisungen. Platzhalter wie <code>{{projekt}}</code>, <code>{{repo}}</code>, <code>{{live}}</code> und <code>{{summary}}</code> füllt ein gewähltes Projekt beim Kopieren aus. „Beispiele hinzufügen“ legt fünf Vorlagen an – vom Code-Review bis „Offene Aufgaben abarbeiten“.</p>
+</article>

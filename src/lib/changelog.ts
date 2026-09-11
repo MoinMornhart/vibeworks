@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.0",
+    date: "2026-09-13",
+    title: "Webseite & Doku",
+    titleEn: "Website & docs",
+    changes: [
+      {
+        type: "neu",
+        text: "VibeWorks hat eine eigene Webseite: moinmornhart.github.io/vibeworks – mit Installationsbefehl zum Kopieren, allen Funktionen und Screenshots",
+        en: "VibeWorks has its own website: moinmornhart.github.io/vibeworks – with a copyable install command, all features and screenshots",
+      },
+      {
+        type: "neu",
+        text: "Doku auf Deutsch und Englisch: Installation, Git & Issues, Claude Code, Windows-App und alle Funktionen",
+        en: "Docs in German and English: installation, Git & issues, Claude Code, Windows app and all features",
+      },
+    ],
+  },
+  {
     version: "0.4.9",
     date: "2026-09-13",
     title: "Öffentliches Portfolio",

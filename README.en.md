@@ -15,6 +15,8 @@
 
 **Projects, tasks, notes and commits in one place – on your own server.**
 
+🌐 **[Website & docs](https://moinmornhart.github.io/vibeworks/en/)**
+
 [Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Windows app](#-windows-app) · [Development](#%EF%B8%8F-development)
 
 <br>
@@ -315,9 +317,9 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 
 **Website**
 
-- ⏳ Landing page on GitHub Pages with a copyable install command
+- ✅ Landing page on GitHub Pages with a copyable install command – [moinmornhart.github.io/vibeworks](https://moinmornhart.github.io/vibeworks/en/)
 - ⏳ Live demo with a read-only demo account
-- ⏳ Docs pages in English and German
+- ✅ Docs pages in English and German
 - ⏳ Short demo GIF: task → issue → Claude → done
 
 ## 📄 License
