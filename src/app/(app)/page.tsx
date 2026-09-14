@@ -3,7 +3,9 @@ import { db } from "@/lib/db";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { projectListSelect, serializeProject, taskDoneCounts } from "@/lib/projects";
 import { AWAKE_STATUSES, lastSign, SLEEP_DAYS } from "@/lib/grave";
-import { getT } from "@/lib/i18n/server";
+import { TriangleAlert } from "lucide-react";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { translateMessage } from "@/lib/i18n/messages";
 import { ProjectBoard } from "@/components/projects/ProjectBoard";
 import { PendingRequests, SharedProjects } from "@/components/share/SharedProjects";
 import { SleepingProjects } from "@/components/grave/SleepingProjects";
@@ -56,7 +58,21 @@ export default async function Dashboard() {
     db.project.count({ where: { ownerId: user.id, buriedAt: { not: null } } }),
     getT("grave"),
   ]);
-  const [inboxCount, ti] = await Promise.all([db.inboxItem.count({ where: { userId: user.id } }), getT("inbox")]);
+  const [inboxCount, ti, gitFailing, gitFailingCount, brokenConnections, tgit, locale] = await Promise.all([
+    db.inboxItem.count({ where: { userId: user.id } }),
+    getT("inbox"),
+    // Git-Probleme: Projekte, deren letzter Abgleich scheiterte, und Verbindungen mit Import-Fehler
+    db.project.findMany({
+      where: { ownerId: user.id, buriedAt: null, status: { not: "ARCHIVED" }, repoCache: { error: { not: null } } },
+      select: { id: true, name: true, repoCache: { select: { error: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
+    db.project.count({ where: { ownerId: user.id, buriedAt: null, status: { not: "ARCHIVED" }, repoCache: { error: { not: null } } } }),
+    db.gitCredential.findMany({ where: { userId: user.id, importError: { not: null } }, select: { id: true, host: true, importError: true } }),
+    getT("git"),
+    getLocale(),
+  ]);
   const sleeping = drowsy
     .map((p) => ({ id: p.id, name: p.name, accent: p.accent, since: lastSign(p.updatedAt, p.repoCache?.commits) }))
     .filter((p) => p.since < cutoff)
@@ -72,6 +88,30 @@ export default async function Dashboard() {
         <Link href="/inbox" className="glass fade-in mb-6 flex items-center gap-3 px-5 py-3 text-sm hover:text-accent-ink" data-testid="inbox-banner">
           <span aria-hidden>📥</span> {ti("banner", { n: inboxCount })}
         </Link>
+      )}
+      {(gitFailingCount > 0 || brokenConnections.length > 0) && (
+        <section className="glass fade-in mb-6 px-5 py-4 text-sm" role="alert" data-testid="git-problems">
+          <p className="flex items-center gap-2 font-semibold text-red-400">
+            <TriangleAlert size={16} /> {gitFailingCount > 0 ? tgit("problems.title", { n: gitFailingCount }) : tgit("problems.connectionsTitle")}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {brokenConnections.map((c) => (
+              <li key={c.id}>
+                <Link href="/account#git-zugang" className="hover:text-accent-ink">
+                  <b>{tgit("problems.connection", { host: c.host })}</b> <span className="text-muted">– {translateMessage(locale, c.importError ?? "")}</span>
+                </Link>
+              </li>
+            ))}
+            {gitFailing.map((p) => (
+              <li key={p.id}>
+                <Link href={`/projects/${p.id}`} className="hover:text-accent-ink">
+                  <b>{p.name}</b> <span className="text-muted">– {translateMessage(locale, p.repoCache?.error ?? "")}</span>
+                </Link>
+              </li>
+            ))}
+            {gitFailingCount > gitFailing.length && <li className="text-muted">{tgit("problems.more", { n: gitFailingCount - gitFailing.length })}</li>}
+          </ul>
+        </section>
       )}
       <SleepingProjects items={sleeping} />
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />

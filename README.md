@@ -157,6 +157,14 @@ Stand zurück.
   <br><sub>Aufgabe → Issue → Claude → erledigt</sub>
 </p>
 
+**Repositories verbinden sich von selbst:** Mit einer Git-Verbindung (GitHub, GitLab, Gitea/Forgejo)
+legt VibeWorks für jedes eigene Repository ein Projekt an – gleich beim Verbinden und danach alle
+30 Minuten für neue. Forks und archivierte bleiben draußen, gelöschte Projekte kommen nicht wieder.
+**Jeder andere Git-Server** geht auch: Verbindung „Beliebiger Git-Server“ mit Zugang als
+`benutzer:token` – Commits und Abhängigkeiten kommen dann direkt per git, Issues und CI gibt es dort
+nicht. **Fehler** (Token abgelaufen, Repository weg …) stehen bei der Verbindung, auf der Projektkarte
+und auf dem Dashboard; scheitert ein Abgleich dreimal in Folge, kommt eine Benachrichtigung.
+
 Trägst du am Projekt ein Repository ein, zeigt VibeWorks dessen Commits unter den Notizen.
 Mit einer Git-Verbindung (**Mein Konto → Git-Verbindungen** – GitHub, GitLab oder Gitea/Forgejo,
 auch selbst gehostet) wird zusätzlich jede Aufgabe automatisch zum Issue. Die Verbindung gilt

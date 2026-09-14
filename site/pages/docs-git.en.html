@@ -14,6 +14,15 @@
   </table>
   <p>Tokens are verified when saved, encrypted with AES-256-GCM and never shown in full again. Public repositories without issue mirroring need no token at all.</p>
 
+  <h2>Connect repositories automatically</h2>
+  <p>After connecting, VibeWorks creates a project for every repository you own – and every 30 minutes for new ones too. Forks and archived ones stay out, already linked ones are recognized, and a deleted project doesn't come back. Per connection you can turn this off or trigger it right away with <b>Import now</b>.</p>
+
+  <h2>Any Git server</h2>
+  <p>Any Git server reachable via https (or http) works too – without an API. Choose <b>Any Git server</b> as the connection, enter the server address and store the access as <code>user:token</code>. VibeWorks then fetches commits and the <code>package.json</code> directly with git; there are no issues, CI or webhooks there. You add repositories on the project. Unknown servers without a GitHub, GitLab or Gitea API are handled this way automatically.</p>
+
+  <h2>Errors</h2>
+  <p>If a sync or import fails, the reason shows at the connection, as a red Git icon on the project card and at the top of the dashboard. From the third failure in a row (for imports from the second) you get one “Git sync failing” notification – until it works again.</p>
+
   <h2>Tasks ↔ issues</h2>
   <p>Every task becomes an issue, and the status travels both ways:</p>
   <table>

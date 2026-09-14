@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { syncProjectRepository } from "./sync";
 import { syncIssues } from "./issues";
 import { tokenCipherFor } from "./token";
+import { runImports } from "./importRepos";
 
 // Hintergrund-Abgleich: in festem Takt Commits und Issues aller Projekte, die
 // einen Zugang haben (Projekt-Token oder Git-Verbindung des Besitzers). So
@@ -82,6 +83,8 @@ export function startGitScheduler() {
     if (state.running) return; // ein langsamer Lauf überholt sich nicht selbst
     state.running = true;
     try {
+      // Neue Repositories der Git-Verbindungen als Projekte anlegen (je Verbindung höchstens alle 30 Minuten)
+      await runImports().catch((err) => console.error("[git-import]", err));
       await runGitSyncOnce();
     } catch (err) {
       console.error("[git-sync]", err);

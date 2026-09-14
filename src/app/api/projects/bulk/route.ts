@@ -5,6 +5,8 @@ import { projectBulkSchema } from "@/lib/validation";
 import { logActivity } from "@/lib/activity";
 import { normalizeTags } from "@/lib/utils";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
+import { dropGitCache } from "@/lib/git/gitCli";
+import { rememberRemovedRepo } from "@/lib/git/importRepos";
 
 // Mehrfachaktionen auf ausgewählte Projekte. Fremde IDs fallen still heraus.
 export const POST = route(async (req) => {
@@ -12,7 +14,7 @@ export const POST = route(async (req) => {
   const input = await readBody(req, projectBulkSchema);
   const projects = await db.project.findMany({
     where: { ownerId: user.id, id: { in: input.ids } },
-    select: { id: true, status: true, tags: true },
+    select: { id: true, status: true, tags: true, repoUrl: true },
   });
   const ids = projects.map((p) => p.id);
   if (!ids.length) return json({ ok: true, count: 0 });
@@ -20,6 +22,11 @@ export const POST = route(async (req) => {
   switch (input.action) {
     case "delete":
       await db.project.deleteMany({ where: { ownerId: user.id, id: { in: ids } } });
+      // Gelöschte Repositories nicht wieder importieren, git-Zwischenspeicher weg
+      for (const p of projects) {
+        await rememberRemovedRepo(user.id, p.repoUrl);
+        await dropGitCache(p.id);
+      }
       break;
     case "favorite":
       await db.project.updateMany({ where: { ownerId: user.id, id: { in: ids } }, data: { favorite: input.favorite } });

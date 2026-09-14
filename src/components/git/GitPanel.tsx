@@ -91,7 +91,7 @@ function Avatar({ name }: { name: string }) {
 }
 
 function issueBaseOf(cache: RepoCacheView): string | null {
-  if (!cache.webUrl) return null;
+  if (!cache.webUrl || cache.provider === "git") return null;
   return cache.provider === "gitlab" ? `${cache.webUrl}/-/issues` : `${cache.webUrl}/issues`;
 }
 
@@ -445,20 +445,25 @@ function AccessPanel({
         </p>
       </form>
 
-      <label className="flex cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 accent-[var(--vw-accent)]"
-          checked={access.issueSync}
-          disabled={busy}
-          onChange={(e) => onSave({ issueSync: e.target.checked })}
-        />
-        <span className="text-sm">
-          <span className="font-medium">{t("access.issueSync")}</span>
-          <span className="block text-xs text-muted">{t("access.issueSyncHint")}</span>
-        </span>
-      </label>
-      <WebhookSection provider={provider} access={access} busy={busy} note={webhookNote} onWebhook={onWebhook} />
+      {/* Beliebige Git-Server kennen weder Issues noch Webhooks */}
+      {provider !== "git" && (
+        <>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-[var(--vw-accent)]"
+              checked={access.issueSync}
+              disabled={busy}
+              onChange={(e) => onSave({ issueSync: e.target.checked })}
+            />
+            <span className="text-sm">
+              <span className="font-medium">{t("access.issueSync")}</span>
+              <span className="block text-xs text-muted">{t("access.issueSyncHint")}</span>
+            </span>
+          </label>
+          <WebhookSection provider={provider} access={access} busy={busy} note={webhookNote} onWebhook={onWebhook} />
+        </>
+      )}
       <FormError message={error} />
     </div>
   );
@@ -586,8 +591,11 @@ export function GitPanel({
 
   // Den Token-Zustand kennt nur der Besitzer – alle anderen sehen die Zahl verknüpfter Issues.
   const hasToken = Boolean(access.tokenHint || access.accountToken);
-  const issueStat = !canManage ? (linked ? String(linked) : "–") : !hasToken ? t("stats.issuesOff") : !access.issueSync ? t("stats.issuesPaused") : String(linked);
-  const issueHint = !canManage
+  const noIssues = provider === "git";
+  const issueStat = noIssues ? "–" : !canManage ? (linked ? String(linked) : "–") : !hasToken ? t("stats.issuesOff") : !access.issueSync ? t("stats.issuesPaused") : String(linked);
+  const issueHint = noIssues
+    ? t("stats.noIssuesGit")
+    : !canManage
     ? t("stats.linked", { n: linked })
     : !hasToken
       ? t("stats.needToken")

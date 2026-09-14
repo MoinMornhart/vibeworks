@@ -92,7 +92,8 @@ async function install(project: Project) {
   const parsed = parseRepoUrl(project.repoUrl);
   const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { provider: true } });
   const provider = (cache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
-  if (!parsed || !provider) throw new ApiError(400, tk("git", "webhook.errors.noProvider"));
+  // Beliebige Git-Server kennen keine Webhooks
+  if (!parsed || !provider || provider === "git") throw new ApiError(400, tk("git", "webhook.errors.noProvider"));
   try {
     await installWebhook(provider, parsed, decrypt(stored.cipher), url, decrypt(project.webhookSecretCipher!));
   } catch (err) {

@@ -156,6 +156,14 @@ working version.
   <br><sub>Task → issue → Claude → done (demo in German)</sub>
 </p>
 
+**Repositories connect themselves:** with a Git connection (GitHub, GitLab, Gitea/Forgejo), VibeWorks
+creates a project for every repository you own – right when connecting and every 30 minutes for new
+ones. Forks and archived ones stay out, deleted projects don't come back. **Any other Git server**
+works too: a “plain Git server” connection with access as `user:token` – commits and dependencies are
+then fetched directly with git; there are no issues or CI there. **Errors** (token expired, repository
+gone …) show up at the connection, on the project card and on the dashboard; if a sync fails three
+times in a row, you get a notification.
+
 Add a repository to a project and VibeWorks shows its commits below the notes. With a Git
 connection (**My account → Git connections** – GitHub, GitLab or Gitea/Forgejo, self-hosted
 too) every task also becomes an issue automatically. The connection applies to all your projects

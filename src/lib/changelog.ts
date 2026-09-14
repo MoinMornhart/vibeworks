@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.3",
+    date: "2026-09-14",
+    title: "Repositories automatisch, jeder Git-Server",
+    titleEn: "Automatic repositories, any Git server",
+    changes: [
+      {
+        type: "neu",
+        text: "Git-Verbindungen legen für jedes eigene Repository selbst ein Projekt an – beim Verbinden und alle 30 Minuten für neue (ohne Forks und archivierte; gelöschte kommen nicht wieder)",
+        en: "Git connections create a project for every repository you own – when connecting and every 30 minutes for new ones (no forks or archived ones; deleted ones don't come back)",
+      },
+      {
+        type: "neu",
+        text: "Beliebiger Git-Server als Verbindung: Commits und Abhängigkeiten direkt per git, Zugang als benutzer:token – unbekannte Server ohne API gehen automatisch diesen Weg",
+        en: "Any Git server as a connection: commits and dependencies fetched directly with git, access as user:token – unknown servers without an API take this route automatically",
+      },
+      {
+        type: "neu",
+        text: "Git-Fehler sichtbar: bei der Verbindung, als rotes Symbol auf der Projektkarte, als Hinweis auf dem Dashboard und als Benachrichtigung „Git-Abgleich scheitert“",
+        en: "Git errors visible: at the connection, as a red icon on the project card, as a notice on the dashboard and as a “Git sync failing” notification",
+      },
+    ],
+  },
+  {
     version: "0.5.2",
     date: "2026-09-13",
     title: "Demo-Modus",

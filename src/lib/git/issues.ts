@@ -70,7 +70,7 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   if (!stored) return null;
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
-  if (!parsed || !provider) return null; // Anbieter erst nach dem ersten Abgleich bekannt
+  if (!parsed || !provider || provider === "git") return null; // Anbieter erst nach dem ersten Abgleich bekannt; beliebige Git-Server kennen keine Issues
   let token: string;
   try {
     token = decrypt(stored.cipher);

@@ -14,6 +14,15 @@
   </table>
   <p>Tokens werden beim Speichern geprüft, mit AES-256-GCM verschlüsselt und nie wieder vollständig angezeigt. Öffentliche Repositories ohne Issue-Spiegelung brauchen gar kein Token.</p>
 
+  <h2>Repositories automatisch verbinden</h2>
+  <p>Nach dem Verbinden legt VibeWorks für jedes eigene Repository ein Projekt an – danach alle 30 Minuten auch für neue. Forks und archivierte bleiben draußen, schon verknüpfte werden wiedererkannt, und ein gelöschtes Projekt kommt nicht wieder. Pro Verbindung lässt sich das abschalten oder mit <b>Jetzt importieren</b> sofort anstoßen.</p>
+
+  <h2>Beliebiger Git-Server</h2>
+  <p>Jeder Git-Server, der per https (oder http) erreichbar ist, geht auch – ohne API. Als Verbindung <b>Beliebiger Git-Server</b> wählen, Serveradresse eintragen und den Zugang als <code>benutzer:token</code> hinterlegen. VibeWorks holt Commits und die <code>package.json</code> dann direkt per git; Issues, CI und Webhooks gibt es dort nicht. Repositories trägst du hier am Projekt ein. Unbekannte Server ohne GitHub-, GitLab- oder Gitea-API behandelt VibeWorks automatisch so.</p>
+
+  <h2>Fehler</h2>
+  <p>Scheitert ein Abgleich oder Import, steht der Grund bei der Verbindung, als rotes Git-Symbol auf der Projektkarte und oben auf dem Dashboard. Ab dem dritten Fehlschlag in Folge (beim Import ab dem zweiten) kommt einmal eine Benachrichtigung „Git-Abgleich scheitert“ – bis es wieder klappt.</p>
+
   <h2>Aufgaben ↔ Issues</h2>
   <p>Jede Aufgabe wird ein Issue, der Status wandert in beide Richtungen:</p>
   <table>

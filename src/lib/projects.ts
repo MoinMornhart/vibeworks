@@ -31,8 +31,8 @@ export const projectListSelect = {
   createdAt: true,
   updatedAt: true,
   _count: { select: { notes: true, tasks: true } },
-  // Nur der CI-Zustand – für den Punkt auf der Projektkarte
-  repoCache: { select: { ci: true } },
+  // CI-Zustand und Abgleich-Fehler – für Punkt und Warnung auf der Projektkarte
+  repoCache: { select: { ci: true, error: true } },
 } satisfies Prisma.ProjectSelect;
 
 export type ProjectListRow = Prisma.ProjectGetPayload<{ select: typeof projectListSelect }>;
@@ -46,6 +46,8 @@ export function serializeProject<T extends ProjectListRow>(p: T, tasksDone = 0) 
     liveSince: liveSince?.toISOString() ?? null,
     sslExpiresAt: sslExpiresAt?.toISOString() ?? null,
     ci: ((repoCache?.ci as { state?: CiState } | null)?.state ?? null) as CiState | null,
+    /** Letzter Abgleich fehlgeschlagen (Übersetzungsschlüssel) */
+    gitError: repoCache?.error ?? null,
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
     notes: _count.notes,

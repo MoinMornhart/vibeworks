@@ -5,7 +5,7 @@ import type { ProjectStatus } from "@prisma/client";
 import { ArrowDown, ArrowUp, Check, Flame, GitBranch, Globe, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
-import { useFormat, useT } from "@/lib/i18n/client";
+import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { StatusSelect } from "./StatusSelect";
 import type { CiState } from "@/lib/git/ci";
@@ -108,6 +108,7 @@ function SelectBox({ project, selected, selecting, onSelect }: Pick<CardProps, "
 export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect, selected, selecting, index = 0 }: CardProps) {
   const t = useT("projects");
   const f = useFormat();
+  const msg = useMsg();
   return (
     <article
       className={cn("glass lift fade-in group relative flex min-h-52 flex-col p-5 hover:z-10 focus-within:z-20", selected && "ring-2 ring-accent/60")}
@@ -168,7 +169,14 @@ export function ProjectCard({ project: p, onStatus, onFavorite, onEdit, onSelect
           {p.notes > 0 && (
             <span className="inline-flex items-center gap-1" title={t("card.notes")}><StickyNote size={13} />{p.notes}</span>
           )}
-          {p.repoUrl && <GitBranch size={13} aria-label={t("card.repoLinked")} />}
+          {p.repoUrl &&
+            (p.gitError ? (
+              <GitBranch size={13} className="shrink-0 text-red-400" role="img" aria-label={t("card.gitError", { error: msg(p.gitError) })} data-testid="card-git-error">
+                <title>{t("card.gitError", { error: msg(p.gitError) })}</title>
+              </GitBranch>
+            ) : (
+              <GitBranch size={13} aria-label={t("card.repoLinked")} />
+            ))}
           {p.liveUrl && <LiveIcon state={p.liveState} />}
           {p.ci &&<span className={cn("h-2 w-2 shrink-0 rounded-full", CI_DOT[p.ci])} title={t(`card.ci.${p.ci}`)} role="img" aria-label={t(`card.ci.${p.ci}`)} />}
           <span suppressHydrationWarning className="truncate" title={t("card.lastUpdated")}>{f.ago(p.updatedAt)}</span>

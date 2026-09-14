@@ -6,6 +6,7 @@ import { tk } from "@/lib/i18n/messages";
 import { parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
 import { apiBase, authHeaders, GitError, request } from "./providers";
 import { tokenCipherFor } from "./token";
+import { readFileViaGit } from "./gitCli";
 import { baseVersion, countPackages, parseManifest, sortPackages, updateLevel, type Advisory, type DepPackage, type DepsReport, type Severity } from "./depsLogic";
 
 // Abhängigkeiten-Check: package.json aus dem Repository, neueste Versionen
@@ -16,7 +17,17 @@ const DAY = 86_400_000;
 const REGISTRY = "https://registry.npmjs.org";
 const PARALLEL = 8;
 
-async function fetchManifest(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null): Promise<unknown | null> {
+async function fetchManifest(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null, projectId?: string): Promise<unknown | null> {
+  // Beliebiger Git-Server: aus dem beim Abgleich geholten Stand lesen
+  if (provider === "git") {
+    const text = projectId ? await readFileViaGit(projectId, branch, "package.json") : null;
+    if (text === null) return null;
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return {};
+    }
+  }
   const api = apiBase(provider, repo);
   const ref = encodeURIComponent(branch ?? "HEAD");
   const headers = authHeaders(provider, token);
@@ -73,11 +84,11 @@ async function advisories(versions: Record<string, string[]>): Promise<Record<st
   }
 }
 
-export async function buildReport(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null): Promise<DepsReport> {
+export async function buildReport(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null, projectId?: string): Promise<DepsReport> {
   const checkedAt = new Date().toISOString();
   let manifest: unknown;
   try {
-    manifest = await fetchManifest(provider, repo, token, branch);
+    manifest = await fetchManifest(provider, repo, token, branch, projectId);
   } catch (err) {
     return { checkedAt, manifest: true, packages: [], counts: countPackages([]), error: err instanceof GitError ? err.message : tk("git", "errors.unreachable") };
   }
@@ -132,7 +143,7 @@ export function refreshDeps(projectId: string, force = false): Promise<DepsRepor
     } catch {
       token = null;
     }
-    const report = await buildReport(cache.provider as GitProvider, parsed, token, cache.defaultBranch);
+    const report = await buildReport(cache.provider as GitProvider, parsed, token, cache.defaultBranch, projectId);
     await db.repoCache.update({ where: { projectId }, data: { deps: report as unknown as Prisma.InputJsonValue, depsCheckedAt: new Date() } });
     return report;
   })().finally(() => running.delete(projectId));

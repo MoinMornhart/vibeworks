@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { db } from "@/lib/db";
+import { importFromCredential } from "@/lib/git/importRepos";
 import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { credentialData, credentialList, GitTokenError } from "@/lib/git/token";
@@ -25,10 +27,12 @@ export const POST = route(async (req) => {
     if (err instanceof GitTokenError) throw new ApiError(err.status, err.message, { token: err.message });
     throw err;
   }
-  await db.gitCredential.upsert({
+  const saved = await db.gitCredential.upsert({
     where: { userId_host: { userId: user.id, host: data.host } },
     create: { userId: user.id, ...data },
-    update: data,
+    update: { ...data, importError: null, importFails: 0 },
   });
+  // Repositories gleich als Projekte anlegen – die Antwort wartet nicht darauf
+  after(() => importFromCredential(saved.id));
   return json({ connections: await credentialList(user.id) }, { status: 201 });
 });

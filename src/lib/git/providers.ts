@@ -1,10 +1,10 @@
 import { safeFetch, FetchBlockedError } from "@/lib/security/ssrf";
 import { tk } from "@/lib/i18n/messages";
-import { guessProvider, splitCommitMessage, type GitProvider, type ParsedRepo } from "./parse";
+import { guessProvider, splitCommitMessage, type ApiProvider, type GitProvider, type ParsedRepo } from "./parse";
 
 // Zugriff auf GitHub, GitLab und Gitea/Forgejo über deren HTTP-APIs:
 // Stammdaten und Commits lesen, Issues anlegen, ändern und abfragen.
-// Kein Klonen, kein git auf dem Server.
+// Beliebige Git-Server ohne API holt gitCli.ts per git.
 
 export class GitError extends Error {
   constructor(message: string, public status?: number) {
@@ -179,7 +179,7 @@ async function gitea(repo: ParsedRepo, token: string | null): Promise<RepoSnapsh
   };
 }
 
-const ADAPTERS: Record<GitProvider, (r: ParsedRepo, t: string | null) => Promise<RepoSnapshot>> = { github, gitlab, gitea };
+const ADAPTERS: Record<ApiProvider, (r: ParsedRepo, t: string | null) => Promise<RepoSnapshot>> = { github, gitlab, gitea };
 
 /**
  * Holt Stammdaten und Commits. Ist der Anbieter nicht am Host erkennbar

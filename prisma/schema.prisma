@@ -387,6 +387,10 @@ model RepoCache {
   depsCheckedAt DateTime?
   fetchedAt     DateTime @default(now())
   error         String?
+  /// Fehlschläge in Folge, seit wann, und ob das schon gemeldet wurde
+  failCount     Int       @default(0)
+  errorSince    DateTime?
+  errorNotified Boolean   @default(false)
 }
 
 /// Git-Verbindung eines Kontos (GitHub, GitLab, Gitea/Forgejo, auch selbst
@@ -408,6 +412,16 @@ model GitCredential {
   hint      String
   /// Anmeldename beim Anbieter, beim Speichern ermittelt
   login     String?
+  /// Automatischer Import: jedes eigene Repository wird zum Projekt (ohne Forks und archivierte)
+  autoImport  Boolean   @default(true)
+  importedAt  DateTime?
+  /// Letzter Import-Fehler (Übersetzungsschlüssel) und Fehlschläge in Folge
+  importError String?
+  importFails Int       @default(0)
+  /// Zuletzt gefundene Repositories (ohne Forks und archivierte)
+  importCount Int       @default(0)
+  /// host/pfad gelöschter oder umgehängter Projekte – werden nicht erneut importiert
+  skipRepos   String[]  @default([])
   createdAt DateTime @default(now())
 
   @@unique([userId, host])

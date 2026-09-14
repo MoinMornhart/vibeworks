@@ -1,4 +1,5 @@
 import type { Shape } from "../types";
+import { plural } from "../translate";
 
 // Namensraum „account“ – deutsche Fassung ist maßgeblich, die englische muss dieselbe Form haben.
 
@@ -96,7 +97,7 @@ const de = {
   git: {
     title: "Git-Verbindungen",
     description:
-      "Einmal verbinden, für alle Projekte: Commits auch aus privaten Repositories und Aufgaben automatisch als Issues. Geht mit GitHub, GitLab und Gitea/Forgejo – auch selbst gehostet.",
+      "Einmal verbinden, für alle Projekte: Deine Repositories werden automatisch zu Projekten, Commits kommen auch aus privaten Repositories, Aufgaben werden zu Issues. Geht mit GitHub, GitLab, Gitea/Forgejo – auch selbst gehostet – und jedem anderen Git-Server.",
     confirmRemove: "Verbindung zu {host} entfernen? Projekte dort können dann keine Issues mehr anlegen.",
     as: "als",
     removeLabel: "Verbindung zu {host} entfernen",
@@ -104,6 +105,17 @@ const de = {
     connect: "Verbinden",
     tokenHint: "Das Token wird beim Speichern beim Anbieter geprüft, verschlüsselt gespeichert und nie wieder vollständig angezeigt.",
     add: "Verbindung hinzufügen",
+    tokenHintGit: "Beim beliebigen Git-Server zeigt sich erst beim ersten Abgleich, ob der Zugang stimmt. Gespeichert wird er verschlüsselt.",
+    autoImport: "Alle Repositories automatisch als Projekte anlegen",
+    autoImportHint: "Neue Repositories kommen alle 30 Minuten von selbst dazu. Forks und archivierte bleiben draußen, gelöschte Projekte kommen nicht wieder.",
+    importNow: "Jetzt importieren",
+    importing: "Importiere …",
+    importState: plural("{n} Repository verbunden · zuletzt {ago}", "{n} Repositories verbunden · zuletzt {ago}"),
+    importNever: "Noch nicht importiert",
+    importDone: plural("{n} neues Projekt angelegt.", "{n} neue Projekte angelegt."),
+    importNothing: "Nichts Neues – alle Repositories sind schon verbunden.",
+    importError: "Import fehlgeschlagen: {error}",
+    noListing: "Ein beliebiger Git-Server hat keine Repository-Liste – Repositories dort am Projekt eintragen (Bearbeiten → Repository).",
   },
   errors: {
     connectionNotFound: "Verbindung nicht gefunden",
@@ -216,7 +228,7 @@ const en: Shape<typeof de> = {
   git: {
     title: "Git connections",
     description:
-      "Connect once, use it in every project: commits from private repositories too, and tasks automatically as issues. Works with GitHub, GitLab and Gitea/Forgejo – self-hosted as well.",
+      "Connect once, use it in every project: your repositories automatically become projects, commits come from private repositories too, and tasks become issues. Works with GitHub, GitLab, Gitea/Forgejo – self-hosted as well – and any other Git server.",
     confirmRemove: "Remove the connection to {host}? Projects there will no longer be able to create issues.",
     as: "as",
     removeLabel: "Remove connection to {host}",
@@ -224,6 +236,17 @@ const en: Shape<typeof de> = {
     connect: "Connect",
     tokenHint: "The token is verified with the provider when saved, stored encrypted and never shown in full again.",
     add: "Add connection",
+    tokenHintGit: "With a plain Git server, whether the access works only shows on the first sync. It is stored encrypted.",
+    autoImport: "Create all repositories as projects automatically",
+    autoImportHint: "New repositories are added by themselves every 30 minutes. Forks and archived ones stay out, deleted projects don't come back.",
+    importNow: "Import now",
+    importing: "Importing …",
+    importState: plural("{n} repository connected · last {ago}", "{n} repositories connected · last {ago}"),
+    importNever: "Not imported yet",
+    importDone: plural("{n} new project created.", "{n} new projects created."),
+    importNothing: "Nothing new – all repositories are already connected.",
+    importError: "Import failed: {error}",
+    noListing: "A plain Git server has no repository list – add repositories there on the project (Edit → Repository).",
   },
   errors: {
     connectionNotFound: "Connection not found",

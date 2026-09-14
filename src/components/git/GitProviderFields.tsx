@@ -14,13 +14,14 @@ export interface GitConnectionForm {
 
 export const EMPTY_GIT_CONNECTION: GitConnectionForm = { provider: "github", server: "", token: "" };
 
-const PROVIDERS: Array<{ value: GitProvider; label: string }> = [
+const PROVIDERS: Array<{ value: GitProvider; label: string | null }> = [
   { value: "github", label: "GitHub" },
   { value: "gitlab", label: "GitLab" },
   { value: "gitea", label: "Gitea / Forgejo" },
+  { value: "git", label: null }, // übersetzt: „Beliebiger Git-Server“
 ];
 
-const TOKEN_PREFIX: Record<GitProvider, string> = { github: "ghp_…", gitlab: "glpat-…", gitea: "Token" };
+const TOKEN_PREFIX: Record<GitProvider, string> = { github: "ghp_…", gitlab: "glpat-…", gitea: "Token", git: "benutzer:token" };
 
 /**
  * Übersetzten Text mit Platzhaltern wie {link} oder {button} ausgeben und
@@ -43,7 +44,9 @@ function Steps({ provider, link }: { provider: GitProvider; link: string | null 
     <span className="text-muted">{t("fields.needServer")}</span>
   );
   const steps =
-    provider === "github"
+    provider === "git"
+      ? [t("fields.steps.git1"), richText(t("fields.steps.git2"), { format: <code>benutzer:token</code> }), t("fields.steps.git3")]
+      : provider === "github"
       ? [
           richText(t("fields.steps.github1"), { link: open }),
           richText(t("fields.steps.github2"), { button: <b>Generate token</b> }),
@@ -102,7 +105,7 @@ export function GitProviderFields({
             onClick={() => set({ provider: p.value, server: "" })}
             className={cn("chip", value.provider === p.value && "chip-active")}
           >
-            {p.label}
+            {p.label ?? t("fields.genericLabel")}
           </button>
         ))}
       </div>
@@ -115,13 +118,15 @@ export function GitProviderFields({
             className="field"
             value={value.server}
             onChange={(e) => set({ server: e.target.value })}
-            placeholder={value.provider === "gitlab" ? t("fields.serverPlaceholderGitlab") : t("fields.serverPlaceholderGitea")}
+            placeholder={
+              value.provider === "gitlab" ? t("fields.serverPlaceholderGitlab") : value.provider === "git" ? t("fields.serverPlaceholderGit") : t("fields.serverPlaceholderGitea")
+            }
             maxLength={300}
             autoComplete="off"
             spellCheck={false}
           />
           <p className="mt-1 text-xs text-muted">
-            {value.provider === "gitlab" ? t("fields.serverHintGitlab") : t("fields.serverHintGitea")}
+            {value.provider === "gitlab" ? t("fields.serverHintGitlab") : value.provider === "git" ? t("fields.serverHintGit") : t("fields.serverHintGitea")}
           </p>
         </div>
       )}

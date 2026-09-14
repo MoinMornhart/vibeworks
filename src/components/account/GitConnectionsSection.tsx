@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, GitBranch, Plus, Save, Trash2, X } from "lucide-react";
+import { CheckCircle2, GitBranch, Plus, RefreshCw, Save, Trash2, TriangleAlert, X } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { EMPTY_GIT_CONNECTION, GitProviderFields, type GitConnectionForm } from "@/components/git/GitProviderFields";
 import { PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
-import { useT } from "@/lib/i18n/client";
+import { useFormat, useMsg, useT } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
 
 export interface GitConnectionItem {
@@ -16,17 +17,41 @@ export interface GitConnectionItem {
   baseUrl: string;
   hint: string;
   login: string | null;
+  autoImport: boolean;
+  importedAt: string | null;
+  importError: string | null;
+  importCount: number;
 }
+
+type ListResponse = { connections: GitConnectionItem[] };
 
 export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[] }) {
   const t = useT("account");
   const tc = useT("common");
+  const f = useFormat();
+  const msg = useMsg();
   const [list, setList] = useState(initial);
   const [adding, setAdding] = useState(initial.length === 0);
   const [form, setForm] = useState<GitConnectionForm>(EMPTY_GIT_CONNECTION);
   const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | undefined>();
+
+  async function importNow(c: Pick<GitConnectionItem, "id">) {
+    setBusyId(c.id);
+    setNotes((n) => ({ ...n, [c.id]: "" }));
+    try {
+      const res = await api<ListResponse & { result: { created: number; error: string | null } }>(`/api/account/git-credentials/${c.id}/import`, { body: {} });
+      setList(res.connections);
+      if (!res.result.error) setNotes((n) => ({ ...n, [c.id]: res.result.created ? t("git.importDone", { n: res.result.created }) : t("git.importNothing") }));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -35,12 +60,15 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
     setError(null);
     setTokenError(undefined);
     try {
-      const res = await api<{ connections: GitConnectionItem[] }>("/api/account/git-credentials", {
+      const res = await api<ListResponse>("/api/account/git-credentials", {
         body: { provider: form.provider, server: form.server, token: form.token.trim() },
       });
       setList(res.connections);
       setForm(EMPTY_GIT_CONNECTION);
       setAdding(false);
+      // Gleich importieren und das Ergebnis zeigen (der Server hat schon angefangen – derselbe Lauf)
+      const fresh = res.connections.find((c) => c.autoImport && c.provider !== "git" && !c.importedAt);
+      if (fresh) void importNow(fresh);
     } catch (err) {
       const field = err instanceof ApiClientError ? err.fieldErrors.token : undefined;
       if (field) setTokenError(field);
@@ -50,11 +78,24 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
     }
   }
 
+  async function toggle(c: GitConnectionItem, autoImport: boolean) {
+    setBusyId(c.id);
+    setError(null);
+    try {
+      const res = await api<ListResponse>(`/api/account/git-credentials/${c.id}`, { method: "PATCH", body: { autoImport } });
+      setList(res.connections);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function remove(c: GitConnectionItem) {
     if (!window.confirm(t("git.confirmRemove", { host: c.host }))) return;
     setError(null);
     try {
-      const res = await api<{ connections: GitConnectionItem[] }>(`/api/account/git-credentials/${c.id}`, { method: "DELETE" });
+      const res = await api<ListResponse>(`/api/account/git-credentials/${c.id}`, { method: "DELETE" });
       setList(res.connections);
     } catch (err) {
       setError(errorMessage(err));
@@ -67,18 +108,54 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
         {list.length > 0 && (
           <ul className="mb-4 space-y-2">
             {list.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
-                <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />
-                <div className="min-w-0 flex-1 text-sm">
-                  <p className="font-medium">
-                    {PROVIDER_LABEL[c.provider]} · {c.host}
-                    {c.login && <> {t("git.as")} <span className="text-accent-ink">@{c.login}</span></>}
-                  </p>
-                  <p className="font-mono text-xs text-muted">{c.hint}</p>
+              <li
+                key={c.id}
+                data-testid="git-connection"
+                className={cn("rounded-2xl border px-4 py-3", c.importError ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/40 bg-emerald-500/10")}
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  {c.importError ? <TriangleAlert size={20} className="shrink-0 text-red-400" /> : <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />}
+                  <div className="min-w-0 flex-1 text-sm">
+                    <p className="font-medium">
+                      {PROVIDER_LABEL[c.provider]} · {c.host}
+                      {c.login && <> {t("git.as")} <span className="text-accent-ink">@{c.login}</span></>}
+                    </p>
+                    <p className="font-mono text-xs text-muted">{c.hint}</p>
+                  </div>
+                  <button type="button" className="btn btn-sm hover:!text-red-400" onClick={() => void remove(c)} aria-label={t("git.removeLabel", { host: c.host })}>
+                    <Trash2 size={14} /> {tc("remove")}
+                  </button>
                 </div>
-                <button type="button" className="btn btn-sm hover:!text-red-400" onClick={() => void remove(c)} aria-label={t("git.removeLabel", { host: c.host })}>
-                  <Trash2 size={14} /> {tc("remove")}
-                </button>
+
+                {c.provider === "git" ? (
+                  <p className="mt-2 text-xs text-muted">{t("git.noListing")}</p>
+                ) : (
+                  <div className="mt-3 space-y-2 border-t border-fg/10 pt-3 text-sm">
+                    <label className="flex cursor-pointer items-start gap-2">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-[var(--vw-accent)]"
+                        checked={c.autoImport}
+                        disabled={busyId === c.id}
+                        onChange={(e) => void toggle(c, e.target.checked)}
+                      />
+                      <span>
+                        <span className="font-medium">{t("git.autoImport")}</span>
+                        <span className="block text-xs text-muted">{t("git.autoImportHint")}</span>
+                      </span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+                      <span suppressHydrationWarning>{c.importedAt ? t("git.importState", { n: c.importCount, ago: f.ago(c.importedAt) }) : t("git.importNever")}</span>
+                      <button type="button" className="btn btn-sm" disabled={busyId === c.id} onClick={() => void importNow(c)}>
+                        <RefreshCw size={13} className={cn(busyId === c.id && "animate-spin")} /> {busyId === c.id ? t("git.importing") : t("git.importNow")}
+                      </button>
+                    </div>
+                    {c.importError && (
+                      <p role="alert" className="text-xs text-red-400">{t("git.importError", { error: msg(c.importError) })}</p>
+                    )}
+                    {notes[c.id] && <p role="status" className="text-xs text-emerald-400">{notes[c.id]}</p>}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -105,7 +182,7 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
                 </button>
               )}
             </div>
-            <p className="text-xs text-muted">{t("git.tokenHint")}</p>
+            <p className="text-xs text-muted">{form.provider === "git" ? t("git.tokenHintGit") : t("git.tokenHint")}</p>
           </form>
         ) : (
           <button type="button" className="btn btn-sm" onClick={() => setAdding(true)}>

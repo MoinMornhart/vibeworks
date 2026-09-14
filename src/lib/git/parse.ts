@@ -1,6 +1,8 @@
 // Repository-Adressen zerlegen – ohne Netz, auch im Browser nutzbar.
 
-export type GitProvider = "github" | "gitlab" | "gitea";
+/** git = beliebiger Git-Server ohne Anbieter-API (Commits per git, keine Issues/CI) */
+export type GitProvider = "github" | "gitlab" | "gitea" | "git";
+export type ApiProvider = Exclude<GitProvider, "git">;
 
 export interface ParsedRepo {
   origin: string;
@@ -37,14 +39,14 @@ export function parseRepoUrl(input: string | null | undefined): ParsedRepo | nul
   return { origin: url.origin, host, hostPort: url.host.toLowerCase(), path: repoPath };
 }
 
-export function guessProvider(host: string): GitProvider | null {
+export function guessProvider(host: string): ApiProvider | null {
   if (host === "github.com" || host.startsWith("github.")) return "github";
   if (host === "gitlab.com" || host.includes("gitlab")) return "gitlab";
   if (host.includes("gitea") || host.includes("forgejo") || host === "codeberg.org") return "gitea";
   return null;
 }
 
-export const PROVIDER_LABEL: Record<GitProvider, string> = { github: "GitHub", gitlab: "GitLab", gitea: "Gitea" };
+export const PROVIDER_LABEL: Record<GitProvider, string> = { github: "GitHub", gitlab: "GitLab", gitea: "Gitea", git: "Git" };
 
 /**
  * GitHub-Seite für ein neues klassisches Token, vorausgefüllt mit „repo“ (alle
@@ -53,7 +55,7 @@ export const PROVIDER_LABEL: Record<GitProvider, string> = { github: "GitHub", g
 export const GITHUB_NEW_TOKEN_URL = "https://github.com/settings/tokens/new?scopes=repo,admin:repo_hook&description=VibeWorks";
 
 /** Voreingestellter Server je Anbieter – Gitea/Forgejo hat keinen, das ist fast immer eine eigene Instanz. */
-export const DEFAULT_SERVER: Record<GitProvider, string> = { github: "github.com", gitlab: "gitlab.com", gitea: "" };
+export const DEFAULT_SERVER: Record<GitProvider, string> = { github: "github.com", gitlab: "gitlab.com", gitea: "", git: "" };
 
 /**
  * Serveradresse normalisieren: „git.example.de“ → https://git.example.de,
@@ -76,6 +78,7 @@ export function normalizeServer(input: string): { baseUrl: string; hostPort: str
 export function newTokenUrl(provider: GitProvider, baseUrl: string): string {
   if (provider === "github") return baseUrl === "https://github.com" ? GITHUB_NEW_TOKEN_URL : `${baseUrl}/settings/tokens/new?scopes=repo,admin:repo_hook&description=VibeWorks`;
   if (provider === "gitlab") return `${baseUrl}/-/user_settings/personal_access_tokens?name=VibeWorks&scopes=api`;
+  if (provider === "git") return baseUrl;
   return `${baseUrl}/user/settings/applications`;
 }
 

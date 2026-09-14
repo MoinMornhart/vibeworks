@@ -59,6 +59,7 @@ const de = {
     lastUpdated: "Zuletzt geändert",
     priority: "Priorität: {label}",
     ci: { success: "CI erfolgreich", failure: "CI fehlgeschlagen", running: "CI läuft", pending: "CI wartet", canceled: "CI abgebrochen" },
+    gitError: "Git-Abgleich fehlgeschlagen: {error}",
   },
   bulk: {
     region: "Mehrfachauswahl",
@@ -201,6 +202,7 @@ const en: Shape<typeof de> = {
     lastUpdated: "Last updated",
     priority: "Priority: {label}",
     ci: { success: "CI passed", failure: "CI failed", running: "CI running", pending: "CI pending", canceled: "CI canceled" },
+    gitError: "Git sync failed: {error}",
   },
   bulk: {
     region: "Multiple selection",

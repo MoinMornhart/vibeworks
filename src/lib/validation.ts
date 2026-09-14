@@ -21,7 +21,7 @@ export const loginSchema = z.object({
   password,
 });
 
-export const gitProviderSchema = z.enum(["github", "gitlab", "gitea"]);
+export const gitProviderSchema = z.enum(["github", "gitlab", "gitea", "git"]);
 
 // Optionale Git-Verbindung beim Anlegen eines Kontos – leeres Token heißt „keine“.
 const optionalGitConnection = {
@@ -258,6 +258,8 @@ export const gitCredentialSchema = z.object({
     .max(500, tk("validation", "token.tooLong"))
     .regex(/^[\x21-\x7e]+$/, tk("validation", "token.invalidChars")),
 });
+
+export const gitCredentialUpdateSchema = z.object({ autoImport: z.boolean() });
 
 // ── Teilen ──────────────────────────────────────────────────
 

@@ -17,12 +17,12 @@ export interface ProjectTokenInput {
   repoTokenCipher: string | null;
 }
 
-export async function accountTokenFor(ownerId: string, repoUrl: string | null): Promise<{ cipher: string; hint: string; login: string | null } | null> {
+export async function accountTokenFor(ownerId: string, repoUrl: string | null): Promise<{ cipher: string; hint: string; login: string | null; provider: string } | null> {
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) return null;
   return db.gitCredential.findUnique({
     where: { userId_host: { userId: ownerId, host: parsed.hostPort } },
-    select: { cipher: true, hint: true, login: true },
+    select: { cipher: true, hint: true, login: true, provider: true },
   });
 }
 
@@ -79,7 +79,8 @@ export async function whoAmI(provider: GitProvider, baseUrl: string, token: stri
 export async function credentialData(provider: GitProvider, server: string, token: string) {
   const norm = normalizeServer(server || DEFAULT_SERVER[provider]);
   if (!norm) throw new GitTokenError(tk("git", "errors.badServer"), 400);
-  const login = await whoAmI(provider, norm.baseUrl, token);
+  // Ein beliebiger Git-Server hat keine API zum Nachfragen – das Token zeigt sich beim ersten Abgleich.
+  const login = provider === "git" ? null : await whoAmI(provider, norm.baseUrl, token);
   return { provider, host: norm.hostPort, baseUrl: norm.baseUrl, cipher: encrypt(token), hint: tokenHint(token), login };
 }
 
@@ -100,6 +101,17 @@ export async function optionalCredential(input: { gitToken: string | null; gitPr
 
 export async function credentialList(userId: string) {
   const rows = await db.gitCredential.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
-  return rows.map((c) => ({ id: c.id, provider: c.provider as GitProvider, host: c.host, baseUrl: c.baseUrl, hint: c.hint, login: c.login }));
+  return rows.map((c) => ({
+    id: c.id,
+    provider: c.provider as GitProvider,
+    host: c.host,
+    baseUrl: c.baseUrl,
+    hint: c.hint,
+    login: c.login,
+    autoImport: c.autoImport,
+    importedAt: c.importedAt?.toISOString() ?? null,
+    importError: c.importError,
+    importCount: c.importCount,
+  }));
 }
 export type GitConnectionView = Awaited<ReturnType<typeof credentialList>>[number];

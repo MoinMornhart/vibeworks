@@ -11,6 +11,8 @@ import { syncProjectProgress } from "@/lib/tasks";
 import { logActivity } from "@/lib/activity";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { parseRepoUrl } from "@/lib/git/parse";
+import { dropGitCache } from "@/lib/git/gitCli";
+import { rememberRemovedRepo } from "@/lib/git/importRepos";
 
 type Params = { id: string };
 
@@ -51,6 +53,9 @@ export const PATCH = route<Params>(async (req, { params }) => {
   if (input.repoUrl !== undefined && input.repoUrl !== current.repoUrl) {
     await db.repoCache.deleteMany({ where: { projectId: id } });
     await db.$executeRaw`UPDATE "Task" SET "issueNumber" = NULL, "issueUrl" = NULL, "issueError" = NULL WHERE "projectId" = ${id}`;
+    // Der Import soll das alte Repository nicht als neues Projekt wieder anlegen
+    await rememberRemovedRepo(current.ownerId, current.repoUrl);
+    await dropGitCache(id);
     // Ein Token gilt nur für seinen Server – nie an einen anderen Host schicken.
     if (parseRepoUrl(input.repoUrl)?.host !== parseRepoUrl(current.repoUrl)?.host) {
       await db.project.update({ where: { id }, data: { repoTokenCipher: null, repoTokenHint: null } });
@@ -82,9 +87,12 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const cover = await db.project.findFirst({ where: { id, ownerId: user.id }, select: { coverUploadId: true } });
+  const cover = await db.project.findFirst({ where: { id, ownerId: user.id }, select: { coverUploadId: true, repoUrl: true } });
   const { count } = await db.project.deleteMany({ where: { id, ownerId: user.id } });
   if (!count) throw notFound(tk("projects", "errors.notFound"));
   await dropUpload(cover?.coverUploadId ?? null);
+  // Gelöschtes Repository nicht wieder importieren, git-Zwischenspeicher weg
+  await rememberRemovedRepo(user.id, cover?.repoUrl ?? null);
+  await dropGitCache(id);
   return json({ ok: true });
 });
