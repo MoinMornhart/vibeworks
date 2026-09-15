@@ -26,6 +26,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.1",
+    date: "2026-09-15",
+    title: "Sicherheits-Nachtrag zu Prisma 7",
+    titleEn: "Security follow-up to Prisma 7",
+    changes: [
+      {
+        type: "fix",
+        text: "Die Prisma-Werkzeuge brachten eine veraltete MySQL-Bibliothek mit bekannten Lücken mit – jetzt auf die abgesicherte Version angehoben (VibeWorks nutzt MySQL nicht, npm audit meldet wieder keine Lücken)",
+        en: "The Prisma tooling shipped an outdated MySQL library with known vulnerabilities – now raised to the patched version (VibeWorks doesn't use MySQL; npm audit reports no vulnerabilities again)",
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-09-15",
     title: "Prisma 7",
