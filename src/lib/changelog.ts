@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.8",
+    date: "2026-09-15",
+    title: "Teams",
+    titleEn: "Teams",
+    changes: [
+      {
+        type: "neu",
+        text: "Teams (Profilmenü → Teams): Konten zu Teams zusammenfassen und Projekte an ein ganzes Team freigeben – zum Ansehen oder Bearbeiten (Projekt → Teilen → Teams). Wer später dazukommt, sieht die Projekte sofort; wer geht oder entfernt wird, verliert den Zugriff sofort",
+        en: "Teams (profile menu → Teams): group accounts into teams and share projects with a whole team – to view or edit (project → Share → Teams). Whoever joins later sees the projects right away; whoever leaves or is removed loses access immediately",
+      },
+      {
+        type: "neu",
+        text: "Beitritt nur per Einladung, die angenommen werden muss; Team-Admins verwalten Mitglieder, und ein Team behält immer einen Admin. Benachrichtigung bei Einladungen, „Mit mir geteilt“ zeigt „über Team …“",
+        en: "Joining only by invitation, which has to be accepted; team admins manage members, and a team always keeps an admin. Notification for invitations, “Shared with me” shows “via team …”",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: Freigeben darf nur der Projektbesitzer und nur an Teams, in denen er selbst ist; Löschen, Teilen und Token bleiben beim Besitzer. Ist jemand zusätzlich einzeln eingeladen, gilt die stärkere Rolle. Nur im Mehrbenutzerbetrieb",
+        en: "Security: only the project owner can share, and only with teams they belong to; deleting, sharing and tokens stay with the owner. If someone is also invited individually, the stronger role applies. Multi-user mode only",
+      },
+    ],
+  },
+  {
     version: "0.6.7",
     date: "2026-09-15",
     title: "Vorstellungs-Folien",

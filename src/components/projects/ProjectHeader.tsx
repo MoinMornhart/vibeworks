@@ -54,7 +54,11 @@ export function ProjectHeader({
   // Nach router.refresh() (z. B. neuer Fortschritt aus Aufgaben) neue Daten übernehmen.
   useEffect(() => setP(initial), [initial]);
   const [editOpen, setEditOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(openShare && isOwner);
+  // Erst im Browser öffnen: ein schon beim Server-Rendern offener Dialog passt nicht zur Hydration (React #418)
+  const [shareOpen, setShareOpen] = useState(false);
+  useEffect(() => {
+    if (openShare && isOwner) setShareOpen(true);
+  }, [openShare, isOwner]);
   const [pending, setPending] = useState(pendingRequests);
   useEffect(() => setPending(pendingRequests), [pendingRequests]);
   const [error, setError] = useState<string | null>(null);

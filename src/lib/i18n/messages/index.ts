@@ -36,11 +36,12 @@ import check from "./check";
 import bugs from "./bugs";
 import community from "./community";
 import slides from "./slides";
+import teams from "./teams";
 
 // Alle Übersetzungen, nach Namensräumen. Übersetzungsdateien importieren nur
 // ../types und ../translate – nie App-Code, sonst entstehen Zirkelbezüge.
 
-export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides };
+export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides, teams };
 
 export type Namespace = keyof typeof MESSAGES;
 export type Key<N extends Namespace> = Leaves<(typeof MESSAGES)[N]["de"]>;

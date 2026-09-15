@@ -142,6 +142,8 @@ model User {
   communityPosts     CommunityPost[]
   communityReplies   CommunityReply[]
   communityMessages  CommunityMessage[]
+  teamMemberships    TeamMember[]
+  teamInvites        TeamInvite[]
 
   sessions      Session[]
   passkeys      Passkey[]
@@ -335,6 +337,7 @@ model Project {
   communityPosts    CommunityPost[]
   communityBans     CommunityBan[]
   communityMessages CommunityMessage[]
+  teams             ProjectTeam[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -342,6 +345,59 @@ model Project {
   @@unique([ownerId, slug])
   @@index([ownerId, status, position])
   @@index([ownerId, updatedAt])
+}
+
+// ── Teams ───────────────────────────────────────────────────
+
+/// Team: Konten, mit denen man Projekte gemeinsam teilt – Beitritt nur per Einladung
+model Team {
+  id          String        @id @default(cuid())
+  name        String
+  createdById String?
+  createdAt   DateTime      @default(now())
+  members     TeamMember[]
+  invites     TeamInvite[]
+  projects    ProjectTeam[]
+}
+
+model TeamMember {
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ADMIN verwaltet Mitglieder und Einladungen · MEMBER nimmt teil
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+
+  @@id([teamId, userId])
+  @@index([userId])
+}
+
+/// Offene Einladung in ein Team – wirkt erst, wenn das Konto annimmt
+model TeamInvite {
+  id          String   @id @default(cuid())
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitedById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+/// Freigabe eines Projekts an ein Team: alle Mitglieder bekommen diese Rolle
+model ProjectTeam {
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role      ProjectRole @default(VIEWER)
+  createdAt DateTime    @default(now())
+
+  @@id([projectId, teamId])
+  @@index([teamId])
 }
 
 // ── Community ───────────────────────────────────────────────

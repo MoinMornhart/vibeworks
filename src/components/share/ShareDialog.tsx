@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ProjectRole } from "@/generated/prisma/client";
-import { Check, Copy, Globe, Link2Off, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
+import Link from "next/link";
+import { Check, Copy, Globe, Link2Off, RefreshCw, Trash2, UserPlus, Users, UsersRound } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
 import type { ShareState } from "@/lib/share";
@@ -52,6 +53,8 @@ export function ShareDialog({
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<ProjectRole>("VIEWER");
   const [decisionRole, setDecisionRole] = useState<Record<string, ProjectRole>>({});
+  const [teamPick, setTeamPick] = useState("");
+  const [teamRole, setTeamRole] = useState<ProjectRole>("VIEWER");
   const linkRef = useRef<HTMLInputElement>(null);
   const onPendingRef = useRef(onPendingChange);
   onPendingRef.current = onPendingChange;
@@ -91,6 +94,17 @@ export function ShareDialog({
   };
   const decide = (id: string, decision: "approve" | "deny", r?: ProjectRole) =>
     run(() => api(`/api/projects/${projectId}/requests/${id}`, { method: "PATCH", body: { decision, role: r } }));
+
+  const setTeamShareRole = (teamId: string, r: ProjectRole) => run(() => api(`/api/projects/${projectId}/teams/${teamId}`, { method: "PATCH", body: { role: r } }));
+  const removeTeam = (teamId: string, name: string) => {
+    if (window.confirm(t("dialog.confirmRemoveTeam", { name }))) void run(() => api(`/api/projects/${projectId}/teams/${teamId}`, { method: "DELETE" }));
+  };
+  async function addTeam(e: React.FormEvent) {
+    e.preventDefault();
+    const teamId = teamPick || share?.myTeams[0]?.id;
+    if (!teamId) return;
+    if (await run(() => api(`/api/projects/${projectId}/teams`, { body: { teamId, role: teamRole } }))) setTeamPick("");
+  }
 
   async function addMember(e: React.FormEvent) {
     e.preventDefault();
@@ -208,6 +222,46 @@ export function ShareDialog({
             <b>{t("role.VIEWER")}</b>: {t("dialog.viewerHelp")} · <b>{t("role.EDITOR")}</b>: {t("dialog.editorHelp")}
           </p>
         </section>
+
+        {share?.teamsEnabled && (
+          <section aria-labelledby="share-teams" data-testid="share-teams">
+            <h3 id="share-teams" className="mb-1 flex items-center gap-2 font-semibold"><UsersRound size={16} className="text-accent-ink" /> {t("dialog.teams")}</h3>
+            <p className="mb-3 text-sm text-muted">{t("dialog.teamsText")}</p>
+            {share.teams.length > 0 && (
+              <ul className="mb-4 divide-y divide-fg/10 rounded-2xl border">
+                {share.teams.map((tm) => (
+                  <li key={tm.teamId} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                    <Initial name={tm.name} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{tm.name}</p>
+                      <p className="truncate text-xs text-muted">{t("dialog.teamMembers", { n: tm.members })}</p>
+                    </div>
+                    <RoleSelect label={t("dialog.teamRoleOf", { name: tm.name })} value={tm.role} onChange={(v) => void setTeamShareRole(tm.teamId, v)} disabled={busy} />
+                    <button type="button" className="btn btn-ghost btn-icon btn-sm hover:!text-red-400" disabled={busy} onClick={() => removeTeam(tm.teamId, tm.name)} aria-label={t("dialog.removeTeam", { name: tm.name })} title={tc("remove")}>
+                      <Trash2 size={15} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {share.myTeams.length > 0 ? (
+              <form onSubmit={addTeam} className="flex flex-wrap gap-2">
+                <select className="field min-w-0 flex-1" value={teamPick || share.myTeams[0].id} onChange={(e) => setTeamPick(e.target.value)} aria-label={t("dialog.pickTeam")}>
+                  {share.myTeams.map((tm) => (
+                    <option key={tm.id} value={tm.id}>{tm.name}</option>
+                  ))}
+                </select>
+                <RoleSelect label={t("dialog.role")} value={teamRole} onChange={setTeamRole} disabled={busy} />
+                <button type="submit" className="btn btn-sm" disabled={busy}>
+                  <UsersRound size={14} /> {t("dialog.addTeam")}
+                </button>
+              </form>
+            ) : (
+              share.teams.length === 0 && <p className="text-sm text-muted">{t("dialog.noTeams")}</p>
+            )}
+            <Link href="/teams" className="mt-2 inline-block text-xs text-accent-ink hover:underline">{t("dialog.manageTeams")}</Link>
+          </section>
+        )}
 
         <FormError message={error} />
       </div>

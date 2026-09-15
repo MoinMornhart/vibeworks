@@ -32,6 +32,16 @@ const de = {
     role: "Rolle",
     viewerHelp: "nur lesen",
     editorHelp: "Aufgaben, Notizen, Status und Beschreibung ändern. Repository, Token, Teilen und Löschen bleiben bei dir.",
+    teams: "Teams",
+    teamsText: "Alle Mitglieder des Teams bekommen diese Rolle – auch wer später dazukommt. Wer das Team verlässt, verliert den Zugriff.",
+    noTeams: "Du bist in keinem Team, mit dem du teilen könntest.",
+    manageTeams: "Teams verwalten",
+    pickTeam: "Team",
+    addTeam: "Freigeben",
+    teamMembers: "{n} Mitgl.",
+    teamRoleOf: "Rolle für Team {name}",
+    removeTeam: "Freigabe für {name} aufheben",
+    confirmRemoveTeam: "Freigabe für das Team „{name}“ aufheben? Die Mitglieder verlieren den Zugriff (außer sie sind einzeln eingeladen).",
   },
   request: {
     sentTitle: "Anfrage gesendet",
@@ -50,6 +60,7 @@ const de = {
     by: "von {name}",
     pending: plural("Eine offene Zugriffsanfrage", "{n} offene Zugriffsanfragen"),
     pendingItem: "{name} → {project} ({role})",
+    viaTeam: "über Team {team}",
   },
   public: {
     metaTitle: "{name} · geteilt",
@@ -79,6 +90,9 @@ const de = {
     memberNotFound: "Mitglied nicht gefunden",
     membersOwnerOnly: "Mitglieder verwaltet nur der Besitzer des Projekts.",
     requestNotFound: "Anfrage nicht gefunden",
+    notInTeam: "Teilen geht nur mit Teams, in denen du selbst Mitglied bist.",
+    teamNotFound: "Diese Team-Freigabe gibt es nicht.",
+    viaTeamOnly: "Du hast Zugriff über ein Team – verlasse dafür das Team unter „Teams“.",
   },
 };
 
@@ -110,6 +124,16 @@ const en: Shape<typeof de> = {
     role: "Role",
     viewerHelp: "read only",
     editorHelp: "can change tasks, notes, status and description. Repository, token, sharing and deletion stay with you.",
+    teams: "Teams",
+    teamsText: "Every member of the team gets this role – including people who join later. Whoever leaves the team loses access.",
+    noTeams: "You're not in a team you could share with.",
+    manageTeams: "Manage teams",
+    pickTeam: "Team",
+    addTeam: "Share",
+    teamMembers: "{n} members",
+    teamRoleOf: "Role for team {name}",
+    removeTeam: "Stop sharing with {name}",
+    confirmRemoveTeam: "Stop sharing with the team “{name}”? Its members lose access (unless they were invited individually).",
   },
   request: {
     sentTitle: "Request sent",
@@ -128,6 +152,7 @@ const en: Shape<typeof de> = {
     by: "by {name}",
     pending: plural("One open access request", "{n} open access requests"),
     pendingItem: "{name} → {project} ({role})",
+    viaTeam: "via team {team}",
   },
   public: {
     metaTitle: "{name} · shared",
@@ -157,6 +182,9 @@ const en: Shape<typeof de> = {
     memberNotFound: "Member not found",
     membersOwnerOnly: "Only the project owner can manage members.",
     requestNotFound: "Request not found",
+    notInTeam: "You can only share with teams you're a member of yourself.",
+    teamNotFound: "This team share doesn't exist.",
+    viaTeamOnly: "You have access through a team – leave the team under “Teams” instead.",
   },
 };
 

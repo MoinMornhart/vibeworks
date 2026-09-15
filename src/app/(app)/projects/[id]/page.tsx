@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
-import { visibleTo, type ProjectAccess } from "@/lib/access";
+import { accessFromRoles, roleSelect, visibleTo, type ProjectAccess } from "@/lib/access";
 import { projectListSelect, serializeProject } from "@/lib/projects";
 import { NOTE_ORDER, serializeNote } from "@/lib/notes";
 import { serializeTask, TASK_ORDER } from "@/lib/tasks";
@@ -46,7 +46,7 @@ const loadProject = cache(async (id: string) => {
       liveError: true,
       ownerId: true,
       owner: { select: { username: true, displayName: true } },
-      members: { where: { userId: user.id }, select: { role: true } },
+      ...roleSelect(user.id),
       accessRequests: { where: { status: "PENDING" }, select: { id: true } },
       notes: { orderBy: NOTE_ORDER },
       tasks: { orderBy: TASK_ORDER },
@@ -54,7 +54,7 @@ const loadProject = cache(async (id: string) => {
     },
   });
   if (!project) return null;
-  const access: ProjectAccess = project.ownerId === user.id ? "OWNER" : (project.members[0]?.role ?? "VIEWER");
+  const access: ProjectAccess = accessFromRoles(project.ownerId, user.id, project);
   return { project, access };
 });
 
@@ -67,7 +67,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
   const { project, access } = loaded;
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,

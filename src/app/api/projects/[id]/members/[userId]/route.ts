@@ -27,6 +27,8 @@ export const DELETE = route<Params>(async (_req, { params }) => {
   const leaving = userId === user.id && access !== "OWNER";
   if (access !== "OWNER" && !leaving) throw new ApiError(403, tk("share", "errors.membersOwnerOnly"));
   const { count } = await db.projectMember.deleteMany({ where: { projectId: project.id, userId } });
+  // Zugriff nur über ein Team: dort austreten statt hier
+  if (!count && leaving) throw new ApiError(409, tk("share", "errors.viaTeamOnly"));
   if (!count) throw notFound(tk("share", "errors.memberNotFound"));
   return json(leaving ? { ok: true } : { share: await shareState(project.id) });
 });

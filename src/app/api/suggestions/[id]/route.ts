@@ -58,7 +58,12 @@ export const POST = route<Params>(async (req, { params }) => {
         where: {
           status: { not: "DONE" },
           dueDate: { lt: dayKeyToDate(today) },
-          project: { buriedAt: null, status: { not: "ARCHIVED" }, OR: [{ ownerId: user.id }, { members: { some: { userId: user.id, role: "EDITOR" } } }] },
+          project: { buriedAt: null, status: { not: "ARCHIVED" }, OR: [
+              { ownerId: user.id },
+              { members: { some: { userId: user.id, role: "EDITOR" } } },
+              { teams: { some: { role: "EDITOR", team: { members: { some: { userId: user.id } } } } } },
+            ],
+          },
         },
         orderBy: { dueDate: "asc" },
         take: 10,

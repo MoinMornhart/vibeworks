@@ -9,6 +9,8 @@ import { translateMessage } from "@/lib/i18n/messages";
 import { ProjectBoard } from "@/components/projects/ProjectBoard";
 import { PendingRequests, SharedProjects } from "@/components/share/SharedProjects";
 import { SleepingProjects } from "@/components/grave/SleepingProjects";
+import { roleSelect, visibleTo } from "@/lib/access";
+import { bestRole } from "@/lib/teamsLogic";
 import { WeeklySuggestions } from "@/components/WeeklySuggestions";
 import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
 
@@ -23,9 +25,9 @@ export default async function Dashboard() {
       orderBy: { updatedAt: "desc" },
     }),
     taskDoneCounts(user.id),
-    // Projekte anderer Konten, in denen man Mitglied ist
+    // Projekte anderer Konten, in denen man Mitglied ist – direkt oder über ein Team
     db.project.findMany({
-      where: { members: { some: { userId: user.id } }, status: { not: "ARCHIVED" } },
+      where: { ownerId: { not: user.id }, ...visibleTo(user.id), status: { not: "ARCHIVED" } },
       select: {
         id: true,
         name: true,
@@ -34,7 +36,7 @@ export default async function Dashboard() {
         progress: true,
         accent: true,
         owner: { select: { username: true, displayName: true } },
-        members: { where: { userId: user.id }, select: { role: true } },
+        ...roleSelect(user.id),
       },
       orderBy: { updatedAt: "desc" },
     }),
@@ -131,7 +133,8 @@ export default async function Dashboard() {
           progress: p.progress,
           accent: p.accent,
           owner: displayNameOf(p.owner),
-          role: p.members[0]?.role ?? "VIEWER",
+          role: bestRole([...p.members, ...p.teams].map((r) => r.role)) ?? "VIEWER",
+          via: p.members.length ? null : (p.teams[0]?.team.name ?? null),
         }))}
       />
       {buried > 0 && (

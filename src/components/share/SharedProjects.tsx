@@ -15,6 +15,8 @@ export interface SharedProjectCard {
   accent: string;
   owner: string;
   role: ProjectRole;
+  /** Zugriff nur über dieses Team */
+  via?: string | null;
 }
 
 export interface PendingRequestItem {
@@ -73,7 +75,10 @@ export function SharedProjects({ projects }: { projects: SharedProjectCard[] }) 
                 <div className="h-full rounded-full" style={{ width: `${p.progress}%`, background: gradient }} />
               </div>
               <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted">
-                <span className="truncate">{t("shared.by", { name: p.owner })}</span>
+                <span className="truncate">
+                  {t("shared.by", { name: p.owner })}
+                  {p.via && ` · ${t("shared.viaTeam", { team: p.via })}`}
+                </span>
                 <span className="inline-flex items-center gap-1.5" style={{ color: `var(${status.cssVar})` }}>
                   <span className="h-2 w-2 rounded-full" style={{ background: `var(${status.cssVar})` }} /> {ts(`project.${p.status}`)}
                 </span>

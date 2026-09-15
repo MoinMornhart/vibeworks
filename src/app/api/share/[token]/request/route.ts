@@ -5,6 +5,7 @@ import { displayNameOf, requireApiUser } from "@/lib/auth/guard";
 import { tk } from "@/lib/i18n/messages";
 import { appLink, notifyUser } from "@/lib/notify";
 import { accessRequestSchema } from "@/lib/validation";
+import { accessOf } from "@/lib/access";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { token: string };
@@ -17,10 +18,11 @@ export const POST = route<Params>(async (req, { params }) => {
   const { token } = await params;
   const project = await db.project.findUnique({
     where: { shareToken: token },
-    select: { id: true, name: true, ownerId: true, members: { where: { userId: user.id }, select: { userId: true } } },
+    select: { id: true, name: true, ownerId: true },
   });
   if (!project) throw notFound(tk("share", "errors.invalidLink"));
-  if (project.ownerId === user.id || project.members.length) throw new ApiError(400, tk("share", "errors.alreadyAccess"));
+  // Schon Zugriff – als Besitzer, Mitglied oder über ein Team
+  if (await accessOf(user.id, project.id)) throw new ApiError(400, tk("share", "errors.alreadyAccess"));
 
   const { role, message } = await readBody(req, accessRequestSchema, { maxBytes: 4096 });
   await db.accessRequest.upsert({
