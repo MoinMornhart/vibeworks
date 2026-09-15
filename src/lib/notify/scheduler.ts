@@ -28,6 +28,8 @@ function zoneHour(at: Date): number {
 export async function runDigest(now = new Date()): Promise<number> {
   // Posteingang aufräumen: nach 30 Tagen hat die Windows-App ihn längst abgeholt
   await db.notification.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } } });
+  // MCP-Protokoll ebenso nur 30 Tage
+  await db.mcpCall.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } } });
   if (zoneHour(now) < DIGEST_HOUR) return 0;
   const today = dayKey(now);
   const rows = await db.notificationSettings.findMany({

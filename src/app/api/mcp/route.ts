@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 import { ApiError, assertSameOrigin } from "@/lib/api";
+import { db } from "@/lib/db";
 import { authenticateApiToken } from "@/lib/mcp/token";
 import { handleBody, RPC, rpcError } from "@/lib/mcp/protocol";
-import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, MCP_TOOLS, type McpContext } from "@/lib/mcp/tools";
+import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, type McpContext } from "@/lib/mcp/tools";
+import { allMcpTools } from "@/lib/mcp/agentTools";
+import { CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL } from "@/lib/mcp/agentRules";
 import { CHANGELOG } from "@/lib/changelog";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
@@ -12,6 +15,7 @@ import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 // MCP-Endpunkt für Claude Code: „Streamable HTTP“, zustandslos, Anmeldung
 // per API-Schlüssel (Mein Konto → Claude Code & API-Schlüssel).
 //   claude mcp add --transport http vibeworks <APP_URL>/api/mcp --header "Authorization: Bearer vw_…"
+// Jeder Werkzeugaufruf landet ohne Inhalte im Protokoll des Kontos (30 Tage).
 
 const MAX_BODY = 2 * 1024 * 1024;
 
@@ -42,13 +46,24 @@ export async function POST(req: NextRequest) {
   const raw = await req.text();
   if (raw.length > MAX_BODY) return NextResponse.json(rpcError(null, RPC.INVALID_REQUEST, "Request too large"), { status: 413 });
 
-  const ctx: McpContext = { userId: auth.user.id, locale };
+  const ctx: McpContext = { userId: auth.user.id, locale, tokenId: auth.tokenId };
+  let rulesAcked = Boolean(auth.rulesAckAt);
   const { status, body } = await handleBody(raw, ctx, {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,
-    tools: MCP_TOOLS,
+    tools: allMcpTools(),
     prompts: MCP_PROMPTS,
     resources: MCP_RESOURCES,
+    onInitialize: async (client) => {
+      await db.apiToken.update({ where: { id: auth.tokenId }, data: { clientName: client.name, clientVersion: client.version, clientProtocol: client.protocol } });
+    },
+    outdatedNote: (v) =>
+      `Note for the user: this MCP client asked for protocol version ${v}, which VibeWorks no longer supports natively. It still works, but please update the client.`,
+    onToolCall: async (call) => {
+      if (call.ok && call.tool === CONFIRM_TOOL) rulesAcked = true;
+      await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms } });
+    },
+    notice: (tool) => (rulesAcked || tool === RULES_TOOL || tool === CONFIRM_TOOL ? null : RULES_REMINDER),
     describeError: async (err) => {
       if (err instanceof ZodError) return err.issues.map((i) => `${i.path.join(".") || "input"}: ${tr(i.message)}`).join("\n");
       if (err instanceof ApiError) {

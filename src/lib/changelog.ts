@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.3",
+    date: "2026-09-15",
+    title: "MCP: Regeln für KI-Agenten und Protokoll",
+    titleEn: "MCP: rules for AI agents and call log",
+    changes: [
+      {
+        type: "neu",
+        text: "Regeln für KI-Agenten: Beim ersten Verbinden holt sich die KI mit get_agent_rules eine Skill-Datei (englisch, mit der aktuellen Werkzeugliste), speichert sie lokal – Claude Code, Gemini oder AGENTS.md – und bestätigt mit confirm_agent_rules. Bis dahin erinnert jede Antwort daran; ob bestätigt ist, steht am Schlüssel",
+        en: "Rules for AI agents: on first connect the AI fetches a skill file with get_agent_rules (English, with the current tool list), saves it locally – Claude Code, Gemini or AGENTS.md – and confirms with confirm_agent_rules. Until then every answer reminds it; the key shows whether it's confirmed",
+      },
+      {
+        type: "neu",
+        text: "MCP-Protokoll im Konto: welche Werkzeuge deine Schlüssel aufgerufen haben, mit Ergebnis, Fehler und Dauer – ohne Inhalte, nach 30 Tagen gelöscht. Am Schlüssel steht außerdem, welcher Client ihn benutzt",
+        en: "MCP call log in your account: which tools your keys called, with result, error and duration – without contents, deleted after 30 days. Each key also shows which client uses it",
+      },
+      {
+        type: "besser",
+        text: "Ältere MCP-Clients funktionieren weiter, bekommen aber den Hinweis, sich zu aktualisieren; Aufrufe unbekannter Werkzeuge landen im Protokoll",
+        en: "Older MCP clients keep working but get a note to update; calls to unknown tools show up in the log",
+      },
+    ],
+  },
+  {
     version: "0.7.2",
     date: "2026-09-15",
     title: "Entwürfe und Passwort-Erinnerung",

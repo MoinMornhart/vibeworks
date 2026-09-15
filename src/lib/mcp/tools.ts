@@ -37,6 +37,8 @@ import { MAX_FOCUS } from "@/lib/today";
 export interface McpContext {
   userId: string;
   locale: Locale;
+  /** Der benutzte API-Schlüssel (für confirm_agent_rules) */
+  tokenId?: string;
 }
 
 export const MCP_INSTRUCTIONS = [
@@ -51,6 +53,7 @@ export const MCP_INSTRUCTIONS = [
   "The user's day: get_today shows planned tasks and suggestions, add_to_today/remove_from_today plan it, start_timer/stop_timer track time on a task.",
   "Runtime errors of the user's apps land in the error inbox: list_errors shows them with stack traces – fix the cause, then mark them with resolve_error.",
   "Starred projects are protected: their status and repository can't be changed via MCP – ask the user to do it in VibeWorks.",
+  "First, call get_agent_rules once, save the rules locally as described there and call confirm_agent_rules – until then tool results carry a reminder.",
 ].join(" ");
 
 const PROJECT_STATUSES = ["IDEA", "PLANNING", "OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"] as const;

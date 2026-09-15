@@ -717,9 +717,32 @@ model ApiToken {
   /// Gekürzte Anzeige, z. B. "vw_AbCd…9f3a"
   hint       String
   lastUsedAt DateTime?
+  /// Die KI hat die Agent-Regeln gespeichert und bestätigt (confirm_agent_rules)
+  rulesAckAt DateTime?
+  /// Zuletzt gemeldeter Client (initialize): Name, Version, verlangte Protokollversion
+  clientName     String?
+  clientVersion  String?
+  clientProtocol String?
+  calls      McpCall[]
   createdAt  DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// MCP-Aufrufe fürs Protokoll im Konto – nur Werkzeug, Ergebnis, Dauer, keine Eingaben. Nach 30 Tagen weg.
+model McpCall {
+  id        String   @id @default(cuid())
+  tokenId   String
+  token     ApiToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  userId    String
+  tool      String
+  ok        Boolean
+  error     String?
+  ms        Int
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 /// Ideen-Eingang: schnell Eingeworfenes, später zu Projekt oder Aufgabe gemacht (dann gelöscht).

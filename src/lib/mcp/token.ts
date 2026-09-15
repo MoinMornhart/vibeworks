@@ -33,11 +33,21 @@ export async function authenticateApiToken(header: string | null) {
   if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > 60_000) {
     await db.apiToken.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } }).catch(() => undefined);
   }
-  return { tokenId: row.id, user: row.user };
+  return { tokenId: row.id, user: row.user, rulesAckAt: row.rulesAckAt };
 }
 export type ApiTokenAuth = NonNullable<Awaited<ReturnType<typeof authenticateApiToken>>>;
 
 export function serializeApiToken(t: ApiToken) {
-  return { id: t.id, name: t.name, hint: t.hint, lastUsedAt: t.lastUsedAt?.toISOString() ?? null, createdAt: t.createdAt.toISOString() };
+  return {
+    id: t.id,
+    name: t.name,
+    hint: t.hint,
+    lastUsedAt: t.lastUsedAt?.toISOString() ?? null,
+    createdAt: t.createdAt.toISOString(),
+    rulesAckAt: t.rulesAckAt?.toISOString() ?? null,
+    clientName: t.clientName,
+    clientVersion: t.clientVersion,
+    clientProtocol: t.clientProtocol,
+  };
 }
 export type ApiTokenItem = ReturnType<typeof serializeApiToken>;

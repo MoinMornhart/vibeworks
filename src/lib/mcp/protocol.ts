@@ -48,6 +48,23 @@ export interface ResourceProvider<C> {
   read: (uri: string, ctx: C) => Promise<{ mimeType: string; text: string } | null>;
 }
 
+export interface ClientInfo {
+  name: string | null;
+  version: string | null;
+  /** Vom Client verlangte Protokollversion */
+  protocol: string | null;
+  /** Kennen wir diese Version? */
+  supported: boolean;
+}
+
+export interface ToolCallInfo {
+  tool: string;
+  ok: boolean;
+  ms: number;
+  /** Fehlertext für das Protokoll (gekürzt) */
+  error: string | null;
+}
+
 export interface ServerOptions<C> {
   info: { name: string; title: string; version: string };
   instructions: string;
@@ -56,11 +73,31 @@ export interface ServerOptions<C> {
   resources?: ResourceProvider<C>;
   /** Fehler eines Werkzeugs als Text für das Modell. */
   describeError: (err: unknown) => Promise<string>;
+  /** Nach „initialize“: welcher Client mit welcher Protokollversion. Fehler hier stören die Antwort nicht. */
+  onInitialize?: (client: ClientInfo, ctx: C) => Promise<void> | void;
+  /** Hinweis für Clients mit veralteter Protokollversion – wird an die instructions gehängt. */
+  outdatedNote?: (requested: string) => string;
+  /** Nach jedem Werkzeugaufruf (Protokoll). Fehler hier stören die Antwort nicht. */
+  onToolCall?: (call: ToolCallInfo, ctx: C) => Promise<void> | void;
+  /** Zusätzlicher Hinweis im Ergebnis eines Werkzeugs – null für keinen. */
+  notice?: (tool: string, ctx: C) => Promise<string | null> | string | null;
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const ok = (id: Id, result: unknown): RpcResponse => ({ jsonrpc: "2.0", id, result });
 export const rpcError = (id: Id | null, code: number, message: string): RpcResponse => ({ jsonrpc: "2.0", id, error: { code, message } });
+const shortText = (v: unknown, max = 100) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+const ERROR_LOG_MAX = 300;
+
+/** Haken aufrufen, ohne dass ein Fehler darin die eigentliche Antwort verdirbt. */
+async function quietly<T>(fn: () => Promise<T> | T): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error("[mcp] hook", err);
+    return null;
+  }
+}
 
 /** Eine Nachricht verarbeiten – null bei Benachrichtigungen und Antworten (dafür gibt es keine Antwort). */
 export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions<C>): Promise<RpcResponse | null> {
@@ -79,11 +116,17 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
       return rpcError(id, RPC.INTERNAL, await opts.describeError(err));
     }
   };
+  const logCall = (call: ToolCallInfo) => quietly(() => opts.onToolCall?.(call, ctx));
 
   switch (msg.method) {
     case "initialize": {
-      const requested = params.protocolVersion;
-      const version = (PROTOCOL_VERSIONS as readonly unknown[]).includes(requested) ? (requested as string) : PROTOCOL_VERSIONS[0];
+      const requested = shortText(params.protocolVersion, 40);
+      const supported = requested !== null && (PROTOCOL_VERSIONS as readonly string[]).includes(requested);
+      const version = supported ? requested! : PROTOCOL_VERSIONS[0];
+      const client = isObject(params.clientInfo) ? params.clientInfo : {};
+      await quietly(() => opts.onInitialize?.({ name: shortText(client.name), version: shortText(client.version, 40), protocol: requested, supported }, ctx));
+      // Ältere, nicht mehr unterstützte Version: funktioniert weiter, aber mit Bitte ums Aktualisieren
+      const outdated = requested && !supported && requested < PROTOCOL_VERSIONS[PROTOCOL_VERSIONS.length - 1] && opts.outdatedNote ? opts.outdatedNote(requested) : null;
       return ok(id, {
         protocolVersion: version,
         capabilities: {
@@ -92,7 +135,7 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
           ...(opts.resources ? { resources: { listChanged: false, subscribe: false } } : {}),
         },
         serverInfo: opts.info,
-        instructions: opts.instructions,
+        instructions: outdated ? `${opts.instructions} ${outdated}` : opts.instructions,
       });
     }
     case "ping":
@@ -103,14 +146,24 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
       });
     case "tools/call": {
       const tool = opts.tools.find((t) => t.name === params.name);
-      if (!tool) return rpcError(id, RPC.INVALID_PARAMS, `Unknown tool: ${String(params.name)}`);
+      if (!tool) {
+        const name = shortText(params.name, 80) ?? "?";
+        await logCall({ tool: name, ok: false, ms: 0, error: "Unknown tool" });
+        return rpcError(id, RPC.INVALID_PARAMS, `Unknown tool: ${String(params.name)}`);
+      }
       const args = isObject(params.arguments) ? params.arguments : {};
+      const started = Date.now();
       try {
         const out = await tool.run(args, ctx);
-        return ok(id, { content: [{ type: "text", text: typeof out === "string" ? out : JSON.stringify(out, null, 2) }] });
+        await logCall({ tool: tool.name, ok: true, ms: Date.now() - started, error: null });
+        const note = await quietly(() => opts.notice?.(tool.name, ctx) ?? null);
+        const content = [{ type: "text", text: typeof out === "string" ? out : JSON.stringify(out, null, 2) }, ...(note ? [{ type: "text", text: note }] : [])];
+        return ok(id, { content });
       } catch (err) {
         // Werkzeugfehler gehören ins Ergebnis, damit das Modell sie sieht und reagieren kann
-        return ok(id, { content: [{ type: "text", text: await opts.describeError(err) }], isError: true });
+        const text = await opts.describeError(err);
+        await logCall({ tool: tool.name, ok: false, ms: Date.now() - started, error: text.slice(0, ERROR_LOG_MAX) });
+        return ok(id, { content: [{ type: "text", text }], isError: true });
       }
     }
     case "prompts/list": {

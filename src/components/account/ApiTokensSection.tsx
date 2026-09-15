@@ -1,14 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Check, Copy, KeyRound, Plus } from "lucide-react";
+import { Bot, Check, CircleAlert, Copy, History, KeyRound, Plus, ScrollText, ShieldCheck } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { ApiTokenItem } from "@/lib/mcp/token";
+import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
 
-export function ApiTokensSection({ initial, appUrl }: { initial: ApiTokenItem[]; appUrl: string }) {
+interface CallItem {
+  id: string;
+  tool: string;
+  ok: boolean;
+  error: string | null;
+  ms: number;
+  token: string;
+  at: string;
+}
+
+export function ApiTokensSection({ initial, appUrl, rules }: { initial: ApiTokenItem[]; appUrl: string; rules: string }) {
   const t = useT("mcp");
   const f = useFormat();
   const [items, setItems] = useState(initial);
@@ -18,6 +29,7 @@ export function ApiTokensSection({ initial, appUrl }: { initial: ApiTokenItem[];
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [calls, setCalls] = useState<CallItem[] | null>(null);
 
   const endpoint = `${appUrl}/api/mcp`;
   const command = (token: string) => `claude mcp add --scope user --transport http vibeworks ${endpoint} --header "Authorization: Bearer ${token}"`;
@@ -61,6 +73,13 @@ export function ApiTokensSection({ initial, appUrl }: { initial: ApiTokenItem[];
     }
   }
 
+  // Protokoll erst beim Aufklappen laden
+  function loadCalls() {
+    api<{ calls: CallItem[] }>("/api/account/mcp-calls")
+      .then((r) => setCalls(r.calls))
+      .catch((err) => setError(errorMessage(err)));
+  }
+
   const CopyButton = ({ value, id, label }: { value: string; id: string; label?: string }) => (
     <button type="button" className="btn btn-sm shrink-0" onClick={() => void copy(value, id)}>
       {copied === id ? <Check size={14} /> : <Copy size={14} />} {copied === id ? t("copied") : (label ?? t("copy"))}
@@ -94,13 +113,27 @@ export function ApiTokensSection({ initial, appUrl }: { initial: ApiTokenItem[];
       {items.length ? (
         <ul className="mb-4 space-y-2">
           {items.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+            <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border p-3" data-testid="api-token">
               <KeyRound size={16} className="shrink-0 text-muted" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.name}</p>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                  <span className="truncate">{item.name}</span>
+                  <span
+                    className={cn("chip !py-0.5 text-[11px]", item.rulesAckAt ? "border-emerald-500/40 text-emerald-400" : "border-amber-500/40 text-amber-400")}
+                    title={item.rulesAckAt ? t("rules.ackedAt", { ago: f.ago(item.rulesAckAt) }) : t("rules.pendingHint")}
+                    suppressHydrationWarning
+                  >
+                    {item.rulesAckAt ? <ShieldCheck size={11} /> : <CircleAlert size={11} />} {item.rulesAckAt ? t("rules.acked") : t("rules.pending")}
+                  </span>
+                </p>
                 <p className="text-xs text-muted" suppressHydrationWarning>
                   <span className="font-mono">{item.hint}</span> · {item.lastUsedAt ? t("lastUsed", { ago: f.ago(item.lastUsedAt) }) : t("neverUsed")} · {t("created", { ago: f.ago(item.createdAt) })}
                 </p>
+                {item.clientName && (
+                  <p className="text-xs text-muted">
+                    {t("client", { name: [item.clientName, item.clientVersion].filter(Boolean).join(" "), protocol: item.clientProtocol ?? "?" })}
+                  </p>
+                )}
               </div>
               {confirming === item.id ? (
                 <div className="flex gap-2">
@@ -135,6 +168,44 @@ export function ApiTokensSection({ initial, appUrl }: { initial: ApiTokenItem[];
       <div className="mt-3">
         <FormError message={error} />
       </div>
+
+      <details className="mt-5 rounded-2xl border px-4 py-3" data-testid="agent-rules">
+        <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+          <ScrollText size={14} className="text-accent-ink" /> {t("rules.title")}
+        </summary>
+        <p className="mt-2 text-xs text-muted">{t("rules.hint")}</p>
+        <div className="mt-3 flex justify-end">
+          <CopyButton value={rules} id="rules" />
+        </div>
+        <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded-lg border bg-black/20 p-3 font-mono text-[11px] leading-relaxed">{rules}</pre>
+      </details>
+
+      <details className="mt-3 rounded-2xl border px-4 py-3" data-testid="mcp-calls" onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && loadCalls()}>
+        <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+          <History size={14} className="text-accent-ink" /> {t("calls.title")}
+        </summary>
+        <p className="mt-2 text-xs text-muted">{t("calls.hint")}</p>
+        {calls === null ? (
+          <p className="mt-3 text-sm text-muted">{t("calls.loading")}</p>
+        ) : calls.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t("calls.empty")}</p>
+        ) : (
+          <ul className="mt-3 max-h-80 divide-y divide-fg/10 overflow-y-auto text-xs">
+            {calls.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5" data-testid="mcp-call">
+                <span className={cn("flex items-center gap-1", c.ok ? "text-emerald-400" : "text-red-400")}>
+                  {c.ok ? <Check size={12} /> : <CircleAlert size={12} />}
+                </span>
+                <code className="font-mono">{c.tool}</code>
+                <span className="text-muted">{c.token}</span>
+                <span className="text-muted">{t("calls.ms", { n: c.ms })}</span>
+                <span className="ml-auto text-muted" suppressHydrationWarning>{f.ago(c.at)}</span>
+                {c.error && <span className="basis-full text-red-400/90">{c.error}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
     </AccountSection>
   );
 }
