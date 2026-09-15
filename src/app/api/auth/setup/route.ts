@@ -23,7 +23,7 @@ export const POST = route(async (req) => {
     async (tx) => {
       if ((await tx.user.count()) > 0) throw new ApiError(409, tk("auth", "errors.setupDone"));
       const created = await tx.user.create({
-        data: { username: input.username, displayName: input.displayName, passwordHash, role: "ADMIN", ...tokenData },
+        data: { username: input.username, displayName: input.displayName, passwordHash, passwordChangedAt: new Date(), role: "ADMIN", ...tokenData },
       });
       const data = {
         mode: input.mode,

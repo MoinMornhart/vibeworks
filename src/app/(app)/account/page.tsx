@@ -33,7 +33,7 @@ export default async function AccountPage() {
   if (!auth) redirect("/login");
   const { user, sessionId } = auth;
   const hasPassword = Boolean(user.passwordHash);
-  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady, apiTokens, inbox, portfolio] = await Promise.all([
+  const [sessions, recoveryLeft, passkeys, connections, notifications, mailReady, apiTokens, inbox, portfolio, pw] = await Promise.all([
     listSessions(user.id, sessionId),
     recoveryCodesLeft(user.id),
     db.passkey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
@@ -43,6 +43,7 @@ export default async function AccountPage() {
     db.apiToken.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     inboxInfo(user.id),
     portfolioView(user.id),
+    db.user.findUnique({ where: { id: user.id }, select: { passwordChangedAt: true, passwordReminderDays: true } }),
   ]);
   return (
     <AccountManager
@@ -51,6 +52,8 @@ export default async function AccountPage() {
         displayName: user.displayName,
         email: user.email,
         hasPassword,
+        passwordChangedAt: pw?.passwordChangedAt?.toISOString() ?? null,
+        passwordReminderDays: pw?.passwordReminderDays ?? 180,
         role: user.role,
         createdAt: user.createdAt.toISOString(),
       }}

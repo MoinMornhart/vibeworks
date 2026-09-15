@@ -11,6 +11,7 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { Logo } from "@/components/Logo";
 import { TimerPill } from "@/components/time/TimerPill";
 import { NotificationBell } from "@/components/NotificationBell";
+import { clearAllDrafts } from "@/lib/client/draft";
 import { api } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import type { Key } from "@/lib/i18n/messages";
@@ -68,6 +69,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
   }, [menu]);
 
   async function logout() {
+    clearAllDrafts(); // geteilte Geräte: keine Entwürfe liegen lassen
     await api("/api/auth/logout", { body: {} }).catch(() => {});
     window.location.assign("/login");
   }

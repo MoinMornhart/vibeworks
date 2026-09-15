@@ -1,3 +1,4 @@
+import { hasSpecial, PASSWORD_MIN } from "./passwordRules";
 import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
 import { tk } from "@/lib/i18n/messages";
 
@@ -62,7 +63,7 @@ function isSequence(s: string): boolean {
   return true;
 }
 
-export const PASSWORD_MIN = 10;
+export { PASSWORD_MIN };
 
 /** null = in Ordnung, sonst eine verständliche Begründung als Übersetzungsschlüssel (auth.policy.*). */
 export function checkPasswordPolicy(password: string, username?: string): string | null {
@@ -74,5 +75,6 @@ export function checkPasswordPolicy(password: string, username?: string): string
   if (isSequence(lower)) return tk("auth", "policy.sequence");
   if (COMMON.has(lower) || COMMON.has(lower.replace(/[\d!?.]+$/, ""))) return tk("auth", "policy.common");
   if (username && username.length >= 3 && lower.includes(username.toLowerCase())) return tk("auth", "policy.containsUsername");
+  if (!hasSpecial(password)) return tk("auth", "policy.special");
   return null;
 }

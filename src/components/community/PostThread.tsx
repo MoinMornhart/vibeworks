@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDraft } from "@/lib/client/draft";
 import { useRouter } from "next/navigation";
 import { Ban, Check, CheckCircle2, Eye, EyeOff, Flag, Lock, LockOpen, Pencil, Send, Trash2 } from "lucide-react";
 import type { PostItem, ReplyItem } from "@/lib/community";
@@ -78,6 +79,7 @@ export function PostThread({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const replyDraft = useDraft(canWrite ? `reply:${initialPost.id}` : null, reply, setReply, (v) => !v.trim());
 
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -141,6 +143,7 @@ export function PostThread({
       setReplies((list) => [...list, res.reply]);
       setPost(res.post);
       setReply("");
+      replyDraft.discard();
     });
   }
 

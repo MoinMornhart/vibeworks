@@ -23,7 +23,7 @@ export const POST = route(async (req) => {
   if (policy) throw new ApiError(400, policy, { password: policy });
   try {
     await db.user.create({
-      data: { username: input.username, displayName: input.displayName, role: input.role, passwordHash: await hashPassword(input.password) },
+      data: { username: input.username, displayName: input.displayName, role: input.role, passwordHash: await hashPassword(input.password), passwordChangedAt: new Date() },
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

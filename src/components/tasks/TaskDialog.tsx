@@ -10,6 +10,9 @@ import { RECURRENCES } from "@/lib/taskDates";
 import { TASK_STATUSES } from "@/lib/status";
 import { ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
+import { usePathname } from "next/navigation";
+import { useDraft } from "@/lib/client/draft";
+import { DraftNote } from "@/components/ui/DraftNote";
 
 export interface TaskForm {
   title: string;
@@ -66,12 +69,22 @@ export function TaskDialog({
 
   const set = <K extends keyof TaskForm>(key: K, value: TaskForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  // Neue Aufgabe: Entwurf je Seite merken – die Spalte kommt weiter vom Klick
+  const pathname = usePathname();
+  const draft = useDraft(
+    open && !task ? `task-new:${pathname}` : null,
+    form,
+    (d) => setForm((f) => ({ ...f, title: d.title, description: d.description, dueDate: d.dueDate, labels: d.labels, recurrence: d.recurrence, assignee: d.assignee })),
+    (f) => !f.title.trim() && !f.description.trim(),
+  );
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
       await onSave(form);
+      draft.discard();
       onClose();
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
@@ -173,6 +186,13 @@ export function TaskDialog({
             {t("dialog.recurrenceHint")}
           </p>
         )}
+        <DraftNote
+          show={draft.restored}
+          onDiscard={() => {
+            draft.discard();
+            setForm(toForm(null, defaultStatus));
+          }}
+        />
         <FormError message={error} />
       </form>
     </Modal>

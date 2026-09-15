@@ -10,6 +10,8 @@ import type { ProjectListItem } from "@/lib/projects";
 import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
 import { api, ApiClientError, errorMessage, withProtectConfirm } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
+import { useDraft } from "@/lib/client/draft";
+import { DraftNote } from "@/components/ui/DraftNote";
 import { cn } from "@/lib/utils";
 import type { TemplateView } from "@/lib/templateData";
 
@@ -103,6 +105,18 @@ export function ProjectDialog({
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  // Neues Projekt: Texte als Entwurf merken
+  const draft = useDraft(
+    open && !project ? "project-new" : null,
+    form,
+    (d) => setForm((f) => ({ ...f, name: d.name, summary: d.summary, description: d.description, tags: d.tags })),
+    (f) => !f.name.trim() && !f.summary.trim() && !f.description.trim(),
+  );
+  const dropDraft = () => {
+    draft.discard();
+    setForm(toForm(null));
+  };
+
   /** Vorlage wählen: füllt Texte nur, wo nichts Eigenes steht; Farbe, Priorität und Fortschrittsart kommen immer mit. */
   function chooseTemplate(tp: TemplateView | null) {
     setTemplateId(tp?.id ?? "");
@@ -146,6 +160,7 @@ export function ProjectDialog({
           )
         : await api<{ project: ProjectListItem }>("/api/projects", { body });
       if (!res) return; // Stern-Schutz: nicht bestätigt – Dialog bleibt offen
+      if (!project) draft.discard();
       onSaved(res.project);
       onClose();
     } catch (err) {
@@ -179,6 +194,11 @@ export function ProjectDialog({
       footer={
         <>
           {/* Fehler direkt über den Knöpfen – im langen Formular stünde er außer Sicht */}
+          {draft.restored && (
+            <div className="basis-full">
+              <DraftNote show onDiscard={dropDraft} />
+            </div>
+          )}
           {error && (
             <div className="basis-full">
               <FormError message={error} />

@@ -53,7 +53,7 @@ const de = {
   setup: {
     title: "Willkommen!",
     subtitle: "Lege das Administratorkonto an und wähle, wie VibeWorks betrieben wird.",
-    passwordHint: "Mindestens 10 Zeichen – eine lange Passphrase ist besser als Sonderzeichen.",
+    passwordHint: "Mindestens 12 Zeichen und ein Sonderzeichen – ein Leerzeichen zählt auch, lange Passphrasen sind ideal.",
     mode: "Betriebsart",
     singleTitle: "Einzelbetrieb",
     singleText: "Genau ein Konto – deins.",
@@ -79,6 +79,7 @@ const de = {
     fewDistinct: "Zu wenige verschiedene Zeichen.",
     sequence: "Keine durchlaufende Zeichenfolge.",
     common: "Dieses Passwort ist zu naheliegend.",
+    special: "Mindestens ein Sonderzeichen – auch ein Leerzeichen zählt.",
     containsUsername: "Das Passwort darf den Benutzernamen nicht enthalten.",
   },
   errors: {
@@ -157,7 +158,7 @@ const en: Shape<typeof de> = {
   setup: {
     title: "Welcome!",
     subtitle: "Create the administrator account and choose how VibeWorks will run.",
-    passwordHint: "At least 10 characters – a long passphrase beats special characters.",
+    passwordHint: "At least 12 characters and one special character – a space counts too, long passphrases are ideal.",
     mode: "Mode",
     singleTitle: "Single user",
     singleText: "Exactly one account – yours.",
@@ -183,6 +184,7 @@ const en: Shape<typeof de> = {
     fewDistinct: "Too few different characters.",
     sequence: "No sequential characters.",
     common: "This password is too obvious.",
+    special: "At least one special character – a space counts too.",
     containsUsername: "The password must not contain the username.",
   },
   errors: {

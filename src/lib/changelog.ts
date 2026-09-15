@@ -26,8 +26,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.2",
+    date: "2026-09-15",
+    title: "Entwürfe und Passwort-Erinnerung",
+    titleEn: "Drafts and password reminder",
+    changes: [
+      {
+        type: "neu",
+        text: "Angefangene Texte bleiben erhalten, wenn man die Seite verlässt oder neu lädt: neue Aufgabe, neues Projekt, neue Notiz, Community-Beitrag, Antwort und Chat. Hinweis „Entwurf wiederhergestellt · Verwerfen“; beim Abmelden werden alle Entwürfe gelöscht, Anmeldedaten nie gespeichert",
+        en: "Unfinished texts survive leaving or reloading the page: new task, new project, new note, community post, reply and chat. Note “Draft restored · Discard”; signing out deletes all drafts, sign-in data is never stored",
+      },
+      {
+        type: "neu",
+        text: "Erinnerung zum Passwortwechsel – unter Konto → Passwort einstellbar (aus, 90, 180 oder 365 Tage). Die Meldung kommt über die Glocke und die Kanäle, ein Klick führt direkt zur Einstellung",
+        en: "Password change reminder – set under Account → Password (off, 90, 180 or 365 days). It arrives via the bell and your channels, a click takes you straight to the setting",
+      },
+      {
+        type: "besser",
+        text: "Strengere Passwortregeln für neue Passwörter: mindestens 12 Zeichen und ein Sonderzeichen (ein Leerzeichen zählt – Passphrasen gehen weiter). Beim Tippen zeigen Häkchen, was schon erfüllt ist; bestehende Passwörter bleiben gültig",
+        en: "Stricter rules for new passwords: at least 12 characters and one special character (a space counts – passphrases still work). Checkmarks show what's already met while typing; existing passwords stay valid",
+      },
+    ],
+  },
+  {
     version: "0.7.1",
-    date: "2026-09-16",
+    date: "2026-09-15",
     title: "Glocke und Bearbeiter",
     titleEn: "Bell and assignees",
     changes: [

@@ -1,24 +1,29 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { KeyRound, LogOut, Monitor, Save, ShieldCheck, Smartphone, UserRound } from "lucide-react";
+import { Check, KeyRound, LogOut, Monitor, Save, ShieldCheck, Smartphone, UserRound, X } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import type { SessionItem } from "@/lib/account";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
+import { hasSpecial, PASSWORD_MIN } from "@/lib/auth/passwordRules";
+import { REMINDER_OPTIONS } from "@/lib/auth/passwordAge";
+import { cn } from "@/lib/utils";
 
 export interface AccountProfile {
   username: string;
   displayName: string | null;
   email: string | null;
   hasPassword: boolean;
+  passwordChangedAt: string | null;
+  passwordReminderDays: number;
   role: "ADMIN" | "USER";
   createdAt: string;
 }
 
-export function AccountSection({ icon, title, description, children }: { icon: ReactNode; title: string; description?: string; children: ReactNode }) {
+export function AccountSection({ icon, title, description, children, id }: { icon: ReactNode; title: string; description?: string; children: ReactNode; id?: string }) {
   return (
-    <section className="glass p-6 sm:p-8">
+    <section id={id} className="glass scroll-mt-24 p-6 sm:p-8">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <span className="text-accent-ink">{icon}</span> {title}
       </h2>
@@ -80,9 +85,12 @@ function ProfileForm({ profile }: { profile: AccountProfile }) {
   );
 }
 
-function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
+function PasswordForm({ hasPassword, changedAt, reminderDays }: { hasPassword: boolean; changedAt: string | null; reminderDays: number }) {
   const t = useT("account");
   const tc = useT("common");
+  const f = useFormat();
+  const [days, setDays] = useState(reminderDays);
+  const [lastChanged, setLastChanged] = useState(changedAt);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -107,6 +115,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       setNext("");
       setConfirm("");
       setNotice(t("password.changed"));
+      setLastChanged(new Date().toISOString());
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
       setError(errorMessage(err));
@@ -114,6 +123,24 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       setBusy(false);
     }
   }
+
+  async function saveReminder(value: number) {
+    setError(null);
+    setNotice(null);
+    try {
+      await api("/api/account/password-reminder", { method: "PATCH", body: { days: value } });
+      setDays(value);
+      setNotice(t("password.reminderSaved"));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  // Beim Tippen zeigen, welche Regeln schon erfüllt sind (geprüft wird auf dem Server)
+  const rules = [
+    { ok: next.length >= PASSWORD_MIN, label: t("password.rules.length", { n: PASSWORD_MIN }) },
+    { ok: hasSpecial(next), label: t("password.rules.special") },
+  ];
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -137,9 +164,31 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         </div>
       </div>
       <p className="text-xs text-muted">{t("password.hint")}</p>
+      {next && (
+        <ul className="space-y-1 text-xs" aria-live="polite" data-testid="password-rules">
+          {rules.map((r) => (
+            <li key={r.label} className={cn("flex items-center gap-1.5", r.ok ? "text-emerald-400" : "text-muted")}>
+              {r.ok ? <Check size={12} /> : <X size={12} />} {r.label}
+            </li>
+          ))}
+        </ul>
+      )}
       <FormError message={error} />
       <Notice text={notice} />
       <button className="btn btn-primary btn-sm" disabled={busy}><KeyRound size={14} /> {busy ? tc("saving") : hasPassword ? t("password.change") : t("password.set")}</button>
+      <div className="flex flex-wrap items-end gap-3 border-t border-fg/10 pt-4">
+        <div>
+          <label className="label" htmlFor="pw-reminder">{t("password.reminder")}</label>
+          <select id="pw-reminder" className="field !w-auto" value={days} onChange={(e) => void saveReminder(Number(e.target.value))}>
+            {REMINDER_OPTIONS.map((d) => (
+              <option key={d} value={d}>{d ? t("password.reminderDays", { n: d }) : t("password.reminderOff")}</option>
+            ))}
+          </select>
+        </div>
+        <p className="pb-2 text-xs text-muted" suppressHydrationWarning>
+          {lastChanged ? t("password.lastChanged", { date: f.date(lastChanged) }) : t("password.neverChanged")}
+        </p>
+      </div>
     </form>
   );
 }
@@ -207,8 +256,8 @@ export function AccountManager({ profile, sessions, children }: { profile: Accou
       <AccountSection icon={<UserRound size={18} />} title={t("profile.title")}>
         <ProfileForm profile={profile} />
       </AccountSection>
-      <AccountSection icon={<KeyRound size={18} />} title={t("password.title")} description={t("password.description")}>
-        <PasswordForm hasPassword={profile.hasPassword} />
+      <AccountSection id="passwort" icon={<KeyRound size={18} />} title={t("password.title")} description={t("password.description")}>
+        <PasswordForm hasPassword={profile.hasPassword} changedAt={profile.passwordChangedAt} reminderDays={profile.passwordReminderDays} />
       </AccountSection>
       {children}
       <AccountSection icon={<Monitor size={18} />} title={t("sessions.title")} description={t("sessions.description")}>

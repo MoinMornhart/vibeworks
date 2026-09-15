@@ -12,6 +12,7 @@ import { pollNtfyInboxes } from "@/lib/inboxServer";
 import { addDaysKey } from "@/lib/weeks";
 import { dayKey, TIME_ZONE } from "@/lib/utils";
 import { eventsOf } from "./format";
+import { passwordReminderDue } from "@/lib/auth/passwordAge";
 import { appLink, notifyUser } from "./index";
 
 // Zeitgesteuerte Benachrichtigungen: morgens die fälligen Aufgaben, nach
@@ -141,6 +142,29 @@ export async function runWeeklySuggestions(now = new Date()): Promise<number> {
   return sent;
 }
 
+/** Passwort-Erinnerung: ab 8 Uhr, wer sie eingeschaltet hat und dessen Passwort zu alt ist – höchstens alle 30 Tage. */
+export async function runPasswordReminders(now = new Date()): Promise<number> {
+  if (zoneHour(now) < DIGEST_HOUR) return 0;
+  const users = await db.user.findMany({
+    where: { active: true, passwordHash: { not: null }, passwordReminderDays: { gt: 0 } },
+    select: { id: true, createdAt: true, passwordChangedAt: true, passwordReminderDays: true, passwordRemindedAt: true },
+  });
+  let sent = 0;
+  for (const u of users) {
+    const age = passwordReminderDue({ changedAt: u.passwordChangedAt, createdAt: u.createdAt, days: u.passwordReminderDays, remindedAt: u.passwordRemindedAt }, now);
+    if (age === null) continue;
+    await db.user.update({ where: { id: u.id }, data: { passwordRemindedAt: now } });
+    await notifyUser(u.id, "passwordAge", (t) => ({
+      event: "passwordAge",
+      title: t("events.passwordAge.title"),
+      message: t("events.passwordAge.message", { n: age }),
+      url: appLink("/account#passwort"),
+    }));
+    sent++;
+  }
+  return sent;
+}
+
 const g = globalThis as typeof globalThis & { __vwNotifyScheduler?: boolean };
 
 export function startNotifyScheduler() {
@@ -152,6 +176,7 @@ export function startNotifyScheduler() {
     void runDigest().catch(log);
     void runRenewals().catch(log);
     void runWeeklySuggestions().catch(log);
+    void runPasswordReminders().catch(log);
   };
   // Ideen-Eingang: ntfy-Themen jede Minute abholen
   setInterval(() => void pollNtfyInboxes().catch(log), 60_000).unref?.();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDraft } from "@/lib/client/draft";
 import Link from "next/link";
 import { EyeOff, Flag, MessageCircle, Send } from "lucide-react";
 import type { PostItem } from "@/lib/community";
@@ -31,6 +32,7 @@ export function CommunityBoard({ projectId, initialPosts, canWrite, moderator }:
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [bans, setBans] = useState<Ban[] | null>(null);
+  const draft = useDraft(canWrite ? `post-new:${projectId}` : null, form, setForm, (f) => !f.title.trim() && !f.body.trim());
 
   useEffect(() => {
     if (!moderator) return;
@@ -50,6 +52,7 @@ export function CommunityBoard({ projectId, initialPosts, canWrite, moderator }:
       const res = await api<{ post: PostItem }>(`/api/community/${projectId}/posts`, { body: form });
       setPosts((list) => [res.post, ...list]);
       setForm({ kind: form.kind, title: "", body: "" });
+      draft.discard();
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);
       setError(errorMessage(err));

@@ -40,6 +40,7 @@ const de = {
     siteDown: "Eine Live-Seite fällt aus, ist wieder da oder ihr Zertifikat läuft bald ab",
     renewal: "Eine Verlängerung steht an (z. B. Domain) – zwei Wochen vorher",
     suggestions: "Neue Wochen-Vorschläge – montags ab 8 Uhr",
+    passwordAge: "Erinnerung, das Passwort zu wechseln (Abstand unter Konto → Passwort)",
     updated: "VibeWorks wurde aktualisiert",
   },
   save: "Speichern",
@@ -93,6 +94,10 @@ const de = {
       message: plural("Am {date} – in {n} Tag – für {amount}.", "Am {date} – in {n} Tagen – für {amount}."),
     },
     suggestions: { title: plural("{n} Vorschlag für diese Woche", "{n} Vorschläge für diese Woche") },
+    passwordAge: {
+      title: "Zeit für ein neues Passwort",
+      message: plural("Dein Passwort ist {n} Tag alt – ein Klick führt zur Einstellung.", "Dein Passwort ist {n} Tage alt – ein Klick führt zur Einstellung."),
+    },
     test: { title: "Test von VibeWorks", message: "Wenn du das liest, kommt der Kanal an. 🎉" },
   },
   errors: {
@@ -145,6 +150,7 @@ const en: Shape<typeof de> = {
     siteDown: "A live site goes down, comes back or its certificate is about to expire",
     renewal: "A renewal is coming up (e.g. a domain) – two weeks ahead",
     suggestions: "New weekly suggestions – Mondays from 8 am",
+    passwordAge: "Reminder to change your password (interval under Account → Password)",
     updated: "VibeWorks was updated",
   },
   save: "Save",
@@ -198,6 +204,10 @@ const en: Shape<typeof de> = {
       message: plural("On {date} – in {n} day – for {amount}.", "On {date} – in {n} days – for {amount}."),
     },
     suggestions: { title: plural("{n} suggestion for this week", "{n} suggestions for this week") },
+    passwordAge: {
+      title: "Time for a new password",
+      message: plural("Your password is {n} day old – a click takes you to the setting.", "Your password is {n} days old – a click takes you to the setting."),
+    },
     test: { title: "Test from VibeWorks", message: "If you can read this, the channel works. 🎉" },
   },
   errors: {

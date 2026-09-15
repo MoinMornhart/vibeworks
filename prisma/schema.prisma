@@ -115,6 +115,12 @@ model User {
   lockedUntil  DateTime?
   lastLoginAt  DateTime?
 
+  /// Passwort zuletzt gesetzt – für die Erinnerung zum Wechseln
+  passwordChangedAt    DateTime?
+  /// Nach wie vielen Tagen an einen Wechsel erinnern (0 = nie)
+  passwordReminderDays Int       @default(180)
+  passwordRemindedAt   DateTime?
+
   /// TOTP-Schlüssel (verschlüsselt). Scharf erst mit totpEnabledAt.
   totpSecret     String?
   totpEnabledAt  DateTime?

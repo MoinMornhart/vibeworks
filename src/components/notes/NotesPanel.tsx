@@ -8,6 +8,8 @@ import type { NoteItem } from "@/lib/notes";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { discardDraft, useDraft } from "@/lib/client/draft";
+import { DraftNote } from "@/components/ui/DraftNote";
 
 function sortNotes(list: NoteItem[]): NoteItem[] {
   return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
@@ -18,9 +20,12 @@ function NoteEditor({
   busy,
   onSave,
   onCancel,
+  draftKey,
 }: {
   initial?: { title: string | null; content: string };
   busy: boolean;
+  /** Nur für neue Notizen – beim Bearbeiten kein Entwurf */
+  draftKey?: string;
   onSave: (title: string, content: string) => void;
   onCancel: () => void;
 }) {
@@ -29,6 +34,15 @@ function NoteEditor({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
   const [tab, setTab] = useState<"write" | "preview">("write");
+  const draft = useDraft(
+    draftKey ?? null,
+    { title, content },
+    (d) => {
+      setTitle(d.title);
+      setContent(d.content);
+    },
+    (d) => !d.title.trim() && !d.content.trim(),
+  );
 
   const save = () => content.trim() && onSave(title, content);
 
@@ -69,6 +83,14 @@ function NoteEditor({
           {content.trim() ? <Markdown>{content}</Markdown> : <p className="text-sm text-muted">{t("editor.nothingToShow")}</p>}
         </div>
       )}
+      <DraftNote
+        show={draft.restored}
+        onDiscard={() => {
+          draft.discard();
+          setTitle("");
+          setContent("");
+        }}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted">{t("editor.hint")}</span>
         <div className="flex gap-2">
@@ -100,6 +122,7 @@ export function NotesPanel({ projectId, initial, readOnly = false }: { projectId
     try {
       const res = await api<{ note: NoteItem }>(`/api/projects/${projectId}/notes`, { body: { title, content } });
       setNotes((list) => sortNotes([res.note, ...list]));
+      discardDraft(`note-new:${projectId}`);
       setComposing(false);
     } catch (e) {
       setError(errorMessage(e));
@@ -151,7 +174,7 @@ export function NotesPanel({ projectId, initial, readOnly = false }: { projectId
 
       {composing && (
         <div className="mb-5 rounded-2xl border border-accent/40 bg-accent/5 p-4">
-          <NoteEditor busy={busy} onSave={create} onCancel={() => setComposing(false)} />
+          <NoteEditor busy={busy} onSave={create} onCancel={() => setComposing(false)} draftKey={`note-new:${projectId}`} />
         </div>
       )}
 

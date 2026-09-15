@@ -25,13 +25,14 @@ describe("Passwortregeln", () => {
     ["1234567890123", "policy.onlyDigits"],
     ["abababababab", "policy.fewDistinct"],
     ["abcdefghijkl", "policy.sequence"],
-    ["passwort123", "policy.common"],
+    ["passwort1234", "policy.common"],
+    ["langespasswortohne", "policy.special"],
     ["morni-ist-toll", "policy.containsUsername"],
   ])("%s wird abgelehnt", (pw, grund) => {
     expect(checkPasswordPolicy(pw, "morni")).toContain(grund);
   });
 
-  it("akzeptiert eine lange Passphrase ohne Sonderzeichen", () => {
+  it("akzeptiert eine lange Passphrase – das Leerzeichen zählt als Sonderzeichen", () => {
     expect(checkPasswordPolicy("pferd batterie heftklammer", "morni")).toBeNull();
   });
 });

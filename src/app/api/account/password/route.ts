@@ -24,7 +24,7 @@ export const POST = route(async (req) => {
   const policy = checkPasswordPolicy(input.newPassword, user.username);
   if (policy) throw new ApiError(400, policy, { newPassword: policy });
 
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.newPassword) } });
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.newPassword), passwordChangedAt: new Date(), passwordRemindedAt: null } });
   await destroyAllSessions(user.id);
   await startSession(user.id, req);
   return json({ ok: true });

@@ -33,7 +33,7 @@ export const POST = route(async (req) => {
     const user = await db.$transaction(async (tx) => {
       if (input.invite && !(await consumeInvite(tx, input.invite))) throw new ApiError(403, tk("auth", "errors.inviteInvalid"));
       const created = await tx.user.create({
-        data: { username: input.username, displayName: input.displayName, passwordHash, role: "USER", ...tokenData },
+        data: { username: input.username, displayName: input.displayName, passwordHash, passwordChangedAt: new Date(), role: "USER", ...tokenData },
       });
       if (input.invite) await tx.invite.updateMany({ where: { tokenHash: sha256(input.invite) }, data: { usedById: created.id } });
       return created;

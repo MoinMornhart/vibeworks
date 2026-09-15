@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDraft } from "@/lib/client/draft";
 import { Eye, EyeOff, Flag, Send, Trash2 } from "lucide-react";
 import type { MessageItem } from "@/lib/community";
 import { MAX_MESSAGE } from "@/lib/communityLogic";
@@ -34,6 +35,8 @@ export function ChatPanel({ room, title, hint }: { room: string; title: string; 
   const [reporting, setReporting] = useState<string | null>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const stick = useRef(true);
+  // Angefangene Nachricht bleibt beim Seitenwechsel erhalten
+  useDraft(`chat:${room}`, text, setText, (v) => !v.trim());
 
   const load = useCallback(async () => {
     try {
