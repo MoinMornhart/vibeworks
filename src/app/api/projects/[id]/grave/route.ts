@@ -23,6 +23,7 @@ export const POST = route<Params>(async (req, { params }) => {
   switch (input.action) {
     case "bury": {
       if (project.buriedAt) throw new ApiError(400, tk("grave", "errors.alreadyBuried"));
+      if (project.favorite) throw new ApiError(409, tk("projects", "errors.protectedBury", { name: project.name }));
       await db.project.update({
         where: { id },
         data: {

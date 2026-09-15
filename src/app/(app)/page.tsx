@@ -47,6 +47,7 @@ export default async function Dashboard() {
       where: {
         ownerId: user.id,
         buriedAt: null,
+        favorite: false, // mit Stern geschützt – der Friedhof fragt nicht
         status: { in: AWAKE_STATUSES },
         updatedAt: { lt: cutoff },
         OR: [{ nudgeSnoozedUntil: null }, { nudgeSnoozedUntil: { lt: now } }],

@@ -36,6 +36,20 @@ export async function api<T = unknown>(url: string, opts: { method?: string; bod
   return data as T;
 }
 
+/**
+ * Stern-Schutz: Fragt der Server bei einem geschützten Projekt nach (409 mit
+ * fieldErrors.confirm), einmal bestätigen lassen und erneut senden. null = abgebrochen.
+ */
+export async function withProtectConfirm<T>(send: (confirmed: boolean) => Promise<T>): Promise<T | null> {
+  try {
+    return await send(false);
+  } catch (err) {
+    if (!(err instanceof ApiClientError && err.status === 409 && err.fieldErrors.confirm)) throw err;
+    if (!window.confirm(err.message)) return null;
+    return send(true);
+  }
+}
+
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiClientError) return err.message;
   if (err instanceof Error && err.name === "AbortError") return tr()("api.aborted");

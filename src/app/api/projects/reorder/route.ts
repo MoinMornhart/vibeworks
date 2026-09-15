@@ -1,5 +1,7 @@
+import { z } from "zod";
 import { db } from "@/lib/db";
-import { json, readBody, route } from "@/lib/api";
+import { ApiError, json, readBody, route } from "@/lib/api";
+import { tk } from "@/lib/i18n/messages";
 import { requireApiUser } from "@/lib/auth/guard";
 import { projectReorderSchema } from "@/lib/validation";
 import { logActivity } from "@/lib/activity";
@@ -11,9 +13,14 @@ import { PROJECT_STATUS_MAP } from "@/lib/status";
 // Brett alles in „Zuletzt geändert“ nach oben. Fremde IDs werden ignoriert.
 export const PATCH = route(async (req) => {
   const user = await requireApiUser();
-  const { status, ids } = await readBody(req, projectReorderSchema);
+  const { status, ids, confirmProtected } = await readBody(req, projectReorderSchema.extend({ confirmProtected: z.boolean().optional() }));
 
-  const own = await db.project.findMany({ where: { ownerId: user.id, id: { in: ids } }, select: { id: true, status: true, name: true } });
+  const own = await db.project.findMany({ where: { ownerId: user.id, id: { in: ids } }, select: { id: true, status: true, name: true, favorite: true } });
+  // Stern-Schutz: in eine andere Spalte gezogen = Status geändert – nur nach Bestätigung
+  const starred = own.filter((p) => p.favorite && p.status !== status);
+  if (starred.length && !confirmProtected) {
+    throw new ApiError(409, tk("projects", "errors.protectedBulkChange", { names: starred.map((p) => p.name).join(", ") }), { confirm: "1" });
+  }
   const byId = new Map(own.map((p) => [p.id, p]));
   const ordered = ids.filter((id) => byId.has(id));
 

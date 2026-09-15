@@ -8,7 +8,7 @@ import { FormError } from "@/components/ui/FormError";
 import { Segmented, Slider, Toggle } from "@/components/theme/controls";
 import type { ProjectListItem } from "@/lib/projects";
 import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
-import { api, ApiClientError, errorMessage } from "@/lib/client/api";
+import { api, ApiClientError, errorMessage, withProtectConfirm } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import type { TemplateView } from "@/lib/templateData";
@@ -141,8 +141,11 @@ export function ProjectDialog({
     try {
       const body = { ...form, ...(!project && templateId ? { templateId } : {}) };
       const res = project
-        ? await api<{ project: ProjectListItem }>(`/api/projects/${project.id}`, { method: "PATCH", body })
+        ? await withProtectConfirm((confirmed) =>
+            api<{ project: ProjectListItem }>(`/api/projects/${project.id}`, { method: "PATCH", body: confirmed ? { ...body, confirmProtected: true } : body }),
+          )
         : await api<{ project: ProjectListItem }>("/api/projects", { body });
+      if (!res) return; // Stern-Schutz: nicht bestätigt – Dialog bleibt offen
       onSaved(res.project);
       onClose();
     } catch (err) {
@@ -175,6 +178,12 @@ export function ProjectDialog({
       size="lg"
       footer={
         <>
+          {/* Fehler direkt über den Knöpfen – im langen Formular stünde er außer Sicht */}
+          {error && (
+            <div className="basis-full">
+              <FormError message={error} />
+            </div>
+          )}
           {editing && ownerControls && (
             <button type="button" className="btn btn-danger btn-sm mr-auto" onClick={remove} disabled={busy}>
               <Trash2 size={14} /> {tc("delete")}
@@ -325,8 +334,6 @@ export function ProjectDialog({
             <Star size={15} className={form.favorite ? "fill-amber-400 text-amber-400" : ""} /> {form.favorite ? t("dialog.favorite") : t("dialog.markFavorite")}
           </button>
         )}
-
-        <FormError message={error} />
       </form>
     </Modal>
   );

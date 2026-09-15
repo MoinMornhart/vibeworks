@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.4",
+    date: "2026-09-15",
+    title: "Stern-Schutz",
+    titleEn: "Star protection",
+    changes: [
+      {
+        type: "neu",
+        text: "Projekte mit Stern sind geschützt: Löschen und Begraben geht erst, wenn der Stern weg ist – auch in der Mehrfachauswahl",
+        en: "Starred projects are protected: deleting and burying only works once the star is removed – in multi-select too",
+      },
+      {
+        type: "neu",
+        text: "Status und Repository geschützter Projekte ändern sich nur nach Bestätigung – im Dialog, auf der Karte und beim Ziehen im Kanban; Claude (MCP) darf sie gar nicht ändern",
+        en: "Status and repository of protected projects only change after confirmation – in the dialog, on the card and when dragging in kanban; Claude (MCP) can't change them at all",
+      },
+      {
+        type: "neu",
+        text: "Der Friedhof fragt bei Projekten mit Stern nicht mehr nach",
+        en: "The graveyard no longer asks about starred projects",
+      },
+      {
+        type: "besser",
+        text: "Fehlermeldungen im Projekt-Dialog stehen jetzt direkt über den Knöpfen statt am Ende des Formulars",
+        en: "Error messages in the project dialog now appear right above the buttons instead of at the end of the form",
+      },
+    ],
+  },
+  {
     version: "0.5.3",
     date: "2026-09-14",
     title: "Repositories automatisch, jeder Git-Server",

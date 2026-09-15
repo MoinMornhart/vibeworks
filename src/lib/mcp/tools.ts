@@ -22,6 +22,7 @@ import type { ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
 import { fillPrompt } from "@/lib/prompts";
+import { protectedChanges } from "@/lib/protect";
 
 // Die Werkzeuge, die Claude Code über MCP sieht. Beschreibungen auf Englisch
 // (sie richten sich an das Modell), Inhalte so, wie sie gespeichert sind.
@@ -354,6 +355,8 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     run: async (args, { userId }) => {
       const { project: current } = await resolveProject(userId, ref.parse(args.project), "EDITOR");
       const input = projectUpdateSchema.pick({ status: true, priority: true, progress: true, summary: true, description: true }).parse(args);
+      // Stern-Schutz: Claude ändert den Status geschützter Projekte nicht – das bestätigt der Mensch in VibeWorks
+      if (protectedChanges(current, input).length) throw new ApiError(409, tk("projects", "errors.protectedMcp", { name: current.name }));
       const data: Prisma.ProjectUncheckedUpdateInput = { ...input };
       const statusChanged = input.status !== undefined && input.status !== current.status;
       if (statusChanged) data.position = await nextPosition(current.ownerId, input.status!);

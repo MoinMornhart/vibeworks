@@ -96,6 +96,8 @@ export const projectCreateSchema = z.object({
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();
+/** Bearbeiten über die Oberfläche: bei Projekten mit Stern bestätigt confirmProtected Status-/Repository-Änderungen. */
+export const projectPatchSchema = projectUpdateSchema.extend({ confirmProtected: z.boolean().optional() });
 
 // ── Portfolio ───────────────────────────────────────────────
 
@@ -290,7 +292,7 @@ export const projectReorderSchema = z.object({
 });
 
 export const projectBulkSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("status"), ids: z.array(z.string().max(40)).min(1).max(500), status: projectStatusSchema }),
+  z.object({ action: z.literal("status"), ids: z.array(z.string().max(40)).min(1).max(500), status: projectStatusSchema, confirmProtected: z.boolean().optional() }),
   z.object({ action: z.literal("addTags"), ids: z.array(z.string().max(40)).min(1).max(500), tags: tagsSchema }),
   z.object({ action: z.literal("removeTags"), ids: z.array(z.string().max(40)).min(1).max(500), tags: tagsSchema }),
   z.object({ action: z.literal("favorite"), ids: z.array(z.string().max(40)).min(1).max(500), favorite: z.boolean() }),

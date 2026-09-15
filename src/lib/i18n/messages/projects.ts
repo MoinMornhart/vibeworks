@@ -143,6 +143,12 @@ const de = {
     ownerOnly: "Das darf nur der Besitzer des Projekts.",
     viewOnly: "Du darfst dieses Projekt nur ansehen.",
     ownerFields: "Repository und Favorit ändert nur der Besitzer des Projekts.",
+    protectedDelete: "„{name}“ ist mit Stern geschützt – erst den Stern entfernen, dann löschen.",
+    protectedBury: "„{name}“ ist mit Stern geschützt – erst den Stern entfernen, dann begraben.",
+    protectedBulk: "Mit Stern geschützt, deshalb wurde nichts gelöscht: {names}. Erst den Stern entfernen.",
+    protectedChange: "„{name}“ ist mit Stern geschützt. Status bzw. Repository wirklich ändern?",
+    protectedBulkChange: "Mit Stern geschützt: {names}. Status trotzdem ändern?",
+    protectedMcp: "„{name}“ ist mit Stern geschützt – Status und Repository nur in VibeWorks selbst ändern.",
   },
 };
 
@@ -286,6 +292,12 @@ const en: Shape<typeof de> = {
     ownerOnly: "Only the project owner can do that.",
     viewOnly: "You can only view this project.",
     ownerFields: "Only the project owner can change the repository and favorite.",
+    protectedDelete: "“{name}” is protected by its star – remove the star first, then delete.",
+    protectedBury: "“{name}” is protected by its star – remove the star first, then bury.",
+    protectedBulk: "Protected by a star, so nothing was deleted: {names}. Remove the star first.",
+    protectedChange: "“{name}” is protected by its star. Really change the status or repository?",
+    protectedBulkChange: "Protected by a star: {names}. Change the status anyway?",
+    protectedMcp: "“{name}” is protected by its star – change its status and repository only in VibeWorks itself.",
   },
 };
 

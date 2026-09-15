@@ -5,7 +5,8 @@ import { checkProjectNow, dropUpload, resetLive } from "@/lib/monitor/run";
 import { requireApiUser } from "@/lib/auth/guard";
 import { tk } from "@/lib/i18n/messages";
 import { requireProject, visibleTo } from "@/lib/access";
-import { projectUpdateSchema } from "@/lib/validation";
+import { projectPatchSchema } from "@/lib/validation";
+import { protectedChanges } from "@/lib/protect";
 import { nextPosition, projectListSelect, serializeProject, uniqueSlug } from "@/lib/projects";
 import { syncProjectProgress } from "@/lib/tasks";
 import { logActivity } from "@/lib/activity";
@@ -34,7 +35,11 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const { project: current, access } = await requireProject(user.id, id, "EDITOR");
-  const input = await readBody(req, projectUpdateSchema);
+  const { confirmProtected, ...input } = await readBody(req, projectPatchSchema);
+  // Stern-Schutz: Status und Repository nur nach Bestätigung (fieldErrors.confirm → Oberfläche fragt nach)
+  if (!confirmProtected && protectedChanges(current, input).length) {
+    throw new ApiError(409, tk("projects", "errors.protectedChange", { name: current.name }), { confirm: "1" });
+  }
   // Repository (samt Token) und Favorit gehören dem Besitzer.
   // Live-Adresse ebenso: der Server ruft sie selbst ab.
   const liveChanged = input.liveUrl !== undefined && input.liveUrl !== current.liveUrl;
@@ -87,7 +92,8 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const cover = await db.project.findFirst({ where: { id, ownerId: user.id }, select: { coverUploadId: true, repoUrl: true } });
+  const cover = await db.project.findFirst({ where: { id, ownerId: user.id }, select: { coverUploadId: true, repoUrl: true, favorite: true, name: true } });
+  if (cover?.favorite) throw new ApiError(409, tk("projects", "errors.protectedDelete", { name: cover.name }));
   const { count } = await db.project.deleteMany({ where: { id, ownerId: user.id } });
   if (!count) throw notFound(tk("projects", "errors.notFound"));
   await dropUpload(cover?.coverUploadId ?? null);

@@ -11,7 +11,7 @@ import { ClaudeMdDialog } from "@/components/prompts/ClaudeMdDialog";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
 import type { ProjectAccess } from "@/lib/access";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
-import { api, errorMessage } from "@/lib/client/api";
+import { api, errorMessage, withProtectConfirm } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { AccentStrip, LiveIcon, PriorityBadge, ProgressBar } from "./ProjectCard";
 import { StatusSelect } from "./StatusSelect";
@@ -93,7 +93,13 @@ export function ProjectHeader({
     setP({ ...p, ...data });
     setError(null);
     try {
-      const res = await api<{ project: ProjectDetail }>(`/api/projects/${p.id}`, { method: "PATCH", body: data });
+      const res = await withProtectConfirm((confirmed) =>
+        api<{ project: ProjectDetail }>(`/api/projects/${p.id}`, { method: "PATCH", body: confirmed ? { ...data, confirmProtected: true } : data }),
+      );
+      if (!res) {
+        setP(before); // Stern-Schutz: nicht bestätigt
+        return;
+      }
       setP(res.project);
       // Neuer Status → neue Analyse (Obergrenze)
       if (res.project.progressFromTasks && data.status) router.refresh();

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUSES } from "@/lib/status";
-import { api, errorMessage } from "@/lib/client/api";
+import { api, errorMessage, withProtectConfirm } from "@/lib/client/api";
 import { useAutoRefresh } from "@/lib/client/useAutoRefresh";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
@@ -198,8 +198,12 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
     setProjects((list) => list.map((x) => (x.id === p.id ? { ...x, ...data } : x)));
     setError(null);
     try {
-      const res = await api<{ project: ProjectListItem }>(`/api/projects/${p.id}`, { method: "PATCH", body: data });
-      upsert(res.project);
+      // Stern-Schutz: Status-/Repository-Änderung einmal bestätigen lassen
+      const res = await withProtectConfirm((confirmed) =>
+        api<{ project: ProjectListItem }>(`/api/projects/${p.id}`, { method: "PATCH", body: confirmed ? { ...data, confirmProtected: true } : data }),
+      );
+      if (res) upsert(res.project);
+      else setProjects(before);
     } catch (e) {
       setProjects(before);
       setError(errorMessage(e));
@@ -222,16 +226,24 @@ export function ProjectBoard({ initial, greeting }: { initial: ProjectListItem[]
       }),
     );
     setError(null);
-    api("/api/projects/reorder", { method: "PATCH", body: { status, ids } }).catch((e) => {
-      setProjects(before);
-      setError(errorMessage(e));
-    });
+    // Stern-Schutz: Ziehen in eine andere Spalte ändert den Status – einmal bestätigen lassen
+    withProtectConfirm((confirmed) => api("/api/projects/reorder", { method: "PATCH", body: { status, ids, ...(confirmed ? { confirmProtected: true } : {}) } }))
+      .then((res) => {
+        if (res === null) setProjects(before);
+      })
+      .catch((e) => {
+        setProjects(before);
+        setError(errorMessage(e));
+      });
   }
 
   async function bulk(action: BulkAction) {
     setError(null);
     try {
-      await api("/api/projects/bulk", { body: { ...action, ids: selectedVisible } });
+      const done = await withProtectConfirm((confirmed) =>
+        api("/api/projects/bulk", { body: { ...action, ids: selectedVisible, ...(confirmed ? { confirmProtected: true } : {}) } }),
+      );
+      if (done === null) return;
       if (action.action === "delete") setSelected(new Set());
       await refresh();
     } catch (e) {
