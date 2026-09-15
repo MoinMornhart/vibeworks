@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.3",
+    date: "2026-09-15",
+    title: "Fehler-Eingang",
+    titleEn: "Error inbox",
+    changes: [
+      {
+        type: "neu",
+        text: "Fehler-Eingang: Deine Apps melden Laufzeitfehler direkt an VibeWorks – mit fertigen Schnipseln für Browser, Node.js und Skripte. Gleichartige Fehler werden zusammengefasst (auch über neue Builds hinweg), mit Zähler, Stack und Version",
+        en: "Error inbox: your apps report runtime errors straight to VibeWorks – with ready-made snippets for browser, Node.js and scripts. Similar errors are grouped (even across new builds), with count, stack and version",
+      },
+      {
+        type: "neu",
+        text: "Erledigen, Ignorieren oder als Aufgabe übernehmen; ein erledigter Fehler, der wiederkommt, ist wieder offen. Neue Fehler melden sich als Benachrichtigung (höchstens 5 je Stunde und Projekt)",
+        en: "Resolve, ignore or turn into a task; a resolved error that comes back is open again. New errors notify you (at most 5 per hour and project)",
+      },
+      {
+        type: "neu",
+        text: "Claude kann die Fehler lesen und abhaken: list_errors und resolve_error; list_problems zeigt offene Fehler aller Projekte",
+        en: "Claude can read and tick off errors: list_errors and resolve_error; list_problems shows open errors across all projects",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: Der Schlüssel in der Adresse erlaubt nur, Fehler in dieses eine Projekt zu schreiben – ohne Cookies, mit Größen- und Mengenlimits, jederzeit erneuerbar. Details sehen nur Projektmitglieder, und eine Aufgabe aus einem Fehler enthält keinen Stack und keine Seiten-Adresse (sie kann als Issue öffentlich werden)",
+        en: "Security: the key in the address only allows writing errors into this one project – no cookies, with size and rate limits, renewable any time. Only project members see details, and a task made from an error contains no stack and no page address (it may become a public issue)",
+      },
+    ],
+  },
+  {
     version: "0.6.2",
     date: "2026-09-15",
     title: "Repo-Check und Abhängigkeiten als Aufgaben",

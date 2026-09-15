@@ -234,6 +234,7 @@ Danach arbeitet Claude Code direkt mit deinen Projekten – ganz ohne Umweg übe
 | `search` | Volltextsuche über Notizen, Aufgaben und Docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Docs lesen und schreiben |
 | `get_repo_status`, `list_problems` | Stand eines Repositorys (Commits, CI, Abhängigkeiten, Repo-Check, Live-Seite) und alles, was gerade klemmt |
+| `list_errors`, `resolve_error` | Fehler aus dem Fehler-Eingang mit Stack lesen und nach dem Beheben abhaken |
 | `get_today`, `add_to_today`, `remove_from_today` | Den Tag planen – vorgemerkte Aufgaben und Vorschläge |
 | `start_timer`, `stop_timer` | Zeit an einer Aufgabe erfassen, auch als Fokus-Timer |
 
@@ -333,6 +334,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
 - ✅ Was der Abhängigkeiten-Check markiert, steht sofort als Aufgabe im Board – und erledigt sich selbst
 - ✅ Repo-Check ohne KI (GitHub Actions): Geheimnisse, Sicherheitslücken, Fehlermuster und TODOs
+- ✅ Fehler-Eingang: Apps melden Laufzeitfehler per Schnipsel (Browser, Node.js, curl), zusammengefasst, mit Benachrichtigung
 - ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**

@@ -234,6 +234,7 @@ After that, Claude Code works directly with your projects – no GitHub detour n
 | `search` | Full-text search across notes, tasks and docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Read and write your docs |
 | `get_repo_status`, `list_problems` | A repository's state (commits, CI, dependencies, repo check, live site) and everything that needs attention |
+| `list_errors`, `resolve_error` | Read errors from the error inbox with stack traces and tick them off after fixing |
 | `get_today`, `add_to_today`, `remove_from_today` | Plan the day – picked tasks and suggestions |
 | `start_timer`, `stop_timer` | Track time on a task, also as a focus timer |
 
@@ -335,6 +336,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Dependency check: outdated packages and security alerts from the repository
 - ✅ Whatever the dependency check flags lands on the board as a task right away – and closes itself
 - ✅ Repo check without AI (GitHub Actions): secrets, vulnerabilities, bug patterns and TODOs
+- ✅ Error inbox: apps report runtime errors via snippet (browser, Node.js, curl), grouped, with notifications
 - ✅ Public portfolio with selected projects
 
 **Website**

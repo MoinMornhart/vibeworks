@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
+import { serializeAppError, setErrorStatus } from "@/lib/bugs";
+import { ERROR_STATUSES, type ErrorStatus } from "@/lib/bugsLogic";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";
@@ -47,6 +49,7 @@ export const MCP_INSTRUCTIONS = [
   "Everything you change shows up in the project's activity log under the user's name – keep titles short and clear.",
   "To see what is broken (sync errors, red CI, sites down, vulnerable dependencies, overdue or blocked tasks) use list_problems; for one project's repository, CI, dependencies and live site use get_repo_status.",
   "The user's day: get_today shows planned tasks and suggestions, add_to_today/remove_from_today plan it, start_timer/stop_timer track time on a task.",
+  "Runtime errors of the user's apps land in the error inbox: list_errors shows them with stack traces – fix the cause, then mark them with resolve_error.",
   "Starred projects are protected: their status and repository can't be changed via MCP – ask the user to do it in VibeWorks.",
 ].join(" ");
 
@@ -638,10 +641,51 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
   },
   {
+    name: "list_errors",
+    title: "List app errors",
+    description:
+      "Runtime errors the project's app reported to VibeWorks (error inbox), grouped by fingerprint: type, message, count, first/last seen, page, release and the stack trace. Default: open errors, newest first. Use it to find and fix bugs, then call resolve_error.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, status: { type: "string", enum: [...ERROR_STATUSES, "all"], description: "Default: open" } },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const status = args.status === "all" ? null : typeof args.status === "string" && (ERROR_STATUSES as readonly string[]).includes(args.status) ? args.status : "open";
+      const rows = await db.appError.findMany({ where: { projectId: project.id, ...(status ? { status } : {}) }, orderBy: { lastSeen: "desc" }, take: 50 });
+      return {
+        project: { id: project.id, name: project.name },
+        errors: rows.map((e) => ({ ...serializeAppError(e), stack: e.stack?.slice(0, 4000) ?? null })),
+        url: link(`/projects/${project.id}#fehler`),
+      };
+    },
+  },
+  {
+    name: "resolve_error",
+    title: "Resolve app error",
+    description: "Mark an error from the error inbox as resolved after fixing it (or ignored, or open again). If a resolved error happens again, it reopens automatically.",
+    inputSchema: {
+      type: "object",
+      properties: { error: { type: "string", description: "Error id from list_errors" }, status: { type: "string", enum: [...ERROR_STATUSES], description: "Default: resolved" } },
+      required: ["error"],
+      additionalProperties: false,
+    },
+    run: async (args, { userId }) => {
+      const row = await db.appError.findUnique({ where: { id: ref.parse(args.error) }, select: { id: true, projectId: true } });
+      if (!row) throw new ApiError(404, tk("bugs", "errors.notFound"));
+      await resolveProject(userId, row.projectId, "EDITOR");
+      const status = typeof args.status === "string" && (ERROR_STATUSES as readonly string[]).includes(args.status) ? (args.status as ErrorStatus) : "resolved";
+      return serializeAppError(await setErrorStatus(row.id, status));
+    },
+  },
+  {
     name: "list_problems",
     title: "List problems",
     description:
-      "Everything that needs attention across the user's projects: Git sync and import errors, red CI, live sites that are down, dependencies with known vulnerabilities, repo check alerts (secrets, vulnerabilities), overdue and blocked tasks.",
+      "Everything that needs attention across the user's projects: Git sync and import errors, red CI, live sites that are down, dependencies with known vulnerabilities, repo check alerts (secrets, vulnerabilities), open app errors from the error inbox, overdue and blocked tasks.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (_args, { userId, locale }) => loadProblems(userId, locale),
@@ -769,7 +813,14 @@ async function loadProblems(userId: string, locale: Locale) {
     take: 100,
   });
   const connections = await db.gitCredential.findMany({ where: { userId, importError: { not: null } }, select: { host: true, importError: true } });
+  const appErrors = await db.appError.findMany({
+    where: { status: "open", project: OPEN_PROJECT(userId) },
+    orderBy: { lastSeen: "desc" },
+    take: 20,
+    include: { project: { select: { id: true, name: true } } },
+  });
   return {
+    appErrors: appErrors.map((e) => ({ project: e.project.name, projectId: e.project.id, id: e.id, type: e.type, message: e.message, count: e.count, lastSeen: e.lastSeen.toISOString() })),
     gitErrors,
     gitConnections: connections.map((c) => ({ host: c.host, error: translateMessage(locale, c.importError ?? "") })),
     redCi,
@@ -874,6 +925,7 @@ export const MCP_RESOURCES: ResourceProvider<McpContext> = {
         ...markdownList("Red CI", p.redCi.map((c) => `${c.project}: ${c.runs.map((r) => r.name).join(", ") || "failed"}`)),
         ...markdownList("Sites down", p.sitesDown.map((s) => `${s.project}: ${s.url ?? ""}${s.error ? ` (${s.error})` : ""}`)),
         ...markdownList("Vulnerable dependencies", p.vulnerableDependencies.map((v) => `${v.project}: ${v.packages.map((x) => x.name).join(", ")}`)),
+        ...markdownList("App errors (open)", p.appErrors.map((e) => `${e.project}: ${e.type ? `${e.type}: ` : ""}${e.message} (${e.count}×)`)),
         ...markdownList("Repo check alerts", p.repoCheckAlerts.map((a) => `${a.project}: ${a.secrets} possible secrets, ${a.vulnerabilities} vulnerabilities`)),
         ...markdownList("Overdue tasks", p.overdueTasks.map((t) => `${t.project?.name ?? ""}: ${t.title} (due ${t.dueDate})`)),
         ...markdownList("Blocked tasks", p.blockedTasks.map((t) => `${t.project?.name ?? ""}: ${t.title}`)),

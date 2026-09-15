@@ -265,6 +265,8 @@ model Project {
   webhookSecretCipher String?
   /// Zuletzt ein gültiger Webhook angekommen
   webhookAt           DateTime?
+  /// Fehler-Eingang: geheimer Teil der Adresse /api/errors/in/<key> – null heißt „aus“
+  errorKey            String? @unique
   /// Live-Überwachung: die fertige Seite, alle 5 Minuten geprüft
   liveUrl        String?
   /// "up" | "down" – null, solange noch nicht geprüft
@@ -304,6 +306,7 @@ model Project {
   costs          ProjectCost[]
   timeEntries    TimeEntry[]
   suggestions    Suggestion[]
+  appErrors      AppError[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -311,6 +314,33 @@ model Project {
   @@unique([ownerId, slug])
   @@index([ownerId, status, position])
   @@index([ownerId, updatedAt])
+}
+
+/// Fehler-Eingang: gleichartige Fehler einer App, per Fingerabdruck zusammengefasst
+model AppError {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// SHA-256 aus Art, vereinheitlichter Nachricht und oberster Stack-Zeile (src/lib/bugsLogic.ts)
+  fingerprint String
+  type        String?
+  message     String
+  stack       String?
+  url         String?
+  release     String?
+  environment String?
+  userAgent   String?
+  count       Int       @default(1)
+  /// open | resolved | ignored – ein erledigter Fehler, der wiederkommt, ist wieder offen
+  status      String    @default("open")
+  firstSeen   DateTime  @default(now())
+  lastSeen    DateTime  @default(now())
+  resolvedAt  DateTime?
+  /// Daraus angelegte Aufgabe (bewusst ohne Fremdschlüssel)
+  taskId      String?
+
+  @@unique([projectId, fingerprint])
+  @@index([projectId, status, lastSeen])
 }
 
 model Note {

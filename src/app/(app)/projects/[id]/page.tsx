@@ -23,6 +23,7 @@ import { serializeCost } from "@/lib/costs";
 import { sumSeconds } from "@/lib/timeServer";
 import { DepsPanel } from "@/components/git/DepsPanel";
 import { RepoCheckPanel } from "@/components/git/RepoCheckPanel";
+import { ErrorsPanel } from "@/components/bugs/ErrorsPanel";
 import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
@@ -39,6 +40,7 @@ const loadProject = cache(async (id: string) => {
       repoTokenHint: true,
       issueSync: true,
       repoCheck: true,
+      errorKey: true,
       repoCache: true,
       liveCheckedAt: true,
       liveError: true,
@@ -65,7 +67,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
   const { project, access } = loaded;
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
@@ -111,6 +113,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           }}
         />
       )}
+      {(isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={!readOnly} />}
       <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={readOnly} />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={readOnly} />
       <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={!readOnly} />
