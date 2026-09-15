@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Die Middleware läuft im Edge-Runtime ohne Datenbank. Sie setzt die
+// Der Proxy (bis Next.js 15 „Middleware“) läuft vor jeder Anfrage, ohne Datenbank. Er setzt die
 // Content-Security-Policy mit einer Nonce je Anfrage und leitet ohne
 // Sitzungscookie zur Anmeldung um. Ob die Sitzung wirklich gültig ist,
 // entscheidet erst der Server in jeder Seite und jedem Endpunkt.
@@ -32,7 +32,7 @@ function csp(nonce: string): string {
   ].join("; ");
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   if (!SESSION_COOKIES.some((n) => req.cookies.has(n)) && !isPublic(pathname)) {
     if (pathname.startsWith("/api/")) {

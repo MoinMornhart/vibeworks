@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // Die übrigen Sicherheits-Header (inkl. CSP mit Nonce) setzt die Middleware,
-  // weil die Nonce je Anfrage neu erzeugt werden muss.
+  // Die übrigen Sicherheits-Header (inkl. CSP mit Nonce) setzt der Proxy
+  // (src/proxy.ts), weil die Nonce je Anfrage neu erzeugt werden muss.
   async headers() {
     return [
       {

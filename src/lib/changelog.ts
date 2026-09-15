@@ -26,6 +26,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.8",
+    date: "2026-09-15",
+    title: "Next.js 16",
+    titleEn: "Next.js 16",
+    changes: [
+      {
+        type: "besser",
+        text: "VibeWorks läuft auf Next.js 16 – gebaut mit Turbopack; die Middleware heißt jetzt Proxy und läuft auf Node.js",
+        en: "VibeWorks runs on Next.js 16 – built with Turbopack; the middleware is now called proxy and runs on Node.js",
+      },
+    ],
+  },
+  {
     version: "0.5.7",
     date: "2026-09-15",
     title: "Sicherheits-Update der Abhängigkeiten",
