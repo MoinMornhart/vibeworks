@@ -11,7 +11,7 @@ type Params = { id: string };
 async function load(userId: string, id: string) {
   const cost = await db.projectCost.findUnique({ where: { id } });
   if (!cost) throw notFound(tk("costs", "errors.notFound"));
-  await requireProject(userId, cost.projectId, "EDITOR");
+  await requireProject(userId, cost.projectId, "costs.edit");
   return cost;
 }
 

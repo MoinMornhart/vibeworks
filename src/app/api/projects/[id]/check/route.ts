@@ -35,7 +35,7 @@ export const POST = route<Params>(async (req, { params }) => {
   const { id } = await params;
   const { action } = await readBody(req, bodySchema, { maxBytes: 1024 });
   const switching = action === "enable" || action === "disable";
-  const { project } = await requireProject(user.id, id, switching ? "OWNER" : "EDITOR");
+  const { project } = await requireProject(user.id, id, switching ? "OWNER" : "git.sync");
   if (!project.repoUrl) throw new ApiError(400, tk("check", "errors.noRepo"));
 
   let removed = false;

@@ -19,7 +19,7 @@ export const GET = route<Params>(async (_req, { params }) => {
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  await requireProject(user.id, id, "EDITOR");
+  await requireProject(user.id, id, "notes.edit");
   const input = await readBody(req, noteCreateSchema);
   const note = await createNote(user.id, id, input);
   return json({ note: serializeNote(note) }, { status: 201 });

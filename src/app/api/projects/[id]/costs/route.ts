@@ -18,7 +18,7 @@ export const GET = route<Params>(async (_req, { params }) => {
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  await requireProject(user.id, id, "EDITOR");
+  await requireProject(user.id, id, "costs.edit");
   const { amount, ...input } = await readBody(req, costSchema, { maxBytes: 4096 });
   const cost = await db.projectCost.create({ data: { ...input, amountCents: amount, projectId: id } });
   return json({ cost: serializeCost(cost) }, { status: 201 });

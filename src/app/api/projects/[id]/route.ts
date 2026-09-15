@@ -34,7 +34,7 @@ export const GET = route<Params>(async (_req, { params }) => {
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { project: current, access } = await requireProject(user.id, id, "EDITOR");
+  const { project: current, access } = await requireProject(user.id, id, "project.edit");
   const { confirmProtected, ...input } = await readBody(req, projectPatchSchema);
   // Stern-Schutz: Status und Repository nur nach Bestätigung (fieldErrors.confirm → Oberfläche fragt nach)
   if (!confirmProtected && protectedChanges(current, input).length) {

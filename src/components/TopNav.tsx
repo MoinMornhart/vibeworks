@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, ShieldCheck, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -132,6 +132,11 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
               {user.community && (
                 <Link role="menuitem" href="/teams" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                   <UsersRound size={15} /> {t("nav.teams")}
+                </Link>
+              )}
+              {user.community && (
+                <Link role="menuitem" href="/roles" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                  <ShieldCheck size={15} /> {t("nav.roles")}
                 </Link>
               )}
               <Link role="menuitem" href="/inbox" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>

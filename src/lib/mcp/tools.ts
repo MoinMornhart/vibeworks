@@ -5,7 +5,7 @@ import { serializeAppError, setErrorStatus } from "@/lib/bugs";
 import { ERROR_STATUSES, type ErrorStatus } from "@/lib/bugsLogic";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
-import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";
+import { accessOf, canDo, requireNote, requireTask, visibleTo, type Need } from "@/lib/access";
 import { tk, translateMessage } from "@/lib/i18n/messages";
 import { docCreateSchema, docUpdateSchema, noteCreateSchema, projectUpdateSchema, taskBulkSchema, taskCreateSchema, taskUpdateSchema } from "@/lib/validation";
 import { createNote, createTask, createTaskInProjects, updateTask } from "@/lib/actions";
@@ -63,7 +63,7 @@ const DAY = 86_400_000;
 const MAX_TEXT = 200_000;
 
 /** Projekt per ID, exaktem Namen oder Slug – mit Rechteprüfung. */
-async function resolveProject(userId: string, value: string, min: ProjectAccess = "VIEWER") {
+async function resolveProject(userId: string, value: string, min: Need = "VIEWER") {
   let res = await accessOf(userId, value);
   if (!res) {
     const matches = await db.project.findMany({
@@ -75,7 +75,7 @@ async function resolveProject(userId: string, value: string, min: ProjectAccess 
     if (matches[0]) res = await accessOf(userId, matches[0].id);
   }
   if (!res) throw notFound(tk("projects", "errors.notFound"));
-  if (!canAccess(res.access, min)) throw new ApiError(403, min === "OWNER" ? tk("projects", "errors.ownerOnly") : tk("projects", "errors.viewOnly"));
+  if (!canDo(res, min)) throw new ApiError(403, min === "OWNER" ? tk("projects", "errors.ownerOnly") : tk("projects", "errors.viewOnly"));
   return res;
 }
 
@@ -276,7 +276,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     run: async (args, { userId }) => {
-      const { project } = await resolveProject(userId, ref.parse(args.project), "EDITOR");
+      const { project } = await resolveProject(userId, ref.parse(args.project), "tasks.edit");
       const { task, progress } = await createTask(userId, project.id, taskCreateSchema.parse(args));
       return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
     },
@@ -301,7 +301,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     run: async (args, { userId }) => {
       const refs = z.array(ref).max(200).optional().parse(args.projects);
       const ids = refs
-        ? await Promise.all(refs.map(async (r) => (await resolveProject(userId, r, "EDITOR")).project.id))
+        ? await Promise.all(refs.map(async (r) => (await resolveProject(userId, r, "tasks.edit")).project.id))
         : (
             await db.project.findMany({
               where: { AND: [visibleTo(userId), { repoUrl: { not: null } }, { status: { not: "ARCHIVED" } }] },
@@ -335,7 +335,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     annotations: { idempotentHint: true },
     run: async (args, { userId }) => {
-      const { task: current } = await requireTask(userId, ref.parse(args.task), "EDITOR");
+      const { task: current } = await requireTask(userId, ref.parse(args.task), "tasks.edit");
       const result = await updateTask(userId, current, taskUpdateSchema.parse(args));
       return {
         task: taskView(result.task, { full: true }),
@@ -362,7 +362,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     run: async (args, { userId }) => {
-      const { project: current } = await resolveProject(userId, ref.parse(args.project), "EDITOR");
+      const { project: current } = await resolveProject(userId, ref.parse(args.project), "project.edit");
       const input = projectUpdateSchema.pick({ status: true, priority: true, progress: true, summary: true, description: true }).parse(args);
       // Stern-Schutz: Claude ändert den Status geschützter Projekte nicht – das bestätigt der Mensch in VibeWorks
       if (protectedChanges(current, input).length) throw new ApiError(409, tk("projects", "errors.protectedMcp", { name: current.name }));
@@ -403,7 +403,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     run: async (args, { userId }) => {
-      const { project } = await resolveProject(userId, ref.parse(args.project), "EDITOR");
+      const { project } = await resolveProject(userId, ref.parse(args.project), "notes.edit");
       const note = await createNote(userId, project.id, noteCreateSchema.parse(args));
       return { id: note.id, title: noteLabel(note), url: link(`/projects/${project.id}`) };
     },
@@ -676,7 +676,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     run: async (args, { userId }) => {
       const row = await db.appError.findUnique({ where: { id: ref.parse(args.error) }, select: { id: true, projectId: true } });
       if (!row) throw new ApiError(404, tk("bugs", "errors.notFound"));
-      await resolveProject(userId, row.projectId, "EDITOR");
+      await resolveProject(userId, row.projectId, "errors.manage");
       const status = typeof args.status === "string" && (ERROR_STATUSES as readonly string[]).includes(args.status) ? (args.status as ErrorStatus) : "resolved";
       return serializeAppError(await setErrorStatus(row.id, status));
     },
@@ -705,7 +705,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { idempotentHint: true },
     run: async (args, { userId }) => {
-      const { task } = await requireTask(userId, ref.parse(args.task), "EDITOR");
+      const { task } = await requireTask(userId, ref.parse(args.task), "tasks.edit");
       const today = dayKey(new Date());
       await db.taskFocus.deleteMany({ where: { userId, day: { lt: today } } }); // gestern ist vorbei
       const count = await db.taskFocus.count({ where: { userId, day: today, taskId: { not: task.id } } });
@@ -741,7 +741,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     run: async (args, { userId }) => {
       const input = z.object({ task: ref, focusMinutes: z.number().int().min(5).max(120).optional() }).parse(args);
-      const { task } = await requireTask(userId, input.task);
+      const { task } = await requireTask(userId, input.task, "time.track");
       await stopRunning(userId);
       await db.timeEntry.create({ data: { userId, projectId: task.projectId, taskId: task.id, focusMinutes: input.focusMinutes ?? null } });
       return { running: await currentEntry(userId) };

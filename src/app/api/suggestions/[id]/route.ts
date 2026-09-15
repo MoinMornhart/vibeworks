@@ -2,7 +2,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
-import { requireProject } from "@/lib/access";
+import { accessOf, requireProject, visibleTo } from "@/lib/access";
 import { createTask } from "@/lib/actions";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { tk, translateMessage } from "@/lib/i18n/messages";
@@ -37,7 +37,7 @@ export const POST = route<Params>(async (req, { params }) => {
   switch (acceptAction(kind)) {
     case "task": {
       if (!s.projectId) throw notFound(tk("projects", "errors.notFound"));
-      await requireProject(user.id, s.projectId, "EDITOR");
+      await requireProject(user.id, s.projectId, "tasks.edit");
       const t = await getT("suggestions");
       const locale = await getLocale();
       const data = (s.data ?? {}) as Record<string, string | number>;
@@ -58,19 +58,20 @@ export const POST = route<Params>(async (req, { params }) => {
         where: {
           status: { not: "DONE" },
           dueDate: { lt: dayKeyToDate(today) },
-          project: { buriedAt: null, status: { not: "ARCHIVED" }, OR: [
-              { ownerId: user.id },
-              { members: { some: { userId: user.id, role: "EDITOR" } } },
-              { teams: { some: { role: "EDITOR", team: { members: { some: { userId: user.id } } } } } },
-            ],
-          },
+          project: { buriedAt: null, status: { not: "ARCHIVED" }, ...visibleTo(user.id) },
         },
         orderBy: { dueDate: "asc" },
-        take: 10,
-        select: { id: true },
+        take: 50,
+        select: { id: true, projectId: true },
       });
+      // Nur Projekte, in denen man Aufgaben bearbeiten darf
+      const editable = new Set<string>();
+      for (const projectId of new Set(tasks.map((x) => x.projectId))) {
+        if ((await accessOf(user.id, projectId))?.perms.has("tasks.edit")) editable.add(projectId);
+      }
       let position = await db.taskFocus.count({ where: { userId: user.id, day: today } });
       for (const task of tasks) {
+        if (!editable.has(task.projectId)) continue;
         if (position >= MAX_FOCUS) break;
         await db.taskFocus.upsert({
           where: { userId_taskId_day: { userId: user.id, taskId: task.id, day: today } },
@@ -82,7 +83,7 @@ export const POST = route<Params>(async (req, { params }) => {
     }
     case "continue": {
       if (!s.projectId) throw notFound(tk("projects", "errors.notFound"));
-      await requireProject(user.id, s.projectId, "EDITOR");
+      await requireProject(user.id, s.projectId, "project.edit");
       // Wie „Weitermachen“ beim Friedhof: zählt als Lebenszeichen, 30 Tage keine Nachfrage
       await db.project.update({ where: { id: s.projectId }, data: { nudgeSnoozedUntil: new Date(Date.now() + SNOOZE_DAYS * 86_400_000) } });
       break;

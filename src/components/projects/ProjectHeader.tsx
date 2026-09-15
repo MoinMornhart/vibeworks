@@ -30,7 +30,10 @@ export function ProjectHeader({
   openShare = false,
   analysis = null,
   timeSeconds = 0,
+  perms = [],
 }: {
+  /** Rechte des Kontos an diesem Projekt (src/lib/rolesLogic.ts) */
+  perms?: string[];
   /** Erfasste Zeit am Projekt in Sekunden (alle Konten) */
   timeSeconds?: number;
   initial: ProjectDetail;
@@ -49,7 +52,8 @@ export function ProjectHeader({
   const f = useFormat();
   const router = useRouter();
   const isOwner = access === "OWNER";
-  const canEdit = access !== "VIEWER";
+  const canEdit = isOwner || perms.includes("project.edit");
+  const canInvite = isOwner || perms.includes("members.invite");
   const [p, setP] = useState<ProjectDetail>(initial);
   // Nach router.refresh() (z. B. neuer Fortschritt aus Aufgaben) neue Daten übernehmen.
   useEffect(() => setP(initial), [initial]);
@@ -57,8 +61,8 @@ export function ProjectHeader({
   // Erst im Browser öffnen: ein schon beim Server-Rendern offener Dialog passt nicht zur Hydration (React #418)
   const [shareOpen, setShareOpen] = useState(false);
   useEffect(() => {
-    if (openShare && isOwner) setShareOpen(true);
-  }, [openShare, isOwner]);
+    if (openShare && canInvite) setShareOpen(true);
+  }, [openShare, canInvite]);
   const [pending, setPending] = useState(pendingRequests);
   useEffect(() => setPending(pendingRequests), [pendingRequests]);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +162,7 @@ export function ProjectHeader({
                 <Star size={18} className={p.favorite ? "fill-amber-400 text-amber-400" : "text-muted"} />
               </button>
             )}
-            {isOwner && (
+            {canInvite && (
               <button className="btn btn-sm" onClick={() => setShareOpen(true)}>
                 <Share2 size={14} /> {t("header.share")}
                 {pending > 0 && (
@@ -277,7 +281,7 @@ export function ProjectHeader({
           }
         />
       )}
-      {isOwner && <ShareDialog projectId={p.id} open={shareOpen} onClose={() => setShareOpen(false)} onPendingChange={setPending} />}
+      {canInvite && <ShareDialog projectId={p.id} open={shareOpen} onClose={() => setShareOpen(false)} onPendingChange={setPending} />}
       <ClaudeMdDialog projectId={p.id} name={p.name} open={mdOpen} onClose={() => setMdOpen(false)} />
       {isOwner && (
         <BuryDialog

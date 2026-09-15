@@ -17,7 +17,7 @@ export const POST = route(async (req) => {
   const user = await requireApiUser();
   limitOrThrow(`time:${user.id}`, 120, MINUTE);
   const { taskId, focusMinutes } = await readBody(req, schema, { maxBytes: 1024 });
-  const { task } = await requireTask(user.id, taskId);
+  const { task } = await requireTask(user.id, taskId, "time.track");
   await stopRunning(user.id);
   await db.timeEntry.create({ data: { userId: user.id, projectId: task.projectId, taskId, focusMinutes: focusMinutes ?? null } });
   return json({ current: await currentEntry(user.id) }, { status: 201 });

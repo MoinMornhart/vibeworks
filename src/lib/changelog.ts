@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.9",
+    date: "2026-09-15",
+    title: "Rollen",
+    titleEn: "Roles",
+    changes: [
+      {
+        type: "neu",
+        text: "Rollen statt nur „Ansehen/Bearbeiten“: zehn einzelne Rechte (Aufgaben, Aufgaben löschen, Notizen, Projektangaben, Kosten, Zeit erfassen, Git prüfen, Live-Prüfung, Fehler-Eingang, Mitglieder einladen). Standardrollen: Betrachter, Mitwirkender, Bearbeiter, Manager – bestehende Mitglieder behalten ihre Rechte",
+        en: "Roles instead of just “view/edit”: ten individual permissions (tasks, deleting tasks, notes, project details, costs, time tracking, Git checks, live check, error inbox, inviting members). Built-in roles: Viewer, Contributor, Editor, Manager – existing members keep their permissions",
+      },
+      {
+        type: "neu",
+        text: "Eigene Rollen im Profilmenü unter Rollen; Admins pflegen Vorlagen für alle und passen die Standardrollen an (Administration → Rollen). Vergeben werden Rollen im Teilen-Dialog – an Mitglieder, bei Anfragen und an Teams",
+        en: "Your own roles in the profile menu under Roles; admins maintain templates for everyone and adjust the built-in roles (Administration → Roles). Roles are assigned in the share dialog – to members, on requests and to teams",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: Wer Mitglieder einladen darf, vergibt nur Rollen bis zu den eigenen Rechten und stuft niemanden um, der mehr darf. Öffentlicher Link, Team-Freigaben, Repository, Token und Löschen bleiben immer beim Besitzer; wird eine eigene Rolle gelöscht, bleibt nur Lesen",
+        en: "Security: whoever may invite members only assigns roles up to their own permissions and can't change anyone who may do more. Public link, team shares, repository, token and deletion always stay with the owner; if a custom role is deleted, only read access remains",
+      },
+      {
+        type: "besser",
+        text: "Zeit erfassen ist jetzt ein eigenes Recht (ab „Mitwirkender“) – Betrachter lesen nur noch",
+        en: "Time tracking is now its own permission (from “Contributor” up) – viewers only read",
+      },
+    ],
+  },
+  {
     version: "0.6.8",
     date: "2026-09-15",
     title: "Teams",

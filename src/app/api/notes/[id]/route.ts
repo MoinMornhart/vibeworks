@@ -11,7 +11,7 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { note: current } = await requireNote(user.id, id, "EDITOR");
+  const { note: current } = await requireNote(user.id, id, "notes.edit");
   const input = await readBody(req, noteUpdateSchema);
 
   const contentChanged =
@@ -44,7 +44,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { note } = await requireNote(user.id, id, "EDITOR");
+  const { note } = await requireNote(user.id, id, "notes.edit");
   await db.note.delete({ where: { id } });
   await logActivity({ projectId: note.projectId, userId: user.id, kind: "NOTE_DELETED", summary: `Notiz „${noteLabel(note)}“ gelöscht`, meta: { title: noteLabel(note) } });
   return json({ ok: true });

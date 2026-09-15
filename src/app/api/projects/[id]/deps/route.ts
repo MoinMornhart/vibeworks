@@ -11,7 +11,7 @@ type Params = { id: string };
 export const POST = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { project } = await requireProject(user.id, id, "EDITOR");
+  const { project } = await requireProject(user.id, id, "git.sync");
   if (!project.repoUrl) throw new ApiError(400, tk("deps", "errors.noRepo"));
   limitOrThrow(`deps:${id}`, 5, MINUTE);
   const report = await refreshDeps(id, true);

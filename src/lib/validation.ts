@@ -283,12 +283,16 @@ export const projectRoleSchema = z.enum(["VIEWER", "EDITOR"]);
 
 export const shareLinkSchema = z.object({ link: z.enum(["on", "off", "renew"]) });
 
+const roleIdSchema = z.string().min(1).max(40);
+
 export const memberAddSchema = z.object({
   username: z.string().trim().toLowerCase().min(1, tk("validation", "username.missing")).max(64),
+  /** Rolle (src/lib/rolesLogic.ts) – ohne Angabe gilt die alte Stufe */
+  roleId: roleIdSchema.optional(),
   role: projectRoleSchema.default("VIEWER"),
 });
 
-export const memberUpdateSchema = z.object({ role: projectRoleSchema });
+export const memberUpdateSchema = z.object({ roleId: roleIdSchema.optional(), role: projectRoleSchema.optional() });
 
 export const accessRequestSchema = z.object({
   role: projectRoleSchema.default("VIEWER"),
@@ -297,6 +301,7 @@ export const accessRequestSchema = z.object({
 
 export const accessDecisionSchema = z.object({
   decision: z.enum(["approve", "deny"]),
+  roleId: roleIdSchema.optional(),
   role: projectRoleSchema.optional(),
 });
 

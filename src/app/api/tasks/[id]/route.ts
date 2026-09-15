@@ -15,7 +15,7 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { task: current } = await requireTask(user.id, id, "EDITOR");
+  const { task: current } = await requireTask(user.id, id, "tasks.edit");
   const input = await readBody(req, taskUpdateSchema);
   const result = await updateTask(user.id, current, input);
   return json({ task: serializeTask(result.task), spawned: result.spawned ? serializeTask(result.spawned) : null, progress: result.progress });
@@ -24,7 +24,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  const { task } = await requireTask(user.id, id, "EDITOR");
+  const { task } = await requireTask(user.id, id, "tasks.delete");
   await db.task.delete({ where: { id } });
   await logActivity({ projectId: task.projectId, userId: user.id, kind: "TASK_DELETED", summary: `Aufgabe „${truncate(task.title, 60)}“ gelöscht`, meta: { title: truncate(task.title, 60) } });
   const progress = await syncProjectProgress(task.projectId);

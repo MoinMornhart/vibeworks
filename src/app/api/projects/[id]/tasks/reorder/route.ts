@@ -18,7 +18,7 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
-  await requireProject(user.id, id, "EDITOR");
+  await requireProject(user.id, id, "tasks.edit");
   const { status, ids } = await readBody(req, taskReorderSchema);
 
   const tasks = await db.task.findMany({ where: { projectId: id, id: { in: ids } } });

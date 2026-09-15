@@ -340,7 +340,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Invitation links for new accounts: single use, with an expiry date, even when registration is closed
 - ✅ Community for the accounts of the instance: present projects, questions, ideas and bug reports, chat (lobby and per project), moderation, reporting and bans
 - ✅ Presentation slides per project: built from description, status, commits and next steps, with fullscreen and keyboard
-- ✅ Teams: share projects with whole teams (view or edit), joining by invitation only
+- ✅ Teams: share projects with whole teams, joining by invitation only
+- ✅ Roles with individual permissions for members and teams – built-in roles, admin templates and your own
 - ✅ Public portfolio with selected projects
 
 **Website**

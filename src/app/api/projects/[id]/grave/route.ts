@@ -16,7 +16,7 @@ export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const input = await readBody(req, graveActionSchema, { maxBytes: 4096 });
-  const min = input.action === "bury" || input.action === "resurrect" ? "OWNER" : "EDITOR";
+  const min = input.action === "bury" || input.action === "resurrect" ? "OWNER" : "project.edit";
   const { project } = await requireProject(user.id, id, min);
   const snooze = new Date(Date.now() + SNOOZE_DAYS * 86_400_000);
 

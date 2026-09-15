@@ -32,6 +32,7 @@ import { UpdatePanel } from "./UpdatePanel";
 import { SmtpSection } from "./SmtpSection";
 import { InvitesSection } from "./InvitesSection";
 import { CommunityAdmin } from "./CommunityAdmin";
+import { RolesManager } from "@/components/roles/RolesManager";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -302,6 +303,7 @@ export function AdminManager({
 }) {
   const t = useT("admin");
   const tcm = useT("community");
+  const trl = useT("roles");
   const f = useFormat();
   const [users, setUsers] = useState(initialUsers);
   const source = build.source === "env" ? t("instance.sourceEnv") : build.source === "git" ? t("instance.sourceGit") : "package.json";
@@ -334,6 +336,10 @@ export function AdminManager({
 
       <AccountSection icon={<Ticket size={18} />} title={t("invites.title")} description={t("invites.description")}>
         <InvitesSection multi={initialSettings.mode === "MULTI"} />
+      </AccountSection>
+
+      <AccountSection icon={<ShieldCheck size={18} />} title={trl("adminTitle")} description={trl("introAdmin")}>
+        <RolesManager mode="admin" />
       </AccountSection>
 
       <AccountSection icon={<MessagesSquare size={18} />} title={tcm("admin.title")} description={tcm("admin.description")}>

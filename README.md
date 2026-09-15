@@ -338,7 +338,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Einladungslinks für neue Konten: einmal nutzbar, mit Ablaufdatum, auch bei geschlossener Registrierung
 - ✅ Community für die Konten der Instanz: Projekte vorstellen, Fragen, Ideen und Fehlerberichte, Chat (Lobby und je Projekt), Moderation, Melden und Sperren
 - ✅ Vorstellungs-Folien je Projekt: automatisch aus Beschreibung, Stand, Commits und nächsten Schritten, mit Vollbild und Tastatur
-- ✅ Teams: Projekte an ganze Teams freigeben (Ansehen oder Bearbeiten), Beitritt nur per Einladung
+- ✅ Teams: Projekte an ganze Teams freigeben, Beitritt nur per Einladung
+- ✅ Rollen mit einzelnen Rechten für Mitglieder und Teams – Standardrollen, Admin-Vorlagen und eigene Rollen
 - ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**

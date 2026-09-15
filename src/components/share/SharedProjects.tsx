@@ -5,6 +5,7 @@ import { Bell, Users } from "lucide-react";
 import type { ProjectStatus, ProjectRole } from "@/generated/prisma/client";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { useT } from "@/lib/i18n/client";
+import { roleName } from "@/components/roles/roleName";
 
 export interface SharedProjectCard {
   id: string;
@@ -14,7 +15,8 @@ export interface SharedProjectCard {
   progress: number;
   accent: string;
   owner: string;
-  role: ProjectRole;
+  /** Rolle (direkt, sonst über ein Team) – ohne Rolle „nur lesen“ */
+  role: { name: string; key: string | null } | null;
   /** Zugriff nur über dieses Team */
   via?: string | null;
 }
@@ -51,6 +53,7 @@ export function PendingRequests({ items }: { items: PendingRequestItem[] }) {
 /** Projekte anderer Konten, in denen man Mitglied ist. */
 export function SharedProjects({ projects }: { projects: SharedProjectCard[] }) {
   const t = useT("share");
+  const tr = useT("roles");
   const ts = useT("status");
   if (!projects.length) return null;
   return (
@@ -68,7 +71,7 @@ export function SharedProjects({ projects }: { projects: SharedProjectCard[] }) 
               <div className="absolute inset-x-0 top-0 h-1" style={{ background: gradient }} />
               <div className="flex items-start justify-between gap-2">
                 <h3 className="min-w-0 break-words text-lg font-semibold">{p.name}</h3>
-                <span className="chip shrink-0 !py-0.5 text-[11px]">{t(`role.${p.role}`)}</span>
+                <span className="chip shrink-0 !py-0.5 text-[11px]">{p.role ? roleName(p.role, tr) : t("role.VIEWER")}</span>
               </div>
               {p.summary && <p className="mt-1 line-clamp-2 text-sm text-muted">{p.summary}</p>}
               <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-fg/10">

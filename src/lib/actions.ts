@@ -8,7 +8,7 @@ import { dayKeyToDate } from "./taskDates";
 import { noteLabel, touchProject } from "./notes";
 import { logActivity } from "./activity";
 import { truncate } from "./utils";
-import { accessOf, canAccess } from "./access";
+import { accessOf } from "./access";
 import type { noteCreateSchema, taskCreateSchema, taskUpdateSchema } from "./validation";
 
 // Schreibvorgänge mit allen Folgen – Verlauf, Fortschritt, Issue-Spiegelung.
@@ -78,7 +78,7 @@ export async function createTaskInProjects(
   let skipped = 0;
   for (const id of [...new Set(projectIds)]) {
     const res = await accessOf(userId, id);
-    if (!res || !canAccess(res.access, "EDITOR") || res.project.status === "ARCHIVED") {
+    if (!res || !res.perms.has("tasks.edit") || res.project.status === "ARCHIVED") {
       skipped++;
       continue;
     }

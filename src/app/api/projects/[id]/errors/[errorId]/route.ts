@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { json, notFound, readBody, route } from "@/lib/api";
+import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { requireProject } from "@/lib/access";
 import { createTask } from "@/lib/actions";
@@ -29,10 +29,12 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   limitOrThrow(`bugs:${user.id}`, 60, MINUTE);
   const { id, errorId } = await params;
-  await requireProject(user.id, id, "EDITOR");
+  const { perms } = await requireProject(user.id, id, "errors.manage");
   const e = await find(id, errorId);
   const body = await readBody(req, bodySchema, { maxBytes: 512 });
   if ("status" in body) return json({ item: serializeAppError(await setErrorStatus(e.id, body.status)) });
+  // Eine Aufgabe daraus machen verlangt zusätzlich das Aufgaben-Recht
+  if (!perms.has("tasks.edit")) throw new ApiError(403, tk("projects", "errors.viewOnly"));
 
   if (e.taskId && (await db.task.findFirst({ where: { id: e.taskId, projectId: id }, select: { id: true } }))) return json({ item: serializeAppError(e) });
   const t = await getT("bugs");
@@ -51,7 +53,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id, errorId } = await params;
-  await requireProject(user.id, id, "EDITOR");
+  await requireProject(user.id, id, "errors.manage");
   const e = await find(id, errorId);
   await db.appError.delete({ where: { id: e.id } });
   return json({ ok: true });

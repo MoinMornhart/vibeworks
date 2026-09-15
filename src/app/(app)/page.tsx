@@ -10,7 +10,6 @@ import { ProjectBoard } from "@/components/projects/ProjectBoard";
 import { PendingRequests, SharedProjects } from "@/components/share/SharedProjects";
 import { SleepingProjects } from "@/components/grave/SleepingProjects";
 import { roleSelect, visibleTo } from "@/lib/access";
-import { bestRole } from "@/lib/teamsLogic";
 import { WeeklySuggestions } from "@/components/WeeklySuggestions";
 import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
 
@@ -133,7 +132,7 @@ export default async function Dashboard() {
           progress: p.progress,
           accent: p.accent,
           owner: displayNameOf(p.owner),
-          role: bestRole([...p.members, ...p.teams].map((r) => r.role)) ?? "VIEWER",
+          role: p.members[0]?.roleRef ?? p.teams[0]?.roleRef ?? null,
           via: p.members.length ? null : (p.teams[0]?.team.name ?? null),
         }))}
       />

@@ -16,7 +16,7 @@ export const POST = route(async (req) => {
   const user = await requireApiUser();
   limitOrThrow(`today:${user.id}`, 120, MINUTE);
   const { taskId } = await readBody(req, todayFocusSchema, { maxBytes: 1024 });
-  await requireTask(user.id, taskId, "EDITOR");
+  await requireTask(user.id, taskId, "tasks.edit");
   const today = dayKey(new Date());
   // Gestern ist vorbei
   await db.taskFocus.deleteMany({ where: { userId: user.id, day: { lt: today } } });

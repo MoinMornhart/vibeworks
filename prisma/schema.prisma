@@ -144,6 +144,7 @@ model User {
   communityMessages  CommunityMessage[]
   teamMemberships    TeamMember[]
   teamInvites        TeamInvite[]
+  roles              Role[]
 
   sessions      Session[]
   passkeys      Passkey[]
@@ -347,6 +348,29 @@ model Project {
   @@index([ownerId, updatedAt])
 }
 
+// ── Rollen ──────────────────────────────────────────────────
+
+/// Rolle: benannte Sammlung von Rechten für Projekte oder Teams (src/lib/rolesLogic.ts)
+model Role {
+  id          String          @id @default(cuid())
+  /// project | team
+  scope       String
+  name        String
+  description String?
+  permissions String[]        @default([])
+  /// Standardrolle (z. B. "project.editor") – bearbeitbar, nicht löschbar
+  key         String?         @unique
+  /// null = Vorlage der Instanz (pflegen Admins), sonst eigene Rolle dieses Kontos
+  ownerId     String?
+  owner       User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  members     ProjectMember[]
+  teamShares  ProjectTeam[]
+
+  @@index([scope, ownerId])
+}
+
 // ── Teams ───────────────────────────────────────────────────
 
 /// Team: Konten, mit denen man Projekte gemeinsam teilt – Beitritt nur per Einladung
@@ -393,7 +417,10 @@ model ProjectTeam {
   project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   teamId    String
   team      Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  /// Alte Stufe – nur noch Rückfall, wenn die Rolle gelöscht wurde
   role      ProjectRole @default(VIEWER)
+  roleId    String?
+  roleRef   Role?       @relation(fields: [roleId], references: [id], onDelete: SetNull)
   createdAt DateTime    @default(now())
 
   @@id([projectId, teamId])
@@ -864,7 +891,10 @@ model ProjectMember {
   project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   userId    String
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Alte Stufe – nur noch Rückfall, wenn die Rolle gelöscht wurde (neue Vergaben: VIEWER)
   role      ProjectRole @default(VIEWER)
+  roleId    String?
+  roleRef   Role?       @relation(fields: [roleId], references: [id], onDelete: SetNull)
   createdAt DateTime    @default(now())
 
   @@id([projectId, userId])

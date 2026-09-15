@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
-import { accessFromRoles, roleSelect, visibleTo, type ProjectAccess } from "@/lib/access";
+import { accessFromGrants, permsFromGrants, roleSelect, visibleTo, type ProjectAccess } from "@/lib/access";
 import { projectListSelect, serializeProject } from "@/lib/projects";
 import { NOTE_ORDER, serializeNote } from "@/lib/notes";
 import { serializeTask, TASK_ORDER } from "@/lib/tasks";
@@ -27,6 +27,7 @@ import { ErrorsPanel } from "@/components/bugs/ErrorsPanel";
 import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
+import type { ProjectPermission } from "@/lib/rolesLogic";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -54,8 +55,9 @@ const loadProject = cache(async (id: string) => {
     },
   });
   if (!project) return null;
-  const access: ProjectAccess = accessFromRoles(project.ownerId, user.id, project);
-  return { project, access };
+  const access: ProjectAccess = accessFromGrants(project.ownerId, user.id, project);
+  const perms = permsFromGrants(project.ownerId, user.id, project);
+  return { project, access, perms };
 });
 
 export async function generateMetadata({ params }: Props) {
@@ -66,7 +68,8 @@ export async function generateMetadata({ params }: Props) {
 export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
-  const { project, access } = loaded;
+  const { project, access, perms } = loaded;
+  const can = (p: ProjectPermission) => perms.has(p);
   const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
   const done = tasks.filter((t) => t.status === "DONE").length;
@@ -91,7 +94,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         initial={serializeProject({ ...rest, repoCache }, done)}
         access={access}
         ownerName={displayNameOf(owner)}
-        pendingRequests={isOwner ? accessRequests.length : 0}
+        pendingRequests={isOwner || can("members.invite") ? accessRequests.length : 0}
+        perms={[...perms]}
         openShare={query.teilen === "1"}
         analysis={analysis}
         timeSeconds={timeSeconds}
@@ -99,7 +103,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       {project.liveUrl && live && (
         <LivePanel
           projectId={project.id}
-          canCheck={!readOnly}
+          canCheck={can("live.check")}
           today={dayKey(new Date())}
           stats={live}
           info={{
@@ -113,10 +117,10 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           }}
         />
       )}
-      {(isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={!readOnly} />}
-      <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={readOnly} />
-      <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={readOnly} />
-      <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={!readOnly} />
+      {(isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={can("errors.manage")} />}
+      <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={!can("tasks.edit")} />
+      <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />
+      <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />
       <GitPanel
         projectId={project.id}
         repoUrl={project.repoUrl}
@@ -130,13 +134,13 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         mode={isOwner ? "owner" : "member"}
       />
       {project.repoUrl && repoCache?.provider && (
-        <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={!readOnly} />
+        <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={can("git.sync")} />
       )}
       {project.repoUrl && repoCache?.provider === "github" && (
         <RepoCheckPanel
           projectId={project.id}
           initial={serializeRepoCheck(repoCheck, repoCache)}
-          canRun={!readOnly}
+          canRun={can("git.sync")}
           canManage={isOwner}
           hasToken={Boolean(repoTokenHint || account)}
         />

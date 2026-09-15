@@ -23,7 +23,7 @@ export const POST = route<Params>(async (req, { params }) => {
     const project = await inboxToProject(user.id, item);
     return json({ project });
   }
-  const { project } = await requireProject(user.id, input.projectId, "EDITOR");
+  const { project } = await requireProject(user.id, input.projectId, "tasks.edit");
   const task = await inboxToTask(user.id, item, project.id);
   return json({ task: { id: task.id, title: task.title }, project: { id: project.id, name: project.name } });
 });
