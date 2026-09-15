@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.7",
+    date: "2026-09-15",
+    title: "Brett einstellen, Bearbeiter aus dem Team, neue Benachrichtigungs-Seite",
+    titleEn: "Set up the board, assignees from the team, new notification page",
+    changes: [
+      {
+        type: "neu",
+        text: "Aufgabenbrett einstellen (Zahnrad): Spalten umbenennen, Reihenfolge ändern, Spalten ausblenden und lange Spalten nach 5, 10, 20 oder 50 Karten einklappen – gilt für alle im Projekt, der Status dahinter bleibt gleich",
+        en: "Set up the task board (gear icon): rename columns, change their order, hide columns and collapse long ones after 5, 10, 20 or 50 cards – applies to everyone in the project, the status behind stays the same",
+      },
+      {
+        type: "neu",
+        text: "Bearbeiter: Vorschläge aus den Leuten im Projekt (Besitzer, Mitglieder, Teams). Wer eingetragen wird, bekommt eine Meldung in der Glocke – neuer Anlass „Aufgabe zugewiesen“",
+        en: "Assignee: suggestions from the people in the project (owner, members, teams). Whoever is entered gets a notification in the bell – new event “Task assigned”",
+      },
+      {
+        type: "besser",
+        text: "Benachrichtigungs-Einstellungen neu: Kanäle als Kacheln mit Status, Anlässe nach Themen gruppiert mit Schaltern und „Alle an/aus“",
+        en: "Notification settings redesigned: channels as tiles with status, events grouped by topic with switches and “All on/off”",
+        link: "/account#benachrichtigungen",
+      },
+      {
+        type: "besser",
+        text: "„Neue Aufgabe mit Details“ hat ein eigenes Symbol – das Zahnrad stellt jetzt das Brett ein",
+        en: "“New task with details” has its own icon – the gear now sets up the board",
+      },
+    ],
+  },
+  {
     version: "0.7.6",
     date: "2026-09-15",
     title: "Bot-Konto für Issues und Rolle „Bughunter“",

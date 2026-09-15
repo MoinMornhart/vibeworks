@@ -3,16 +3,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, PenLine, TriangleAlert, UserRound } from "lucide-react";
+import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
 import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
-import { TASK_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
 import { cn, dayKey } from "@/lib/utils";
 import { TimerButtons } from "@/components/time/TimerPill";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
+import { BoardSettings } from "./BoardSettings";
+import { DEFAULT_BOARD, type BoardConfig } from "@/lib/boardConfig";
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
   TODO: "var(--vw-muted)",
@@ -142,6 +143,9 @@ export function TaskBoard({
   limit,
   progressFromTasks,
   readOnly = false,
+  board,
+  canConfigure = false,
+  people = [],
 }: {
   projectId: string;
   initial: TaskItem[];
@@ -149,6 +153,12 @@ export function TaskBoard({
   progressFromTasks: boolean;
   /** Betrachter: kein Anlegen, Ziehen oder Abhaken */
   readOnly?: boolean;
+  /** Spalten: Namen, Reihenfolge, Sichtbarkeit, Einklappen (je Projekt) */
+  board?: BoardConfig;
+  /** Darf das Brett einstellen (Recht „Projektangaben ändern“) */
+  canConfigure?: boolean;
+  /** Wer im Projekt ist – Vorschläge für „Bearbeiter“ */
+  people?: Array<{ username: string; name: string }>;
 }) {
   const t = useT("tasks");
   const ts = useT("status");
@@ -159,6 +169,11 @@ export function TaskBoard({
   const [dialog, setDialog] = useState<{ task: TaskItem | null; status: TaskStatus } | null>(null);
   const [quick, setQuick] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [boardCfg, setBoardCfg] = useState<BoardConfig>(board ?? DEFAULT_BOARD);
+  const [configuring, setConfiguring] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
+  const columnLabel = (s: TaskStatus) => boardCfg.labels[s] || ts(`task.${s}`);
+  const visibleColumns = boardCfg.order.filter((s) => showHidden || !boardCfg.hidden.includes(s));
   const today = dayKey(new Date());
   const done = useMemo(() => tasks.filter((t) => t.status === "DONE").length, [tasks]);
   // Erledigtes und Blockiertes verschwindet nach zwei Tagen vom Board – auf Wunsch wieder einblendbar.
@@ -284,33 +299,71 @@ export function TaskBoard({
               {showFaded ? t("board.hideOlder") : t("board.olderHidden", { n: fadedCount })}
             </button>
           )}
+          {boardCfg.hidden.length > 0 && (
+            <button
+              type="button"
+              className={cn("chip !py-0.5 text-xs", showHidden && "chip-active")}
+              onClick={() => setShowHidden((s) => !s)}
+              aria-pressed={showHidden}
+              data-testid="hidden-columns"
+            >
+              <EyeOff size={12} /> {showHidden ? t("board.hideHidden") : t("board.hiddenColumns", { list: boardCfg.hidden.map(columnLabel).join(", ") })}
+            </button>
+          )}
+          {canConfigure && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon btn-sm"
+              onClick={() => setConfiguring((c) => !c)}
+              aria-expanded={configuring}
+              aria-label={t("board.configure")}
+              title={t("board.configure")}
+            >
+              <Settings2 size={15} />
+            </button>
+          )}
         </div>
         {!readOnly && (
         <form onSubmit={quickAdd} className="flex w-full gap-2 sm:w-auto">
           <input className="field sm:w-72" placeholder={t("board.quickPlaceholder")} value={quick} onChange={(e) => setQuick(e.target.value)} maxLength={200} aria-label={t("board.quickLabel")} />
           <button type="submit" className="btn btn-icon shrink-0" aria-label={t("board.quickSubmit")} disabled={!quick.trim()}><Plus size={16} /></button>
           <button type="button" className="btn btn-icon shrink-0" aria-label={t("board.withDetails")} title={t("board.withDetailsTitle")} onClick={() => setDialog({ task: null, status: "TODO" })}>
-            <SlidersHorizontal size={15} />
+            <FilePlus2 size={15} />
           </button>
         </form>
         )}
       </div>
 
+      {configuring && (
+        <BoardSettings
+          projectId={projectId}
+          value={boardCfg}
+          defaultLimit={limit}
+          labelOf={(s) => ts(`task.${s}`)}
+          colorOf={(s) => COLUMN_COLOR[s]}
+          onSaved={(b) => {
+            setBoardCfg(b);
+            setConfiguring(false);
+          }}
+          onClose={() => setConfiguring(false)}
+        />
+      )}
+
       {error && <p role="alert" className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
 
       <SortableColumns
         items={boardTasks}
-        columns={TASK_STATUSES.map((s) => s.value)}
+        columns={visibleColumns}
         columnOf={statusOf}
         sort={byPosition}
         labelOf={(t) => t.title}
         onReorder={reorder}
-        limit={limit}
+        limit={boardCfg.collapseAfter || limit}
         emptyText={t("board.empty")}
         renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderColumn={(status, count, body) => {
-          const label = ts(`task.${status as TaskStatus}`);
+          const label = columnLabel(status as TaskStatus);
           return (
             <div className="flex min-w-0 flex-col rounded-2xl border bg-bg/25 p-2.5" aria-label={label} role="group">
               <h3 className="mb-2.5 flex items-center gap-2 px-1 text-sm font-semibold">
@@ -322,7 +375,7 @@ export function TaskBoard({
             </div>
           );
         }}
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", visibleColumns.length >= 4 ? "xl:grid-cols-4" : visibleColumns.length === 3 && "xl:grid-cols-3")}
       />
 
       {!readOnly && (
@@ -333,6 +386,7 @@ export function TaskBoard({
         onClose={() => setDialog(null)}
         onSave={save}
         onDelete={remove}
+        people={people}
       />
       )}
     </section>

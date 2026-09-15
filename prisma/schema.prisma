@@ -283,6 +283,8 @@ model Project {
   /// Rang innerhalb der Kanban-Spalte
   position    Int           @default(0)
   progressFromTasks Boolean @default(false)
+  /// Aufgabenbrett: Spaltennamen, Reihenfolge, ausgeblendete Spalten, Einklappen (src/lib/boardConfig.ts)
+  boardConfig Json?
   repoUrl     String?
   /// Zugangstoken für private Repositories, AES-256-GCM-verschlüsselt
   repoTokenCipher String?

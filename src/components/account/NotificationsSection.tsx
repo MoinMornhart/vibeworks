@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, CheckCircle2, Save, Send, XCircle } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Bell, CheckCircle2, Mail, Save, Send, Smartphone, Webhook, XCircle } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
+import { Toggle } from "@/components/theme/controls";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
-import { NOTIFY_EVENTS, splitLastError, type Channel, type EventSwitches, type NotifyEvent } from "@/lib/notify/format";
+import { NOTIFY_GROUPS, splitLastError, type Channel, type EventSwitches, type NotifyEvent } from "@/lib/notify/format";
+import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
 
 export interface NotificationSettingsView {
@@ -24,6 +26,7 @@ interface Result {
   error?: string;
 }
 
+/** Benachrichtigungen: Kanäle als Kacheln mit Status, Anlässe nach Themen gruppiert (je Gruppe alle an/aus). */
 export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial: NotificationSettingsView; smtpReady: boolean; isAdmin: boolean }) {
   const t = useT("notify");
   const msg = useMsg();
@@ -37,9 +40,10 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Result[] | null>(null);
 
-  const events = NOTIFY_EVENTS.filter((e) => e !== "updated" || isAdmin);
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((s) => ({ ...s, [key]: value }));
   const toggle = (e: NotifyEvent) => setForm((s) => ({ ...s, events: { ...s.events, [e]: !s.events[e] } }));
+  const setGroup = (list: readonly NotifyEvent[], on: boolean) =>
+    setForm((s) => ({ ...s, events: { ...s.events, ...Object.fromEntries(list.map((e) => [e, on])) } }));
 
   async function save(extra: { ntfyToken?: string | null } = {}) {
     setBusy(true);
@@ -81,64 +85,92 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
 
   const last = splitLastError(saved.lastError);
 
+  const ChannelCard = ({ icon, title, active, children }: { icon: ReactNode; title: string; active: boolean; children: ReactNode }) => (
+    <div className={cn("rounded-2xl border p-4 transition-colors", active ? "border-emerald-500/40 bg-emerald-500/5" : "bg-bg/25")} data-testid="notify-channel">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-accent-ink">{icon}</span>
+        <span className="font-medium">{title}</span>
+        <span className={cn("chip ml-auto !py-0.5 text-[11px]", active ? "border-emerald-500/40 text-emerald-400" : "text-muted")}>{active ? t("channelOn") : t("channelOff")}</span>
+      </div>
+      {children}
+    </div>
+  );
+
   return (
     <AccountSection id="benachrichtigungen" icon={<Bell size={18} />} title={t("section.title")} description={t("section.description")}>
       <form
-        className="space-y-4"
+        className="space-y-6"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
         }}
       >
-        <div>
-          <label className="label" htmlFor="notify-ntfy">{t("ntfy.label")}</label>
-          <input id="notify-ntfy" className="field font-mono text-sm" value={form.ntfyUrl} onChange={(e) => set("ntfyUrl", e.target.value)} placeholder={t("ntfy.placeholder")} maxLength={500} spellCheck={false} />
-          {fieldErrors.ntfyUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.ntfyUrl}</p>}
-          <p className="mt-1 text-xs text-muted">{t("ntfy.hint")}</p>
-          {form.ntfyUrl && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              <input
-                type="password"
-                autoComplete="off"
-                className="field min-w-0 flex-1 font-mono text-sm"
-                value={ntfyToken}
-                onChange={(e) => setNtfyToken(e.target.value)}
-                placeholder={saved.hasNtfyToken ? t("ntfy.tokenSaved") : t("ntfy.token")}
-                aria-label={t("ntfy.token")}
-                maxLength={300}
-              />
-              {saved.hasNtfyToken && (
-                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void save({ ntfyToken: null })}>{t("ntfy.removeToken")}</button>
+        <p className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2 text-sm">
+          <Bell size={15} className="mt-0.5 shrink-0 text-accent-ink" /> {t("bellNote")}
+        </p>
+
+        <section aria-labelledby="notify-channels">
+          <h3 id="notify-channels" className="mb-3 text-sm font-semibold">{t("channelsTitle")}</h3>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <ChannelCard icon={<Smartphone size={16} />} title={t("ntfy.label")} active={Boolean(form.ntfyUrl.trim())}>
+              <input id="notify-ntfy" className="field font-mono text-sm" value={form.ntfyUrl} onChange={(e) => set("ntfyUrl", e.target.value)} placeholder={t("ntfy.placeholder")} maxLength={500} spellCheck={false} aria-label={t("ntfy.label")} />
+              {fieldErrors.ntfyUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.ntfyUrl}</p>}
+              <p className="mt-1 text-xs text-muted">{t("ntfy.hint")}</p>
+              {form.ntfyUrl && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    className="field min-w-0 flex-1 font-mono text-sm"
+                    value={ntfyToken}
+                    onChange={(e) => setNtfyToken(e.target.value)}
+                    placeholder={saved.hasNtfyToken ? t("ntfy.tokenSaved") : t("ntfy.token")}
+                    aria-label={t("ntfy.token")}
+                    maxLength={300}
+                  />
+                  {saved.hasNtfyToken && (
+                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void save({ ntfyToken: null })}>{t("ntfy.removeToken")}</button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label className="label" htmlFor="notify-webhook">{t("webhook.label")}</label>
-          <input id="notify-webhook" className="field font-mono text-sm" value={form.webhookUrl} onChange={(e) => set("webhookUrl", e.target.value)} placeholder={t("webhook.placeholder")} maxLength={1000} spellCheck={false} />
-          {fieldErrors.webhookUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.webhookUrl}</p>}
-          <p className="mt-1 text-xs text-muted">{t("webhook.hint")}</p>
-        </div>
-
-        <div>
-          <label className="label" htmlFor="notify-email">{t("email.label")}</label>
-          <input id="notify-email" type="email" className="field" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder={t("email.placeholder")} maxLength={254} disabled={!smtpReady && !form.email} />
-          {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
-          {!smtpReady && <p className="mt-1 text-xs text-amber-400">{t("email.noSmtp")}</p>}
-        </div>
-
-        <fieldset>
-          <legend className="label">{t("switches.title")}</legend>
-          <div className="space-y-2">
-            {events.map((e) => (
-              <label key={e} className="flex cursor-pointer items-start gap-3 text-sm">
-                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--vw-accent)]" checked={form.events[e]} onChange={() => toggle(e)} />
-                {t(`switches.${e}`)}
-              </label>
-            ))}
+            </ChannelCard>
+            <ChannelCard icon={<Webhook size={16} />} title={t("webhook.label")} active={Boolean(form.webhookUrl.trim())}>
+              <input id="notify-webhook" className="field font-mono text-sm" value={form.webhookUrl} onChange={(e) => set("webhookUrl", e.target.value)} placeholder={t("webhook.placeholder")} maxLength={1000} spellCheck={false} aria-label={t("webhook.label")} />
+              {fieldErrors.webhookUrl && <p className="mt-1 text-xs text-red-400">{fieldErrors.webhookUrl}</p>}
+              <p className="mt-1 text-xs text-muted">{t("webhook.hint")}</p>
+            </ChannelCard>
+            <ChannelCard icon={<Mail size={16} />} title={t("email.label")} active={Boolean(form.email.trim()) && smtpReady}>
+              <input id="notify-email" type="email" className="field" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder={t("email.placeholder")} maxLength={254} disabled={!smtpReady && !form.email} aria-label={t("email.label")} />
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
+              {!smtpReady && <p className="mt-1 text-xs text-amber-400">{t("email.noSmtp")}</p>}
+            </ChannelCard>
           </div>
-        </fieldset>
+        </section>
+
+        <section aria-labelledby="notify-events">
+          <h3 id="notify-events" className="mb-3 text-sm font-semibold">{t("switches.title")}</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            {NOTIFY_GROUPS.map((g) => {
+              const list = g.events.filter((e) => e !== "updated" || isAdmin);
+              const allOn = list.every((e) => form.events[e]);
+              return (
+                <div key={g.key} className="rounded-2xl border p-4" data-testid="notify-group">
+                  <div className="mb-3 flex items-center gap-2">
+                    <h4 className="text-sm font-semibold">{t(`groups.${g.key}`)}</h4>
+                    <button type="button" className="btn btn-ghost btn-sm ml-auto text-xs" onClick={() => setGroup(list, !allOn)}>
+                      {allOn ? t("allOff") : t("allOn")}
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {list.map((e) => (
+                      <Toggle key={e} label={t(`switches.${e}`)} checked={form.events[e]} onChange={() => toggle(e)} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="flex flex-wrap gap-2">
           <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>

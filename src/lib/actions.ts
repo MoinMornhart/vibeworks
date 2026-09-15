@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { db } from "./db";
 import { pushTaskIssue, pushTaskIssues } from "./git/issues";
 import { displayNameOf } from "./auth/guard";
+import { notifyAssignee } from "./assignNotify";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "./tasks";
 import { dayKeyToDate } from "./taskDates";
 import { noteLabel, touchProject } from "./notes";
@@ -42,6 +43,7 @@ export async function createTask(
   await touchProject(projectId);
   const progress = await syncProjectProgress(projectId);
   after(() => pushTaskIssue(task.id));
+  if (task.assignee) after(() => notifyAssignee(task, userId, null));
   return { task, progress };
 }
 
@@ -67,6 +69,7 @@ export async function updateTask(userId: string, current: Task, input: z.output<
   const progress = await syncProjectProgress(current.projectId);
   const pushIds = [result.task.id, ...(result.spawned ? [result.spawned.id] : [])];
   after(() => pushTaskIssues(pushIds));
+  if (input.assignee !== undefined) after(() => notifyAssignee(result.task, userId, current.assignee));
   return { ...result, progress };
 }
 

@@ -43,6 +43,7 @@ export function TaskDialog({
   onClose,
   onSave,
   onDelete,
+  people = [],
 }: {
   open: boolean;
   task: TaskItem | null;
@@ -50,6 +51,8 @@ export function TaskDialog({
   onClose: () => void;
   onSave: (form: TaskForm) => Promise<void>;
   onDelete?: (task: TaskItem) => Promise<void>;
+  /** Vorschläge für „Bearbeiter“: die Leute im Projekt */
+  people?: Array<{ username: string; name: string }>;
 }) {
   const t = useT("tasks");
   const tc = useT("common");
@@ -182,6 +185,9 @@ export function TaskDialog({
               autoComplete="off"
             />
             <datalist id="t-assignee-list">
+              {people.map((p) => (
+                <option key={p.username} value={p.name} label={`@${p.username}`} />
+              ))}
               <option value="Claude" />
             </datalist>
             {task && task.issueAssignees.length > 0 && <p className="mt-1 text-xs text-muted">{t("dialog.issueAssignees", { list: task.issueAssignees.join(", ") })}</p>}

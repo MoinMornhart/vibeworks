@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { eventsOf, ntfyRequest, parseNtfyUrl, splitLastError, webhookBody, type Notice } from "./format";
+import { eventsOf, NOTIFY_EVENTS, NOTIFY_GROUPS, ntfyRequest, parseNtfyUrl, splitLastError, webhookBody, type Notice } from "./format";
 
 const notice: Notice = { event: "ciFailed", title: "CI fehlgeschlagen: Übersicht", message: "build ist rot", url: "https://vibeworks.example.de/projects/1", priority: "high" };
 
 describe("Anlässe", () => {
   it("fehlende Schalter sind an, ausdrücklich ausgeschaltete aus", () => {
-    expect(eventsOf(null)).toEqual({ taskDue: true, accessRequest: true, issueClosed: true, ciFailed: true, checkAlert: true, appError: true, community: true, team: true, gitFailed: true, siteDown: true, renewal: true, suggestions: true, passwordAge: true, news: true, updated: true });
+    expect(eventsOf(null)).toEqual({ taskDue: true, assigned: true, accessRequest: true, issueClosed: true, ciFailed: true, checkAlert: true, appError: true, community: true, team: true, gitFailed: true, siteDown: true, renewal: true, suggestions: true, passwordAge: true, news: true, updated: true });
     expect(eventsOf({ ciFailed: false, taskDue: true }).ciFailed).toBe(false);
+  });
+
+  it("jeder Anlass steht in genau einer Gruppe der Einstellungen", () => {
+    const grouped = NOTIFY_GROUPS.flatMap((g) => g.events);
+    expect([...grouped].sort()).toEqual([...NOTIFY_EVENTS].sort());
   });
 });
 

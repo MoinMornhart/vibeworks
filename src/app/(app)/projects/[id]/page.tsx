@@ -28,6 +28,8 @@ import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
 import type { ProjectPermission } from "@/lib/rolesLogic";
+import { normalizeBoard } from "@/lib/boardConfig";
+import { projectPeople } from "@/lib/projectPeople";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -42,6 +44,7 @@ const loadProject = cache(async (id: string) => {
       issueSync: true,
       repoCheck: true,
       errorKey: true,
+      boardConfig: true,
       repoCache: true,
       liveCheckedAt: true,
       liveError: true,
@@ -70,8 +73,13 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access, perms } = loaded;
   const can = (p: ProjectPermission) => perms.has(p);
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
-  const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const [live, timeSeconds, people] = await Promise.all([
+    project.liveUrl ? liveStats(project.id) : null,
+    sumSeconds({ projectId: project.id }),
+    // Vorschläge für „Bearbeiter“ nur für die, die Aufgaben bearbeiten dürfen
+    perms.has("tasks.edit") ? projectPeople(project.id) : Promise.resolve([]),
+  ]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
   // falls der gespeicherte Wert noch aus der alten Berechnung stammt
@@ -118,7 +126,16 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         />
       )}
       {(isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={can("errors.manage")} />}
-      <TaskBoard projectId={project.id} initial={tasks.map(serializeTask)} limit={settings.taskColumnLimit} progressFromTasks={project.progressFromTasks} readOnly={!can("tasks.edit")} />
+      <TaskBoard
+        projectId={project.id}
+        initial={tasks.map(serializeTask)}
+        limit={settings.taskColumnLimit}
+        progressFromTasks={project.progressFromTasks}
+        readOnly={!can("tasks.edit")}
+        board={normalizeBoard(boardConfig)}
+        canConfigure={can("project.edit")}
+        people={people.map(({ username, name }) => ({ username, name }))}
+      />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />
       <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />
       <GitPanel

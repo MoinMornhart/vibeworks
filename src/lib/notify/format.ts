@@ -1,8 +1,16 @@
 // Benachrichtigungen ohne Netz und Datenbank: Anlässe, ntfy-Anfrage und
 // Webhook-Nutzlast – im Browser und in Tests nutzbar.
 
-export const NOTIFY_EVENTS = ["taskDue", "accessRequest", "issueClosed", "ciFailed", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "news", "updated"] as const;
+export const NOTIFY_EVENTS = ["taskDue", "assigned", "accessRequest", "issueClosed", "ciFailed", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "news", "updated"] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
+
+/** Anlässe nach Themen für die Einstellungen – jeder genau einmal (Test). */
+export const NOTIFY_GROUPS: ReadonlyArray<{ key: "tasks" | "dev" | "people" | "account"; events: readonly NotifyEvent[] }> = [
+  { key: "tasks", events: ["taskDue", "assigned", "issueClosed", "suggestions"] },
+  { key: "dev", events: ["ciFailed", "checkAlert", "gitFailed", "appError", "siteDown"] },
+  { key: "people", events: ["accessRequest", "community", "team"] },
+  { key: "account", events: ["passwordAge", "renewal", "news", "updated"] },
+];
 export type EventSwitches = Record<NotifyEvent, boolean>;
 
 export const CHANNELS = ["ntfy", "webhook", "email"] as const;
@@ -36,6 +44,7 @@ export function parseNtfyUrl(url: string): { server: string; topic: string } | n
 
 const TAGS: Record<Notice["event"], string> = {
   taskDue: "calendar",
+  assigned: "bust_in_silhouette",
   accessRequest: "raising_hand",
   issueClosed: "white_check_mark",
   ciFailed: "x",
