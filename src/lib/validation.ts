@@ -95,7 +95,18 @@ export const projectCreateSchema = z.object({
   liveUrl: liveUrlSchema,
 });
 
-export const projectUpdateSchema = projectCreateSchema.partial();
+// Für PATCH: alles optional und OHNE Standardwerte. zod 4 setzt .default()
+// auch in optionalen Feldern ein – ein Umbenennen würde sonst Status,
+// Fortschritt, Farbe, Tags und Favorit auf die Anfangswerte zurücksetzen.
+export const projectUpdateSchema = projectCreateSchema.partial().extend({
+  status: projectStatusSchema.optional(),
+  priority: z.number().int().min(1).max(4).optional(),
+  progress: z.number().int().min(0).max(100).optional(),
+  accent: accentSchema.optional(),
+  tags: tagsSchema.optional(),
+  favorite: z.boolean().optional(),
+  progressFromTasks: z.boolean().optional(),
+});
 /** Bearbeiten über die Oberfläche: bei Projekten mit Stern bestätigt confirmProtected Status-/Repository-Änderungen. */
 export const projectPatchSchema = projectUpdateSchema.extend({ confirmProtected: z.boolean().optional() });
 
@@ -163,7 +174,8 @@ export const promptSchema = z.object({
   projectId: z.string().max(40).nullish().transform((v) => v || null),
 });
 
-export const promptUpdateSchema = promptSchema.partial();
+// PATCH ohne Standardwerte – sonst leerte zod 4 beim Umbenennen die Tags
+export const promptUpdateSchema = promptSchema.partial().extend({ tags: tagsSchema.optional() });
 
 // ── Heute ───────────────────────────────────────────────────
 
@@ -210,7 +222,7 @@ export const notificationSettingsSchema = z.object({
     .transform((v) => v || null)
     .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), tk("notify", "errors.badWebhookUrl")),
   email: optionalText254.refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), tk("notify", "errors.badEmail")),
-  events: z.record(z.boolean()).default({}),
+  events: z.record(z.string(), z.boolean()).default({}),
 });
 
 export const smtpSettingsSchema = z.object({
@@ -412,8 +424,8 @@ const webauthnResponseSchema = z
     id: z.string().min(1).max(1024),
     rawId: z.string().max(1024),
     type: z.literal("public-key"),
-    response: z.record(z.unknown()),
-    clientExtensionResults: z.record(z.unknown()).default({}),
+    response: z.record(z.string(), z.unknown()),
+    clientExtensionResults: z.record(z.string(), z.unknown()).default({}),
     authenticatorAttachment: z.string().max(40).optional(),
   })
   .passthrough();

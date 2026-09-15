@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.9",
+    date: "2026-09-15",
+    title: "zod 4",
+    titleEn: "zod 4",
+    changes: [
+      {
+        type: "besser",
+        text: "Die Eingabeprüfung läuft auf zod 4 – schneller, Fehlermeldungen unverändert auf Deutsch und Englisch",
+        en: "Input validation runs on zod 4 – faster, error messages unchanged in German and English",
+      },
+      {
+        type: "fix",
+        text: "Abgesichert: Änderungen an Projekten und Prompts übernehmen nur die geschickten Felder – zod 4 hätte beim Umbenennen sonst Status, Fortschritt und Tags zurückgesetzt",
+        en: "Safeguarded: changes to projects and prompts only take the fields that were sent – zod 4 would otherwise have reset status, progress and tags when renaming",
+      },
+    ],
+  },
+  {
     version: "0.5.8",
     date: "2026-09-15",
     title: "Next.js 16",

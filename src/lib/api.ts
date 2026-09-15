@@ -62,7 +62,8 @@ export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S
   } catch {
     throw new ApiError(400, "errors.invalidJson");
   }
-  const parsed = schema.safeParse(raw);
+  // reportInput: zod 4 nennt den Eingabewert sonst nicht – daran erkennen wir fehlende Pflichtfelder
+  const parsed = schema.safeParse(raw, { reportInput: true });
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
@@ -70,7 +71,7 @@ export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S
       // Eigene Meldungen der Schemas sind Übersetzungsschlüssel (validation.*);
       // für Zods englische Standardtexte gibt es allgemeine Schlüssel.
       const message =
-        issue.code === "invalid_type" && issue.received === "undefined"
+        issue.code === "invalid_type" && issue.input === undefined
           ? msgKey("errors.required", { field: key })
           : issue.code === "invalid_type"
             ? msgKey("errors.invalidValue", { field: key })

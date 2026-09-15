@@ -61,7 +61,7 @@ const docIn = z.object({
 });
 
 export const importSchema = z.object({
-  format: z.literal(EXPORT_FORMAT, { errorMap: () => ({ message: tk("data", "errors.format") }) }),
+  format: z.literal(EXPORT_FORMAT, { error: tk("data", "errors.format") }),
   version: z.number().int().min(1).max(EXPORT_VERSION, tk("data", "errors.version")),
   projects: z.array(projectIn).max(500).default([]),
   docs: z.array(docIn).max(5000).default([]),
