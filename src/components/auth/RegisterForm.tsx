@@ -9,7 +9,7 @@ import { GitTokenOptional } from "./GitTokenOptional";
 import { EMPTY_GIT_CONNECTION, type GitConnectionForm } from "@/components/git/GitProviderFields";
 import { useT } from "@/lib/i18n/client";
 
-export function RegisterForm() {
+export function RegisterForm({ invite }: { invite?: string }) {
   const t = useT("auth");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -30,7 +30,7 @@ export function RegisterForm() {
     }
     setBusy(true);
     try {
-      await api("/api/auth/register", { body: { username, displayName, password, gitToken: git.token, gitProvider: git.provider, gitServer: git.server } });
+      await api("/api/auth/register", { body: { username, displayName, password, gitToken: git.token, gitProvider: git.provider, gitServer: git.server, ...(invite ? { invite } : {}) } });
       window.location.assign("/");
     } catch (err) {
       if (err instanceof ApiClientError) setFieldErrors(err.fieldErrors);

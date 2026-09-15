@@ -10,6 +10,7 @@ import {
   Server,
   Settings2,
   ShieldCheck,
+  Ticket,
   Trash2,
   User,
   UserCheck,
@@ -28,6 +29,7 @@ import type { PublicBuildInfo } from "@/lib/buildInfo";
 import { CloudDownload } from "lucide-react";
 import { UpdatePanel } from "./UpdatePanel";
 import { SmtpSection } from "./SmtpSection";
+import { InvitesSection } from "./InvitesSection";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -325,6 +327,10 @@ export function AdminManager({
             <p className="text-xs text-muted">{t("users.moreInMulti")}</p>
           )}
         </div>
+      </AccountSection>
+
+      <AccountSection icon={<Ticket size={18} />} title={t("invites.title")} description={t("invites.description")}>
+        <InvitesSection multi={initialSettings.mode === "MULTI"} />
       </AccountSection>
 
       <AccountSection icon={<Server size={18} />} title={t("instance.title")}>

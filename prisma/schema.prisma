@@ -217,6 +217,22 @@ model Passkey {
   @@index([userId])
 }
 
+/// Einladung zur Registrierung: einmal nutzbar, läuft ab. Gespeichert wird nur der SHA-256 des Codes.
+model Invite {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  /// Letzte Zeichen des Codes für die Liste, z. B. "…9f3a"
+  hint        String
+  note        String?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?
+
+  @@index([expiresAt])
+}
+
 /// Einmal verwendbare WebAuthn-Challenge.
 model WebAuthnChallenge {
   id        String   @id @default(cuid())

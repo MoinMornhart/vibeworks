@@ -4,31 +4,39 @@ import { ApiError, clientIp, json, readBody, route } from "@/lib/api";
 import { registerSchema } from "@/lib/validation";
 import { checkPasswordPolicy, hashPassword } from "@/lib/auth/password";
 import { startSession } from "@/lib/auth/session";
-import { registrationOpen } from "@/lib/settings";
+import { getSettings, registrationOpen } from "@/lib/settings";
+import { consumeInvite } from "@/lib/invites";
+import { sha256 } from "@/lib/crypto";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { optionalCredential } from "@/lib/git/token";
 import { tk } from "@/lib/i18n/messages";
 
-// Selbstregistrierung – nur im Mehrbenutzerbetrieb und nur, wenn der
-// Administrator sie freigeschaltet hat.
+// Selbstregistrierung – nur im Mehrbenutzerbetrieb: entweder freigeschaltet
+// oder mit einem gültigen Einladungslink (einmal nutzbar, läuft ab).
 export const POST = route(async (req) => {
   limitOrThrow(`register:${clientIp(req)}`, 5, 60 * MINUTE);
-  if (!(await registrationOpen())) throw new ApiError(403, tk("auth", "errors.registrationClosed"));
-
   const input = await readBody(req, registerSchema);
+  if (input.invite) {
+    if ((await getSettings()).mode !== "MULTI") throw new ApiError(403, tk("auth", "errors.inviteInvalid"));
+  } else if (!(await registrationOpen())) {
+    throw new ApiError(403, tk("auth", "errors.registrationClosed"));
+  }
+
   const policy = checkPasswordPolicy(input.password, input.username);
   if (policy) throw new ApiError(400, policy, { password: policy });
   const tokenData = await optionalCredential(input);
+  const passwordHash = await hashPassword(input.password);
 
   try {
-    const user = await db.user.create({
-      data: {
-        username: input.username,
-        displayName: input.displayName,
-        passwordHash: await hashPassword(input.password),
-        role: "USER",
-        ...tokenData,
-      },
+    // Einladung verbrauchen und Konto anlegen in einem Schritt: ist der Name
+    // vergeben, bleibt die Einladung gültig; zweimal einlösen geht nicht.
+    const user = await db.$transaction(async (tx) => {
+      if (input.invite && !(await consumeInvite(tx, input.invite))) throw new ApiError(403, tk("auth", "errors.inviteInvalid"));
+      const created = await tx.user.create({
+        data: { username: input.username, displayName: input.displayName, passwordHash, role: "USER", ...tokenData },
+      });
+      if (input.invite) await tx.invite.updateMany({ where: { tokenHash: sha256(input.invite) }, data: { usedById: created.id } });
+      return created;
     });
     await startSession(user.id, req);
   } catch (err) {

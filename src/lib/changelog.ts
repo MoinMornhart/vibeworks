@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.4",
+    date: "2026-09-15",
+    title: "Einladungslinks",
+    titleEn: "Invitation links",
+    changes: [
+      {
+        type: "neu",
+        text: "Einladungslinks: Unter Administration → Einladungen erzeugst du Links für neue Konten – einmal nutzbar, 1, 7 oder 30 Tage gültig, mit Notiz. Sie funktionieren auch, wenn die Selbstregistrierung aus ist; so kommen Leute gezielt in deine Instanz (Grundlage für die Community)",
+        en: "Invitation links: under Administration → Invitations you create links for new accounts – single use, valid for 1, 7 or 30 days, with a note. They work even when self-registration is off, so you can bring people into your instance on purpose (the basis for the community)",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: VibeWorks speichert vom Link nur einen Fingerabdruck und zeigt ihn nur beim Erzeugen; Einlösen und Konto anlegen geschehen in einem Schritt (zweimal geht nicht, ein vergebener Name verbraucht die Einladung nicht). Eingeladene bekommen immer ein normales Benutzerkonto, offene Links lassen sich zurückziehen",
+        en: "Security: VibeWorks only stores a fingerprint of the link and shows it only when creating it; redeeming and creating the account happen in one step (no second use, a taken username doesn't use up the invitation). Invited people always get a regular user account, open links can be revoked",
+      },
+    ],
+  },
+  {
     version: "0.6.3",
     date: "2026-09-15",
     title: "Fehler-Eingang",

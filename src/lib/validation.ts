@@ -47,6 +47,8 @@ export const setupSchema = z.object({
 
 export const registerSchema = z.object({
   username: usernameSchema,
+  /** Code aus einem Einladungslink – dann auch bei geschlossener Registrierung */
+  invite: z.string().regex(/^[\w-]{16,64}$/).optional(),
   displayName,
   password,
   ...optionalGitConnection,

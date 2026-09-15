@@ -337,6 +337,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Whatever the dependency check flags lands on the board as a task right away – and closes itself
 - ✅ Repo check without AI (GitHub Actions): secrets, vulnerabilities, bug patterns and TODOs
 - ✅ Error inbox: apps report runtime errors via snippet (browser, Node.js, curl), grouped, with notifications
+- ✅ Invitation links for new accounts: single use, with an expiry date, even when registration is closed
 - ✅ Public portfolio with selected projects
 
 **Website**
