@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ProjectRole } from "@prisma/client";
+import type { ProjectRole } from "@/generated/prisma/client";
 import { Hourglass, Send } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";

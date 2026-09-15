@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, clientIp, json, readBody, route } from "@/lib/api";
 import { registerSchema } from "@/lib/validation";

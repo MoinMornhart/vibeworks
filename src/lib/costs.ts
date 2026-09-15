@@ -1,4 +1,4 @@
-import type { ProjectCost } from "@prisma/client";
+import type { ProjectCost } from "@/generated/prisma/client";
 import type { Locale } from "./i18n/config";
 import { INTL_LOCALE } from "./i18n/config";
 

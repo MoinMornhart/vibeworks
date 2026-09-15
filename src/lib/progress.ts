@@ -1,4 +1,4 @@
-import type { ProjectStatus, TaskStatus } from "@prisma/client";
+import type { ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 
 // Automatischer Fortschritt: eine nachvollziehbare Analyse statt eines
 // Reglers. Drei Signale – Aufgaben, Entwicklung (Commits, CI) und Planung

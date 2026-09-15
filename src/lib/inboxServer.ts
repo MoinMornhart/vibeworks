@@ -1,4 +1,4 @@
-import type { InboxItem } from "@prisma/client";
+import type { InboxItem } from "@/generated/prisma/client";
 import { db } from "./db";
 import { config } from "./config";
 import { randomToken } from "./crypto";

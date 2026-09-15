@@ -1,4 +1,4 @@
-import type { ActivityKind, ProjectStatus, TaskStatus } from "@prisma/client";
+import type { ActivityKind, ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 import type { TFunction } from "@/lib/i18n/messages";
 
 // Verlaufseinträge in der Sprache der Oberfläche. Neue Einträge tragen in

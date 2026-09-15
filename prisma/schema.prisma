@@ -2,14 +2,16 @@
 //  VibeWorks – Datenmodell (PostgreSQL)
 // ─────────────────────────────────────────────────────────────
 
+// Prisma 7: der Client wird nach src/generated/prisma erzeugt (nicht
+// eingecheckt) und spricht über @prisma/adapter-pg mit Postgres – ohne
+// eigene Query-Engine. Die Verbindung steht in prisma.config.ts.
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ── Enums ───────────────────────────────────────────────────

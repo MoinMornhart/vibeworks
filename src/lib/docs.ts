@@ -1,4 +1,4 @@
-import type { Doc, Prisma } from "@prisma/client";
+import type { Doc, Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
 
 // Mini-Docs: Seiten eines Kontos als Baum. Jede Abfrage filtert auf den

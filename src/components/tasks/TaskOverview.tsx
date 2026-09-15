@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { TaskStatus } from "@prisma/client";
+import type { TaskStatus } from "@/generated/prisma/client";
 import { Check, CheckCheck, ListPlus, Repeat, Sun } from "lucide-react";
 import { BulkTaskDialog, type BulkProject } from "./BulkTaskDialog";
 import { TimerButtons } from "@/components/time/TimerPill";

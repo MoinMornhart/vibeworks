@@ -1,6 +1,6 @@
 {
   "name": "vibeworks",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "private": true,
   "description": "VibeWorks – selbst gehostetes Kontrollzentrum für Vibe-Coding-Projekte",
   "scripts": {
@@ -16,7 +16,6 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts",
     "setup": "node scripts/setup.mjs",
     "version:bump": "node scripts/bump-version.mjs",
     "postinstall": "prisma generate"
@@ -25,9 +24,11 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.2",
+    "dotenv": "^17.4.2",
     "lucide-react": "^0.511.0",
     "next": "^16.3.5",
     "nodemailer": "^10.0.10",
@@ -46,7 +47,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "prisma": "^6.19.3",
+    "prisma": "^7.10.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",

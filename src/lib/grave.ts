@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 
 // Projekt-Friedhof: Projekte, die lange schlafen, schlägt das Dashboard zum
 // Begraben vor. Begraben heißt archivieren mit Grabstein – nichts geht

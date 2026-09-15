@@ -1,4 +1,4 @@
-import type { Prisma, ProjectStatus, TaskStatus } from "@prisma/client";
+import type { Prisma, ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 import { db } from "./db";
 import { hashPassword } from "./auth/password";
 import { randomToken } from "./crypto";

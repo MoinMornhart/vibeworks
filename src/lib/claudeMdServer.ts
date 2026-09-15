@@ -1,4 +1,4 @@
-import type { Project } from "@prisma/client";
+import type { Project } from "@/generated/prisma/client";
 import { db } from "./db";
 import { config } from "./config";
 import { makeT } from "./i18n/messages";

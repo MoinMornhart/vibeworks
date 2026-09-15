@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { TaskStatus } from "@prisma/client";
+import type { TaskStatus } from "@/generated/prisma/client";
 import { Check, ListChecks, Plus, Sun, X } from "lucide-react";
 import type { OverviewTask } from "@/components/tasks/TaskOverview";
 import { DueBadge } from "@/components/tasks/TaskBoard";

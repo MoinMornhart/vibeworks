@@ -1,4 +1,4 @@
-import type { Prisma, ProjectStatus } from "@prisma/client";
+import type { Prisma, ProjectStatus } from "@/generated/prisma/client";
 import type { CiState } from "@/lib/git/ci";
 import { db } from "./db";
 import { slugify } from "./utils";

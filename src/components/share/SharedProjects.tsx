@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Bell, Users } from "lucide-react";
-import type { ProjectStatus, ProjectRole } from "@prisma/client";
+import type { ProjectStatus, ProjectRole } from "@/generated/prisma/client";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { useT } from "@/lib/i18n/client";
 

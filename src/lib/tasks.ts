@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Task, TaskStatus } from "@prisma/client";
+import type { Prisma, PrismaClient, Task, TaskStatus } from "@/generated/prisma/client";
 import { db } from "./db";
 import { logActivity } from "./activity";
 import { dayKeyToDate, nextDueKey } from "./taskDates";

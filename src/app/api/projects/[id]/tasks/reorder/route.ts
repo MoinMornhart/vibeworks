@@ -1,4 +1,4 @@
-import type { Task } from "@prisma/client";
+import type { Task } from "@/generated/prisma/client";
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { pushTaskIssues } from "@/lib/git/issues";

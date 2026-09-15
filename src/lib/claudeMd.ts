@@ -1,4 +1,4 @@
-import type { ProjectStatus, TaskStatus } from "@prisma/client";
+import type { ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 import type { TFunction } from "./i18n/messages";
 import { dayKey, truncate } from "./utils";
 

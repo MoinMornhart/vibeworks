@@ -1,4 +1,4 @@
-import type { Prisma, Suggestion } from "@prisma/client";
+import type { Prisma, Suggestion } from "@/generated/prisma/client";
 import { db } from "./db";
 import { visibleTo } from "./access";
 import { dayKey } from "./utils";

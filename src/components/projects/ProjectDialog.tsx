@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { Save, Star, Trash2, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";

@@ -1,4 +1,4 @@
-import type { Prompt } from "@prisma/client";
+import type { Prompt } from "@/generated/prisma/client";
 import type { Locale } from "./i18n/config";
 
 // Prompt-Bibliothek: bewährte Anweisungen für Claude & Co. Platzhalter wie

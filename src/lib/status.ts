@@ -1,4 +1,4 @@
-import type { ProjectStatus, TaskStatus } from "@prisma/client";
+import type { ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 import type { Locale } from "@/lib/i18n/config";
 import { makeT } from "@/lib/i18n/messages";
 

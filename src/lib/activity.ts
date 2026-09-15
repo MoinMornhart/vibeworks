@@ -1,4 +1,4 @@
-import type { ActivityKind, Prisma, PrismaClient } from "@prisma/client";
+import type { ActivityKind, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { db } from "./db";
 
 // Verlauf je Projekt – erzählt, was passiert ist, statt jede Feldänderung

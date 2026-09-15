@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { ArrowDown, ArrowUp, Check, Flame, GitBranch, Globe, ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";

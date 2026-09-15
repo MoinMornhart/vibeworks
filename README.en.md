@@ -5,7 +5,7 @@
 <p>
   <a href="https://github.com/MoinMornhart/vibeworks/commits/main"><img alt="Version" src="https://img.shields.io/github/package-json/v/MoinMornhart/vibeworks?label=Version&color=8b5cf6&style=flat-square"></a>
   <a href="https://github.com/MoinMornhart/vibeworks/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MoinMornhart/vibeworks?label=Last%20commit&color=ec4899&style=flat-square"></a>
-  <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&style=flat-square">
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&style=flat-square">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white&style=flat-square">
   <img alt="Proxmox LXC" src="https://img.shields.io/badge/Proxmox-LXC-E57000?logo=proxmox&logoColor=white&style=flat-square">
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/github/license/MoinMornhart/vibeworks?label=License&color=22d3ee&style=flat-square"></a>
@@ -277,7 +277,7 @@ npm run dev            # → http://localhost:3000
 | `npm test` | Unit tests (Vitest) |
 | `npm run version:bump` | Bump the version by one step |
 
-**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Prisma ·
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Prisma 7 ·
 PostgreSQL · SimpleWebAuthn · dnd-kit · Vitest
 
 Translations live in `src/lib/i18n/messages/` – one file per area with a German and an English

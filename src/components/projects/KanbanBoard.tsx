@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { ListChecks, Pencil, Star, StickyNote } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { PROJECT_STATUS_MAP } from "@/lib/status";

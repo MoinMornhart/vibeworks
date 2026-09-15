@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from "@prisma/client";
+import type { Task, TaskStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { tk } from "@/lib/i18n/messages";

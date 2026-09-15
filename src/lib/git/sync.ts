@@ -1,4 +1,4 @@
-import { Prisma, type RepoCache } from "@prisma/client";
+import { Prisma, type RepoCache } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { tk, translateMessage } from "@/lib/i18n/messages";

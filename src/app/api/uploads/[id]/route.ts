@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { json, notFound, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";

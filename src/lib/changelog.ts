@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.0",
+    date: "2026-09-15",
+    title: "Prisma 7",
+    titleEn: "Prisma 7",
+    changes: [
+      {
+        type: "besser",
+        text: "Die Datenbank-Anbindung läuft auf Prisma 7 – ohne eigene Query-Engine, direkt über den Postgres-Treiber: schlankere Installation, schnellerer Start",
+        en: "The database layer runs on Prisma 7 – no separate query engine, straight through the Postgres driver: leaner install, faster startup",
+      },
+      {
+        type: "besser",
+        text: "Alle Abhängigkeiten sind jetzt aktuell (Next.js 16, zod 4, Prisma 7, SimpleWebAuthn 14) – npm audit meldet keine Lücken",
+        en: "All dependencies are now up to date (Next.js 16, zod 4, Prisma 7, SimpleWebAuthn 14) – npm audit reports no vulnerabilities",
+      },
+    ],
+  },
+  {
     version: "0.5.9",
     date: "2026-09-15",
     title: "zod 4",

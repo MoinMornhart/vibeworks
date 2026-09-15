@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { formatDuration } from "@/lib/time";
 import { ArrowLeft, Bot, CalendarPlus, Download, Timer, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
 import { BuryDialog } from "@/components/grave/BuryDialog";

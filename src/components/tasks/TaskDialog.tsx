@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Recurrence, TaskStatus } from "@prisma/client";
+import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
 import { Save, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";

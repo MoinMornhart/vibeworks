@@ -1,4 +1,4 @@
-import type { Project, ProjectRole } from "@prisma/client";
+import type { Project, ProjectRole } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { tk } from "@/lib/i18n/messages";

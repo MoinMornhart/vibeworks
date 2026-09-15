@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { Check } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PROJECT_STATUSES } from "@/lib/status";

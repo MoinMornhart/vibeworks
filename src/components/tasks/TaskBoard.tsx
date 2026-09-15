@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import type { Recurrence, TaskStatus } from "@prisma/client";
+import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
 import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";

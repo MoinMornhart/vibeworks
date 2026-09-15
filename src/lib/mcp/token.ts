@@ -1,4 +1,4 @@
-import type { ApiToken } from "@prisma/client";
+import type { ApiToken } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { randomToken, sha256 } from "@/lib/crypto";
 

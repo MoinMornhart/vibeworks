@@ -1,4 +1,4 @@
-import type { Note } from "@prisma/client";
+import type { Note } from "@/generated/prisma/client";
 import { db } from "./db";
 import { truncate } from "./utils";
 

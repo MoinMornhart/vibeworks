@@ -1,4 +1,4 @@
-import type { Prisma, Task } from "@prisma/client";
+import type { Prisma, Task } from "@/generated/prisma/client";
 import type { z } from "zod";
 import { after } from "next/server";
 import { db } from "./db";

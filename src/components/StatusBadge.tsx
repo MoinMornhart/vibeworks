@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProjectStatus } from "@prisma/client";
+import type { ProjectStatus } from "@/generated/prisma/client";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";

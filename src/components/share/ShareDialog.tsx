@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ProjectRole } from "@prisma/client";
+import type { ProjectRole } from "@/generated/prisma/client";
 import { Check, Copy, Globe, Link2Off, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";

@@ -1,4 +1,4 @@
-import type { Prisma, Project } from "@prisma/client";
+import type { Prisma, Project } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";

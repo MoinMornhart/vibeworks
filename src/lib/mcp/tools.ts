@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Prisma, Task } from "@prisma/client";
+import type { Prisma, Task } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";

@@ -1,4 +1,4 @@
-import type { NotificationSettings } from "@prisma/client";
+import type { NotificationSettings } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 import { decrypt } from "@/lib/crypto";

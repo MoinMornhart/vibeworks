@@ -1,4 +1,4 @@
-import type { Recurrence, TaskStatus } from "@prisma/client";
+import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
 import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
 import { makeT } from "@/lib/i18n/messages";
 
