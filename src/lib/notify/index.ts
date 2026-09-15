@@ -5,7 +5,7 @@ import { decrypt } from "@/lib/crypto";
 import { safeFetch } from "@/lib/security/ssrf";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { makeT, tk, type TFunction } from "@/lib/i18n/messages";
-import { eventsOf, ntfyRequest, webhookBody, type Channel, type Notice, type NotifyEvent } from "./format";
+import { eventsOf, ntfyRequest, webhookBody, withUrgency, type Channel, type Notice, type NotifyEvent } from "./format";
 import { sendMail } from "./mail";
 
 // Versand an die Kanäle eines Kontos: ntfy, Webhook, E-Mail. Jede Nachricht
@@ -31,6 +31,7 @@ async function postJson(url: string, body: unknown, headers: Record<string, stri
 }
 
 export async function deliver(s: NotificationSettings, notice: Notice): Promise<ChannelResult[]> {
+  notice = withUrgency(notice, s.urgentCritical);
   const results: ChannelResult[] = [];
   const attempt = async (channel: Channel, send: () => Promise<void>) => {
     try {
@@ -92,6 +93,7 @@ export function notificationView(s: NotificationSettings | null) {
     webhookUrl: s?.webhookUrl ?? "",
     email: s?.email ?? "",
     events: eventsOf(s?.events),
+    urgentCritical: s?.urgentCritical ?? true,
     lastError: s?.lastError ?? null,
     lastSentAt: s?.lastSentAt?.toISOString() ?? null,
   };

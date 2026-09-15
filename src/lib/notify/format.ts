@@ -21,8 +21,12 @@ export interface Notice {
   title: string;
   message: string;
   url: string | null;
-  priority?: "high" | "default";
+  /** urgent: kritisch (App-Fehler, Seite down, Geheimnis im Repo) – ntfy 5, kommt auch bei „Nicht stören“ durch */
+  priority?: "urgent" | "high" | "default";
 }
+
+/** Kritisches nur mit höchster Priorität, wenn das Konto es so will – sonst „hoch“. */
+export const withUrgency = (n: Notice, allowUrgent: boolean): Notice => (n.priority === "urgent" && !allowUrgent ? { ...n, priority: "high" } : n);
 
 /** Gespeicherte Schalter lesen – fehlt ein Anlass, ist er eingeschaltet. */
 export function eventsOf(json: unknown): EventSwitches {
@@ -77,7 +81,7 @@ export function ntfyRequest(ntfyUrl: string, n: Notice, token: string | null) {
       topic: parsed.topic,
       title: n.title,
       message: n.message,
-      priority: n.priority === "high" ? 4 : 3,
+      priority: n.priority === "urgent" ? 5 : n.priority === "high" ? 4 : 3,
       tags: [TAGS[n.event]],
       ...(n.url ? { click: n.url } : {}),
     },

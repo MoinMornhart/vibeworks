@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventsOf, NOTIFY_EVENTS, NOTIFY_GROUPS, ntfyRequest, parseNtfyUrl, splitLastError, webhookBody, type Notice } from "./format";
+import { eventsOf, NOTIFY_EVENTS, NOTIFY_GROUPS, ntfyRequest, withUrgency, parseNtfyUrl, splitLastError, webhookBody, type Notice } from "./format";
 
 const notice: Notice = { event: "ciFailed", title: "CI fehlgeschlagen: Übersicht", message: "build ist rot", url: "https://vibeworks.example.de/projects/1", priority: "high" };
 
@@ -28,6 +28,10 @@ describe("ntfy", () => {
     expect(req.url).toBe("https://ntfy.sh");
     expect(req.headers).toEqual({ Authorization: "Bearer tk_123" });
     expect(req.body).toMatchObject({ topic: "vw", title: "CI fehlgeschlagen: Übersicht", priority: 4, click: notice.url, tags: ["x"] });
+    // Kritisches: höchste Stufe – außer das Konto hat es abgeschaltet
+    expect(ntfyRequest("https://ntfy.sh/vw", { ...notice, priority: "urgent" }, null)!.body.priority).toBe(5);
+    expect(ntfyRequest("https://ntfy.sh/vw", withUrgency({ ...notice, priority: "urgent" }, false), null)!.body.priority).toBe(4);
+    expect(withUrgency(notice, false)).toBe(notice);
   });
 });
 

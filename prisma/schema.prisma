@@ -956,6 +956,8 @@ model NotificationSettings {
   ntfyUrl         String?
   /// Optionales ntfy-Zugangstoken (AES-256-GCM)
   ntfyTokenCipher String?
+  /// Kritisches mit höchster ntfy-Priorität (durchbricht „Nicht stören“, wenn in der App erlaubt)
+  urgentCritical  Boolean   @default(true)
   /// Webhook – Discord, Slack oder beliebiger JSON-Empfänger
   webhookUrl      String?
   /// Versand über den SMTP-Server der Instanz

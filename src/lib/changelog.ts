@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.0",
+    date: "2026-09-15",
+    title: "Kritisches kommt immer durch",
+    titleEn: "Critical alerts always get through",
+    changes: [
+      {
+        type: "neu",
+        text: "Kritische Meldungen – neuer App-Fehler, Live-Seite nicht erreichbar, Geheimnis im Repository – gehen mit höchster ntfy-Priorität raus und kommen so auch bei „Nicht stören“ durch (in der ntfy-App erlauben). Abschaltbar unter Benachrichtigungen in der ntfy-Kachel",
+        en: "Critical alerts – a new app error, the live site down, a secret in the repository – go out with the highest ntfy priority and so get through “Do not disturb” too (allow it in the ntfy app). Can be switched off under Notifications in the ntfy tile",
+        link: "/account#benachrichtigungen",
+      },
+    ],
+  },
+  {
     version: "0.7.9",
     date: "2026-09-15",
     title: "Team-Seite: Übersicht, Claude, Wünsche, Chat",

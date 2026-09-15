@@ -95,7 +95,7 @@ async function checkProject(projectId: string): Promise<void> {
       title: t("events.siteDown.title", { project: p.name }),
       message: t("events.siteDown.message", { url: liveUrl, error: translateMessage(locale, result.error ?? "") }),
       url: link,
-      priority: "high",
+      priority: "urgent",
     }));
   } else if (next.event === "up") {
     void notifyUser(p.ownerId, "siteDown", (t) => ({

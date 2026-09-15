@@ -23,6 +23,7 @@ export const PUT = route(async (req) => {
     webhookUrl: input.webhookUrl,
     email: input.email,
     events,
+    urgentCritical: input.urgentCritical,
     ...(input.ntfyToken !== undefined ? { ntfyTokenCipher: input.ntfyToken ? encrypt(input.ntfyToken) : null } : {}),
   };
   const saved = await db.notificationSettings.upsert({ where: { userId: user.id }, create: { userId: user.id, ...data }, update: data });

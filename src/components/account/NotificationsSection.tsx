@@ -16,6 +16,7 @@ export interface NotificationSettingsView {
   webhookUrl: string;
   email: string;
   events: EventSwitches;
+  urgentCritical: boolean;
   lastError: string | null;
   lastSentAt: string | null;
 }
@@ -32,7 +33,7 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
   const msg = useMsg();
   const f = useFormat();
   const [saved, setSaved] = useState(initial);
-  const [form, setForm] = useState({ ntfyUrl: initial.ntfyUrl, webhookUrl: initial.webhookUrl, email: initial.email, events: initial.events });
+  const [form, setForm] = useState({ ntfyUrl: initial.ntfyUrl, webhookUrl: initial.webhookUrl, email: initial.email, events: initial.events, urgentCritical: initial.urgentCritical });
   const [ntfyToken, setNtfyToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -133,6 +134,9 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
                   )}
                 </div>
               )}
+              <div className="mt-3 border-t border-fg/10 pt-3" data-testid="notify-urgent">
+                <Toggle label={t("urgent")} hint={t("urgentHint")} checked={form.urgentCritical} onChange={(v) => set("urgentCritical", v)} />
+              </div>
             </ChannelCard>
             <ChannelCard icon={<Webhook size={16} />} title={t("webhook.label")} active={Boolean(form.webhookUrl.trim())}>
               <input id="notify-webhook" className="field font-mono text-sm" value={form.webhookUrl} onChange={(e) => set("webhookUrl", e.target.value)} placeholder={t("webhook.placeholder")} maxLength={1000} spellCheck={false} aria-label={t("webhook.label")} />

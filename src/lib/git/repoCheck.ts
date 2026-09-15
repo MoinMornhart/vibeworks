@@ -270,7 +270,8 @@ async function notifyCheckAlert(project: { id: string; name: string; ownerId: st
     title: t("events.checkAlert.title", { project: project.name }),
     message: t("events.checkAlert.message", { secrets: report.counts.secrets, vulns: report.counts.vulnerabilities }),
     url: appLink(`/projects/${project.id}#repo-check`),
-    priority: "high",
+    // Ein Geheimnis im Repository ist kritisch, Sicherheitslücken „nur“ dringend
+    priority: report.counts.secrets > 0 ? "urgent" : "high",
   }));
 }
 

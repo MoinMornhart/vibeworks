@@ -217,6 +217,8 @@ export const notificationSettingsSchema = z.object({
     .refine((v) => v === null || /^https?:\/\/[^/\s]+\/[\w-]{1,64}\/?$/.test(v), tk("notify", "errors.badNtfyUrl")),
   // undefined = behalten, null = entfernen
   ntfyToken: z.string().trim().max(300).nullable().optional(),
+  /** Kritisches (Fehler, Seite down, Geheimnis im Repo) mit höchster ntfy-Priorität – kommt auch bei „Nicht stören“ durch */
+  urgentCritical: z.boolean().default(true),
   webhookUrl: z
     .string()
     .trim()

@@ -58,7 +58,7 @@ async function notifyAppError(project: IngestProject, report: ErrorReport, regre
     title: t(regression ? "events.appError.regression" : "events.appError.title", { project: project.name }),
     message: `${report.type ? `${report.type}: ` : ""}${report.message}`.slice(0, 300),
     url: appLink(`/projects/${project.id}#fehler`),
-    priority: "high",
+    priority: "urgent",
   })).catch((err) => console.error("[errors-in]", project.id, err));
 }
 
