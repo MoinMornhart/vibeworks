@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import { ApiError, assertSameOrigin } from "@/lib/api";
 import { authenticateApiToken } from "@/lib/mcp/token";
 import { handleBody, RPC, rpcError } from "@/lib/mcp/protocol";
-import { MCP_INSTRUCTIONS, MCP_TOOLS, type McpContext } from "@/lib/mcp/tools";
+import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, MCP_TOOLS, type McpContext } from "@/lib/mcp/tools";
 import { CHANGELOG } from "@/lib/changelog";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,
     tools: MCP_TOOLS,
+    prompts: MCP_PROMPTS,
+    resources: MCP_RESOURCES,
     describeError: async (err) => {
       if (err instanceof ZodError) return err.issues.map((i) => `${i.path.join(".") || "input"}: ${tr(i.message)}`).join("\n");
       if (err instanceof ApiError) {

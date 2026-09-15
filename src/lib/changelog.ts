@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.5",
+    date: "2026-09-15",
+    title: "Besseres MCP",
+    titleEn: "Better MCP",
+    changes: [
+      {
+        type: "neu",
+        text: "Neue Werkzeuge für Claude: get_repo_status (Commits, CI, Abhängigkeiten, Live-Seite), list_problems (alles, was klemmt), Heute planen und Zeit erfassen",
+        en: "New tools for Claude: get_repo_status (commits, CI, dependencies, live site), list_problems (everything that needs attention), planning today and tracking time",
+      },
+      {
+        type: "neu",
+        text: "Deine Prompt-Bibliothek erscheint in Claude Code als Befehle, auf Wunsch mit einem Projekt ausgefüllt",
+        en: "Your prompt library shows up in Claude Code as commands, optionally filled in with a project",
+      },
+      {
+        type: "neu",
+        text: "Die CLAUDE.md jedes Projekts, „Was klemmt“ und „Heute“ lassen sich in Claude Code als Ressourcen anhängen",
+        en: "Every project's CLAUDE.md, “problems” and “today” can be attached as resources in Claude Code",
+      },
+    ],
+  },
+  {
     version: "0.5.4",
     date: "2026-09-15",
     title: "Stern-Schutz",

@@ -233,6 +233,13 @@ Danach arbeitet Claude Code direkt mit deinen Projekten – ganz ohne Umweg übe
 | `create_note`, `get_note` | Notizen am Projekt, z. B. ein Arbeitsprotokoll |
 | `search` | Volltextsuche über Notizen, Aufgaben und Docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Docs lesen und schreiben |
+| `get_repo_status`, `list_problems` | Stand eines Repositorys (Commits, CI, Abhängigkeiten, Live-Seite) und alles, was gerade klemmt |
+| `get_today`, `add_to_today`, `remove_from_today` | Den Tag planen – vorgemerkte Aufgaben und Vorschläge |
+| `start_timer`, `stop_timer` | Zeit an einer Aufgabe erfassen, auch als Fokus-Timer |
+
+Außerdem erscheint deine **Prompt-Bibliothek** in Claude Code als Befehle (`/mcp__vibeworks__…`, auf Wunsch mit
+einem Projekt ausgefüllt), und die **CLAUDE.md jedes Projekts**, „Was klemmt“ und „Heute“ lassen sich als
+Ressourcen anhängen (`@vibeworks:…`).
 
 Probier zum Beispiel: „Welche Aufgaben sind in VibeWorks offen?“ oder „Arbeite die offenen Aufgaben
 von Projekt X ab und halte fest, was du gemacht hast, als Notiz.“ Claude handelt mit deinen Rechten,

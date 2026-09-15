@@ -3,7 +3,7 @@ import type { Prisma, Task } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";
-import { tk } from "@/lib/i18n/messages";
+import { tk, translateMessage } from "@/lib/i18n/messages";
 import { docCreateSchema, docUpdateSchema, noteCreateSchema, projectUpdateSchema, taskBulkSchema, taskCreateSchema, taskUpdateSchema } from "@/lib/validation";
 import { createNote, createTask, createTaskInProjects, updateTask } from "@/lib/actions";
 import { searchContent } from "@/lib/searchQuery";
@@ -16,13 +16,15 @@ import { logActivity } from "@/lib/activity";
 import { PROJECT_STATUS_MAP } from "@/lib/status";
 import { dayKeyToDate } from "@/lib/taskDates";
 import { addDaysKey } from "@/lib/weeks";
-import { dayKey, truncate } from "@/lib/utils";
+import { dayKey, slugify, truncate } from "@/lib/utils";
 import { config } from "@/lib/config";
-import type { ToolDef } from "./protocol";
+import type { PromptProvider, ResourceProvider, ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
 import { fillPrompt } from "@/lib/prompts";
 import { protectedChanges } from "@/lib/protect";
+import { currentEntry, stopRunning } from "@/lib/timeServer";
+import { MAX_FOCUS } from "@/lib/today";
 
 // Die Werkzeuge, die Claude Code über MCP sieht. Beschreibungen auf Englisch
 // (sie richten sich an das Modell), Inhalte so, wie sie gespeichert sind.
@@ -42,6 +44,9 @@ export const MCP_INSTRUCTIONS = [
   "Working on tasks: find them with list_tasks or get_project, set status DOING when you start, DONE when finished (BLOCKED with a short reason in the description if you are stuck).",
   "If a project mirrors tasks as issues in its Git repository, the issues follow automatically.",
   "Everything you change shows up in the project's activity log under the user's name – keep titles short and clear.",
+  "To see what is broken (sync errors, red CI, sites down, vulnerable dependencies, overdue or blocked tasks) use list_problems; for one project's repository, CI, dependencies and live site use get_repo_status.",
+  "The user's day: get_today shows planned tasks and suggestions, add_to_today/remove_from_today plan it, start_timer/stop_timer track time on a task.",
+  "Starred projects are protected: their status and repository can't be changed via MCP – ask the user to do it in VibeWorks.",
 ].join(" ");
 
 const PROJECT_STATUSES = ["IDEA", "PLANNING", "OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"] as const;
@@ -576,4 +581,297 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       return { id: doc.id, title: doc.title, length: doc.content.length, updatedAt: doc.updatedAt.toISOString() };
     },
   },
+  {
+    name: "get_repo_status",
+    title: "Get repository status",
+    description:
+      "State of a project's repository and live site: provider, branch, last sync and its error, recent commits, CI runs, outdated or vulnerable dependencies, uptime and SSL.",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId, locale }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const cache = await db.repoCache.findUnique({ where: { projectId: project.id } });
+      const commits = (cache?.commits as unknown as Array<{ sha: string; title: string; author: string; date: string }> | null) ?? [];
+      const ci = cache?.ci as { state?: string; runs?: unknown[] } | null;
+      const deps = cache?.deps as {
+        counts?: unknown;
+        error?: string | null;
+        packages?: Array<{ name: string; current: string | null; latest: string | null; level: string; advisories?: Array<{ severity: string; title: string }> }>;
+      } | null;
+      return {
+        project: { id: project.id, name: project.name },
+        repository: project.repoUrl
+          ? {
+              url: project.repoUrl,
+              provider: cache?.provider || null,
+              defaultBranch: cache?.defaultBranch ?? null,
+              syncedAt: cache?.fetchedAt.toISOString() ?? null,
+              syncError: cache?.error ? translateMessage(locale, cache.error) : null,
+              failuresInRow: cache?.failCount ?? 0,
+              recentCommits: commits.slice(0, 5).map((c) => ({ sha: c.sha.slice(0, 7), title: c.title, author: c.author, date: c.date })),
+              ci: ci?.state ? { state: ci.state, runs: ci.runs ?? [] } : null,
+              dependencies: deps
+                ? {
+                    counts: deps.counts ?? null,
+                    error: deps.error ? translateMessage(locale, deps.error) : null,
+                    attention: (deps.packages ?? [])
+                      .filter((p) => p.level === "major" || p.advisories?.length)
+                      .slice(0, 15)
+                      .map((p) => ({ name: p.name, current: p.current, latest: p.latest, level: p.level, advisories: (p.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })),
+                  }
+                : null,
+            }
+          : null,
+        liveSite: project.liveUrl
+          ? {
+              url: project.liveUrl,
+              state: project.liveState,
+              responseMs: project.liveMs,
+              sslExpiresAt: project.sslExpiresAt?.toISOString() ?? null,
+              error: project.liveError ? translateMessage(locale, project.liveError) : null,
+            }
+          : null,
+        url: link(`/projects/${project.id}`),
+      };
+    },
+  },
+  {
+    name: "list_problems",
+    title: "List problems",
+    description:
+      "Everything that needs attention across the user's projects: Git sync and import errors, red CI, live sites that are down, dependencies with known vulnerabilities, overdue and blocked tasks.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (_args, { userId, locale }) => loadProblems(userId, locale),
+  },
+  {
+    name: "get_today",
+    title: "Get today",
+    description: "The user's plan for today (tasks they picked), suggestions (overdue, due today, in progress) and the running timer.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (_args, { userId }) => loadToday(userId),
+  },
+  {
+    name: "add_to_today",
+    title: "Add to today",
+    description: "Put a task on the user's list for today.",
+    inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
+    annotations: { idempotentHint: true },
+    run: async (args, { userId }) => {
+      const { task } = await requireTask(userId, ref.parse(args.task), "EDITOR");
+      const today = dayKey(new Date());
+      await db.taskFocus.deleteMany({ where: { userId, day: { lt: today } } }); // gestern ist vorbei
+      const count = await db.taskFocus.count({ where: { userId, day: today, taskId: { not: task.id } } });
+      if (count >= MAX_FOCUS) throw new ApiError(400, tk("today", "errors.full", { n: MAX_FOCUS }));
+      await db.taskFocus.upsert({
+        where: { userId_taskId_day: { userId, taskId: task.id, day: today } },
+        create: { userId, taskId: task.id, day: today, position: count },
+        update: {},
+      });
+      return { ok: true, day: today, task: taskView(task) };
+    },
+  },
+  {
+    name: "remove_from_today",
+    title: "Remove from today",
+    description: "Take a task off the user's list for today.",
+    inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
+    annotations: { idempotentHint: true },
+    run: async (args, { userId }) => {
+      const { count } = await db.taskFocus.deleteMany({ where: { userId, taskId: ref.parse(args.task), day: dayKey(new Date()) } });
+      return { ok: true, removed: count > 0 };
+    },
+  },
+  {
+    name: "start_timer",
+    title: "Start timer",
+    description: "Start tracking time on a task (a running timer is stopped first). With focusMinutes it is a focus timer, otherwise a stopwatch.",
+    inputSchema: {
+      type: "object",
+      properties: { task: { type: "string", description: "Task id" }, focusMinutes: { type: "integer", minimum: 5, maximum: 120 } },
+      required: ["task"],
+      additionalProperties: false,
+    },
+    run: async (args, { userId }) => {
+      const input = z.object({ task: ref, focusMinutes: z.number().int().min(5).max(120).optional() }).parse(args);
+      const { task } = await requireTask(userId, input.task);
+      await stopRunning(userId);
+      await db.timeEntry.create({ data: { userId, projectId: task.projectId, taskId: task.id, focusMinutes: input.focusMinutes ?? null } });
+      return { running: await currentEntry(userId) };
+    },
+  },
+  {
+    name: "stop_timer",
+    title: "Stop timer",
+    description: "Stop the running timer, if any.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    run: async (_args, { userId }) => {
+      const before = await currentEntry(userId);
+      await stopRunning(userId);
+      return { stopped: before ?? null };
+    },
+  },
 ];
+
+// ── Gemeinsame Abfragen für Werkzeuge und Ressourcen ─────────
+
+const OPEN_PROJECT = (userId: string) => ({ ...visibleTo(userId), buriedAt: null, status: { not: "ARCHIVED" as const } });
+
+async function loadProblems(userId: string, locale: Locale) {
+  const today = dayKey(new Date());
+  const projects = await db.project.findMany({
+    where: OPEN_PROJECT(userId),
+    select: { id: true, name: true, liveUrl: true, liveState: true, liveError: true, repoCache: { select: { error: true, ci: true, deps: true } } },
+    take: 500,
+  });
+  const gitErrors: Array<{ project: string; id: string; error: string }> = [];
+  const redCi: Array<{ project: string; id: string; runs: Array<{ name: string; url: string | null }> }> = [];
+  const sitesDown: Array<{ project: string; id: string; url: string | null; error: string | null }> = [];
+  const vulnerableDependencies: Array<{ project: string; id: string; packages: Array<{ name: string; advisories: string[] }> }> = [];
+  for (const p of projects) {
+    const cache = p.repoCache;
+    if (cache?.error) gitErrors.push({ project: p.name, id: p.id, error: translateMessage(locale, cache.error) });
+    const ci = cache?.ci as { state?: string; runs?: Array<{ name: string; state: string; url: string | null }> } | null;
+    if (ci?.state === "failure") redCi.push({ project: p.name, id: p.id, runs: (ci.runs ?? []).filter((r) => r.state === "failure").map((r) => ({ name: r.name, url: r.url })) });
+    if (p.liveState === "down") sitesDown.push({ project: p.name, id: p.id, url: p.liveUrl, error: p.liveError ? translateMessage(locale, p.liveError) : null });
+    const deps = cache?.deps as { packages?: Array<{ name: string; advisories?: Array<{ severity: string; title: string }> }> } | null;
+    const risky = (deps?.packages ?? []).filter((x) => x.advisories?.length);
+    if (risky.length) {
+      vulnerableDependencies.push({ project: p.name, id: p.id, packages: risky.slice(0, 10).map((x) => ({ name: x.name, advisories: (x.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })) });
+    }
+  }
+  const tasks = await db.task.findMany({
+    where: { project: OPEN_PROJECT(userId), OR: [{ status: "BLOCKED" }, { status: { not: "DONE" }, dueDate: { lt: dayKeyToDate(today) } }] },
+    include: { project: { select: { id: true, name: true } } },
+    orderBy: { dueDate: "asc" },
+    take: 100,
+  });
+  const connections = await db.gitCredential.findMany({ where: { userId, importError: { not: null } }, select: { host: true, importError: true } });
+  return {
+    gitErrors,
+    gitConnections: connections.map((c) => ({ host: c.host, error: translateMessage(locale, c.importError ?? "") })),
+    redCi,
+    sitesDown,
+    vulnerableDependencies,
+    overdueTasks: tasks.filter((t) => t.status !== "BLOCKED").map((t) => taskView(t, { project: t.project })),
+    blockedTasks: tasks.filter((t) => t.status === "BLOCKED").map((t) => taskView(t, { project: t.project })),
+  };
+}
+
+async function loadToday(userId: string) {
+  const today = dayKey(new Date());
+  const focus = await db.taskFocus.findMany({
+    where: { userId, day: today, task: { project: OPEN_PROJECT(userId) } },
+    include: { task: { include: { project: { select: { id: true, name: true } } } } },
+    orderBy: { position: "asc" },
+  });
+  const suggestions = await db.task.findMany({
+    where: {
+      id: { notIn: focus.map((f) => f.taskId) },
+      status: { not: "DONE" },
+      project: OPEN_PROJECT(userId),
+      OR: [{ status: "DOING" }, { dueDate: { lte: dayKeyToDate(today) } }],
+    },
+    include: { project: { select: { id: true, name: true } } },
+    orderBy: { dueDate: "asc" },
+    take: 15,
+  });
+  return {
+    day: today,
+    planned: focus.map((f) => taskView(f.task, { project: f.task.project })),
+    suggestions: suggestions.map((t) => taskView(t, { project: t.project })),
+    timer: await currentEntry(userId),
+    url: link("/today"),
+  };
+}
+
+function markdownList(title: string, items: string[]): string[] {
+  return items.length ? [`## ${title}`, ...items.map((i) => `- ${i}`), ""] : [];
+}
+
+// ── Prompts: die Prompt-Bibliothek als MCP-Prompts ───────────
+
+/** Stabile Namen aus den Titeln (älteste zuerst, Doppelte mit -2, -3 …). */
+async function promptEntries(userId: string) {
+  const prompts = await db.prompt.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, take: 200 });
+  const used = new Map<string, number>();
+  return prompts.map((prompt) => {
+    const base = slugify(prompt.title).slice(0, 48) || "prompt";
+    const n = (used.get(base) ?? 0) + 1;
+    used.set(base, n);
+    return { name: n > 1 ? `${base}-${n}` : base, prompt };
+  });
+}
+
+export const MCP_PROMPTS: PromptProvider<McpContext> = {
+  list: async ({ userId }) =>
+    (await promptEntries(userId)).map(({ name, prompt }) => ({
+      name,
+      title: prompt.title,
+      description: truncate(prompt.body.replace(/\s+/g, " "), 160),
+      arguments: [{ name: "project", description: "Project id or exact name – fills {{projekt}}, {{repo}}, {{live}}, {{summary}}", required: false }],
+    })),
+  get: async (name, args, { userId }) => {
+    const entry = (await promptEntries(userId)).find((e) => e.name === name);
+    if (!entry) return null;
+    const project = args.project ? (await resolveProject(userId, ref.parse(args.project))).project : null;
+    // Zählt als Verwendung – „zuletzt geändert“ bleibt
+    await db.$executeRaw`UPDATE "Prompt" SET "uses" = "uses" + 1 WHERE "id" = ${entry.prompt.id}`;
+    return { description: entry.prompt.title, text: fillPrompt(entry.prompt.body, project) };
+  },
+};
+
+// ── Ressourcen: CLAUDE.md je Projekt, „Was klemmt“ und „Heute“ ─
+
+const CLAUDE_MD_URI = /^vibeworks:\/\/project\/([\w-]+)\/CLAUDE\.md$/;
+
+export const MCP_RESOURCES: ResourceProvider<McpContext> = {
+  list: async ({ userId }) => {
+    const projects = await db.project.findMany({ where: OPEN_PROJECT(userId), select: { id: true, name: true, summary: true }, orderBy: { updatedAt: "desc" }, take: 100 });
+    return [
+      { uri: "vibeworks://problems", name: "problems", title: "VibeWorks – what needs attention", mimeType: "text/markdown" },
+      { uri: "vibeworks://today", name: "today", title: "VibeWorks – today's plan", mimeType: "text/markdown" },
+      ...projects.map((p) => ({
+        uri: `vibeworks://project/${p.id}/CLAUDE.md`,
+        name: `claude-md-${slugify(p.name)}`,
+        title: `CLAUDE.md – ${p.name}`,
+        ...(p.summary ? { description: p.summary } : {}),
+        mimeType: "text/markdown",
+      })),
+    ];
+  },
+  read: async (uri, { userId, locale }) => {
+    if (uri === "vibeworks://problems") {
+      const p = await loadProblems(userId, locale);
+      const lines = [
+        "# What needs attention",
+        "",
+        ...markdownList("Git sync errors", p.gitErrors.map((e) => `${e.project}: ${e.error}`)),
+        ...markdownList("Git connections", p.gitConnections.map((c) => `${c.host}: ${c.error}`)),
+        ...markdownList("Red CI", p.redCi.map((c) => `${c.project}: ${c.runs.map((r) => r.name).join(", ") || "failed"}`)),
+        ...markdownList("Sites down", p.sitesDown.map((s) => `${s.project}: ${s.url ?? ""}${s.error ? ` (${s.error})` : ""}`)),
+        ...markdownList("Vulnerable dependencies", p.vulnerableDependencies.map((v) => `${v.project}: ${v.packages.map((x) => x.name).join(", ")}`)),
+        ...markdownList("Overdue tasks", p.overdueTasks.map((t) => `${t.project?.name ?? ""}: ${t.title} (due ${t.dueDate})`)),
+        ...markdownList("Blocked tasks", p.blockedTasks.map((t) => `${t.project?.name ?? ""}: ${t.title}`)),
+      ];
+      if (lines.length === 2) lines.push("Nothing needs attention right now.");
+      return { mimeType: "text/markdown", text: lines.join("\n") };
+    }
+    if (uri === "vibeworks://today") {
+      const d = await loadToday(userId);
+      const lines = [
+        `# Today (${d.day})`,
+        "",
+        ...markdownList("Planned", d.planned.map((t) => `${t.project?.name ?? ""}: ${t.title} [${t.status}] (task ${t.id})`)),
+        ...markdownList("Suggestions", d.suggestions.map((t) => `${t.project?.name ?? ""}: ${t.title} [${t.status}]${t.dueDate ? ` due ${t.dueDate}` : ""} (task ${t.id})`)),
+      ];
+      if (lines.length === 2) lines.push("Nothing planned and nothing due.");
+      return { mimeType: "text/markdown", text: lines.join("\n") };
+    }
+    const m = uri.match(CLAUDE_MD_URI);
+    if (!m) return null;
+    const { project } = await resolveProject(userId, m[1]);
+    return { mimeType: "text/markdown", text: await claudeMdFor(project, locale) };
+  },
+};

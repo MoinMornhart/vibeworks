@@ -4,7 +4,7 @@
 
 export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"] as const;
 
-export const RPC = { PARSE: -32700, INVALID_REQUEST: -32600, METHOD_NOT_FOUND: -32601, INVALID_PARAMS: -32602, INTERNAL: -32603 } as const;
+export const RPC = { PARSE: -32700, INVALID_REQUEST: -32600, METHOD_NOT_FOUND: -32601, INVALID_PARAMS: -32602, INTERNAL: -32603, RESOURCE_NOT_FOUND: -32002 } as const;
 
 type Id = string | number;
 
@@ -21,10 +21,39 @@ export interface ToolDef<C> {
   run: (args: Record<string, unknown>, ctx: C) => Promise<unknown>;
 }
 
+/** Vorlagen, die der Client als Befehle anbietet (in Claude Code: /mcp__server__name). */
+export interface PromptInfo {
+  name: string;
+  title?: string;
+  description?: string;
+  arguments?: Array<{ name: string; description?: string; required?: boolean }>;
+}
+export interface PromptProvider<C> {
+  list: (ctx: C) => Promise<PromptInfo[]>;
+  /** null = unbekannt */
+  get: (name: string, args: Record<string, string>, ctx: C) => Promise<{ description?: string; text: string } | null>;
+}
+
+/** Lesbare Inhalte, die der Client anhängen kann (in Claude Code: @server:uri). */
+export interface ResourceInfo {
+  uri: string;
+  name: string;
+  title?: string;
+  description?: string;
+  mimeType?: string;
+}
+export interface ResourceProvider<C> {
+  list: (ctx: C) => Promise<ResourceInfo[]>;
+  /** null = unbekannt */
+  read: (uri: string, ctx: C) => Promise<{ mimeType: string; text: string } | null>;
+}
+
 export interface ServerOptions<C> {
   info: { name: string; title: string; version: string };
   instructions: string;
   tools: ToolDef<C>[];
+  prompts?: PromptProvider<C>;
+  resources?: ResourceProvider<C>;
   /** Fehler eines Werkzeugs als Text für das Modell. */
   describeError: (err: unknown) => Promise<string>;
 }
@@ -41,6 +70,15 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
   const id = msg.id;
   if (typeof id !== "string" && typeof id !== "number") return rpcError(null, RPC.INVALID_REQUEST, "Invalid request id");
   const params = isObject(msg.params) ? msg.params : {};
+  const methodNotFound = () => rpcError(id, RPC.METHOD_NOT_FOUND, `Method not found: ${String(msg.method)}`);
+  // Fehler beim Lesen von Prompts/Ressourcen als JSON-RPC-Fehler mit lesbarer Meldung
+  const safely = async (fn: () => Promise<RpcResponse>): Promise<RpcResponse> => {
+    try {
+      return await fn();
+    } catch (err) {
+      return rpcError(id, RPC.INTERNAL, await opts.describeError(err));
+    }
+  };
 
   switch (msg.method) {
     case "initialize": {
@@ -48,7 +86,11 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
       const version = (PROTOCOL_VERSIONS as readonly unknown[]).includes(requested) ? (requested as string) : PROTOCOL_VERSIONS[0];
       return ok(id, {
         protocolVersion: version,
-        capabilities: { tools: { listChanged: false } },
+        capabilities: {
+          tools: { listChanged: false },
+          ...(opts.prompts ? { prompts: { listChanged: false } } : {}),
+          ...(opts.resources ? { resources: { listChanged: false, subscribe: false } } : {}),
+        },
         serverInfo: opts.info,
         instructions: opts.instructions,
       });
@@ -71,8 +113,46 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
         return ok(id, { content: [{ type: "text", text: await opts.describeError(err) }], isError: true });
       }
     }
+    case "prompts/list": {
+      const prompts = opts.prompts;
+      if (!prompts) return methodNotFound();
+      return safely(async () => ok(id, { prompts: await prompts.list(ctx) }));
+    }
+    case "prompts/get": {
+      const prompts = opts.prompts;
+      if (!prompts) return methodNotFound();
+      const name = params.name;
+      if (typeof name !== "string") return rpcError(id, RPC.INVALID_PARAMS, "Missing prompt name");
+      const args = isObject(params.arguments)
+        ? (Object.fromEntries(Object.entries(params.arguments).filter(([, v]) => typeof v === "string")) as Record<string, string>)
+        : {};
+      return safely(async () => {
+        const p = await prompts.get(name, args, ctx);
+        if (!p) return rpcError(id, RPC.INVALID_PARAMS, `Unknown prompt: ${name}`);
+        return ok(id, { ...(p.description ? { description: p.description } : {}), messages: [{ role: "user", content: { type: "text", text: p.text } }] });
+      });
+    }
+    case "resources/list": {
+      const resources = opts.resources;
+      if (!resources) return methodNotFound();
+      return safely(async () => ok(id, { resources: await resources.list(ctx) }));
+    }
+    case "resources/templates/list":
+      if (!opts.resources) return methodNotFound();
+      return ok(id, { resourceTemplates: [] });
+    case "resources/read": {
+      const resources = opts.resources;
+      if (!resources) return methodNotFound();
+      const uri = params.uri;
+      if (typeof uri !== "string") return rpcError(id, RPC.INVALID_PARAMS, "Missing resource uri");
+      return safely(async () => {
+        const r = await resources.read(uri, ctx);
+        if (!r) return rpcError(id, RPC.RESOURCE_NOT_FOUND, `Resource not found: ${uri}`);
+        return ok(id, { contents: [{ uri, mimeType: r.mimeType, text: r.text }] });
+      });
+    }
     default:
-      return rpcError(id, RPC.METHOD_NOT_FOUND, `Method not found: ${msg.method}`);
+      return methodNotFound();
   }
 }
 

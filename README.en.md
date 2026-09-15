@@ -233,6 +233,13 @@ After that, Claude Code works directly with your projects – no GitHub detour n
 | `create_note`, `get_note` | Notes on a project, e.g. a work log |
 | `search` | Full-text search across notes, tasks and docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Read and write your docs |
+| `get_repo_status`, `list_problems` | A repository's state (commits, CI, dependencies, live site) and everything that needs attention |
+| `get_today`, `add_to_today`, `remove_from_today` | Plan the day – picked tasks and suggestions |
+| `start_timer`, `stop_timer` | Track time on a task, also as a focus timer |
+
+Your **prompt library** also shows up in Claude Code as commands (`/mcp__vibeworks__…`, optionally filled in
+with a project), and **every project's CLAUDE.md**, "problems" and "today" can be attached as resources
+(`@vibeworks:…`).
 
 Try for example: "Which tasks are open in VibeWorks?" or "Work through the open tasks of project X
 and write down what you did as a note." Claude acts with your permissions, and every change shows
