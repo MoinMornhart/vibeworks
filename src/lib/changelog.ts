@@ -28,6 +28,40 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.5",
+    date: "2026-09-15",
+    title: "Wer hat's angelegt? Klare MCP-Fehler",
+    titleEn: "Who created it? Clear MCP errors",
+    changes: [
+      {
+        type: "neu",
+        text: "Aufgaben merken sich, wer sie in VibeWorks angelegt hat – auf der Karte, im Dialog und im Issue („✍️ Erstellt von …“; per KI über MCP und Automatisches werden als solches genannt). Bestehende Aufgaben bekommen den Ersteller aus dem Aktivitätsprotokoll",
+        en: "Tasks remember who created them in VibeWorks – on the card, in the dialog and in the issue (“✍️ Erstellt von …”; created by AI via MCP and automatic ones are labelled as such). Existing tasks get their creator from the activity log",
+      },
+      {
+        type: "besser",
+        text: "MCP-Fehler 401 nennen die Ursache (missing, malformed, invalid_or_revoked, account_inactive); am Schlüssel steht, von welcher Adresse und mit welchem Programm er zuletzt benutzt wurde, dazu wie lange Schlüssel und Sitzungen gelten",
+        en: "MCP 401 errors name the cause (missing, malformed, invalid_or_revoked, account_inactive); each key shows the address and program it was last used from, plus how long keys and sessions last",
+        link: "/account#mcp",
+      },
+      {
+        type: "besser",
+        text: "Abgelaufene Anmeldung: die Anmeldeseite sagt jetzt, warum, statt stumm zurückzuspringen",
+        en: "Expired sign-in: the sign-in page now says why instead of silently jumping back",
+      },
+      {
+        type: "besser",
+        text: "„KI & MCP“ steht direkt im Profilmenü",
+        en: "“AI & MCP” is right in the profile menu",
+      },
+      {
+        type: "fix",
+        text: "Keine CSP-Meldung „eval blockiert“ und keine Schrift-Warnung (Cascadia Code) mehr in der Browser-Konsole",
+        en: "No more CSP “eval blocked” message and no font warning (Cascadia Code) in the browser console",
+      },
+    ],
+  },
+  {
     version: "0.7.4",
     date: "2026-09-15",
     title: "Hinweise auf Neues und schönere Scrollbars",

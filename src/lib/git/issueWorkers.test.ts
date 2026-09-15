@@ -10,8 +10,16 @@ describe("Wer arbeitet am Issue?", () => {
   });
 
   it("der eingetragene Bearbeiter steht im Issue-Text", () => {
-    const base = { id: "t1", description: "Text", labels: [], dueDate: null, recurrence: null };
+    const base = { id: "t1", description: "Text", labels: [], dueDate: null, recurrence: null, createdByName: null, createdVia: null };
     expect(issueBody({ ...base, assignee: "Claude" })).toContain("👤 Bearbeitet von: Claude");
     expect(issueBody({ ...base, assignee: null })).not.toContain("Bearbeitet von");
+  });
+
+  it("wer die Aufgabe in VibeWorks angelegt hat, steht im Issue", () => {
+    const base = { id: "t1", description: null, labels: [], dueDate: null, recurrence: null, assignee: null };
+    expect(issueBody({ ...base, createdByName: "anna", createdVia: "web" })).toContain("✍️ Erstellt von: anna in VibeWorks");
+    expect(issueBody({ ...base, createdByName: "anna", createdVia: "mcp" })).toContain("anna in VibeWorks (per KI über MCP)");
+    expect(issueBody({ ...base, createdByName: null, createdVia: "auto" })).toContain("Automatisch von VibeWorks angelegt");
+    expect(issueBody({ ...base, createdByName: null, createdVia: null })).not.toContain("✍️");
   });
 });

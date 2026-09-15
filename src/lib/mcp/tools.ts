@@ -288,7 +288,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project), "tasks.edit");
-      const { task, progress } = await createTask(userId, project.id, taskCreateSchema.parse(args));
+      const { task, progress } = await createTask(userId, project.id, taskCreateSchema.parse(args), "mcp");
       return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
     },
   },
@@ -321,7 +321,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
           ).map((p) => p.id);
       const input = taskBulkSchema.parse({ ...args, projectIds: ids.length ? ids : undefined });
       const { projectIds, ...fields } = input;
-      const { created, skipped } = await createTaskInProjects(userId, projectIds, fields);
+      const { created, skipped } = await createTaskInProjects(userId, projectIds, fields, "mcp");
       return { created: created.map((c) => ({ project: c.project.name, projectId: c.project.id, taskId: c.task.id })), skipped };
     },
   },

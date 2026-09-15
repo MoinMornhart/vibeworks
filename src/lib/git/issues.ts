@@ -22,8 +22,11 @@ const BACKFILL_LIMIT = 25;
 /** Unsichtbare Markierung im Issue-Text – so ist jedes Issue seiner Aufgabe zuzuordnen. */
 export const taskMarker = (taskId: string) => `<!-- vibeworks:task:${taskId} -->`;
 
-export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "dueDate" | "recurrence" | "assignee">): string {
+export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "dueDate" | "recurrence" | "assignee" | "createdByName" | "createdVia">): string {
   const meta: string[] = [];
+  // Veröffentlicht wird mit dem Token des Besitzers – wer die Aufgabe wirklich angelegt hat, steht deshalb hier
+  if (task.createdVia === "auto") meta.push("✍️ Automatisch von VibeWorks angelegt");
+  else if (task.createdByName) meta.push(`✍️ Erstellt von: ${task.createdByName} in VibeWorks${task.createdVia === "mcp" ? " (per KI über MCP)" : ""}`);
   if (task.assignee) meta.push(`👤 Bearbeitet von: ${task.assignee}`);
   if (task.dueDate) meta.push(`📅 Fällig: ${task.dueDate.toISOString().slice(0, 10).split("-").reverse().join(".")}`);
   if (task.recurrence) meta.push(`🔁 ${recurrenceLabel(task.recurrence)}`);

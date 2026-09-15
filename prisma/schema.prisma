@@ -165,6 +165,7 @@ model User {
   gitCredentials GitCredential[]
   apiTokens      ApiToken[]
   notifications  Notification[]
+  createdTasks   Task[]         @relation("TaskCreator")
   taskFocus      TaskFocus[]
   prompts        Prompt[]
   timeEntries    TimeEntry[]
@@ -595,6 +596,12 @@ model Task {
   assignee    String?
   /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“
   issueAssignees String[] @default([])
+  /// Wer die Aufgabe in VibeWorks angelegt hat – Name als Schnappschuss, steht auch im Issue
+  createdById   String?
+  createdBy     User?   @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName String?
+  /// Weg: web · mcp (per KI) · auto (von VibeWorks selbst)
+  createdVia    String?
   focus       TaskFocus[]
   timeEntries TimeEntry[]
   createdAt   DateTime    @default(now())
@@ -717,6 +724,9 @@ model ApiToken {
   /// Gekürzte Anzeige, z. B. "vw_AbCd…9f3a"
   hint       String
   lastUsedAt DateTime?
+  /// Prüfspur: von wo und womit zuletzt benutzt
+  lastUsedIp        String?
+  lastUsedUserAgent String?
   /// Die KI hat die Agent-Regeln gespeichert und bestätigt (confirm_agent_rules)
   rulesAckAt DateTime?
   /// Zuletzt gemeldeter Client (initialize): Name, Version, verlangte Protokollversion

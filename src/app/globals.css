@@ -26,7 +26,8 @@
   --color-st-archived: var(--vw-status-archived);
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  /* Nur Systemschriften – Firefox blockt sonst nachinstallierte (Cascadia Code) mit Warnung (#24) */
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
 
   --breakpoint-xs: 24rem;
 }

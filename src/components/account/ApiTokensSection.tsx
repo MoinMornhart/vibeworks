@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Check, CircleAlert, Copy, History, KeyRound, Plus, ScrollText, ShieldCheck } from "lucide-react";
+import { Bot, Check, CircleAlert, Copy, History, KeyRound, LifeBuoy, Plus, ScrollText, ShieldCheck } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { ApiTokenItem } from "@/lib/mcp/token";
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
+
+/** Programmname aus dem User-Agent, z. B. „claude-cli/2.1.0“. */
+const shortAgent = (ua: string | null) => (ua ? ua.split(/[\s(]/)[0].slice(0, 40) : "?");
 
 interface CallItem {
   id: string;
@@ -19,7 +22,19 @@ interface CallItem {
   at: string;
 }
 
-export function ApiTokensSection({ initial, appUrl, rules }: { initial: ApiTokenItem[]; appUrl: string; rules: string }) {
+export function ApiTokensSection({
+  initial,
+  appUrl,
+  rules,
+  sessionIdleHours,
+  sessionTtlDays,
+}: {
+  initial: ApiTokenItem[];
+  appUrl: string;
+  rules: string;
+  sessionIdleHours: number;
+  sessionTtlDays: number;
+}) {
   const t = useT("mcp");
   const f = useFormat();
   const [items, setItems] = useState(initial);
@@ -129,6 +144,11 @@ export function ApiTokensSection({ initial, appUrl, rules }: { initial: ApiToken
                 <p className="text-xs text-muted" suppressHydrationWarning>
                   <span className="font-mono">{item.hint}</span> · {item.lastUsedAt ? t("lastUsed", { ago: f.ago(item.lastUsedAt) }) : t("neverUsed")} · {t("created", { ago: f.ago(item.createdAt) })}
                 </p>
+                {item.lastUsedIp && (
+                  <p className="text-xs text-muted" title={item.lastUsedUserAgent ?? undefined} data-testid="api-token-last-from">
+                    {t("lastFrom", { ip: item.lastUsedIp, agent: shortAgent(item.lastUsedUserAgent) })}
+                  </p>
+                )}
                 {item.clientName && (
                   <p className="text-xs text-muted">
                     {t("client", { name: [item.clientName, item.clientVersion].filter(Boolean).join(" "), protocol: item.clientProtocol ?? "?" })}
@@ -169,7 +189,19 @@ export function ApiTokensSection({ initial, appUrl, rules }: { initial: ApiToken
         <FormError message={error} />
       </div>
 
-      <details className="mt-5 rounded-2xl border px-4 py-3" data-testid="agent-rules">
+      <div className="mt-5 rounded-2xl border px-4 py-3 text-xs text-muted" data-testid="key-lifecycle">
+        <p className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-fg">
+          <LifeBuoy size={14} className="text-accent-ink" /> {t("lifecycle.title")}
+        </p>
+        <ul className="list-disc space-y-1 pl-4">
+          <li>{t("lifecycle.keys")}</li>
+          <li>{t("lifecycle.sessions", { hours: sessionIdleHours, days: sessionTtlDays })}</li>
+          <li>{t("lifecycle.codes")}</li>
+          <li>{t("lifecycle.update")}</li>
+        </ul>
+      </div>
+
+      <details className="mt-3 rounded-2xl border px-4 py-3" data-testid="agent-rules">
         <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
           <ScrollText size={14} className="text-accent-ink" /> {t("rules.title")}
         </summary>

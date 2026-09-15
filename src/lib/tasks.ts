@@ -26,6 +26,8 @@ export function serializeTask(t: Task) {
     issueError: t.issueError,
     assignee: t.assignee,
     issueAssignees: t.issueAssignees,
+    createdByName: t.createdByName,
+    createdVia: t.createdVia,
   };
 }
 export type TaskItem = ReturnType<typeof serializeTask>;
@@ -74,6 +76,9 @@ export async function transitionTask(
         labels: updated.labels,
         recurrence: updated.recurrence,
         recurredFrom: updated.id,
+        createdById: updated.createdById,
+        createdByName: updated.createdByName,
+        createdVia: updated.createdVia,
         dueDate: dayKeyToDate(due),
         status: "TODO",
         position: await nextTaskPosition(client, updated.projectId, "TODO"),

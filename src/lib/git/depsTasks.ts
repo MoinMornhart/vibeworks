@@ -35,7 +35,7 @@ export async function syncDepsTasks(projectId: string, report: DepsReport): Prom
 
     if (action === "create") {
       const created = await db.task.create({
-        data: { projectId, title, description, labels, autoKey: plan.key, status: "TODO", position: await nextTaskPosition(db, projectId, "TODO") },
+        data: { projectId, title, description, labels, autoKey: plan.key, status: "TODO", position: await nextTaskPosition(db, projectId, "TODO"), createdVia: "auto" },
       });
       await logActivity({ projectId, userId: null, kind: "TASK_ADDED", summary: `Aufgabe „${truncate(title, 60)}“ angelegt`, meta: { title: truncate(title, 60), taskId: created.id } });
       pushIds.push(created.id);

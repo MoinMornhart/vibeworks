@@ -21,7 +21,8 @@ export async function currentUser(): Promise<SessionUser | null> {
 
 export async function requirePageUser(): Promise<SessionUser> {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  // Cookie da, Sitzung aber weg (Leerlauf, Höchstdauer, gesperrt): mit Begründung zum Login statt stumm (#25)
+  if (!user) redirect((await readSessionToken()) ? "/login?abgelaufen=1" : "/login");
   return user;
 }
 

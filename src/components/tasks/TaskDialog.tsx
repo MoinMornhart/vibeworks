@@ -131,6 +131,12 @@ export function TaskDialog({
           <label className="label" htmlFor="t-title">{t("dialog.title")}</label>
           <input id="t-title" className="field" value={form.title} onChange={(e) => set("title", e.target.value)} required maxLength={200} autoFocus />
           {fieldErrors.title && <p className="mt-1 text-xs text-red-400">{fieldErrors.title}</p>}
+          {task?.createdByName && (
+            <p className="mt-1 text-xs text-muted" data-testid="task-created-by">
+              {t(task.createdVia === "mcp" ? "dialog.createdByAi" : "dialog.createdBy", { name: task.createdByName })}
+            </p>
+          )}
+          {task?.createdVia === "auto" && <p className="mt-1 text-xs text-muted">{t("dialog.createdAuto")}</p>}
         </div>
         <div>
           <label className="label" htmlFor="t-desc">{t("dialog.description")}</label>

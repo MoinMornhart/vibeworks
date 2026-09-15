@@ -20,20 +20,33 @@ export function bearerOf(header: string | null): string | null {
   return m[1];
 }
 
-/** Konto zum Bearer-Schlüssel – null bei unbekanntem, widerrufenem Schlüssel oder gesperrtem Konto. */
-export async function authenticateApiToken(header: string | null) {
+/** Warum ein Schlüssel nicht angenommen wird – als Code im 401 (#25). Unbekannt und widerrufen sind nicht unterscheidbar: widerrufene Zeilen sind gelöscht. */
+export type ApiTokenProblem = "missing" | "malformed" | "invalid_or_revoked" | "account_inactive";
+
+/** Konto zum Bearer-Schlüssel – oder die Ursache, warum nicht. meta: wer gerade anfragt (Prüfspur am Schlüssel). */
+export async function checkApiToken(header: string | null, meta: { ip?: string | null; userAgent?: string | null } = {}) {
+  if (!header?.trim()) return { problem: "missing" as ApiTokenProblem };
   const token = bearerOf(header);
-  if (!token) return null;
+  if (!token) return { problem: "malformed" as ApiTokenProblem };
   const row = await db.apiToken.findUnique({
     where: { tokenHash: sha256(token) },
     include: { user: { select: { id: true, username: true, displayName: true, role: true, active: true, locale: true } } },
   });
-  if (!row || !row.user.active) return null;
-  // „Zuletzt benutzt“ höchstens einmal pro Minute schreiben
+  if (!row) return { problem: "invalid_or_revoked" as ApiTokenProblem };
+  if (!row.user.active) return { problem: "account_inactive" as ApiTokenProblem };
+  // „Zuletzt benutzt“ samt Adresse und Programm höchstens einmal pro Minute schreiben
   if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > 60_000) {
-    await db.apiToken.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } }).catch(() => undefined);
+    await db.apiToken
+      .update({ where: { id: row.id }, data: { lastUsedAt: new Date(), lastUsedIp: meta.ip?.slice(0, 64) ?? null, lastUsedUserAgent: meta.userAgent?.slice(0, 300) ?? null } })
+      .catch(() => undefined);
   }
-  return { tokenId: row.id, user: row.user, rulesAckAt: row.rulesAckAt };
+  return { auth: { tokenId: row.id, user: row.user, rulesAckAt: row.rulesAckAt } };
+}
+
+/** Konto zum Bearer-Schlüssel – null bei fehlendem, kaputtem, unbekanntem, widerrufenem Schlüssel oder gesperrtem Konto. */
+export async function authenticateApiToken(header: string | null) {
+  const r = await checkApiToken(header);
+  return r.auth ?? null;
 }
 export type ApiTokenAuth = NonNullable<Awaited<ReturnType<typeof authenticateApiToken>>>;
 
@@ -48,6 +61,8 @@ export function serializeApiToken(t: ApiToken) {
     clientName: t.clientName,
     clientVersion: t.clientVersion,
     clientProtocol: t.clientProtocol,
+    lastUsedIp: t.lastUsedIp,
+    lastUsedUserAgent: t.lastUsedUserAgent,
   };
 }
 export type ApiTokenItem = ReturnType<typeof serializeApiToken>;

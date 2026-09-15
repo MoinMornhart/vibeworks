@@ -19,6 +19,7 @@ const de = {
   login: {
     title: "Anmelden",
     subtitle: "Schön, dass du wieder da bist.",
+    expired: "Deine Sitzung ist abgelaufen – VibeWorks meldet dich nach {hours} Stunden ohne Aktivität und spätestens nach {days} Tagen zur Sicherheit ab. Bitte melde dich neu an.",
     submit: "Anmelden",
     submitting: "Anmelden …",
     or: "oder",
@@ -124,6 +125,7 @@ const en: Shape<typeof de> = {
   login: {
     title: "Sign in",
     subtitle: "Good to see you again.",
+    expired: "Your session has expired – for security, VibeWorks signs you out after {hours} hours without activity and after {days} days at the latest. Please sign in again.",
     submit: "Sign in",
     submitting: "Signing in …",
     or: "or",

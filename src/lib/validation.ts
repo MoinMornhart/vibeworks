@@ -1,3 +1,4 @@
+import "./zodSetup";
 import { z } from "zod";
 import { PROJECT_ACCENTS } from "./status";
 import { normalizeTags } from "./utils";

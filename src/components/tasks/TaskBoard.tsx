@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, TriangleAlert, UserRound } from "lucide-react";
+import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, SlidersHorizontal, PenLine, TriangleAlert, UserRound } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
 import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
@@ -90,11 +90,16 @@ function TaskCard({
         </button>
         {!done && !overlay && <TimerButtons taskId={t.id} hoverOnly />}
       </div>
-      {(t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0) && (
+      {(t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">
           {workers.length > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-px text-[11px] text-accent-ink" title={tr("card.assignee", { name: workers.join(", ") })} data-testid="task-assignee">
               <UserRound size={11} /> {workers.join(", ")}
+            </span>
+          )}
+          {t.createdByName && (
+            <span className="inline-flex items-center gap-0.5 text-[11px]" title={tr("card.createdBy", { name: t.createdByName })} data-testid="task-creator">
+              <PenLine size={11} /> {t.createdByName}
             </span>
           )}
           {t.issueNumber && t.issueUrl && (

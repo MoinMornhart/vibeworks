@@ -1,3 +1,4 @@
+import "@/lib/zodSetup";
 import { z } from "zod";
 import { HEX_RE, shiftHue } from "./color";
 import { tk } from "../i18n/messages";

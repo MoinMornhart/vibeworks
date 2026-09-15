@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { after } from "next/server";
 import { db } from "./db";
 import { pushTaskIssue, pushTaskIssues } from "./git/issues";
+import { displayNameOf } from "./auth/guard";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "./tasks";
 import { dayKeyToDate } from "./taskDates";
 import { noteLabel, touchProject } from "./notes";
@@ -15,7 +16,16 @@ import type { noteCreateSchema, taskCreateSchema, taskUpdateSchema } from "./val
 // Gemeinsam für die Oberfläche (API-Routen) und Claude (MCP). Die Rechte
 // prüft der Aufrufer vorher.
 
-export async function createTask(userId: string, projectId: string, input: Omit<z.output<typeof taskCreateSchema>, "assignee"> & { assignee?: string | null }) {
+/** Weg, auf dem eine Aufgabe entsteht: Oberfläche oder KI über MCP. */
+export type TaskVia = "web" | "mcp";
+
+export async function createTask(
+  userId: string,
+  projectId: string,
+  input: Omit<z.output<typeof taskCreateSchema>, "assignee"> & { assignee?: string | null },
+  via: TaskVia = "web",
+) {
+  const creator = await db.user.findUnique({ where: { id: userId }, select: { displayName: true, username: true } });
   const task = await db.task.create({
     data: {
       ...input,
@@ -23,6 +33,9 @@ export async function createTask(userId: string, projectId: string, input: Omit<
       doneAt: input.status === "DONE" ? new Date() : null,
       projectId,
       position: await nextTaskPosition(db, projectId, input.status),
+      createdById: userId,
+      createdByName: creator ? displayNameOf(creator) : null,
+      createdVia: via,
     },
   });
   await logActivity({ projectId, userId, kind: "TASK_ADDED", summary: `Aufgabe „${truncate(task.title, 60)}“ angelegt`, meta: { title: truncate(task.title, 60), taskId: task.id } });
@@ -74,6 +87,7 @@ export async function createTaskInProjects(
   userId: string,
   projectIds: string[],
   input: Pick<z.output<typeof taskCreateSchema>, "title" | "description" | "dueDate" | "labels">,
+  via: TaskVia = "web",
 ) {
   const created: Array<{ task: Task; project: { id: string; name: string; accent: string } }> = [];
   let skipped = 0;
@@ -83,7 +97,7 @@ export async function createTaskInProjects(
       skipped++;
       continue;
     }
-    const { task } = await createTask(userId, id, { ...input, status: "TODO", recurrence: null });
+    const { task } = await createTask(userId, id, { ...input, status: "TODO", recurrence: null }, via);
     created.push({ task, project: { id, name: res.project.name, accent: res.project.accent } });
   }
   return { created, skipped };

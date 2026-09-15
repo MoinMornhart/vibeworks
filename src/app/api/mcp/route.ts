@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
-import { ApiError, assertSameOrigin } from "@/lib/api";
+import { ApiError, assertSameOrigin, clientIp } from "@/lib/api";
 import { db } from "@/lib/db";
-import { authenticateApiToken } from "@/lib/mcp/token";
+import { checkApiToken } from "@/lib/mcp/token";
 import { handleBody, RPC, rpcError } from "@/lib/mcp/protocol";
 import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, type McpContext } from "@/lib/mcp/tools";
 import { allMcpTools } from "@/lib/mcp/agentTools";
@@ -27,11 +27,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(rpcError(null, RPC.INVALID_REQUEST, "Forbidden origin"), { status: 403 });
   }
 
-  const auth = await authenticateApiToken(req.headers.get("authorization"));
+  const checked = await checkApiToken(req.headers.get("authorization"), { ip: clientIp(req), userAgent: req.headers.get("user-agent") });
+  const auth = checked.auth;
   if (!auth) {
+    // Klare Ursache statt eines Sammelfehlers (#25): fehlt, kaputt, unbekannt/widerrufen oder Konto gesperrt
+    const code = checked.problem ?? "invalid_or_revoked";
     return NextResponse.json(
-      { error: translateMessage("en", tk("mcp", "errors.unauthorized")) },
-      { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="VibeWorks"' } },
+      { error: translateMessage("en", tk("mcp", `errors.token.${code}`)), code },
+      { status: 401, headers: { "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}"` } },
     );
   }
   const locale: Locale = isLocale(auth.user.locale) ? auth.user.locale : "de";
