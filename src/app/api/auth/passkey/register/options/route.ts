@@ -1,4 +1,4 @@
-import { generateRegistrationOptions, type AuthenticatorTransportFuture } from "@simplewebauthn/server";
+import { generateRegistrationOptions, type AuthenticatorTransport } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { json, route } from "@/lib/api";
 import { displayNameOf, requireApiUser } from "@/lib/auth/guard";
@@ -20,7 +20,7 @@ export const POST = route(async () => {
     userDisplayName: displayNameOf(user),
     userID: new TextEncoder().encode(user.id),
     attestationType: "none",
-    excludeCredentials: existing.map((c) => ({ id: c.credentialId, transports: c.transports as AuthenticatorTransportFuture[] })),
+    excludeCredentials: existing.map((c) => ({ id: c.credentialId, transports: c.transports as AuthenticatorTransport[] })),
     authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
   });
   await storeChallenge(options.challenge, "registration", user.id);

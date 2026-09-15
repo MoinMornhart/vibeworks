@@ -1,4 +1,4 @@
-import type { AuthenticatorTransportFuture, WebAuthnCredential } from "@simplewebauthn/server";
+import type { AuthenticatorTransport, WebAuthnCredential } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 import { describeUserAgent } from "@/lib/userAgent";
@@ -37,7 +37,7 @@ export function toCredential(p: { credentialId: string; publicKey: Uint8Array; c
     id: p.credentialId,
     publicKey: new Uint8Array(p.publicKey),
     counter: p.counter,
-    transports: p.transports as AuthenticatorTransportFuture[],
+    transports: p.transports as AuthenticatorTransport[],
   };
 }
 

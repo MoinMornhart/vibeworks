@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.7",
+    date: "2026-09-15",
+    title: "Sicherheits-Update der Abhängigkeiten",
+    titleEn: "Dependency security update",
+    changes: [
+      {
+        type: "fix",
+        text: "Fünf bekannte Sicherheitslücken behoben (PostCSS in Next.js, deepmerge-ts im Prisma-Werkzeug) – npm audit meldet keine mehr",
+        en: "Fixed five known vulnerabilities (PostCSS in Next.js, deepmerge-ts in the Prisma tooling) – npm audit reports none",
+      },
+      {
+        type: "besser",
+        text: "Passkeys auf SimpleWebAuthn 14, dazu nodemailer und die Node-Typen aktualisiert; VibeWorks braucht jetzt Node.js 22 oder neuer (der Installer richtet 24 ein)",
+        en: "Passkeys on SimpleWebAuthn 14, plus updated nodemailer and Node types; VibeWorks now needs Node.js 22 or newer (the installer sets up 24)",
+      },
+    ],
+  },
+  {
     version: "0.5.6",
     date: "2026-09-15",
     title: "Wochen-Vorschläge",
