@@ -5,7 +5,7 @@ import { tk } from "@/lib/i18n/messages";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
-import { tokenCipherFor } from "./token";
+import { issueTokenCipherFor } from "./token";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
@@ -81,7 +81,7 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
     select: { ownerId: true, repoUrl: true, repoTokenCipher: true, issueSync: true, repoCache: { select: { provider: true } } },
   });
   if (!project?.repoUrl || !project.issueSync) return null;
-  const stored = await tokenCipherFor(project); // Projekt-Token oder Konto-Token
+  const stored = await issueTokenCipherFor(project); // Bot-Konto, sonst Projekt- oder Konto-Token
   if (!stored) return null;
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";

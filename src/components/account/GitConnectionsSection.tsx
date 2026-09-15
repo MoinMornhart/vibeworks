@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, GitBranch, Plus, RefreshCw, Save, Trash2, TriangleAlert, X } from "lucide-react";
+import { Bot, CheckCircle2, GitBranch, Plus, RefreshCw, Save, Trash2, TriangleAlert, X } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { EMPTY_GIT_CONNECTION, GitProviderFields, type GitConnectionForm } from "@/components/git/GitProviderFields";
 import { PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
@@ -17,6 +17,8 @@ export interface GitConnectionItem {
   baseUrl: string;
   hint: string;
   login: string | null;
+  botHint: string | null;
+  botLogin: string | null;
   autoImport: boolean;
   importedAt: string | null;
   importError: string | null;
@@ -38,6 +40,24 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | undefined>();
+  const [botInput, setBotInput] = useState<Record<string, string>>({});
+  const [botErrors, setBotErrors] = useState<Record<string, string>>({});
+
+  /** Bot-Konto für Issues setzen (Token wird beim Anbieter geprüft) oder mit null entfernen. */
+  async function setBot(c: GitConnectionItem, botToken: string | null) {
+    setBusyId(c.id);
+    setBotErrors((s) => ({ ...s, [c.id]: "" }));
+    try {
+      const res = await api<ListResponse>(`/api/account/git-credentials/${c.id}`, { method: "PATCH", body: { botToken: botToken === null ? null : botToken.trim() } });
+      setList(res.connections);
+      setBotInput((s) => ({ ...s, [c.id]: "" }));
+    } catch (err) {
+      const field = err instanceof ApiClientError ? err.fieldErrors.botToken : undefined;
+      setBotErrors((s) => ({ ...s, [c.id]: field ?? errorMessage(err) }));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function importNow(c: Pick<GitConnectionItem, "id">) {
     setBusyId(c.id);
@@ -154,6 +174,44 @@ export function GitConnectionsSection({ initial }: { initial: GitConnectionItem[
                       <p role="alert" className="text-xs text-red-400">{t("git.importError", { error: msg(c.importError) })}</p>
                     )}
                     {notes[c.id] && <p role="status" className="text-xs text-emerald-400">{notes[c.id]}</p>}
+                    <div className="border-t border-fg/10 pt-3" data-testid="git-bot">
+                      <p className="flex items-center gap-1.5 font-medium">
+                        <Bot size={14} className="text-accent-ink" /> {t("git.botTitle")}
+                      </p>
+                      {c.botHint ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          <span className="text-emerald-400">{c.botLogin ? t("git.botAs", { login: c.botLogin }) : c.botHint}</span>
+                          <button type="button" className="btn btn-sm" disabled={busyId === c.id} onClick={() => void setBot(c, null)}>
+                            {t("git.botRemove")}
+                          </button>
+                        </div>
+                      ) : (
+                        <form
+                          className="mt-1 flex flex-wrap gap-2"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            void setBot(c, botInput[c.id] ?? "");
+                          }}
+                        >
+                          <input
+                            type="password"
+                            autoComplete="off"
+                            spellCheck={false}
+                            className="field min-w-0 flex-1 font-mono text-xs"
+                            placeholder={t("git.botPlaceholder")}
+                            aria-label={t("git.botTitle")}
+                            maxLength={500}
+                            value={botInput[c.id] ?? ""}
+                            onChange={(e) => setBotInput((s) => ({ ...s, [c.id]: e.target.value }))}
+                          />
+                          <button className="btn btn-sm" disabled={busyId === c.id || !(botInput[c.id] ?? "").trim()}>
+                            {t("git.botSave")}
+                          </button>
+                        </form>
+                      )}
+                      <p className="mt-1 text-xs text-muted">{t("git.botHint")}</p>
+                      {botErrors[c.id] && <p role="alert" className="mt-1 text-xs text-red-400">{botErrors[c.id]}</p>}
+                    </div>
                   </div>
                 )}
               </li>

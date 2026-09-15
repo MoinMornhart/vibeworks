@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.6",
+    date: "2026-09-15",
+    title: "Bot-Konto für Issues und Rolle „Bughunter“",
+    titleEn: "Bot account for issues and “Bughunter” role",
+    changes: [
+      {
+        type: "neu",
+        text: "Bot-Konto für Issues: je Git-Verbindung lässt sich der Token eines zweiten Kontos (z. B. „vibeworks-bot“) eintragen – dann legt VibeWorks Issues und Status-Labels unter dem Bot an statt unter deinem Profil. Commits, CI und Import laufen weiter über deinen Zugang",
+        en: "Bot account for issues: per Git connection you can enter the token of a second account (e.g. “vibeworks-bot”) – VibeWorks then creates issues and status labels as the bot instead of under your profile. Commits, CI and import keep using your access",
+        link: "/account#git-zugang",
+      },
+      {
+        type: "neu",
+        text: "Neue Standardrolle „Bughunter“: Aufgaben, Notizen, Zeit, Git- und Live-Prüfung und Fehler-Eingang – ohne Mitglieder, Kosten und Projektangaben. Vergeben im Teilen-Dialog",
+        en: "New built-in role “Bughunter”: tasks, notes, time, Git and live checks and the error inbox – without members, costs or project details. Assigned in the share dialog",
+      },
+    ],
+  },
+  {
     version: "0.7.5",
     date: "2026-09-15",
     title: "Wer hat's angelegt? Klare MCP-Fehler",

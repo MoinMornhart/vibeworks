@@ -684,6 +684,10 @@ model GitCredential {
   hint      String
   /// Anmeldename beim Anbieter, beim Speichern ermittelt
   login     String?
+  /// Bot-Konto nur für Issues – damit VibeWorks sie nicht unter dem eigenen Profil anlegt (verschlüsselt)
+  botCipher String?
+  botHint   String?
+  botLogin  String?
   /// Automatischer Import: jedes eigene Repository wird zum Projekt (ohne Forks und archivierte)
   autoImport  Boolean   @default(true)
   importedAt  DateTime?

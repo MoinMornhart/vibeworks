@@ -5,7 +5,7 @@ import type { TFunction } from "@/lib/i18n/messages";
 // niemand sie umbenannt hat; Rechte haben Schlüssel mit Unterstrich.
 
 type Underscore<S extends string> = S extends `${infer A}.${infer B}` ? `${A}_${B}` : S;
-type BuiltinKey = "project_viewer" | "project_contributor" | "project_editor" | "project_manager" | "team_admin" | "team_inviter" | "team_member";
+type BuiltinKey = "project_viewer" | "project_contributor" | "project_editor" | "project_manager" | "project_bughunter" | "team_admin" | "team_inviter" | "team_member";
 
 export const permKey = <P extends ProjectPermission | TeamPermission>(p: P) => p.replace(".", "_") as Underscore<P>;
 

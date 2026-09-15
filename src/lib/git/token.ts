@@ -32,6 +32,20 @@ export async function tokenCipherFor(project: ProjectTokenInput): Promise<{ ciph
   return account ? { cipher: account.cipher, source: "account" } : null;
 }
 
+/**
+ * Token für Issues: das Bot-Konto der Verbindung zu genau diesem Server, falls
+ * eingetragen – so legt VibeWorks Issues nicht unter dem Profil des Besitzers
+ * an. Sonst wie gewohnt Projekt- oder Konto-Token.
+ */
+export async function issueTokenCipherFor(project: ProjectTokenInput): Promise<{ cipher: string; source: TokenSource | "bot" } | null> {
+  const parsed = parseRepoUrl(project.repoUrl);
+  if (parsed) {
+    const bot = await db.gitCredential.findUnique({ where: { userId_host: { userId: project.ownerId, host: parsed.hostPort } }, select: { botCipher: true } });
+    if (bot?.botCipher) return { cipher: bot.botCipher, source: "bot" };
+  }
+  return tokenCipherFor(project);
+}
+
 // ── Verbindungen prüfen und anlegen ─────────────────────────
 
 export class GitTokenError extends Error {
@@ -108,6 +122,8 @@ export async function credentialList(userId: string) {
     baseUrl: c.baseUrl,
     hint: c.hint,
     login: c.login,
+    botHint: c.botHint,
+    botLogin: c.botLogin,
     autoImport: c.autoImport,
     importedAt: c.importedAt?.toISOString() ?? null,
     importError: c.importError,
