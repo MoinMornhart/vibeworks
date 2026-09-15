@@ -41,6 +41,7 @@ const de = {
     renewal: "Eine Verlängerung steht an (z. B. Domain) – zwei Wochen vorher",
     suggestions: "Neue Wochen-Vorschläge – montags ab 8 Uhr",
     passwordAge: "Erinnerung, das Passwort zu wechseln (Abstand unter Konto → Passwort)",
+    news: "Neue Funktionen nach einem Update – ein Klick führt direkt dorthin",
     updated: "VibeWorks wurde aktualisiert",
   },
   save: "Speichern",
@@ -98,6 +99,7 @@ const de = {
       title: "Zeit für ein neues Passwort",
       message: plural("Dein Passwort ist {n} Tag alt – ein Klick führt zur Einstellung.", "Dein Passwort ist {n} Tage alt – ein Klick führt zur Einstellung."),
     },
+    news: { title: "Neu in VibeWorks {version}" },
     test: { title: "Test von VibeWorks", message: "Wenn du das liest, kommt der Kanal an. 🎉" },
   },
   errors: {
@@ -151,6 +153,7 @@ const en: Shape<typeof de> = {
     renewal: "A renewal is coming up (e.g. a domain) – two weeks ahead",
     suggestions: "New weekly suggestions – Mondays from 8 am",
     passwordAge: "Reminder to change your password (interval under Account → Password)",
+    news: "New features after an update – a click takes you straight there",
     updated: "VibeWorks was updated",
   },
   save: "Save",
@@ -208,6 +211,7 @@ const en: Shape<typeof de> = {
       title: "Time for a new password",
       message: plural("Your password is {n} day old – a click takes you to the setting.", "Your password is {n} days old – a click takes you to the setting."),
     },
+    news: { title: "New in VibeWorks {version}" },
     test: { title: "Test from VibeWorks", message: "If you can read this, the channel works. 🎉" },
   },
   errors: {

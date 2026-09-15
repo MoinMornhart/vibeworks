@@ -87,7 +87,7 @@ export function ApiTokensSection({ initial, appUrl, rules }: { initial: ApiToken
   );
 
   return (
-    <AccountSection icon={<Bot size={18} />} title={t("section.title")} description={t("section.description")}>
+    <AccountSection id="mcp" icon={<Bot size={18} />} title={t("section.title")} description={t("section.description")}>
       <p className="mb-4 text-sm text-muted">{t("can")}</p>
 
       {fresh && (

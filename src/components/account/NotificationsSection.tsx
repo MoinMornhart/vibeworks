@@ -82,7 +82,7 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
   const last = splitLastError(saved.lastError);
 
   return (
-    <AccountSection icon={<Bell size={18} />} title={t("section.title")} description={t("section.description")}>
+    <AccountSection id="benachrichtigungen" icon={<Bell size={18} />} title={t("section.title")} description={t("section.description")}>
       <form
         className="space-y-4"
         onSubmit={(e) => {

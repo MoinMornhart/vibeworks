@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { visibleTo } from "@/lib/access";
 import { CHANGELOG } from "@/lib/changelog";
+import { newsSince } from "@/lib/news";
 import { getSettings } from "@/lib/settings";
 import { dayKeyToDate, diffDays, formatDue } from "@/lib/taskDates";
 import { formatMoney, INTERVALS, nextRenewal, RENEWAL_WARN_DAYS, type CostInterval } from "@/lib/costs";
@@ -75,6 +76,20 @@ export async function runVersionCheck(): Promise<void> {
       message: locale === "en" ? (entry.titleEn ?? entry.title) : entry.title,
       url: appLink("/"),
     }));
+  }
+  // Neue Funktionen mit eigener Seite: an alle, in ihrer Sprache – der Klick führt direkt dorthin
+  const news = newsSince(CHANGELOG, settings.lastVersion);
+  if (!news.length) return;
+  const users = await db.user.findMany({ where: { active: true }, select: { id: true } });
+  for (const u of users) {
+    for (const n of news) {
+      await notifyUser(u.id, "news", (t, locale) => ({
+        event: "news",
+        title: t("events.news.title", { version: n.version }),
+        message: (locale === "en" && n.change.en) || n.change.text,
+        url: appLink(n.change.link),
+      }));
+    }
   }
 }
 

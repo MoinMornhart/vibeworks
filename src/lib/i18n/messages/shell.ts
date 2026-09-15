@@ -88,6 +88,7 @@ const de = {
     dirty: "(mit lokalen Änderungen)",
     commitDate: "vom {date}",
     installedBadge: "installiert",
+    open: "Ansehen",
     types: {
       neu: "Neu",
       besser: "Besser",
@@ -194,6 +195,7 @@ const en: Shape<typeof de> = {
     dirty: "(with local changes)",
     commitDate: "from {date}",
     installedBadge: "installed",
+    open: "View",
     types: {
       neu: "New",
       besser: "Improved",

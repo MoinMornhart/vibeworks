@@ -14,6 +14,8 @@ export interface ChangelogChange {
   type: ChangeType;
   text: string;
   en?: string;
+  /** Seite oder Einstellung der Neuerung (Pfad dieser Instanz) – Hinweis in der Glocke und „Ansehen“ im Verlauf führen dorthin */
+  link?: string;
 }
 
 export interface ChangelogEntry {
@@ -26,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.4",
+    date: "2026-09-15",
+    title: "Hinweise auf Neues und schönere Scrollbars",
+    titleEn: "What's new notices and nicer scrollbars",
+    changes: [
+      {
+        type: "neu",
+        text: "Nach einem Update meldet die Glocke neue Funktionen in deiner Sprache – ein Klick führt direkt zur passenden Einstellung. Abschaltbar unter Benachrichtigungen („Neue Funktionen“)",
+        en: "After an update the bell announces new features in your language – a click takes you straight to the matching setting. Can be switched off under Notifications (“New features”)",
+        link: "/account#benachrichtigungen",
+      },
+      {
+        type: "besser",
+        text: "Im Änderungsverlauf führt „Ansehen“ bei neuen Funktionen direkt zur Einstellung",
+        en: "In the changelog, “View” takes you straight to the setting of a new feature",
+      },
+      {
+        type: "besser",
+        text: "Schönere Scrollbars überall – schmal, ohne graue Spur, in den Farben deines Designs und beim Anfassen in der Akzentfarbe; auch in Firefox",
+        en: "Nicer scrollbars everywhere – slim, no grey track, in your design's colours and in the accent colour while you drag; in Firefox too",
+      },
+    ],
+  },
+  {
     version: "0.7.3",
     date: "2026-09-15",
     title: "MCP: Regeln für KI-Agenten und Protokoll",
@@ -35,6 +61,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         type: "neu",
         text: "Regeln für KI-Agenten: Beim ersten Verbinden holt sich die KI mit get_agent_rules eine Skill-Datei (englisch, mit der aktuellen Werkzeugliste), speichert sie lokal – Claude Code, Gemini oder AGENTS.md – und bestätigt mit confirm_agent_rules. Bis dahin erinnert jede Antwort daran; ob bestätigt ist, steht am Schlüssel",
         en: "Rules for AI agents: on first connect the AI fetches a skill file with get_agent_rules (English, with the current tool list), saves it locally – Claude Code, Gemini or AGENTS.md – and confirms with confirm_agent_rules. Until then every answer reminds it; the key shows whether it's confirmed",
+        link: "/account#mcp",
       },
       {
         type: "neu",
@@ -63,6 +90,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         type: "neu",
         text: "Erinnerung zum Passwortwechsel – unter Konto → Passwort einstellbar (aus, 90, 180 oder 365 Tage). Die Meldung kommt über die Glocke und die Kanäle, ein Klick führt direkt zur Einstellung",
         en: "Password change reminder – set under Account → Password (off, 90, 180 or 365 days). It arrives via the bell and your channels, a click takes you straight to the setting",
+        link: "/account#passwort",
       },
       {
         type: "besser",

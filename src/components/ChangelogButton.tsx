@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { GitCommitHorizontal } from "lucide-react";
 import { CHANGELOG, type ChangeType } from "@/lib/changelog";
 import type { PublicBuildInfo } from "@/lib/buildInfo";
@@ -59,7 +60,17 @@ export function ChangelogButton({ build }: { build: PublicBuildInfo }) {
                 {entry.changes.map((c, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <span className={`mt-0.5 shrink-0 rounded-md border px-1.5 text-[11px] font-medium ${TYPE_CLS[c.type]}`}>{t(`changelog.types.${c.type}`)}</span>
-                    <span>{(en && c.en) || c.text}</span>
+                    <span>
+                      {(en && c.en) || c.text}
+                      {c.link && (
+                        <>
+                          {" "}
+                          <Link href={c.link} className="whitespace-nowrap text-accent-ink hover:underline" onClick={() => setOpen(false)}>
+                            {t("changelog.open")} →
+                          </Link>
+                        </>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
