@@ -26,6 +26,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.5",
+    date: "2026-09-15",
+    title: "Community",
+    titleEn: "Community",
+    changes: [
+      {
+        type: "neu",
+        text: "Community für die Konten deiner Instanz (Mehrbenutzerbetrieb): Projekte vorstellen und dazu Fragen, Ideen und Fehlerberichte schreiben, mit Antworten und Markdown. Antwortet der Projektbesitzer auf eine Frage, gilt sie als beantwortet",
+        en: "Community for the accounts of your instance (multi-user mode): present projects and write questions, ideas and bug reports about them, with replies and Markdown. When the project owner answers a question, it counts as answered",
+      },
+      {
+        type: "neu",
+        text: "Moderation: Der Projektbesitzer kann Beiträge ausblenden, schließen, löschen und Leute für sein Projekt sperren; alle können melden. Admins sehen unter Administration → Community alle Meldungen und können Konten für die ganze Community sperren",
+        en: "Moderation: the project owner can hide, close and delete posts and ban people from their project; everyone can report. Admins see all reports under Administration → Community and can ban accounts from the whole community",
+      },
+      {
+        type: "neu",
+        text: "Benachrichtigung bei neuen Beiträgen zu deinem Projekt und bei Antworten auf deine Beiträge",
+        en: "Notifications for new posts on your project and for replies to your posts",
+      },
+      {
+        type: "besser",
+        text: "Datenschutz: Die Community zeigt nur Name, Kurzbeschreibung, Stand, Tags und Links der Projekte, die du ausdrücklich freigibst – Beschreibung, Notizen und Aufgaben bleiben privat, und niemand bekommt dadurch Zugriff auf das Projekt. Ausgeblendetes sehen nur Autor und Moderation; Gesperrte können lesen, aber nicht schreiben",
+        en: "Privacy: the community only shows name, summary, status, tags and links of projects you explicitly share – description, notes and tasks stay private, and nobody gets access to the project through it. Hidden posts are only visible to their author and moderators; banned people can read but not write",
+      },
+    ],
+  },
+  {
     version: "0.6.4",
     date: "2026-09-15",
     title: "Einladungslinks",

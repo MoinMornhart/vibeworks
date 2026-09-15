@@ -136,6 +136,12 @@ model User {
   portfolioPublic Boolean @default(false)
   portfolioBio    String?
 
+  /// Community: von einem Admin gesperrt – lesen geht, schreiben nicht
+  communityBannedAt  DateTime?
+  communityBanReason String?
+  communityPosts     CommunityPost[]
+  communityReplies   CommunityReply[]
+
   sessions      Session[]
   passkeys      Passkey[]
   recoveryCodes RecoveryCode[]
@@ -308,6 +314,8 @@ model Project {
   statusBeforeBurial ProjectStatus?
   /// Im öffentlichen Portfolio des Besitzers zeigen
   inPortfolio        Boolean @default(false)
+  /// In der Community der Instanz vorstellen (nur für angemeldete Konten sichtbar)
+  inCommunity        Boolean @default(false)
   /// „Später fragen“ – bis dahin kein Hinweis auf dem Dashboard
   nudgeSnoozedUntil  DateTime?
 
@@ -323,6 +331,8 @@ model Project {
   timeEntries    TimeEntry[]
   suggestions    Suggestion[]
   appErrors      AppError[]
+  communityPosts CommunityPost[]
+  communityBans  CommunityBan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -330,6 +340,79 @@ model Project {
   @@unique([ownerId, slug])
   @@index([ownerId, status, position])
   @@index([ownerId, updatedAt])
+}
+
+// ── Community ───────────────────────────────────────────────
+
+/// Beitrag zu einem vorgestellten Projekt: Frage, Idee oder Fehlerbericht
+model CommunityPost {
+  id             String           @id @default(cuid())
+  projectId      String
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// question | idea | bug
+  kind           String           @default("question")
+  title          String
+  body           String
+  /// open | answered | closed
+  status         String           @default("open")
+  /// Von der Moderation ausgeblendet – sehen nur Autor, Projektbesitzer und Admins
+  hidden         Boolean          @default(false)
+  replyCount     Int              @default(0)
+  lastActivityAt DateTime         @default(now())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  replies        CommunityReply[]
+
+  @@index([projectId, lastActivityAt])
+}
+
+model CommunityReply {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  hidden    Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([postId, createdAt])
+}
+
+/// Meldung eines Beitrags oder einer Antwort an die Moderation
+model CommunityReport {
+  id          String    @id @default(cuid())
+  /// post | reply
+  targetType  String
+  targetId    String
+  projectId   String
+  reporterId  String
+  reason      String
+  /// open | done
+  status      String    @default("open")
+  handledById String?
+  handledAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([targetType, targetId, reporterId])
+  @@index([status, createdAt])
+  @@index([projectId, status])
+}
+
+/// Sperre für die Community eines Projekts (vom Projektbesitzer oder einem Admin)
+model CommunityBan {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String
+  reason      String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([projectId, userId])
 }
 
 /// Fehler-Eingang: gleichartige Fehler einer App, per Fingerabdruck zusammengefasst

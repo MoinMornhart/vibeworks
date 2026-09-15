@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, Sun, UserRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, Sun, UserRound, Users, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -19,6 +19,8 @@ export interface NavUser {
   name: string;
   username: string;
   isAdmin: boolean;
+  /** Community gibt es nur im Mehrbenutzerbetrieb */
+  community?: boolean;
 }
 
 interface NavItem {
@@ -26,6 +28,7 @@ interface NavItem {
   label: Key<"shell">;
   icon: LucideIcon;
   admin?: boolean;
+  community?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -34,6 +37,7 @@ const NAV: NavItem[] = [
   { href: "/tasks", label: "nav.tasks", icon: ListChecks },
   { href: "/prompts", label: "nav.prompts", icon: MessageSquare },
   { href: "/review", label: "nav.review", icon: CalendarRange },
+  { href: "/community", label: "nav.community", icon: Users, community: true },
   { href: "/docs", label: "nav.docs", icon: BookOpen },
   // Design und Admin stehen im Profilmenü – die Leiste bleibt so auch mit laufendem Timer vollständig
 ];
@@ -75,7 +79,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
           <span className="hidden text-lg sm:inline">{appName}</span>
         </Link>
         <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-          {NAV.filter((n) => !n.admin || user.isAdmin).map((item) => (
+          {NAV.filter((n) => (!n.admin || user.isAdmin) && (!n.community || user.community)).map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}

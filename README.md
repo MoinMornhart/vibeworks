@@ -336,6 +336,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Repo-Check ohne KI (GitHub Actions): Geheimnisse, Sicherheitslücken, Fehlermuster und TODOs
 - ✅ Fehler-Eingang: Apps melden Laufzeitfehler per Schnipsel (Browser, Node.js, curl), zusammengefasst, mit Benachrichtigung
 - ✅ Einladungslinks für neue Konten: einmal nutzbar, mit Ablaufdatum, auch bei geschlossener Registrierung
+- ✅ Community für die Konten der Instanz: Projekte vorstellen, Fragen, Ideen und Fehlerberichte, Moderation, Melden und Sperren
 - ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**
