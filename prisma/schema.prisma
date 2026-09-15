@@ -152,6 +152,7 @@ model User {
   timeEntries    TimeEntry[]
   inboxItems     InboxItem[]
   templates      ProjectTemplate[]
+  suggestions    Suggestion[]
   notificationSettings NotificationSettings?
 
   createdAt DateTime @default(now())
@@ -298,6 +299,7 @@ model Project {
   prompts        Prompt[]
   costs          ProjectCost[]
   timeEntries    TimeEntry[]
+  suggestions    Suggestion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -545,6 +547,34 @@ model TaskFocus {
 
   @@unique([userId, taskId, day])
   @@index([userId, day])
+}
+
+/// Wochen-Vorschläge: bis zu fünf Hinweise je Konto und Woche – regelbasiert, ohne KI.
+model Suggestion {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Montag der Woche "YYYY-MM-DD" (Europe/Berlin)
+  week      String
+  /// Regel und Ziel, z. B. "vuln:<projectId>" – je Woche nur einmal
+  key       String
+  /// vuln | ci | git | renewal | overdue | sleeping | major | plan | describe
+  kind      String
+  /// Werte für die Texte (Projektname, Pakete …)
+  data      Json      @default("{}")
+  /// Rang in der Woche (wichtigster zuerst)
+  position  Int       @default(0)
+  /// OPEN | ACCEPTED | DISMISSED
+  status    String    @default("OPEN")
+  /// Beim Annehmen angelegte Aufgabe
+  taskId    String?
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  @@unique([userId, week, key])
+  @@index([userId, week])
 }
 
 /// Einzelne Prüfung einer Live-Seite – 30 Tage aufbewahrt.

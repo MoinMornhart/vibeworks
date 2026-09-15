@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.6",
+    date: "2026-09-15",
+    title: "Wochen-Vorschläge",
+    titleEn: "Weekly suggestions",
+    changes: [
+      {
+        type: "neu",
+        text: "Jede Woche bis zu fünf Vorschläge auf dem Dashboard – aus deinen Projekten, ohne KI: Sicherheitslücken, rote CI, Git-Fehler, Verlängerungen, Überfälliges, schlafende Projekte, große Updates, fehlende Planung",
+        en: "Up to five suggestions on the dashboard every week – from your projects, no AI: vulnerabilities, red CI, Git errors, renewals, overdue tasks, sleeping projects, major updates, missing planning",
+      },
+      {
+        type: "neu",
+        text: "Annehmen legt eine Aufgabe an, merkt Überfälliges für heute vor oder heißt „weitermachen“; Abgelehntes kommt drei Wochen nicht wieder",
+        en: "Accepting creates a task, puts overdue tasks on today's list or means “carry on”; dismissed ones stay away for three weeks",
+      },
+      {
+        type: "neu",
+        text: "Benachrichtigung „Vorschläge für diese Woche“ montags ab 8 Uhr",
+        en: "“Suggestions for this week” notification on Mondays from 8 am",
+      },
+    ],
+  },
+  {
     version: "0.5.5",
     date: "2026-09-15",
     title: "Besseres MCP",

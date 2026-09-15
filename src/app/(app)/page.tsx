@@ -9,6 +9,8 @@ import { translateMessage } from "@/lib/i18n/messages";
 import { ProjectBoard } from "@/components/projects/ProjectBoard";
 import { PendingRequests, SharedProjects } from "@/components/share/SharedProjects";
 import { SleepingProjects } from "@/components/grave/SleepingProjects";
+import { WeeklySuggestions } from "@/components/WeeklySuggestions";
+import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
 
 export default async function Dashboard() {
   const user = await requirePageUser();
@@ -74,6 +76,9 @@ export default async function Dashboard() {
     getT("git"),
     getLocale(),
   ]);
+  // Wochen-Vorschläge: beim ersten Besuch der Woche anlegen, dann nur lesen
+  await ensureWeeklySuggestions(user.id, now, locale);
+  const suggestions = await loadWeekSuggestions(user.id, now);
   const sleeping = drowsy
     .map((p) => ({ id: p.id, name: p.name, accent: p.accent, since: lastSign(p.updatedAt, p.repoCache?.commits) }))
     .filter((p) => p.since < cutoff)
@@ -114,6 +119,7 @@ export default async function Dashboard() {
           </ul>
         </section>
       )}
+      <WeeklySuggestions initial={suggestions} />
       <SleepingProjects items={sleeping} />
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />
       <SharedProjects

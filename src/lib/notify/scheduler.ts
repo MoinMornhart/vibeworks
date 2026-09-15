@@ -4,7 +4,10 @@ import { CHANGELOG } from "@/lib/changelog";
 import { getSettings } from "@/lib/settings";
 import { dayKeyToDate, diffDays, formatDue } from "@/lib/taskDates";
 import { formatMoney, INTERVALS, nextRenewal, RENEWAL_WARN_DAYS, type CostInterval } from "@/lib/costs";
-import { INTL_LOCALE } from "@/lib/i18n/config";
+import { INTL_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
+import { makeT, translateMessage } from "@/lib/i18n/messages";
+import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
+import { suggestionVars } from "@/lib/suggestionsLogic";
 import { pollNtfyInboxes } from "@/lib/inboxServer";
 import { addDaysKey } from "@/lib/weeks";
 import { dayKey, TIME_ZONE } from "@/lib/utils";
@@ -112,6 +115,32 @@ export async function runRenewals(now = new Date()): Promise<number> {
   return warned;
 }
 
+/** Wochen-Vorschläge: ab Montag 8 Uhr (oder beim ersten Lauf danach) je Konto einmal anlegen und melden. */
+export async function runWeeklySuggestions(now = new Date()): Promise<number> {
+  if (zoneHour(now) < DIGEST_HOUR) return 0;
+  const users = await db.user.findMany({ where: { active: true, projects: { some: {} } }, select: { id: true, locale: true } });
+  let sent = 0;
+  for (const u of users) {
+    const locale: Locale = isLocale(u.locale) ? u.locale : "de";
+    const created = await ensureWeeklySuggestions(u.id, now, locale);
+    if (!created) continue;
+    const list = await loadWeekSuggestions(u.id, now);
+    await notifyUser(u.id, "suggestions", (t, loc) => {
+      const ts = makeT(loc, "suggestions");
+      return {
+        event: "suggestions",
+        title: t("events.suggestions.title", { n: list.length }),
+        message: list
+          .map((s) => `• ${ts(`kinds.${s.kind}.title`, suggestionVars(s.data, loc, (x) => translateMessage(loc, x)))}`)
+          .join("\n"),
+        url: appLink("/"),
+      };
+    });
+    sent++;
+  }
+  return sent;
+}
+
 const g = globalThis as typeof globalThis & { __vwNotifyScheduler?: boolean };
 
 export function startNotifyScheduler() {
@@ -122,6 +151,7 @@ export function startNotifyScheduler() {
   const tick = () => {
     void runDigest().catch(log);
     void runRenewals().catch(log);
+    void runWeeklySuggestions().catch(log);
   };
   // Ideen-Eingang: ntfy-Themen jede Minute abholen
   setInterval(() => void pollNtfyInboxes().catch(log), 60_000).unref?.();
