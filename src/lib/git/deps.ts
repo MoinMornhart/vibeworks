@@ -1,3 +1,4 @@
+import { syncDepsTasks } from "./depsTasks";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
@@ -7,7 +8,7 @@ import { parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
 import { apiBase, authHeaders, GitError, request } from "./providers";
 import { tokenCipherFor } from "./token";
 import { readFileViaGit } from "./gitCli";
-import { baseVersion, countPackages, parseManifest, sortPackages, updateLevel, type Advisory, type DepPackage, type DepsReport, type Severity } from "./depsLogic";
+import { baseVersion, countPackages, parseManifest, sortPackages, stableLatest, updateLevel, type Advisory, type DepPackage, type DepsReport, type Severity } from "./depsLogic";
 
 // Abhängigkeiten-Check: package.json aus dem Repository, neueste Versionen
 // aus der npm-Registry, bekannte Sicherheitslücken aus derselben Quelle wie
@@ -52,8 +53,9 @@ async function latestVersion(name: string): Promise<string | null> {
       timeoutMs: 10_000,
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { "dist-tags"?: { latest?: string } };
-    return data["dist-tags"]?.latest ?? null;
+    const data = (await res.json()) as { "dist-tags"?: { latest?: string }; versions?: Record<string, unknown> };
+    // Manche Pakete markieren einen Release Candidate als „latest“ – dann zählt die höchste stabile Version
+    return stableLatest(data["dist-tags"]?.latest ?? null, Object.keys(data.versions ?? {}));
   } catch {
     return null;
   }
@@ -145,6 +147,8 @@ export function refreshDeps(projectId: string, force = false): Promise<DepsRepor
     }
     const report = await buildReport(cache.provider as GitProvider, parsed, token, cache.defaultBranch, projectId);
     await db.repoCache.update({ where: { projectId }, data: { deps: report as unknown as Prisma.InputJsonValue, depsCheckedAt: new Date() } });
+    // Markiertes sofort als Aufgabe – ein Fehler dabei darf den Check nicht kippen
+    await syncDepsTasks(projectId, report).catch((err) => console.error("[deps-tasks]", projectId, err));
     return report;
   })().finally(() => running.delete(projectId));
   running.set(projectId, job);

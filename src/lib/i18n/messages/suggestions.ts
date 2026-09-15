@@ -15,6 +15,7 @@ const de = {
   fromSuggestions: "Aus den Wochen-Vorschlägen von VibeWorks.",
   kinds: {
     vuln: { title: "Sicherheitslücke in {project}", detail: "Bekannte Lücken in: {packages}.", task: "Sicherheitslücken beheben: {packages}" },
+    check: { title: "Der Repo-Check schlägt an: {project}", detail: "Geheimnisse: {secrets} · Sicherheitslücken: {vulns}.", task: "Repo-Check-Befunde beheben" },
     ci: { title: "Die CI von {project} ist rot", detail: "Fehlgeschlagen: {runs}.", task: "CI reparieren: {runs}" },
     git: { title: "{project} lässt sich nicht mit Git abgleichen", detail: "{error}", task: "Git-Zugang prüfen" },
     renewal: { title: "Verlängerung: {name} ({project})", detail: "Am {date} für {amount}.", task: "Verlängerung prüfen: {name}" },
@@ -42,6 +43,7 @@ const en: Shape<typeof de> = {
   fromSuggestions: "From VibeWorks' weekly suggestions.",
   kinds: {
     vuln: { title: "Vulnerability in {project}", detail: "Known vulnerabilities in: {packages}.", task: "Fix vulnerabilities: {packages}" },
+    check: { title: "Repo check alert: {project}", detail: "Secrets: {secrets} · Vulnerabilities: {vulns}.", task: "Fix repo check findings" },
     ci: { title: "{project}'s CI is red", detail: "Failed: {runs}.", task: "Fix CI: {runs}" },
     git: { title: "{project} can't sync with Git", detail: "{error}", task: "Check Git access" },
     renewal: { title: "Renewal: {name} ({project})", detail: "On {date} for {amount}.", task: "Check renewal: {name}" },

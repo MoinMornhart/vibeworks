@@ -20,6 +20,20 @@ const de = {
   cols: { name: "Paket", current: "Angabe", latest: "Neueste", status: "Status" },
   level: { major: "Major", minor: "Minor", patch: "Patch", current: "aktuell", unknown: "?" },
   severity: { critical: "kritisch", high: "hoch", moderate: "mittel", low: "niedrig", info: "Hinweis" },
+  tasksHint: "Was hier markiert ist, steht automatisch als Aufgabe im Board – und ist erledigt, sobald nichts mehr markiert ist.",
+  tasks: {
+    vuln: {
+      title: plural("Sicherheitslücke beheben: {packages}", "Sicherheitslücken in {n} Paketen beheben: {packages}"),
+      intro: "Der Abhängigkeiten-Check hat bekannte Sicherheitslücken gefunden:",
+    },
+    update: {
+      title: plural("Abhängigkeit aktualisieren: {packages}", "{n} Abhängigkeiten aktualisieren: {packages}"),
+      intro: "Für diese Pakete gibt es neuere Versionen:",
+    },
+    auto: "Von VibeWorks angelegt – die Liste hält sich selbst aktuell, und die Aufgabe ist erledigt, sobald nichts mehr markiert ist.",
+    label: "abhängigkeiten",
+    labelSecurity: "sicherheit",
+  },
   errors: {
     noRepo: "Für dieses Projekt ist kein Repository verknüpft.",
     notSynced: "Das Repository wurde noch nicht abgeglichen – einmal „Git & Updates“ öffnen und es erneut versuchen.",
@@ -43,6 +57,20 @@ const en: Shape<typeof de> = {
   cols: { name: "Package", current: "Specified", latest: "Latest", status: "Status" },
   level: { major: "Major", minor: "Minor", patch: "Patch", current: "current", unknown: "?" },
   severity: { critical: "critical", high: "high", moderate: "moderate", low: "low", info: "info" },
+  tasksHint: "Whatever is flagged here automatically shows up as a task on the board – and is done as soon as nothing is flagged anymore.",
+  tasks: {
+    vuln: {
+      title: plural("Fix vulnerability: {packages}", "Fix vulnerabilities in {n} packages: {packages}"),
+      intro: "The dependency check found known vulnerabilities:",
+    },
+    update: {
+      title: plural("Update dependency: {packages}", "Update {n} dependencies: {packages}"),
+      intro: "Newer versions are available for these packages:",
+    },
+    auto: "Created by VibeWorks – the list keeps itself up to date, and the task is done as soon as nothing is flagged anymore.",
+    label: "dependencies",
+    labelSecurity: "security",
+  },
   errors: {
     noRepo: "No repository is linked to this project.",
     notSynced: "The repository hasn't been synced yet – open “Git & updates” once and try again.",

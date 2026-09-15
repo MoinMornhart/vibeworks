@@ -200,7 +200,7 @@ When you connect, the app shows a short guide with a link to the right token pag
 
 | Provider | Token |
 | --- | --- |
-| GitHub | Classic token with the `repo` and `admin:repo_hook` scopes (for webhooks; the link is pre-filled) |
+| GitHub | Classic token with the `repo`, `admin:repo_hook` (webhooks) and `workflow` (repo check) scopes; the link is pre-filled |
 | GitLab | Personal access token with the `api` scope |
 | Gitea / Forgejo | Token with *repository: read* and *issue: read and write* |
 
@@ -233,7 +233,7 @@ After that, Claude Code works directly with your projects – no GitHub detour n
 | `create_note`, `get_note` | Notes on a project, e.g. a work log |
 | `search` | Full-text search across notes, tasks and docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Read and write your docs |
-| `get_repo_status`, `list_problems` | A repository's state (commits, CI, dependencies, live site) and everything that needs attention |
+| `get_repo_status`, `list_problems` | A repository's state (commits, CI, dependencies, repo check, live site) and everything that needs attention |
 | `get_today`, `add_to_today`, `remove_from_today` | Plan the day – picked tasks and suggestions |
 | `start_timer`, `stop_timer` | Track time on a task, also as a focus timer |
 
@@ -333,6 +333,8 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Time tracking and focus timer per task, evaluated in the weekly review
 - ✅ Today view: plan tasks from all projects for the day and check them off
 - ✅ Dependency check: outdated packages and security alerts from the repository
+- ✅ Whatever the dependency check flags lands on the board as a task right away – and closes itself
+- ✅ Repo check without AI (GitHub Actions): secrets, vulnerabilities, bug patterns and TODOs
 - ✅ Public portfolio with selected projects
 
 **Website**

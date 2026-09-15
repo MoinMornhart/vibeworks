@@ -59,6 +59,24 @@ function parts(v: string): [number, number, number] | null {
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
 
+const isStable = (v: string) => /^\d+\.\d+\.\d+$/.test(v);
+
+/**
+ * Die Version, auf die sich ein Update lohnt: das Tag „latest“ – außer es
+ * zeigt auf eine Vorabversion (8.0.0-rc.15), dann die höchste stabile.
+ */
+export function stableLatest(tag: string | null, versions: string[]): string | null {
+  if (tag && isStable(tag)) return tag;
+  let best: string | null = null;
+  for (const v of versions) {
+    if (!isStable(v)) continue;
+    const a = parts(v)!;
+    const b = best ? parts(best)! : null;
+    if (!b || a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) best = v;
+  }
+  return best ?? tag;
+}
+
 export function updateLevel(current: string | null, latest: string | null): UpdateLevel {
   const a = current ? parts(current) : null;
   const b = latest ? parts(latest) : null;

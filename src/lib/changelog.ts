@@ -26,6 +26,44 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.2",
+    date: "2026-09-15",
+    title: "Repo-Check und Abhängigkeiten als Aufgaben",
+    titleEn: "Repo check and dependencies as tasks",
+    changes: [
+      {
+        type: "neu",
+        text: "Repo-Check ohne KI: VibeWorks richtet in GitHub-Repositories einen kostenlosen Workflow ein, der Geheimnisse (Gitleaks), Sicherheitslücken (OSV-Scanner), Fehlermuster (Semgrep) und TODOs findet – Ergebnis mit Links auf die Fundstellen, montags und auf Knopfdruck",
+        en: "Repo check without AI: VibeWorks sets up a free workflow in GitHub repositories that finds secrets (Gitleaks), vulnerabilities (OSV-Scanner), bug patterns (Semgrep) and TODOs – results link to the exact spot, on Mondays and on demand",
+      },
+      {
+        type: "neu",
+        text: "Was im Abhängigkeiten-Check markiert ist, steht sofort als Aufgabe im Board – eine für Sicherheitslücken, eine für Updates; die Liste pflegt sich selbst und die Aufgabe ist erledigt, sobald nichts mehr markiert ist",
+        en: "Whatever the dependency check flags shows up as a task on the board right away – one for vulnerabilities, one for updates; the list keeps itself up to date and the task is done once nothing is flagged",
+      },
+      {
+        type: "neu",
+        text: "Benachrichtigung, wenn der Repo-Check neue Geheimnisse oder Lücken findet; der Check fließt in die Wochen-Vorschläge und in Claudes get_repo_status/list_problems ein",
+        en: "Notification when the repo check finds new secrets or vulnerabilities; the check also feeds the weekly suggestions and Claude's get_repo_status/list_problems",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: Die Ergebnisse sehen nur Projektmitglieder, nie öffentliche Seiten; der Workflow hat nur Leserechte und gibt sein Token nicht an die Prüfwerkzeuge weiter. Ausschalten nimmt die Datei wieder aus dem Repository, und wer sie dort löscht, schaltet den Check ab",
+        en: "Security: only project members see the results, never public pages; the workflow is read-only and doesn't hand its token to the scanners. Turning it off removes the file from the repository again, and deleting it there turns the check off",
+      },
+      {
+        type: "fix",
+        text: "Abhängigkeiten-Check: Markiert ein Paket einen Release Candidate als „latest“ (z. B. prisma 8.0.0-rc), zählt jetzt die höchste stabile Version",
+        en: "Dependency check: if a package tags a release candidate as “latest” (e.g. prisma 8.0.0-rc), the highest stable version now counts",
+      },
+      {
+        type: "besser",
+        text: "Der GitHub-Token-Link fragt jetzt auch das Recht „workflow“ an (für den Repo-Check)",
+        en: "The GitHub token link now also asks for the “workflow” scope (for the repo check)",
+      },
+    ],
+  },
+  {
     version: "0.6.1",
     date: "2026-09-15",
     title: "Sicherheits-Nachtrag zu Prisma 7",

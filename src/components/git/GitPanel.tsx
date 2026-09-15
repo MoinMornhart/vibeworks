@@ -427,7 +427,7 @@ function AccessPanel({
         </div>
         {(provider === "github" || !provider) && (
           <a
-            href="https://github.com/settings/tokens/new?scopes=public_repo,admin:repo_hook&description=VibeWorks"
+            href="https://github.com/settings/tokens/new?scopes=public_repo,admin:repo_hook,workflow&description=VibeWorks"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-sm w-full justify-center sm:w-auto"

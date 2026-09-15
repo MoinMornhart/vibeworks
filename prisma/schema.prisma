@@ -257,6 +257,8 @@ model Project {
   repoTokenHint   String?
   /// Aufgaben automatisch als Issues im Repository spiegeln (braucht ein Token)
   issueSync       Boolean @default(true)
+  /// Repo-Check (GitHub-Workflow) automatisch einrichten und auswerten – aus = Datei wird entfernt
+  repoCheck       Boolean @default(true)
   /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
   shareToken      String? @unique
   /// Geheimnis für eingehende Webhooks (AES-256-GCM) – null heißt „kein Webhook“
@@ -345,11 +347,14 @@ model Task {
   issueUrl    String?
   /// Letzter Fehler beim Spiegeln – wird beim nächsten Erfolg geleert
   issueError  String?
+  /// Von VibeWorks selbst gepflegte Aufgabe (z. B. "deps:vuln") – je Projekt höchstens eine je Schlüssel
+  autoKey     String?
   focus       TaskFocus[]
   timeEntries TimeEntry[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  @@unique([projectId, autoKey])
   @@index([projectId, status, position])
   @@index([dueDate])
 }
@@ -395,6 +400,16 @@ model RepoCache {
   failCount     Int       @default(0)
   errorSince    DateTime?
   errorNotified Boolean   @default(false)
+  /// Repo-Check (GitHub-Workflow): null = nicht eingerichtet · waiting · running · done · failed
+  checkStatus    String?
+  /// Bericht aus dem Artefakt (siehe src/lib/git/repoCheckLogic.ts)
+  checkReport    Json?
+  checkRunUrl    String?
+  checkRunAt     DateTime?
+  checkFetchedAt DateTime?
+  checkError     String?
+  /// Zuletzt geprüft, ob die Workflow-Datei im Repository aktuell ist (einmal am Tag)
+  checkInstalledAt DateTime?
 }
 
 /// Git-Verbindung eines Kontos (GitHub, GitLab, Gitea/Forgejo, auch selbst

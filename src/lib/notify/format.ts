@@ -1,7 +1,7 @@
 // Benachrichtigungen ohne Netz und Datenbank: Anlässe, ntfy-Anfrage und
 // Webhook-Nutzlast – im Browser und in Tests nutzbar.
 
-export const NOTIFY_EVENTS = ["taskDue", "accessRequest", "issueClosed", "ciFailed", "gitFailed", "siteDown", "renewal", "suggestions", "updated"] as const;
+export const NOTIFY_EVENTS = ["taskDue", "accessRequest", "issueClosed", "ciFailed", "checkAlert", "gitFailed", "siteDown", "renewal", "suggestions", "updated"] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
 export type EventSwitches = Record<NotifyEvent, boolean>;
 
@@ -39,6 +39,7 @@ const TAGS: Record<Notice["event"], string> = {
   accessRequest: "raising_hand",
   issueClosed: "white_check_mark",
   ciFailed: "x",
+  checkAlert: "lock",
   gitFailed: "warning",
   siteDown: "rotating_light",
   renewal: "moneybag",

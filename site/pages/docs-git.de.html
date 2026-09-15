@@ -8,7 +8,7 @@
   <p>Unter <b>Mein Konto → Git-Verbindungen</b> legst du einmal ein Token an; es gilt für alle deine Projekte auf diesem Server. Selbst gehostetes GitLab und Gitea/Forgejo gehen genauso.</p>
   <table>
     <tr><th>Anbieter</th><th>Token</th></tr>
-    <tr><td>GitHub</td><td>Klassisches Token mit <code>repo</code> und <code>admin:repo_hook</code> (für Webhooks)</td></tr>
+    <tr><td>GitHub</td><td>Klassisches Token mit <code>repo</code>, <code>admin:repo_hook</code> (Webhooks) und <code>workflow</code> (Repo-Check)</td></tr>
     <tr><td>GitLab</td><td>Persönliches Zugangstoken mit <code>api</code></td></tr>
     <tr><td>Gitea / Forgejo</td><td>Token mit <i>repository: lesen</i> und <i>issue: lesen und schreiben</i></td></tr>
   </table>
@@ -42,6 +42,17 @@
 
   <h2>Abhängigkeiten-Check</h2>
   <p>Liegt eine <code>package.json</code> im Repository, vergleicht VibeWorks jede Abhängigkeit einmal am Tag mit der neuesten Version bei npm (Major, Minor, Patch) und fragt die npm-Sicherheitsdatenbank nach bekannten Lücken – dieselbe Quelle wie <code>npm audit</code>. „Jetzt prüfen“ geht jederzeit.</p>
+  <p>Was dabei markiert ist, steht sofort als Aufgabe im Board: eine für Sicherheitslücken, eine für Updates, jeweils mit der Liste der Pakete. Die Liste hält sich selbst aktuell, und ist nichts mehr markiert, ist die Aufgabe erledigt. Hakst du sie selbst ab, bleibt sie zu – bis ein neues Paket dazukommt.</p>
+
+  <h2>Repo-Check</h2>
+  <p>Für GitHub-Repositories legt VibeWorks die Datei <code>.github/workflows/vibeworks-check.yml</code> an – ein kostenloser Workflow ohne KI, der montags und auf <b>Jetzt prüfen</b> läuft: Geheimnisse im Verlauf (Gitleaks), bekannte Sicherheitslücken in allen Abhängigkeiten (OSV-Scanner), Fehlermuster (Semgrep) und TODO/FIXME-Kommentare. VibeWorks holt den Bericht selbst ab und verlinkt jede Fundstelle.</p>
+  <ul>
+    <li>Das Token braucht dafür das Recht <code>workflow</code> (der Link in VibeWorks ist vorausgefüllt).</li>
+    <li>Der Workflow darf nur lesen, gibt sein Token nicht an die Prüfwerkzeuge weiter, und Gitleaks überträgt nie den Wert eines Geheimnisses – nur Datei, Zeile und Regel.</li>
+    <li>Die Ergebnisse sehen nur Projektmitglieder, nie öffentliche Seiten oder das Portfolio.</li>
+    <li>Ausschalten (Projektseite → Repo-Check) nimmt die Datei wieder aus dem Repository. Wer sie dort löscht, schaltet den Check ebenfalls ab; eine selbst angepasste Datei überschreibt VibeWorks nicht.</li>
+    <li>Neue Geheimnisse oder Lücken melden sich auf Wunsch als Benachrichtigung und in den Wochen-Vorschlägen.</li>
+  </ul>
 
   <h2>Eine Aufgabe für viele Projekte</h2>
   <p>Aufgaben → <b>Für mehrere Projekte</b> (oder in der Schnellerfassung „Alle mit Git“): dieselbe Aufgabe, etwa „Abhängigkeiten aktualisieren“, landet in jedem gewählten Projekt – samt Issue.</p>

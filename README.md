@@ -199,7 +199,7 @@ Die App zeigt beim Verbinden eine kurze Anleitung mit Link zur passenden Token-S
 
 | Anbieter | Token |
 | --- | --- |
-| GitHub | Klassisches Token mit den Rechten `repo` und `admin:repo_hook` (für Webhooks; der Link ist vorausgefüllt) |
+| GitHub | Klassisches Token mit den Rechten `repo`, `admin:repo_hook` (Webhooks) und `workflow` (Repo-Check); der Link ist vorausgefüllt |
 | GitLab | Personal-Access-Token mit dem Scope `api` |
 | Gitea / Forgejo | Token mit *repository: Lesen* und *issue: Lesen und Schreiben* |
 
@@ -233,7 +233,7 @@ Danach arbeitet Claude Code direkt mit deinen Projekten – ganz ohne Umweg übe
 | `create_note`, `get_note` | Notizen am Projekt, z. B. ein Arbeitsprotokoll |
 | `search` | Volltextsuche über Notizen, Aufgaben und Docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Docs lesen und schreiben |
-| `get_repo_status`, `list_problems` | Stand eines Repositorys (Commits, CI, Abhängigkeiten, Live-Seite) und alles, was gerade klemmt |
+| `get_repo_status`, `list_problems` | Stand eines Repositorys (Commits, CI, Abhängigkeiten, Repo-Check, Live-Seite) und alles, was gerade klemmt |
 | `get_today`, `add_to_today`, `remove_from_today` | Den Tag planen – vorgemerkte Aufgaben und Vorschläge |
 | `start_timer`, `stop_timer` | Zeit an einer Aufgabe erfassen, auch als Fokus-Timer |
 
@@ -331,6 +331,8 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Zeiterfassung und Fokus-Timer je Aufgabe, ausgewertet im Wochenrückblick
 - ✅ Heute-Ansicht: Aufgaben aus allen Projekten für den Tag vormerken und abhaken
 - ✅ Abhängigkeiten-Check: veraltete Pakete und Sicherheitswarnungen aus dem Repository
+- ✅ Was der Abhängigkeiten-Check markiert, steht sofort als Aufgabe im Board – und erledigt sich selbst
+- ✅ Repo-Check ohne KI (GitHub Actions): Geheimnisse, Sicherheitslücken, Fehlermuster und TODOs
 - ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**

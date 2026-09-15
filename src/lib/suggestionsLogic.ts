@@ -4,7 +4,7 @@ import { INTL_LOCALE, type Locale } from "./i18n/config";
 // auswählen – dringend vor nützlich, höchstens zwei derselben Art, und was
 // gerade angenommen oder abgelehnt wurde, kommt ein paar Wochen nicht wieder.
 
-export const SUGGESTION_KINDS = ["vuln", "ci", "git", "renewal", "overdue", "sleeping", "major", "plan", "describe"] as const;
+export const SUGGESTION_KINDS = ["vuln", "check", "ci", "git", "renewal", "overdue", "sleeping", "major", "plan", "describe"] as const;
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
 export const PER_WEEK = 5;
@@ -13,7 +13,7 @@ export const MAX_PER_KIND = 2;
 export const QUIET_WEEKS = 3;
 
 /** Grundgewicht je Art. */
-export const WEIGHT: Record<SuggestionKind, number> = { vuln: 100, ci: 90, git: 80, renewal: 70, overdue: 60, sleeping: 50, major: 35, plan: 30, describe: 20 };
+export const WEIGHT: Record<SuggestionKind, number> = { vuln: 100, check: 95, ci: 90, git: 80, renewal: 70, overdue: 60, sleeping: 50, major: 35, plan: 30, describe: 20 };
 
 export interface Candidate {
   key: string;

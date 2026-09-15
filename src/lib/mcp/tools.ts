@@ -1,5 +1,6 @@
 import { z } from "zod";
-import type { Prisma, Task } from "@/generated/prisma/client";
+import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
+import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canAccess, requireNote, requireTask, visibleTo, type ProjectAccess } from "@/lib/access";
@@ -585,7 +586,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "get_repo_status",
     title: "Get repository status",
     description:
-      "State of a project's repository and live site: provider, branch, last sync and its error, recent commits, CI runs, outdated or vulnerable dependencies, uptime and SSL.",
+      "State of a project's repository and live site: provider, branch, last sync and its error, recent commits, CI runs, outdated or vulnerable dependencies, the repo check (secrets, vulnerabilities, bug patterns found by the GitHub workflow), uptime and SSL.",
     inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (args, { userId, locale }) => {
@@ -620,6 +621,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
                       .map((p) => ({ name: p.name, current: p.current, latest: p.latest, level: p.level, advisories: (p.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })),
                   }
                 : null,
+              repoCheck: repoCheckSummary(cache, locale),
             }
           : null,
         liveSite: project.liveUrl
@@ -639,7 +641,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "list_problems",
     title: "List problems",
     description:
-      "Everything that needs attention across the user's projects: Git sync and import errors, red CI, live sites that are down, dependencies with known vulnerabilities, overdue and blocked tasks.",
+      "Everything that needs attention across the user's projects: Git sync and import errors, red CI, live sites that are down, dependencies with known vulnerabilities, repo check alerts (secrets, vulnerabilities), overdue and blocked tasks.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (_args, { userId, locale }) => loadProblems(userId, locale),
@@ -718,17 +720,34 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
 
 const OPEN_PROJECT = (userId: string) => ({ ...visibleTo(userId), buriedAt: null, status: { not: "ARCHIVED" as const } });
 
+/** Repo-Check für get_repo_status: Zustand, Zahlen und die ersten Fundstellen (ohne Geheimniswerte – die kennt VibeWorks nicht). */
+function repoCheckSummary(cache: RepoCache | null, locale: Locale) {
+  if (!cache?.checkStatus && !cache?.checkReport) return null;
+  const r = cache.checkReport ? parseCheckReport(cache.checkReport) : null;
+  return {
+    status: cache.checkStatus,
+    error: cache.checkError ? translateMessage(locale, cache.checkError) : null,
+    finishedAt: r?.finishedAt ?? null,
+    runUrl: cache.checkRunUrl,
+    counts: r?.counts ?? null,
+    secrets: (r?.secrets ?? []).slice(0, 10).map((s) => ({ file: s.file, line: s.line, rule: s.rule, commit: s.commit })),
+    vulnerabilities: (r?.vulnerabilities ?? []).slice(0, 15).map((v) => ({ package: v.package, version: v.version, id: v.id, severity: v.severity, summary: v.summary })),
+    findings: (r?.findings ?? []).slice(0, 10).map((x) => ({ file: x.file, line: x.line, rule: x.rule, severity: x.severity, message: x.message })),
+  };
+}
+
 async function loadProblems(userId: string, locale: Locale) {
   const today = dayKey(new Date());
   const projects = await db.project.findMany({
     where: OPEN_PROJECT(userId),
-    select: { id: true, name: true, liveUrl: true, liveState: true, liveError: true, repoCache: { select: { error: true, ci: true, deps: true } } },
+    select: { id: true, name: true, liveUrl: true, liveState: true, liveError: true, repoCache: { select: { error: true, ci: true, deps: true, checkReport: true } } },
     take: 500,
   });
   const gitErrors: Array<{ project: string; id: string; error: string }> = [];
   const redCi: Array<{ project: string; id: string; runs: Array<{ name: string; url: string | null }> }> = [];
   const sitesDown: Array<{ project: string; id: string; url: string | null; error: string | null }> = [];
   const vulnerableDependencies: Array<{ project: string; id: string; packages: Array<{ name: string; advisories: string[] }> }> = [];
+  const repoCheckAlerts: Array<{ project: string; id: string; secrets: number; vulnerabilities: number }> = [];
   for (const p of projects) {
     const cache = p.repoCache;
     if (cache?.error) gitErrors.push({ project: p.name, id: p.id, error: translateMessage(locale, cache.error) });
@@ -740,6 +759,8 @@ async function loadProblems(userId: string, locale: Locale) {
     if (risky.length) {
       vulnerableDependencies.push({ project: p.name, id: p.id, packages: risky.slice(0, 10).map((x) => ({ name: x.name, advisories: (x.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })) });
     }
+    const check = cache?.checkReport ? parseCheckReport(cache.checkReport) : null;
+    if (check && checkIsUrgent(check)) repoCheckAlerts.push({ project: p.name, id: p.id, secrets: check.counts.secrets, vulnerabilities: check.counts.vulnerabilities });
   }
   const tasks = await db.task.findMany({
     where: { project: OPEN_PROJECT(userId), OR: [{ status: "BLOCKED" }, { status: { not: "DONE" }, dueDate: { lt: dayKeyToDate(today) } }] },
@@ -754,6 +775,7 @@ async function loadProblems(userId: string, locale: Locale) {
     redCi,
     sitesDown,
     vulnerableDependencies,
+    repoCheckAlerts,
     overdueTasks: tasks.filter((t) => t.status !== "BLOCKED").map((t) => taskView(t, { project: t.project })),
     blockedTasks: tasks.filter((t) => t.status === "BLOCKED").map((t) => taskView(t, { project: t.project })),
   };
@@ -852,6 +874,7 @@ export const MCP_RESOURCES: ResourceProvider<McpContext> = {
         ...markdownList("Red CI", p.redCi.map((c) => `${c.project}: ${c.runs.map((r) => r.name).join(", ") || "failed"}`)),
         ...markdownList("Sites down", p.sitesDown.map((s) => `${s.project}: ${s.url ?? ""}${s.error ? ` (${s.error})` : ""}`)),
         ...markdownList("Vulnerable dependencies", p.vulnerableDependencies.map((v) => `${v.project}: ${v.packages.map((x) => x.name).join(", ")}`)),
+        ...markdownList("Repo check alerts", p.repoCheckAlerts.map((a) => `${a.project}: ${a.secrets} possible secrets, ${a.vulnerabilities} vulnerabilities`)),
         ...markdownList("Overdue tasks", p.overdueTasks.map((t) => `${t.project?.name ?? ""}: ${t.title} (due ${t.dueDate})`)),
         ...markdownList("Blocked tasks", p.blockedTasks.map((t) => `${t.project?.name ?? ""}: ${t.title}`)),
       ];

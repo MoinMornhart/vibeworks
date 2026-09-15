@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ExternalLink, PackageSearch, RefreshCw, ShieldAlert } from "lucide-react";
 import type { DepsReport, Severity, UpdateLevel } from "@/lib/git/depsLogic";
 import { severityRank } from "@/lib/git/depsLogic";
@@ -28,6 +29,7 @@ export function DepsPanel({ projectId, initial, canCheck }: { projectId: string;
   const t = useT("deps");
   const f = useFormat();
   const msg = useMsg();
+  const router = useRouter();
   const [report, setReport] = useState(initial);
   const [onlyIssues, setOnlyIssues] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -39,6 +41,7 @@ export function DepsPanel({ projectId, initial, canCheck }: { projectId: string;
     try {
       const res = await api<{ report: DepsReport }>(`/api/projects/${projectId}/deps`, { body: {} });
       setReport(res.report);
+      router.refresh(); // Markiertes ist jetzt als Aufgabe im Board
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -86,6 +89,7 @@ export function DepsPanel({ projectId, initial, canCheck }: { projectId: string;
               {t("onlyIssues")}
             </label>
           </p>
+          {(c.outdated > 0 || c.vulnerable > 0) && <p className="mb-3 text-xs text-muted">{t("tasksHint")}</p>}
           {rows.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[34rem] text-sm">

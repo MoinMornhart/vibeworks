@@ -22,6 +22,8 @@ import { CostPanel } from "@/components/costs/CostPanel";
 import { serializeCost } from "@/lib/costs";
 import { sumSeconds } from "@/lib/timeServer";
 import { DepsPanel } from "@/components/git/DepsPanel";
+import { RepoCheckPanel } from "@/components/git/RepoCheckPanel";
+import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
 
@@ -36,6 +38,7 @@ const loadProject = cache(async (id: string) => {
       description: true,
       repoTokenHint: true,
       issueSync: true,
+      repoCheck: true,
       repoCache: true,
       liveCheckedAt: true,
       liveError: true,
@@ -62,7 +65,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const [loaded, settings, query] = await Promise.all([loadProject((await params).id), getSettings(), searchParams]);
   if (!loaded) notFound();
   const { project, access } = loaded;
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, repoCache, ownerId: _ownerId, owner, members: _members, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds] = await Promise.all([project.liveUrl ? liveStats(project.id) : null, sumSeconds({ projectId: project.id })]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
@@ -125,6 +128,15 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       />
       {project.repoUrl && repoCache?.provider && (
         <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={!readOnly} />
+      )}
+      {project.repoUrl && repoCache?.provider === "github" && (
+        <RepoCheckPanel
+          projectId={project.id}
+          initial={serializeRepoCheck(repoCheck, repoCache)}
+          canRun={!readOnly}
+          canManage={isOwner}
+          hasToken={Boolean(repoTokenHint || account)}
+        />
       )}
       <AutoRefresh />
     </div>

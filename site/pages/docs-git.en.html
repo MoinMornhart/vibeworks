@@ -8,7 +8,7 @@
   <p>Under <b>My account → Git connections</b> you add a token once; it applies to all your projects on that server. Self-hosted GitLab and Gitea/Forgejo work the same way.</p>
   <table>
     <tr><th>Provider</th><th>Token</th></tr>
-    <tr><td>GitHub</td><td>Classic token with <code>repo</code> and <code>admin:repo_hook</code> (for webhooks)</td></tr>
+    <tr><td>GitHub</td><td>Classic token with <code>repo</code>, <code>admin:repo_hook</code> (webhooks) and <code>workflow</code> (repo check)</td></tr>
     <tr><td>GitLab</td><td>Personal access token with <code>api</code></td></tr>
     <tr><td>Gitea / Forgejo</td><td>Token with <i>repository: read</i> and <i>issue: read and write</i></td></tr>
   </table>
@@ -42,6 +42,17 @@
 
   <h2>Dependency check</h2>
   <p>If there is a <code>package.json</code> in the repository, VibeWorks compares every dependency once a day with the latest npm version (major, minor, patch) and asks the npm advisory database for known vulnerabilities – the same source as <code>npm audit</code>. “Check now” works any time.</p>
+  <p>Whatever gets flagged shows up as a task on the board right away: one for vulnerabilities, one for updates, each with the list of packages. The list keeps itself up to date, and once nothing is flagged, the task is done. If you tick it off yourself, it stays closed – until a new package joins the list.</p>
+
+  <h2>Repo check</h2>
+  <p>For GitHub repositories, VibeWorks adds the file <code>.github/workflows/vibeworks-check.yml</code> – a free workflow without AI that runs on Mondays and on <b>Check now</b>: secrets in the history (Gitleaks), known vulnerabilities in all dependencies (OSV-Scanner), bug patterns (Semgrep) and TODO/FIXME comments. VibeWorks fetches the report itself and links every finding.</p>
+  <ul>
+    <li>The token needs the <code>workflow</code> scope for this (the link in VibeWorks is pre-filled).</li>
+    <li>The workflow is read-only, doesn't hand its token to the scanners, and Gitleaks never transfers a secret's value – only file, line and rule.</li>
+    <li>Only project members see the results, never public pages or the portfolio.</li>
+    <li>Turning it off (project page → Repo check) removes the file from the repository again. Deleting it there turns the check off too; VibeWorks never overwrites a file you customized.</li>
+    <li>New secrets or vulnerabilities can notify you and show up in the weekly suggestions.</li>
+  </ul>
 
   <h2>One task for many projects</h2>
   <p>Tasks → <b>For several projects</b> (or “All with Git” in quick capture): the same task, e.g. “Update dependencies”, lands in every selected project – including its issue.</p>

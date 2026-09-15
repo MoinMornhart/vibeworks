@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseVersion, countPackages, parseManifest, sortPackages, updateLevel, type DepPackage } from "./depsLogic";
+import { baseVersion, countPackages, parseManifest, sortPackages, stableLatest, updateLevel, type DepPackage } from "./depsLogic";
 
 describe("Abhängigkeiten", () => {
   it("liest dependencies und devDependencies, doppelte nur einmal", () => {
@@ -29,6 +29,13 @@ describe("Abhängigkeiten", () => {
     expect(updateLevel("15.1.0", "15.1.0")).toBe("current");
     expect(updateLevel("2.0.0-beta.1", "1.9.0")).toBe("current");
     expect(updateLevel(null, "1.0.0")).toBe("unknown");
+  });
+
+  it("Vorabversion als „latest“: die höchste stabile zählt", () => {
+    expect(stableLatest("7.10.0", ["7.10.0", "8.0.0-rc.15"])).toBe("7.10.0");
+    expect(stableLatest("8.0.0-rc.15", ["6.19.3", "7.10.0", "7.9.1", "8.0.0-rc.15", "7.10.0-dev.1"])).toBe("7.10.0");
+    expect(stableLatest("2.0.0-beta.1", ["2.0.0-beta.1"])).toBe("2.0.0-beta.1");
+    expect(stableLatest(null, [])).toBeNull();
   });
 
   it("Sicherheitswarnungen zuerst, dann nach Abstand", () => {

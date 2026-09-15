@@ -1,2 +1,4 @@
 *.sh text eol=lf
 install/systemd/* text eol=lf
+# Der Repo-Check-Workflow ist zugleich Vorlage (src/lib/git/repoCheckWorkflow.ts) – ein Test vergleicht beide Byte für Byte
+.github/workflows/vibeworks-check.yml text eol=lf

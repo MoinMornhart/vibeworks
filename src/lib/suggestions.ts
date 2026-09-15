@@ -33,7 +33,9 @@ async function collect(userId: string, now: Date, locale: Locale): Promise<Candi
       description: true,
       updatedAt: true,
       nudgeSnoozedUntil: true,
-      repoCache: { select: { error: true, ci: true, deps: true, commits: true } },
+      repoCache: { select: { error: true, ci: true, deps: true, commits: true, checkReport: true } },
+      // Offene Abhängigkeiten-Aufgaben: dann braucht es dazu keinen Vorschlag mehr
+      tasks: { where: { autoKey: { not: null }, status: { not: "DONE" } }, select: { autoKey: true } },
       _count: { select: { tasks: { where: { status: { not: "DONE" } } } } },
       costs: { where: { renewsOn: { not: null } }, select: { id: true, name: true, amountCents: true, currency: true, renewsOn: true, interval: true } },
     },
@@ -42,9 +44,16 @@ async function collect(userId: string, now: Date, locale: Locale): Promise<Candi
   for (const p of projects) {
     const cache = p.repoCache;
     const packages = ((cache?.deps as { packages?: Pkg[] } | null)?.packages ?? []);
+    const autoTasks = new Set(p.tasks.map((x) => x.autoKey));
     const risky = packages.filter((x) => Array.isArray(x.advisories) && x.advisories.length);
-    if (risky.length) {
+    if (risky.length && !autoTasks.has("deps:vuln")) {
       out.push({ key: `vuln:${p.id}`, kind: "vuln", projectId: p.id, score: WEIGHT.vuln + Math.min(risky.length, 9), data: { project: p.name, packages: risky.slice(0, 4).map((x) => x.name).join(", ") } });
+    }
+    const check = (cache?.checkReport as { counts?: { secrets?: number; vulnerabilities?: number } } | null)?.counts;
+    const secrets = check?.secrets ?? 0;
+    const vulns = check?.vulnerabilities ?? 0;
+    if (secrets > 0 || vulns > 0) {
+      out.push({ key: `check:${p.id}`, kind: "check", projectId: p.id, score: WEIGHT.check + Math.min(secrets, 9), data: { project: p.name, secrets, vulns } });
     }
     const ci = cache?.ci as { state?: string; runs?: Array<{ name: string; state: string }> } | null;
     if (ci?.state === "failure") {
@@ -53,7 +62,7 @@ async function collect(userId: string, now: Date, locale: Locale): Promise<Candi
     }
     if (cache?.error) out.push({ key: `git:${p.id}`, kind: "git", projectId: p.id, score: WEIGHT.git, data: { project: p.name, error: cache.error } });
     const major = packages.filter((x) => x.level === "major" && !(Array.isArray(x.advisories) && x.advisories.length));
-    if (major.length) {
+    if (major.length && !autoTasks.has("deps:update")) {
       out.push({
         key: `major:${p.id}`,
         kind: "major",

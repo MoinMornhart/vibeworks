@@ -1,0 +1,103 @@
+import type { Shape } from "../types";
+
+// Namensraum „check“: Repo-Check (GitHub-Workflow) auf der Projektseite.
+
+const de = {
+  title: "Repo-Check",
+  hint: "Kostenlos bei GitHub, ohne KI: Geheimnisse (Gitleaks), Sicherheitslücken (OSV-Scanner), Fehlermuster (Semgrep) und offene Stellen (TODO/FIXME). Läuft montags und auf Knopfdruck.",
+  private: "Nur für Projektmitglieder sichtbar – nie auf öffentlichen Seiten.",
+  run: "Jetzt prüfen",
+  running: "Läuft …",
+  lastRun: "Geprüft {ago}",
+  openRun: "Lauf bei GitHub",
+  enable: "Einschalten",
+  disable: "Ausschalten",
+  confirmDisable: "Repo-Check ausschalten? VibeWorks nimmt die Datei .github/workflows/vibeworks-check.yml wieder aus dem Repository.",
+  removed: "Ausgeschaltet – die Workflow-Datei wurde aus dem Repository entfernt.",
+  removeFailed: "Ausgeschaltet, aber die Datei ließ sich nicht entfernen: {error}",
+  off: "Der Repo-Check ist für dieses Projekt aus.",
+  needToken: "Für den Repo-Check braucht das Projekt einen GitHub-Zugang – ein Token mit den Rechten „repo“ und „workflow“.",
+  createToken: "Token mit workflow-Recht erstellen",
+  status: {
+    none: "Wird beim nächsten Git-Abgleich eingerichtet.",
+    waiting: "Wartet auf den Lauf bei GitHub – das dauert ein paar Minuten.",
+    running: "Der Check läuft gerade bei GitHub …",
+    failed: "Der letzte Lauf ist fehlgeschlagen – angezeigt wird der letzte gute Bericht.",
+  },
+  counts: { secrets: "Geheimnisse", vulnerabilities: "Lücken", findings: "Befunde", todos: "TODOs" },
+  sections: {
+    secrets: "Mögliche Geheimnisse im Verlauf",
+    vulnerabilities: "Bekannte Sicherheitslücken",
+    findings: "Fehlermuster (Semgrep)",
+    todos: "Offene Stellen",
+  },
+  secretHint: "Gefunden von Gitleaks – der Wert selbst wird nie übertragen. Ein echtes Geheimnis im Verlauf gilt als verbrannt: beim Anbieter widerrufen und neu erzeugen.",
+  toolMissing: "Dieses Werkzeug lieferte beim letzten Lauf kein Ergebnis.",
+  allGood: "Keine Geheimnisse und keine bekannten Lücken gefunden.",
+  empty: "Nichts gefunden.",
+  more: "{n} weitere zeigen",
+  inCommit: "Commit {commit}",
+  errors: {
+    noRepo: "Das Projekt hat kein Repository.",
+    needToken: "Ohne GitHub-Token kann VibeWorks den Check nicht einrichten.",
+    off: "Der Repo-Check ist für dieses Projekt aus.",
+    noPermission:
+      "Das Token darf keine Workflows anlegen – beim klassischen GitHub-Token fehlt das Recht „workflow“ (oder der Schreibzugriff). Neues Token erstellen oder die Datei selbst ins Repository legen.",
+    protected: "GitHub hat das Anlegen der Datei abgelehnt – vermutlich ist der Standardzweig geschützt. Lege .github/workflows/vibeworks-check.yml selbst an.",
+    runFailed: "Der Lauf endete mit „{conclusion}“.",
+    noArtifact: "Der Lauf hat keinen Bericht hinterlassen (Artefakt fehlt oder ist abgelaufen).",
+    tooLarge: "Der Bericht ist zu groß.",
+    badReport: "Der Bericht ließ sich nicht lesen.",
+  },
+};
+
+const en: Shape<typeof de> = {
+  title: "Repo check",
+  hint: "Free on GitHub, no AI: secrets (Gitleaks), vulnerabilities (OSV-Scanner), bug patterns (Semgrep) and open spots (TODO/FIXME). Runs on Mondays and on demand.",
+  private: "Only visible to project members – never on public pages.",
+  run: "Check now",
+  running: "Running …",
+  lastRun: "Checked {ago}",
+  openRun: "Run on GitHub",
+  enable: "Turn on",
+  disable: "Turn off",
+  confirmDisable: "Turn off the repo check? VibeWorks removes .github/workflows/vibeworks-check.yml from the repository again.",
+  removed: "Turned off – the workflow file was removed from the repository.",
+  removeFailed: "Turned off, but the file couldn't be removed: {error}",
+  off: "The repo check is off for this project.",
+  needToken: "The repo check needs GitHub access for this project – a token with the “repo” and “workflow” scopes.",
+  createToken: "Create a token with the workflow scope",
+  status: {
+    none: "Will be set up with the next Git sync.",
+    waiting: "Waiting for the run on GitHub – this takes a few minutes.",
+    running: "The check is running on GitHub …",
+    failed: "The last run failed – showing the last good report.",
+  },
+  counts: { secrets: "Secrets", vulnerabilities: "Vulnerabilities", findings: "Findings", todos: "TODOs" },
+  sections: {
+    secrets: "Possible secrets in the history",
+    vulnerabilities: "Known vulnerabilities",
+    findings: "Bug patterns (Semgrep)",
+    todos: "Open spots",
+  },
+  secretHint: "Found by Gitleaks – the value itself is never transferred. A real secret in the history counts as burned: revoke it with the provider and create a new one.",
+  toolMissing: "This tool returned no result in the last run.",
+  allGood: "No secrets and no known vulnerabilities found.",
+  empty: "Nothing found.",
+  more: "Show {n} more",
+  inCommit: "commit {commit}",
+  errors: {
+    noRepo: "The project has no repository.",
+    needToken: "Without a GitHub token, VibeWorks can't set up the check.",
+    off: "The repo check is off for this project.",
+    noPermission:
+      "The token isn't allowed to create workflows – a classic GitHub token needs the “workflow” scope (and write access). Create a new token or add the file to the repository yourself.",
+    protected: "GitHub refused to create the file – the default branch is probably protected. Add .github/workflows/vibeworks-check.yml yourself.",
+    runFailed: "The run ended with “{conclusion}”.",
+    noArtifact: "The run left no report (artifact missing or expired).",
+    tooLarge: "The report is too large.",
+    badReport: "The report couldn't be read.",
+  },
+};
+
+export default { de, en };
