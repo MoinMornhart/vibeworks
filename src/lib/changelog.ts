@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.9",
+    date: "2026-09-15",
+    title: "Team-Seite: Übersicht, Claude, Wünsche, Chat",
+    titleEn: "Team page: overview, Claude, wishes, chat",
+    changes: [
+      {
+        type: "neu",
+        text: "Jedes Team hat eine eigene Seite (Klick auf den Team-Namen): Mitglieder mit Rollen, Team-Projekte mit offenen Aufgaben und Fehlern, letzte Aktivität – und „Woran arbeitet Claude gerade?“ mit allen Aufgaben, bei denen Claude Bearbeiter ist",
+        en: "Every team has its own page (click the team name): members with roles, team projects with open tasks and errors, recent activity – and “What is Claude working on?” with all tasks assigned to Claude",
+        link: "/teams",
+      },
+      {
+        type: "neu",
+        text: "Team-Chat nur für Mitglieder – z. B. um direkt mit dem Bughunter zu sprechen",
+        en: "Team chat for members only – e.g. to talk to the bughunter directly",
+      },
+      {
+        type: "neu",
+        text: "Wünsche ans Team: jedes Mitglied bis zu 3 am Tag; wer das Team verwaltet, macht mit einem Klick eine Aufgabe in einem Team-Projekt daraus oder lehnt mit Grund ab – die Person bekommt jeweils eine Meldung",
+        en: "Wishes to the team: every member up to 3 a day; whoever manages the team turns one into a task in a team project with one click or declines with a reason – the person gets notified either way",
+      },
+    ],
+  },
+  {
     version: "0.7.8",
     date: "2026-09-15",
     title: "Befunde verständlich, Fork-Meldung, Beiträge als Aufgabe",

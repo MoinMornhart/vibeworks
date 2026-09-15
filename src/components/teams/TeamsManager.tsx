@@ -125,7 +125,11 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
           {data.teams.map((team) => (
             <section key={team.id} className="glass p-6" aria-label={team.name} data-testid="team">
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <h2 className="mr-auto break-words text-xl font-semibold">{team.name}</h2>
+                <h2 className="mr-auto break-words text-xl font-semibold">
+                  <Link href={`/teams/${team.id}`} className="hover:text-accent-ink" data-testid="team-open">
+                    {team.name}
+                  </Link>
+                </h2>
                 <span className="chip !py-0.5 text-[11px]">{roleLabel(team, team.myRole, "")}</span>
                 {team.can.manage && (
                   <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={busy} onClick={() => rename(team)} aria-label={t("rename")} title={t("rename")}>

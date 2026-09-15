@@ -150,6 +150,8 @@ model User {
   communityMessages  CommunityMessage[]
   teamMemberships    TeamMember[]
   teamInvites        TeamInvite[]
+  teamMessages       TeamMessage[]
+  teamWishes         TeamWish[]
   roles              Role[]
 
   sessions      Session[]
@@ -397,6 +399,43 @@ model Team {
   invites     TeamInvite[]
   projects    ProjectTeam[]
   roles       Role[]
+  messages    TeamMessage[]
+  wishes      TeamWish[]
+}
+
+/// Team-Chat (#38) – nur für Mitglieder
+model TeamMessage {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([teamId, createdAt])
+}
+
+/// Wunsch ans Team (#38): höchstens 3 am Tag je Mitglied; Verwalter nehmen an (→ Aufgabe) oder lehnen ab
+model TeamWish {
+  id          String    @id @default(cuid())
+  teamId      String
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  body        String?
+  /// open | accepted | declined
+  status      String    @default("open")
+  decidedById String?
+  decidedAt   DateTime?
+  reason      String?
+  projectId   String?
+  taskId      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([teamId, createdAt])
+  @@index([authorId, createdAt])
 }
 
 model TeamMember {

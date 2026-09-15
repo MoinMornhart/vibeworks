@@ -110,6 +110,14 @@ const de = {
     },
     news: { title: "Neu in VibeWorks {version}" },
     assigned: { title: "Dir zugewiesen: {title}", message: "{name} hat dich in „{project}“ als Bearbeiter eingetragen." },
+    wish: {
+      newTitle: "Neuer Wunsch im Team „{team}“",
+      newMessage: "{name}: {title}",
+      acceptedTitle: "Wunsch angenommen: {title}",
+      acceptedMessage: "Im Team „{team}“ ist daraus eine Aufgabe geworden.",
+      declinedTitle: "Wunsch abgelehnt: {title}",
+      declinedMessage: "Im Team „{team}“.{reason}",
+    },
     fork: {
       title: "Neuer Fork: {project}",
       message: "{owner} hat das Repository geforkt: {fork} – nichts davon landet automatisch bei dir, Änderungen kämen nur als Pull Request, den du prüfst.",
@@ -237,6 +245,14 @@ const en: Shape<typeof de> = {
     },
     news: { title: "New in VibeWorks {version}" },
     assigned: { title: "Assigned to you: {title}", message: "{name} entered you as assignee in “{project}”." },
+    wish: {
+      newTitle: "New wish in the team “{team}”",
+      newMessage: "{name}: {title}",
+      acceptedTitle: "Wish accepted: {title}",
+      acceptedMessage: "In the team “{team}” it became a task.",
+      declinedTitle: "Wish declined: {title}",
+      declinedMessage: "In the team “{team}”.{reason}",
+    },
     fork: {
       title: "New fork: {project}",
       message: "{owner} forked the repository: {fork} – nothing from it reaches you automatically, changes would only come as a pull request you review.",
