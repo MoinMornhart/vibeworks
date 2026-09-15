@@ -613,3 +613,17 @@ select.field optgroup {
 select.field option:checked {
   background-color: color-mix(in srgb, var(--vw-accent) 35%, var(--vw-elevated));
 }
+
+/* Glocke: kurzes Wackeln bei ungelesenen Benachrichtigungen */
+@keyframes vw-bell-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(14deg); }
+  20%, 40% { transform: rotate(-12deg); }
+  50% { transform: rotate(6deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bell-ring {
+    transform-origin: 50% 10%;
+    animation: vw-bell-ring 1.4s ease-in-out 0.3s 2;
+  }
+}

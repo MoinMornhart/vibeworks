@@ -24,6 +24,8 @@ export function serializeTask(t: Task) {
     issueNumber: t.issueNumber,
     issueUrl: t.issueUrl,
     issueError: t.issueError,
+    assignee: t.assignee,
+    issueAssignees: t.issueAssignees,
   };
 }
 export type TaskItem = ReturnType<typeof serializeTask>;

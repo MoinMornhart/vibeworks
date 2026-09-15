@@ -18,6 +18,7 @@ export interface TaskForm {
   dueDate: string;
   labels: string;
   recurrence: Recurrence | "";
+  assignee: string;
 }
 
 function toForm(t: TaskItem | null, status: TaskStatus): TaskForm {
@@ -28,6 +29,7 @@ function toForm(t: TaskItem | null, status: TaskStatus): TaskForm {
     dueDate: t?.dueDate ?? "",
     labels: t?.labels.join(", ") ?? "",
     recurrence: t?.recurrence ?? "",
+    assignee: t?.assignee ?? "",
   };
 }
 
@@ -147,6 +149,23 @@ export function TaskDialog({
           <div>
             <label className="label" htmlFor="t-labels">{t("dialog.labels")}</label>
             <input id="t-labels" className="field" value={form.labels} onChange={(e) => set("labels", e.target.value)} placeholder={t("dialog.labelsPlaceholder")} />
+          </div>
+          <div>
+            <label className="label" htmlFor="t-assignee">{t("dialog.assignee")}</label>
+            <input
+              id="t-assignee"
+              className="field"
+              value={form.assignee}
+              onChange={(e) => set("assignee", e.target.value)}
+              placeholder={t("dialog.assigneePlaceholder")}
+              maxLength={60}
+              list="t-assignee-list"
+              autoComplete="off"
+            />
+            <datalist id="t-assignee-list">
+              <option value="Claude" />
+            </datalist>
+            {task && task.issueAssignees.length > 0 && <p className="mt-1 text-xs text-muted">{t("dialog.issueAssignees", { list: task.issueAssignees.join(", ") })}</p>}
           </div>
         </div>
         {form.recurrence && (

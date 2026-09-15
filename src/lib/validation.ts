@@ -350,6 +350,9 @@ const dueDateSchema = z
   .nullish()
   .transform((v) => v || null);
 
+/** Bearbeiter: frei eingetragen, z. B. „anna“ oder „Claude“ */
+const assigneeSchema = z.string().trim().max(60);
+
 const labelsSchema = z.union([z.array(z.string().max(40)).max(30), z.string().max(500)]).transform((t) => normalizeTags(t, 8));
 
 export const taskCreateSchema = z.object({
@@ -359,6 +362,7 @@ export const taskCreateSchema = z.object({
   dueDate: dueDateSchema,
   labels: labelsSchema.default([]),
   recurrence: recurrenceSchema.nullish().transform((v) => v ?? null),
+  assignee: assigneeSchema.nullish().transform((v) => v || null),
 });
 
 // Dieselbe Aufgabe für mehrere Projekte (Aufgabenübersicht, MCP)
@@ -374,6 +378,10 @@ export const taskUpdateSchema = z.object({
   dueDate: dueDateSchema.optional(),
   labels: labelsSchema.optional(),
   recurrence: recurrenceSchema.nullable().optional(),
+  assignee: assigneeSchema
+    .nullable()
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v || null)),
 });
 
 export const taskReorderSchema = z.object({

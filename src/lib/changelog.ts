@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.1",
+    date: "2026-09-16",
+    title: "Glocke und Bearbeiter",
+    titleEn: "Bell and assignees",
+    changes: [
+      {
+        type: "neu",
+        text: "Glocke in der Kopfleiste: zeigt die neuesten Benachrichtigungen mit Zahl der ungelesenen. Ein Klick öffnet das Ziel, einzeln als gelesen/ungelesen markieren, löschen oder alle auf einmal als gelesen markieren",
+        en: "Bell in the top bar: shows the latest notifications with the number of unread ones. A click opens the target; mark single ones read/unread, delete them or mark all as read at once",
+      },
+      {
+        type: "neu",
+        text: "Bearbeiter an Aufgaben: wer daran arbeitet (z. B. „anna“ oder „Claude“), steht auf der Karte und im Issue („👤 Bearbeitet von“). Umgekehrt zeigen Zuweisungen im Issue und Labels wie „🤖 Claude“, wer das Issue gerade macht",
+        en: "Assignees on tasks: who works on it (e.g. “anna” or “Claude”) shows on the card and in the issue (“👤 Bearbeitet von”). The other way round, issue assignees and labels like “🤖 Claude” show who is working on the issue",
+      },
+      {
+        type: "besser",
+        text: "MCP: create_task und update_task kennen „assignee“ – eine KI trägt beim Start ihren Namen ein, damit alle sehen, wer dran ist",
+        en: "MCP: create_task and update_task know “assignee” – an AI enters its name when it starts, so everyone sees who is on it",
+      },
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-09-15",
     title: "Team-Rollen und eigene Rollen",

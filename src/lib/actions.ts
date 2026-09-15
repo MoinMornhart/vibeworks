@@ -15,7 +15,7 @@ import type { noteCreateSchema, taskCreateSchema, taskUpdateSchema } from "./val
 // Gemeinsam für die Oberfläche (API-Routen) und Claude (MCP). Die Rechte
 // prüft der Aufrufer vorher.
 
-export async function createTask(userId: string, projectId: string, input: z.output<typeof taskCreateSchema>) {
+export async function createTask(userId: string, projectId: string, input: Omit<z.output<typeof taskCreateSchema>, "assignee"> & { assignee?: string | null }) {
   const task = await db.task.create({
     data: {
       ...input,
@@ -38,6 +38,7 @@ export async function updateTask(userId: string, current: Task, input: z.output<
   if (input.description !== undefined) data.description = input.description;
   if (input.labels !== undefined) data.labels = input.labels;
   if (input.recurrence !== undefined) data.recurrence = input.recurrence;
+  if (input.assignee !== undefined) data.assignee = input.assignee;
   if (input.dueDate !== undefined) data.dueDate = input.dueDate ? dayKeyToDate(input.dueDate) : null;
 
   let result: { task: Task; spawned: Task | null };

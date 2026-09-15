@@ -10,6 +10,7 @@ import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { Logo } from "@/components/Logo";
 import { TimerPill } from "@/components/time/TimerPill";
+import { NotificationBell } from "@/components/NotificationBell";
 import { api } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import type { Key } from "@/lib/i18n/messages";
@@ -107,6 +108,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
           <Search size={16} />
           <kbd className="hidden rounded border px-1.5 text-[10px] text-muted lg:inline">{t("topNav.searchKbd")}</kbd>
         </button>
+        <NotificationBell />
         <button
           className="btn btn-ghost btn-icon btn-sm"
           onClick={() => window.dispatchEvent(new Event(OPEN_CAPTURE_EVENT))}

@@ -89,6 +89,8 @@ function taskView(t: Task, opts: { full?: boolean; project?: { id: string; name:
     ...(t.recurrence ? { recurrence: t.recurrence } : {}),
     ...(t.description ? { description: opts.full ? t.description : truncate(t.description, 500) } : {}),
     ...(t.issueUrl ? { issue: t.issueUrl } : {}),
+    ...(t.assignee ? { assignee: t.assignee } : {}),
+    ...(t.issueAssignees.length ? { issueAssignees: t.issueAssignees } : {}),
     ...(opts.project ? { project: opts.project } : {}),
   };
 }
@@ -102,6 +104,11 @@ const S = {
   dueDate: { type: ["string", "null"], description: "Due date as YYYY-MM-DD, null to clear" },
   labels: { type: "array", items: { type: "string" }, description: "Short labels, e.g. [\"bug\", \"ui\"]" },
   recurrence: { type: ["string", "null"], enum: [...RECURRENCES, null] },
+  assignee: {
+    type: ["string", "null"],
+    maxLength: 60,
+    description: "Who works on the task, shown on the board and in the issue – set your own name (e.g. \"Claude\") when you start, null to clear",
+  },
 };
 
 export const MCP_TOOLS: ToolDef<McpContext>[] = [
@@ -271,6 +278,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         dueDate: S.dueDate,
         labels: S.labels,
         recurrence: S.recurrence,
+        assignee: S.assignee,
       },
       required: ["project", "title"],
       additionalProperties: false,
@@ -318,7 +326,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "update_task",
     title: "Update task",
     description:
-      "Move a task to another status (TODO, DOING, BLOCKED, DONE) and/or edit it. Only the given fields change. Set DOING when you start working on it and DONE when finished.",
+      "Move a task to another status (TODO, DOING, BLOCKED, DONE) and/or edit it. Only the given fields change. When you start working on it, set status DOING and assignee to your name (e.g. \"Claude\") so everyone sees who is on it; set DONE when finished.",
     inputSchema: {
       type: "object",
       properties: {
@@ -329,6 +337,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         dueDate: S.dueDate,
         labels: S.labels,
         recurrence: S.recurrence,
+        assignee: S.assignee,
       },
       required: ["task"],
       additionalProperties: false,

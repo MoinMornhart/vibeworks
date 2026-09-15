@@ -22,8 +22,9 @@ const BACKFILL_LIMIT = 25;
 /** Unsichtbare Markierung im Issue-Text – so ist jedes Issue seiner Aufgabe zuzuordnen. */
 export const taskMarker = (taskId: string) => `<!-- vibeworks:task:${taskId} -->`;
 
-export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "dueDate" | "recurrence">): string {
+export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "dueDate" | "recurrence" | "assignee">): string {
   const meta: string[] = [];
+  if (task.assignee) meta.push(`👤 Bearbeitet von: ${task.assignee}`);
   if (task.dueDate) meta.push(`📅 Fällig: ${task.dueDate.toISOString().slice(0, 10).split("-").reverse().join(".")}`);
   if (task.recurrence) meta.push(`🔁 ${recurrenceLabel(task.recurrence)}`);
   if (task.labels.length) meta.push(`🏷️ ${task.labels.join(", ")}`);
@@ -31,6 +32,17 @@ export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "du
     .filter(Boolean)
     .join("\n\n");
 }
+
+/** Labels, die sagen, wer an einem Issue arbeitet: „🤖 Claude“, „👤 anna“. */
+const WORKER_LABEL = /^(?:🤖|👤)\s*/u;
+
+/** Bearbeiter laut Issue: Bearbeiter-Labels und Zuweisungen (als @login), ohne Doppelte. */
+export function workersFromIssue(issue: Pick<IssueRef, "labels" | "assignees">): string[] {
+  const fromLabels = issue.labels.filter((l) => WORKER_LABEL.test(l.trim())).map((l) => l.trim().replace(WORKER_LABEL, "").trim());
+  return [...new Set([...fromLabels, ...issue.assignees.map((a) => `@${a}`)].filter(Boolean))].slice(0, 10);
+}
+
+const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 export function labelForStatus(status: TaskStatus): StatusLabel | null {
   return status === "DOING" ? STATUS_LABELS.DOING : status === "BLOCKED" ? STATUS_LABELS.BLOCKED : null;
@@ -186,6 +198,9 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     const closedViaGit: string[] = [];
     for (const task of linked) {
       const issue = byNumber.get(task.issueNumber!)!;
+      // Bearbeiter laut Issue – ohne updatedAt anzufassen, das entscheidet über die Richtung des Statusabgleichs
+      const workers = workersFromIssue(issue);
+      if (!sameList(workers, task.issueAssignees)) await db.$executeRaw`UPDATE "Task" SET "issueAssignees" = ${workers}::text[] WHERE "id" = ${task.id}`;
       const target = statusFromIssue(issue);
       if (target === task.status) continue;
       // Nur übernehmen, wenn das Issue nach der Aufgabe geändert wurde –

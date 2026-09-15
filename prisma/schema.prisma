@@ -585,6 +585,10 @@ model Task {
   issueError  String?
   /// Von VibeWorks selbst gepflegte Aufgabe (z. B. "deps:vuln") – je Projekt höchstens eine je Schlüssel
   autoKey     String?
+  /// Wer daran arbeitet – frei eingetragen (z. B. „anna“ oder „Claude“), steht auch im Issue
+  assignee    String?
+  /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“
+  issueAssignees String[] @default([])
   focus       TaskFocus[]
   timeEntries TimeEntry[]
   createdAt   DateTime    @default(now())
@@ -853,6 +857,8 @@ model Notification {
   title     String
   message   String
   url       String?
+  /// Gelesen (Glocke in der Kopfleiste) – null heißt ungelesen
+  readAt    DateTime?
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])

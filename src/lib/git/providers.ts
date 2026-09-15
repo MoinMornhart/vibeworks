@@ -208,6 +208,8 @@ export interface IssueRef {
   closed: boolean;
   updatedAt: string;
   labels: string[];
+  /** Zugewiesene Konten (Login bzw. Benutzername) */
+  assignees: string[];
 }
 
 /** Labels, über die ein offenes Issue in die Spalten „In Arbeit“ bzw. „Blockiert“ fällt. */
@@ -237,8 +239,8 @@ export interface IssueApi {
 type LabelList = Array<{ name: string } | string> | null | undefined;
 const labelNames = (l: LabelList) => (l ?? []).map((x) => (typeof x === "string" ? x : x.name));
 
-interface GhIssue { number: number; html_url: string; state: string; updated_at: string; pull_request?: unknown; labels?: LabelList }
-interface GlIssue { iid: number; web_url: string; state: string; updated_at: string; labels?: string[] }
+interface GhIssue { number: number; html_url: string; state: string; updated_at: string; pull_request?: unknown; labels?: LabelList; assignees?: Array<{ login: string }> | null }
+interface GlIssue { iid: number; web_url: string; state: string; updated_at: string; labels?: string[]; assignees?: Array<{ username: string }> | null }
 interface GhLabel { id: number; name: string }
 
 export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string): IssueApi {
@@ -246,7 +248,7 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
   const headers = authHeaders(provider, token);
 
   if (provider === "gitlab") {
-    const ref = (i: GlIssue): IssueRef => ({ number: i.iid, url: i.web_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: i.labels ?? [] });
+    const ref = (i: GlIssue): IssueRef => ({ number: i.iid, url: i.web_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: i.labels ?? [], assignees: (i.assignees ?? []).map((a) => a.username) });
     const write = (i: IssueInput) => ({ title: i.title, description: i.body });
     return {
       async create(input) {
@@ -270,7 +272,7 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
   }
 
   // GitHub und Gitea sprechen fast dieselbe Sprache.
-  const ref = (i: GhIssue): IssueRef => ({ number: i.number, url: i.html_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: labelNames(i.labels) });
+  const ref = (i: GhIssue): IssueRef => ({ number: i.number, url: i.html_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: labelNames(i.labels), assignees: (i.assignees ?? []).map((a) => a.login) });
 
   // Status-Labels einmal pro Lauf anlegen; Gitea braucht zudem ihre IDs.
   let labelIds: Promise<Map<string, number>> | null = null;
