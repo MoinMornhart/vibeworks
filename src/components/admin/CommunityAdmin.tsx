@@ -8,7 +8,7 @@ import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
 
 interface ReportGroup {
-  targetType: "post" | "reply";
+  targetType: "post" | "reply" | "message";
   targetId: string;
   count: number;
   reasons: string[];
@@ -60,7 +60,8 @@ export function CommunityAdmin() {
 
   const resolve = (r: ReportGroup) => api("/api/community/reports/resolve", { body: { targetType: r.targetType, targetId: r.targetId } });
   const hide = async (r: ReportGroup) => {
-    await api(r.targetType === "post" ? `/api/community/posts/${r.targetId}` : `/api/community/replies/${r.targetId}`, { method: "PATCH", body: { hidden: true } });
+    const path = r.targetType === "post" ? "posts" : r.targetType === "reply" ? "replies" : "messages";
+    await api(`/api/community/${path}/${r.targetId}`, { method: "PATCH", body: { hidden: true } });
     await resolve(r);
   };
 
@@ -81,7 +82,8 @@ export function CommunityAdmin() {
                   <span className="inline-flex items-center gap-1 text-red-400">
                     <Flag size={12} /> {t("admin.reportedBy", { n: r.count })}
                   </span>
-                  <span>{t("admin.in", { project: r.project })}</span>
+                  <span>{t("admin.in", { project: r.project || t("chat.lobby") })}</span>
+                  {r.targetType === "message" && <span>· {t("chat.message")}</span>}
                   <span>· {r.author.name}</span>
                   {r.hidden && <span className="text-amber-400">· {t("hiddenBadge")}</span>}
                 </p>

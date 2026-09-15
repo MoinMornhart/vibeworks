@@ -1,4 +1,4 @@
-import type { CommunityPost, CommunityReply } from "@/generated/prisma/client";
+import type { CommunityMessage, CommunityPost, CommunityReply } from "@/generated/prisma/client";
 import { db } from "./db";
 import { notFound } from "./api";
 import { getSettings } from "./settings";
@@ -6,7 +6,7 @@ import { tk } from "./i18n/messages";
 import { appLink, notifyUser } from "./notify";
 import { hit, MINUTE } from "./security/rateLimit";
 import { displayNameOf, type SessionUser } from "./auth/guard";
-import { canDelete, canEdit, canModerate, canSee, type PostKind, type PostStatus, type Viewer } from "./communityLogic";
+import { canDelete, canEdit, canModerate, canSee, CHAT_PAGE, LOBBY, type PostKind, type PostStatus, type Viewer } from "./communityLogic";
 
 // Community: Projekte, die ihre Besitzer vorstellen, mit Beiträgen und
 // Antworten – nur für angemeldete Konten dieser Instanz, nur im
@@ -167,6 +167,47 @@ export async function replyForChange(replyId: string) {
   const reply = await db.communityReply.findUnique({ where: { id: replyId }, include: { post: true } });
   if (!reply) throw notFound(tk("community", "errors.replyNotFound"));
   return { reply, post: reply.post, project: await requireCommunityProject(reply.post.projectId) };
+}
+
+// ── Chat ────────────────────────────────────────────────────
+
+/** Raum: "lobby" (moderiert von Admins) oder die ID eines Community-Projekts (Besitzer und Admins). */
+export async function chatRoom(room: string): Promise<{ projectId: string | null; ownerId: string }> {
+  if (room === LOBBY) return { projectId: null, ownerId: "" };
+  const project = await requireCommunityProject(room);
+  return { projectId: project.id, ownerId: project.ownerId };
+}
+
+export function serializeMessage(m: CommunityMessage & { author: Author }, v: Viewer, ownerId: string) {
+  return {
+    id: m.id,
+    body: m.body,
+    hidden: m.hidden,
+    createdAt: m.createdAt.toISOString(),
+    author: authorView(m.author),
+    byOwner: Boolean(ownerId) && m.authorId === ownerId,
+    mine: m.authorId === v.id,
+    canDelete: canDelete(v, m.authorId, ownerId),
+  };
+}
+export type MessageItem = ReturnType<typeof serializeMessage>;
+
+/** Die letzten Nachrichten eines Raums, älteste zuerst. */
+export async function loadMessages(projectId: string | null, v: Viewer, ownerId: string) {
+  const mod = canModerate(v, ownerId);
+  const rows = await db.communityMessage.findMany({
+    where: { projectId, ...visibleFor(v, mod) },
+    include: { author: authorSelect },
+    orderBy: { createdAt: "desc" },
+    take: CHAT_PAGE,
+  });
+  return rows.reverse().map((m) => serializeMessage(m, v, ownerId));
+}
+
+export async function messageForChange(messageId: string) {
+  const message = await db.communityMessage.findUnique({ where: { id: messageId } });
+  if (!message) throw notFound(tk("community", "errors.messageNotFound"));
+  return { message, ...(await chatRoom(message.projectId ?? LOBBY)) };
 }
 
 /** Benachrichtigen – höchstens 10 je Konto und Stunde. */

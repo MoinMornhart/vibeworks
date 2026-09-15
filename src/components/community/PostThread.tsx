@@ -12,9 +12,9 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { Avatar, KindBadge, StatusBadge } from "./ui";
 
-type Target = { type: "post" | "reply"; id: string };
+export type Target = { type: "post" | "reply" | "message"; id: string };
 
-function ReportForm({ target, onDone, onCancel }: { target: Target; onDone: (msg: string) => void; onCancel: () => void }) {
+export function ReportForm({ target, onDone, onCancel }: { target: Target; onDone: (msg: string) => void; onCancel: () => void }) {
   const t = useT("community");
   const [reason, setReason] = useState<ReportReason>("spam");
   const [note, setNote] = useState("");

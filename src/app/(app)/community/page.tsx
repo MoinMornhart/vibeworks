@@ -6,6 +6,8 @@ import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { getT } from "@/lib/i18n/server";
 import { AccentStrip } from "@/components/projects/ProjectCard";
 import { CommunityMine } from "@/components/community/CommunityMine";
+import { ChatPanel } from "@/components/community/ChatPanel";
+import { LOBBY } from "@/lib/communityLogic";
 
 export async function generateMetadata() {
   return { title: (await getT("community"))("title") };
@@ -79,6 +81,8 @@ export default async function CommunityPage() {
           })}
         </ul>
       )}
+
+      <ChatPanel room={LOBBY} title={t("chat.lobby")} hint={t("chat.lobbyHint")} />
 
       <CommunityMine initial={mine} />
     </div>

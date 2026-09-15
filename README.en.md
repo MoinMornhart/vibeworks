@@ -338,7 +338,7 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Repo check without AI (GitHub Actions): secrets, vulnerabilities, bug patterns and TODOs
 - ✅ Error inbox: apps report runtime errors via snippet (browser, Node.js, curl), grouped, with notifications
 - ✅ Invitation links for new accounts: single use, with an expiry date, even when registration is closed
-- ✅ Community for the accounts of the instance: present projects, questions, ideas and bug reports, moderation, reporting and bans
+- ✅ Community for the accounts of the instance: present projects, questions, ideas and bug reports, chat (lobby and per project), moderation, reporting and bans
 - ✅ Public portfolio with selected projects
 
 **Website**

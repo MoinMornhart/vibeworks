@@ -8,6 +8,7 @@ import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { getT } from "@/lib/i18n/server";
 import { AccentStrip } from "@/components/projects/ProjectCard";
 import { CommunityBoard } from "@/components/community/CommunityBoard";
+import { ChatPanel } from "@/components/community/ChatPanel";
 
 type Props = { params: Promise<{ projectId: string }> };
 
@@ -60,6 +61,7 @@ export default async function CommunityProjectPage({ params }: Props) {
         </div>
       </section>
       <CommunityBoard projectId={project.id} initialPosts={posts} canWrite={canWrite(viewer, banned)} moderator={canModerate(viewer, project.ownerId)} />
+      <ChatPanel room={project.id} title={t("chat.project")} hint={t("chat.projectHint")} />
     </div>
   );
 }

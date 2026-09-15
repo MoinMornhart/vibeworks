@@ -20,6 +20,12 @@ describe("Community-Rechte", () => {
     expect(canSee(other, hidden, "owner")).toBe(false);
     expect(canSee(other, { hidden: false, authorId: "author" }, "owner")).toBe(true);
   });
+  it("Lobby (ohne Besitzer): nur Admins moderieren", () => {
+    expect(canModerate(owner, "")).toBe(false);
+    expect(canModerate(admin, "")).toBe(true);
+    expect(canDelete(author, "author", "")).toBe(true);
+    expect(canDelete(other, "author", "")).toBe(false);
+  });
   it("Sperren verhindern das Schreiben", () => {
     expect(canWrite({ banned: false }, false)).toBe(true);
     expect(canWrite({ banned: true }, false)).toBe(false);

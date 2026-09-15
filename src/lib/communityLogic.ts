@@ -11,6 +11,11 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 export const MAX_TITLE = 150;
 export const MAX_BODY = 10_000;
 export const MAX_REPLY = 5_000;
+export const MAX_MESSAGE = 1_000;
+/** So viele Chat-Nachrichten zeigt ein Raum. */
+export const CHAT_PAGE = 100;
+/** Chat für alle Konten der Instanz – moderiert von Admins. */
+export const LOBBY = "lobby";
 
 export interface Viewer {
   id: string;

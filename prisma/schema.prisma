@@ -141,6 +141,7 @@ model User {
   communityBanReason String?
   communityPosts     CommunityPost[]
   communityReplies   CommunityReply[]
+  communityMessages  CommunityMessage[]
 
   sessions      Session[]
   passkeys      Passkey[]
@@ -331,8 +332,9 @@ model Project {
   timeEntries    TimeEntry[]
   suggestions    Suggestion[]
   appErrors      AppError[]
-  communityPosts CommunityPost[]
-  communityBans  CommunityBan[]
+  communityPosts    CommunityPost[]
+  communityBans     CommunityBan[]
+  communityMessages CommunityMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -382,7 +384,21 @@ model CommunityReply {
   @@index([postId, createdAt])
 }
 
-/// Meldung eines Beitrags oder einer Antwort an die Moderation
+/// Chat-Nachricht: im Chat eines Projekts oder in der Lobby (projectId null)
+model CommunityMessage {
+  id        String   @id @default(cuid())
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}
+
+/// Meldung eines Beitrags, einer Antwort oder einer Chat-Nachricht an die Moderation
 model CommunityReport {
   id          String    @id @default(cuid())
   /// post | reply

@@ -26,6 +26,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.6",
+    date: "2026-09-15",
+    title: "Community-Chat",
+    titleEn: "Community chat",
+    changes: [
+      {
+        type: "neu",
+        text: "Chat in der Community: ein Lobby-Chat für alle auf der Instanz und ein Chat je vorgestelltem Projekt. Neue Nachrichten erscheinen von selbst, Enter sendet",
+        en: "Chat in the community: a lobby chat for everyone on the instance and a chat for each presented project. New messages show up by themselves, Enter sends",
+      },
+      {
+        type: "neu",
+        text: "Moderation wie bei den Beiträgen: Nachrichten ausblenden, löschen und melden; im Projekt-Chat moderiert der Besitzer, in der Lobby die Admins. Gemeldete Nachrichten stehen in Administration → Community, Sperren gelten auch im Chat",
+        en: "Moderation like for posts: hide, delete and report messages; the owner moderates the project chat, admins moderate the lobby. Reported messages show up under Administration → Community, bans apply to the chat too",
+      },
+      {
+        type: "besser",
+        text: "Sicherheit: Chat-Nachrichten werden als reiner Text gezeigt (kein HTML, kein Markdown), höchstens 1.000 Zeichen und 20 Nachrichten je Minute",
+        en: "Security: chat messages are shown as plain text (no HTML, no Markdown), at most 1,000 characters and 20 messages per minute",
+      },
+    ],
+  },
+  {
     version: "0.6.5",
     date: "2026-09-15",
     title: "Community",
