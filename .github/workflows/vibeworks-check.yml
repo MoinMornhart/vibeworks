@@ -51,7 +51,9 @@ jobs:
 
       - name: Offene Stellen (TODO/FIXME)
         continue-on-error: true
-        run: git grep -n -I -E '\b(TODO|FIXME|HACK|XXX)\b' -- ':!*.lock' ':!package-lock.json' ':!.github/workflows/vibeworks-check.yml' > .vw-todos.txt || true
+        # Nur Kommentare (// # /* * -- <!--) – nicht jedes Wort „TODO“ im Code
+        run: |
+          git grep -n -I -E '(//|#|/\*|\*|--|<!--)[[:space:]]*(TODO|FIXME|HACK|XXX)\b' -- ':!*.lock' ':!package-lock.json' ':!.github/workflows/vibeworks-check.yml' > .vw-todos.txt || true
 
       - name: Zusammenfassen
         run: |
