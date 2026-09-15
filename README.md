@@ -337,6 +337,7 @@ bekommt einen Eintrag im Änderungsverlauf (`src/lib/changelog.ts`), der in der 
 - ✅ Fehler-Eingang: Apps melden Laufzeitfehler per Schnipsel (Browser, Node.js, curl), zusammengefasst, mit Benachrichtigung
 - ✅ Einladungslinks für neue Konten: einmal nutzbar, mit Ablaufdatum, auch bei geschlossener Registrierung
 - ✅ Community für die Konten der Instanz: Projekte vorstellen, Fragen, Ideen und Fehlerberichte, Chat (Lobby und je Projekt), Moderation, Melden und Sperren
+- ✅ Vorstellungs-Folien je Projekt: automatisch aus Beschreibung, Stand, Commits und nächsten Schritten, mit Vollbild und Tastatur
 - ✅ Öffentliches Portfolio mit ausgewählten Projekten
 
 **Webseite**

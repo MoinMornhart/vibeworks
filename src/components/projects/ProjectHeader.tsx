@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProjectStatus } from "@/generated/prisma/client";
 import { formatDuration } from "@/lib/time";
-import { ArrowLeft, Bot, CalendarPlus, Download, Timer, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Share2, Star, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarPlus, Download, Timer, ExternalLink, Ghost, GitBranch, HeartPulse, History, LayoutTemplate, LogOut, Pencil, Presentation, Share2, Star, Users } from "lucide-react";
 import { BuryDialog } from "@/components/grave/BuryDialog";
 import { ClaudeMdDialog } from "@/components/prompts/ClaudeMdDialog";
 import type { ProjectDetail, ProjectListItem } from "@/lib/projects";
@@ -63,6 +63,7 @@ export function ProjectHeader({
   const [buryOpen, setBuryOpen] = useState(false);
   const tp = useT("prompts");
   const tm = useT("time");
+  const tsl = useT("slides");
   const [mdOpen, setMdOpen] = useState(false);
 
   async function resurrect() {
@@ -169,6 +170,7 @@ export function ProjectHeader({
             <ActionMenu
               label={td("more")}
               items={[
+                { label: tsl("present"), icon: Presentation, onClick: () => router.push(`/projects/${p.id}/slides`) },
                 { label: td("templates.saveAs"), icon: LayoutTemplate, onClick: () => void saveTemplate() },
                 { label: td("export.project"), icon: Download, onClick: () => window.location.assign(`/api/projects/${p.id}/export`) },
                 { label: tp("claudeMd.menu"), icon: Bot, onClick: () => setMdOpen(true) },

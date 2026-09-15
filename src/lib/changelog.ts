@@ -26,6 +26,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.7",
+    date: "2026-09-15",
+    title: "Vorstellungs-Folien",
+    titleEn: "Presentation slides",
+    changes: [
+      {
+        type: "neu",
+        text: "Projekt präsentieren: Im Projekt über das Menü „Weitere Aktionen“ → Präsentieren baut VibeWorks Folien aus deinen Angaben – Titel, je Überschrift der Beschreibung eine Folie, Stand mit Aufgaben, letzte Commits, Live-Seite, nächste Schritte und ein Schluss mit Links",
+        en: "Present a project: in a project via the “More actions” menu → Present, VibeWorks builds slides from your details – title, one slide per heading of the description, status with tasks, recent commits, live site, next steps and a closing slide with links",
+      },
+      {
+        type: "neu",
+        text: "Blättern mit Pfeiltasten, Leertaste, Klick oder Wischen, F für Vollbild, Esc zurück – in den Farben des Projekts, passend zu Hell und Dunkel. Nur für Projektmitglieder",
+        en: "Navigate with arrow keys, space, click or swipe, F for fullscreen, Esc to go back – in the project's colors, fitting light and dark mode. Only for project members",
+      },
+    ],
+  },
+  {
     version: "0.6.6",
     date: "2026-09-15",
     title: "Community-Chat",
