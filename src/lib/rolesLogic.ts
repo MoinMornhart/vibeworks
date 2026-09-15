@@ -46,10 +46,21 @@ export const BUILTIN_ROLES: BuiltinRole[] = [
   { id: "role-project-contributor", key: "project.contributor", scope: "project", name: "Mitwirkender", description: "Arbeitet an Aufgaben mit und erfasst Zeit.", permissions: ["tasks.edit", "time.track"] },
   { id: "role-project-editor", key: "project.editor", scope: "project", name: "Bearbeiter", description: "Ändert Inhalte, Status und Kosten – Mitglieder verwaltet er nicht.", permissions: EDITOR_PERMISSIONS },
   { id: "role-project-manager", key: "project.manager", scope: "project", name: "Manager", description: "Wie Bearbeiter und darf Mitglieder einladen und verwalten.", permissions: [...PROJECT_PERMISSIONS] },
+  { id: "role-team-admin", key: "team.admin", scope: "team", name: "Admin", description: "Verwaltet Mitglieder, Einladungen, Rollen und das Team selbst.", permissions: [...TEAM_PERMISSIONS] },
+  { id: "role-team-inviter", key: "team.inviter", scope: "team", name: "Einlader", description: "Darf Leute einladen, aber niemanden entfernen.", permissions: ["team.invite"] },
+  { id: "role-team-member", key: "team.member", scope: "team", name: "Mitglied", description: "Nimmt teil und sieht die Team-Projekte.", permissions: [] },
 ];
 
 /** Die alte Stufe als Standardrolle – für Anfragen („ansehen“/„bearbeiten“) und Übergänge. */
 export const LEGACY_ROLE_ID = { VIEWER: "role-project-viewer", EDITOR: "role-project-editor" } as const;
+/** Alte Team-Stufen als Standardrolle. */
+export const LEGACY_TEAM_ROLE_ID = { ADMIN: "role-team-admin", MEMBER: "role-team-member" } as const;
+
+/** Team-Rechte eines Mitglieds – ohne Rolle gilt die alte Stufe (Admin: alles, Mitglied: nichts). */
+export function teamPermissionsOf(g: { role: string; roleRef: { permissions: string[] } | null }): Set<TeamPermission> {
+  const list = g.roleRef ? g.roleRef.permissions : g.role === "ADMIN" ? [...TEAM_PERMISSIONS] : [];
+  return new Set(list.filter((p): p is TeamPermission => (TEAM_PERMISSIONS as readonly string[]).includes(p)));
+}
 
 const known = (scope: RoleScope): readonly string[] => (scope === "project" ? PROJECT_PERMISSIONS : TEAM_PERMISSIONS);
 

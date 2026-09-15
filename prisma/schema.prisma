@@ -367,8 +367,13 @@ model Role {
   updatedAt   DateTime        @updatedAt
   members     ProjectMember[]
   teamShares  ProjectTeam[]
+  teamMembers TeamMember[]
+  /// Team-Rolle, die einem Team gehört (ownerId dann leer) – pflegen Mitglieder mit „Rollen vergeben“
+  teamId      String?
+  team        Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([scope, ownerId])
+  @@index([teamId])
 }
 
 // ── Teams ───────────────────────────────────────────────────
@@ -382,6 +387,7 @@ model Team {
   members     TeamMember[]
   invites     TeamInvite[]
   projects    ProjectTeam[]
+  roles       Role[]
 }
 
 model TeamMember {
@@ -389,8 +395,10 @@ model TeamMember {
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// ADMIN verwaltet Mitglieder und Einladungen · MEMBER nimmt teil
+  /// Alte Stufe (ADMIN/MEMBER) – nur noch Rückfall, wenn die Rolle gelöscht wurde (neue Vergaben: MEMBER)
   role      String   @default("MEMBER")
+  roleId    String?
+  roleRef   Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@id([teamId, userId])

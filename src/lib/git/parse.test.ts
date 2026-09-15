@@ -38,7 +38,9 @@ describe("Serveradressen", () => {
   });
 
   it("baut die Token-Seite je Anbieter", () => {
-    expect(newTokenUrl("github", "https://github.com")).toContain("scopes=repo");
+    // Alle Rechte, die VibeWorks nutzt: Repos/Issues, Webhook, Repo-Check-Workflow
+    expect(newTokenUrl("github", "https://github.com")).toBe("https://github.com/settings/tokens/new?scopes=repo,admin:repo_hook,workflow&description=VibeWorks");
+    expect(newTokenUrl("github", "https://github.firma.de")).toBe("https://github.firma.de/settings/tokens/new?scopes=repo,admin:repo_hook,workflow&description=VibeWorks");
     expect(newTokenUrl("gitlab", "https://gitlab.com")).toBe("https://gitlab.com/-/user_settings/personal_access_tokens?name=VibeWorks&scopes=api");
     expect(newTokenUrl("gitea", "https://git.example.de")).toBe("https://git.example.de/user/settings/applications");
   });

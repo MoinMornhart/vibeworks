@@ -1,5 +1,5 @@
-// Teams ohne Datenbank: Rollen zusammenführen und prüfen, ob ein Team
-// nach dem Gehen oder Herabstufen noch einen Admin hat.
+// Teams ohne Datenbank: Rollen zusammenführen und prüfen, ob ein Team nach dem
+// Gehen, Entfernen oder Umstufen noch jemanden hat, der es verwalten darf.
 
 export const TEAM_ROLES = ["ADMIN", "MEMBER"] as const;
 export type TeamRole = (typeof TEAM_ROLES)[number];
@@ -15,22 +15,23 @@ export function bestRole(roles: ShareRole[]): ShareRole | null {
   return roles.includes("EDITOR") ? "EDITOR" : "VIEWER";
 }
 
-type Member = { userId: string; role: string };
+/** manager: darf das Team verwalten (Recht „team.manage“). */
+type Member = { userId: string; manager: boolean };
 
 /**
  * Was passiert, wenn dieses Mitglied das Team verlässt (oder entfernt wird)?
- * ok · lastAdmin (es bleiben Mitglieder ohne Admin – vorher jemanden befördern)
- * · lastMember (das Team wäre leer – dann wird es gelöscht)
+ * ok · lastAdmin (es bleiben Mitglieder, aber niemand darf mehr verwalten –
+ * vorher jemanden befördern) · lastMember (das Team wäre leer – es wird gelöscht)
  */
 export function leaveOutcome(members: Member[], userId: string): "ok" | "lastAdmin" | "lastMember" {
   const me = members.find((m) => m.userId === userId);
   if (!me) return "ok";
   if (members.length === 1) return "lastMember";
-  if (me.role === "ADMIN" && !members.some((m) => m.userId !== userId && m.role === "ADMIN")) return "lastAdmin";
+  if (me.manager && !members.some((m) => m.userId !== userId && m.manager)) return "lastAdmin";
   return "ok";
 }
 
-/** Herabstufen geht nur, wenn danach noch ein anderer Admin da ist. */
+/** Einem Verwalter das Verwalten nehmen geht nur, wenn danach noch jemand verwalten darf. */
 export function canDemote(members: Member[], userId: string): boolean {
-  return members.some((m) => m.userId !== userId && m.role === "ADMIN");
+  return members.some((m) => m.userId !== userId && m.manager);
 }

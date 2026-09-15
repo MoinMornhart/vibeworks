@@ -2,24 +2,20 @@
 // Ermittelt beim Bauen, welche Version gerade gebaut wird, und schreibt sie
 // nach .vibeworks-build.json – die App liest die Datei zur Laufzeit.
 //
-// Die Version ergibt sich aus der Zahl der Commits: jeder Commit ist ein
-// Update und zählt eine Stufe weiter, mit Übertrag bei 9:
-//   1 → 0.0.1 · 9 → 0.0.9 · 10 → 0.1.0 · 16 → 0.1.6 · 100 → 1.0.0
+// Die Version steht in package.json (npm run version:bump, passend zum
+// Änderungsverlauf). Die Zahl der Commits ist die Update-Nummer – nicht die
+// Version, denn sie zählt auch Commits mit, die keine Updates sind (etwa den
+// Repo-Check-Workflow, den VibeWorks selbst ins Repository schreibt).
 //
-// Quellen, in dieser Reihenfolge:
+// Commit und Update-Nummer, in dieser Reihenfolge:
 //   1. Umgebung (VIBEWORKS_SHA, VIBEWORKS_COMMIT_COUNT, …) – setzt der
 //      update-Befehl, denn im Release-Ordner gibt es kein .git
 //   2. git im Projektordner (Entwicklung)
-//   3. package.json (Notlösung)
+//   3. ohne beides nur die Version
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-
-export function versionFromCount(count) {
-  const n = Math.max(0, Math.floor(Number(count) || 0));
-  return `${Math.floor(n / 100)}.${Math.floor(n / 10) % 10}.${n % 10}`;
-}
 
 /** Git-Remote → Web-Adresse ohne Zugangsdaten (für Commit-Links). */
 export function webUrl(remote) {
@@ -43,7 +39,7 @@ export function collect(root, env = process.env) {
     const count = Number(env.VIBEWORKS_COMMIT_COUNT);
     return {
       ...base,
-      version: versionFromCount(count),
+      version: pkg.version,
       commit: env.VIBEWORKS_SHA,
       shortCommit: env.VIBEWORKS_SHA.slice(0, 7),
       count,
@@ -71,7 +67,7 @@ export function collect(root, env = process.env) {
     }
     return {
       ...base,
-      version: versionFromCount(count),
+      version: pkg.version,
       commit,
       shortCommit: commit.slice(0, 7),
       count,
@@ -91,7 +87,4 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   writeFileSync(join(root, ".vibeworks-build.json"), `${JSON.stringify(info, null, 2)}\n`);
   const commit = info.shortCommit ? ` (Commit ${info.shortCommit}${info.dirty ? ", mit lokalen Änderungen" : ""}, Update Nr. ${info.count})` : "";
   console.log(`Build-Info: Version ${info.version}${commit} – Quelle: ${info.source}`);
-  if (info.source !== "package.json" && info.packageVersion !== info.version) {
-    console.log(`Hinweis: package.json steht auf ${info.packageVersion}, die Commits ergeben ${info.version}.`);
-  }
 }

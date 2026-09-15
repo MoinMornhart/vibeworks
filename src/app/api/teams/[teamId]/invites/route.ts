@@ -2,7 +2,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { ApiError, json, readBody, route } from "@/lib/api";
 import { displayNameOf, requireApiUser } from "@/lib/auth/guard";
-import { notifyTeamInvite, requireTeamAdmin, requireTeams, teamsOverview } from "@/lib/teams";
+import { notifyTeamInvite, requireTeamPerm, requireTeams, teamsOverview } from "@/lib/teams";
 import { usernameSchema } from "@/lib/validation";
 import { tk } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
@@ -12,12 +12,12 @@ type Params = { teamId: string };
 const inviteSchema = z.object({ username: usernameSchema });
 const revokeSchema = z.object({ userId: z.string().min(1).max(40) });
 
-// Konto einladen – es wird erst Mitglied, wenn es annimmt. Nur Team-Admins.
+// Konto einladen – es wird erst Mitglied, wenn es annimmt. Nur mit dem Team-Recht „einladen“.
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   await requireTeams();
   const { teamId } = await params;
-  await requireTeamAdmin(teamId, user.id);
+  await requireTeamPerm(teamId, user.id, "team.invite");
   limitOrThrow(`team-invite:${user.id}`, 30, 10 * MINUTE);
   const { username } = await readBody(req, inviteSchema, { maxBytes: 512 });
   const target = await db.user.findFirst({ where: { username, active: true }, select: { id: true } });
@@ -34,7 +34,7 @@ export const DELETE = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   await requireTeams();
   const { teamId } = await params;
-  await requireTeamAdmin(teamId, user.id);
+  await requireTeamPerm(teamId, user.id, "team.invite");
   const { userId } = await readBody(req, revokeSchema, { maxBytes: 512 });
   await db.teamInvite.deleteMany({ where: { teamId, userId } });
   return json({ overview: await teamsOverview(user.id) });

@@ -8,19 +8,19 @@ describe("Teams", () => {
     expect(bestRole(["VIEWER", "EDITOR"])).toBe("EDITOR");
     expect(bestRole(["EDITOR", "VIEWER", "VIEWER"])).toBe("EDITOR");
   });
-  it("Gehen: letzter Admin, letztes Mitglied, normal", () => {
+  it("Gehen: letzter Verwalter, letztes Mitglied, normal", () => {
     const team = [
-      { userId: "a", role: "ADMIN" },
-      { userId: "b", role: "MEMBER" },
+      { userId: "a", manager: true },
+      { userId: "b", manager: false },
     ];
     expect(leaveOutcome(team, "b")).toBe("ok");
     expect(leaveOutcome(team, "a")).toBe("lastAdmin");
-    expect(leaveOutcome([{ userId: "a", role: "ADMIN" }], "a")).toBe("lastMember");
-    expect(leaveOutcome([...team, { userId: "c", role: "ADMIN" }], "a")).toBe("ok");
+    expect(leaveOutcome([{ userId: "a", manager: true }], "a")).toBe("lastMember");
+    expect(leaveOutcome([...team, { userId: "c", manager: true }], "a")).toBe("ok");
     expect(leaveOutcome(team, "fremd")).toBe("ok");
   });
-  it("herabstufen nur mit einem weiteren Admin", () => {
-    expect(canDemote([{ userId: "a", role: "ADMIN" }, { userId: "b", role: "MEMBER" }], "a")).toBe(false);
-    expect(canDemote([{ userId: "a", role: "ADMIN" }, { userId: "b", role: "ADMIN" }], "a")).toBe(true);
+  it("Verwalten wegnehmen nur mit einem weiteren Verwalter", () => {
+    expect(canDemote([{ userId: "a", manager: true }, { userId: "b", manager: false }], "a")).toBe(false);
+    expect(canDemote([{ userId: "a", manager: true }, { userId: "b", manager: true }], "a")).toBe(true);
   });
 });

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Save, ShieldCheck, Trash2, X } from "lucide-react";
 import type { RoleItem } from "@/lib/roles";
-import { MAX_ROLE_DESCRIPTION, MAX_ROLE_NAME, PROJECT_PERMISSIONS } from "@/lib/rolesLogic";
+import { MAX_ROLE_DESCRIPTION, MAX_ROLE_NAME, PROJECT_PERMISSIONS, TEAM_PERMISSIONS, type RoleScope } from "@/lib/rolesLogic";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useT } from "@/lib/i18n/client";
@@ -18,7 +18,9 @@ interface Draft {
   permissions: string[];
 }
 
-function Editor({ draft, onChange, onSave, onCancel, busy }: { draft: Draft; onChange: (d: Draft) => void; onSave: () => void; onCancel: () => void; busy: boolean }) {
+const PERMS: Record<RoleScope, readonly (typeof PROJECT_PERMISSIONS[number] | typeof TEAM_PERMISSIONS[number])[]> = { project: PROJECT_PERMISSIONS, team: TEAM_PERMISSIONS };
+
+function Editor({ scope, draft, onChange, onSave, onCancel, busy }: { scope: RoleScope; draft: Draft; onChange: (d: Draft) => void; onSave: () => void; onCancel: () => void; busy: boolean }) {
   const t = useT("roles");
   const toggle = (p: string) => onChange({ ...draft, permissions: draft.permissions.includes(p) ? draft.permissions.filter((x) => x !== p) : [...draft.permissions, p] });
   return (
@@ -36,7 +38,7 @@ function Editor({ draft, onChange, onSave, onCancel, busy }: { draft: Draft; onC
       <fieldset>
         <legend className="label">{t("permissions")}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          {PROJECT_PERMISSIONS.map((p) => (
+          {PERMS[scope].map((p) => (
             <label key={p} className="flex cursor-pointer items-start gap-2 rounded-lg border bg-bg/30 px-3 py-2 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--vw-accent)]" checked={draft.permissions.includes(p)} onChange={() => toggle(p)} />
               <span>
@@ -60,7 +62,20 @@ function Editor({ draft, onChange, onSave, onCancel, busy }: { draft: Draft; onC
 }
 
 /** Rollen ansehen, anlegen, bearbeiten: eigene (mode "own") oder Vorlagen der Instanz (mode "admin"). */
-export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem[] }) {
+/** teamId: die eigenen Rollen dieses Teams · onChanged: nach jeder gespeicherten Änderung */
+export function RolesManager({
+  mode,
+  initial,
+  scope = "project",
+  teamId,
+  onChanged,
+}: {
+  mode: Mode;
+  initial?: RoleItem[];
+  scope?: RoleScope;
+  teamId?: string;
+  onChanged?: () => void;
+}) {
   const t = useT("roles");
   const [roles, setRoles] = useState<RoleItem[] | null>(initial ?? null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -69,10 +84,10 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
 
   useEffect(() => {
     if (initial) return;
-    api<{ roles: RoleItem[] }>("/api/roles?scope=project")
+    api<{ roles: RoleItem[] }>(teamId ? `/api/roles?teamId=${encodeURIComponent(teamId)}` : `/api/roles?scope=${scope}`)
       .then((r) => setRoles(r.roles))
       .catch((e) => setError(errorMessage(e)));
-  }, [initial]);
+  }, [initial, scope, teamId]);
 
   async function run(fn: () => Promise<{ roles: RoleItem[] }>) {
     setBusy(true);
@@ -80,6 +95,7 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
     try {
       setRoles((await fn()).roles);
       setDraft(null);
+      onChanged?.();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -91,7 +107,7 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
     if (!draft) return;
     const body = { name: draft.name.trim(), description: draft.description.trim() || null, permissions: draft.permissions };
     void run(() =>
-      draft.id ? api(`/api/roles/${draft.id}`, { method: "PATCH", body }) : api("/api/roles", { body: { ...body, scope: "project", template: mode === "admin" } }),
+      draft.id ? api(`/api/roles/${draft.id}`, { method: "PATCH", body }) : api("/api/roles", { body: { ...body, scope, template: mode === "admin", ...(teamId ? { teamId } : {}) } }),
     );
   }
 
@@ -99,19 +115,19 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted">{mode === "admin" ? t("introAdmin") : t("ownerOnly")}</p>
+      <p className="text-xs text-muted">{teamId ? t("teamRolesHint") : scope === "team" ? t("teamHint") : mode === "admin" ? t("introAdmin") : t("ownerOnly")}</p>
       <ul className="space-y-2" data-testid="roles">
         {shown.map((r) =>
           draft?.id === r.id ? (
             <li key={r.id}>
-              <Editor draft={draft} onChange={setDraft} onSave={save} onCancel={() => setDraft(null)} busy={busy} />
+              <Editor scope={scope} draft={draft} onChange={setDraft} onSave={save} onCancel={() => setDraft(null)} busy={busy} />
             </li>
           ) : (
             <li key={r.id} className="rounded-2xl border bg-bg/25 p-4" data-testid="role">
               <div className="flex flex-wrap items-center gap-2">
                 <ShieldCheck size={16} className="text-accent-ink" />
                 <span className="font-semibold">{roleName(r, t)}</span>
-                <span className="chip !py-0.5 text-[11px]">{r.builtIn ? t("kinds.builtIn") : r.template ? t("kinds.template") : t("kinds.own")}</span>
+                <span className="chip !py-0.5 text-[11px]">{r.builtIn ? t("kinds.builtIn") : r.template ? t("kinds.template") : r.team ? t("kinds.team") : t("kinds.own")}</span>
                 <span className="ml-auto flex gap-1">
                   {r.editable && (
                     <button
@@ -146,7 +162,7 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
                 ) : (
                   r.permissions.map((p) => (
                     <span key={p} className={cn("chip !py-0.5 text-[11px]", p === "members.invite" && "border-amber-500/40 text-amber-400")}>
-                      {(PROJECT_PERMISSIONS as readonly string[]).includes(p) ? t(`perms.${permKey(p as (typeof PROJECT_PERMISSIONS)[number])}`) : p}
+                      {(PERMS[scope] as readonly string[]).includes(p) ? t(`perms.${permKey(p as (typeof PERMS)[RoleScope][number])}`) : p}
                     </span>
                   ))
                 )}
@@ -156,9 +172,14 @@ export function RolesManager({ mode, initial }: { mode: Mode; initial?: RoleItem
         )}
       </ul>
       {draft && draft.id === null ? (
-        <Editor draft={draft} onChange={setDraft} onSave={save} onCancel={() => setDraft(null)} busy={busy} />
+        <Editor scope={scope} draft={draft} onChange={setDraft} onSave={save} onCancel={() => setDraft(null)} busy={busy} />
       ) : (
-        <button type="button" className="btn btn-sm" disabled={busy || !roles} onClick={() => setDraft({ id: null, name: "", description: "", permissions: ["tasks.edit"] })}>
+        <button
+          type="button"
+          className="btn btn-sm"
+          disabled={busy || !roles}
+          onClick={() => setDraft({ id: null, name: "", description: "", permissions: scope === "team" ? [] : ["tasks.edit"] })}
+        >
           <Plus size={14} /> {mode === "admin" ? t("createTemplate") : t("create")}
         </button>
       )}

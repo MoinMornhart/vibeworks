@@ -339,7 +339,16 @@ export function AdminManager({
       </AccountSection>
 
       <AccountSection icon={<ShieldCheck size={18} />} title={trl("adminTitle")} description={trl("introAdmin")}>
-        <RolesManager mode="admin" />
+        <div className="space-y-6">
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">{trl("section.project")}</h3>
+            <RolesManager mode="admin" />
+          </div>
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">{trl("section.team")}</h3>
+            <RolesManager mode="admin" scope="team" />
+          </div>
+        </div>
       </AccountSection>
 
       <AccountSection icon={<MessagesSquare size={18} />} title={tcm("admin.title")} description={tcm("admin.description")}>

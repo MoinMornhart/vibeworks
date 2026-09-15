@@ -26,6 +26,44 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.0",
+    date: "2026-09-15",
+    title: "Team-Rollen und eigene Rollen",
+    titleEn: "Team roles and your own roles",
+    changes: [
+      {
+        type: "neu",
+        text: "Team-Rollen mit eigenen Rechten: Mitglieder einladen, Mitglieder entfernen, Rollen im Team vergeben, Team umbenennen und löschen. Standardrollen Admin, Einlader und Mitglied – bisherige Admins und Mitglieder behalten ihre Rechte",
+        en: "Team roles with their own permissions: inviting members, removing members, assigning roles in the team, renaming and deleting the team. Built-in roles Admin, Inviter and Member – existing admins and members keep their permissions",
+      },
+      {
+        type: "neu",
+        text: "Jedes Team legt seine eigenen Rollen an (Teams → Team → Rollen dieses Teams) – wer „Rollen vergeben“ darf, nur bis zu den eigenen Rechten. In der Mitgliederliste wählt man die Rolle per Auswahlfeld",
+        en: "Every team creates its own roles (Teams → team → This team's roles) – whoever may assign roles, only up to their own permissions. In the member list you pick the role from a dropdown",
+      },
+      {
+        type: "neu",
+        text: "Eigene Projekt-Rollen direkt im Teilen-Dialog anlegen („Eigene Rolle anlegen“) – sie stehen danach sofort zur Auswahl",
+        en: "Create your own project roles right in the share dialog (“Create your own role”) – they're available for selection straight away",
+      },
+      {
+        type: "besser",
+        text: "Admins pflegen unter Administration → Rollen jetzt auch Vorlagen für Team-Rollen",
+        en: "Under Administration → Roles, admins now also maintain templates for team roles",
+      },
+      {
+        type: "fix",
+        text: "Die Versionsanzeige kommt jetzt aus dem Änderungsverlauf – vorher zählten auch die Repo-Check-Commits mit, deshalb stand dort z. B. 0.7.1 statt 0.6.9. „Update Nr.“ zählt weiter alle Commits",
+        en: "The version display now comes from the changelog – previously the repo check commits were counted too, which showed e.g. 0.7.1 instead of 0.6.9. “Update no.” still counts all commits",
+      },
+      {
+        type: "fix",
+        text: "„Token auf GitHub erstellen“ fragt überall dieselben, vollständigen Rechte an (repo, admin:repo_hook, workflow) – vorher fehlte im Git-Bereich „repo“, damit gingen private Repositories und der Repo-Check nicht",
+        en: "“Create token on GitHub” now requests the same complete scopes everywhere (repo, admin:repo_hook, workflow) – previously “repo” was missing in the Git section, so private repositories and the repo check didn't work",
+      },
+    ],
+  },
+  {
     version: "0.6.9",
     date: "2026-09-15",
     title: "Rollen",

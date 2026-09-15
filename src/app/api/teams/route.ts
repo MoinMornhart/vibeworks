@@ -22,6 +22,6 @@ export const POST = route(async (req) => {
   limitOrThrow(`team-create:${user.id}`, 10, 60 * MINUTE);
   const { name } = await readBody(req, createSchema, { maxBytes: 1024 });
   if ((await db.teamMember.count({ where: { userId: user.id } })) >= MAX_TEAMS) throw new ApiError(409, tk("teams", "errors.tooMany"));
-  await db.team.create({ data: { name, createdById: user.id, members: { create: { userId: user.id, role: "ADMIN" } } } });
+  await db.team.create({ data: { name, createdById: user.id, members: { create: { userId: user.id, role: "ADMIN", roleId: "role-team-admin" } } } });
   return json({ overview: await teamsOverview(user.id) }, { status: 201 });
 });

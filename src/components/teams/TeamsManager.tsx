@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Crown, LogOut, Pencil, Plus, Trash2, UserPlus, UsersRound, X } from "lucide-react";
+import { Check, Crown, LogOut, Pencil, Plus, ShieldCheck, Trash2, UserPlus, UsersRound, X } from "lucide-react";
 import type { TeamsOverview } from "@/lib/teams";
 import { MAX_TEAM_NAME } from "@/lib/teamsLogic";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
+import { roleName } from "@/components/roles/roleName";
+import { RolesManager } from "@/components/roles/RolesManager";
 
 type Team = TeamsOverview["teams"][number];
 
@@ -19,9 +21,10 @@ function Initial({ name }: { name: string }) {
   );
 }
 
-/** Teams anlegen, Einladungen annehmen, Mitglieder verwalten, Team-Projekte sehen. */
+/** Teams anlegen, Einladungen annehmen, Mitglieder und ihre Team-Rollen verwalten, Team-Projekte sehen. */
 export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: string }) {
   const t = useT("teams");
+  const tr = useT("roles");
   const tsh = useT("share");
   const f = useFormat();
   const [data, setData] = useState(initial);
@@ -62,6 +65,15 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
     if (!username) return;
     if (await run(() => api(`/api/teams/${team.id}/invites`, { body: { username } }))) setInvite((s) => ({ ...s, [team.id]: "" }));
   }
+
+  // Nach Änderungen an den Team-Rollen: Namen und Auswahl neu laden
+  const reload = () => void run(() => api("/api/teams"));
+
+  const roleLabel = (team: Team, role: { name: string; key: string | null } | null, fallbackId: string) => {
+    if (role) return roleName(role, tr);
+    const known = team.roles.find((r) => r.id === fallbackId);
+    return known ? roleName(known, tr) : "–";
+  };
 
   return (
     <div className="fade-in space-y-6">
@@ -110,128 +122,142 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
         <p className="glass px-6 py-10 text-center text-muted">{t("empty")}</p>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2" data-testid="teams">
-          {data.teams.map((team) => {
-            const admin = team.myRole === "ADMIN";
-            return (
-              <section key={team.id} className="glass p-6" aria-label={team.name} data-testid="team">
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <h2 className="mr-auto break-words text-xl font-semibold">{team.name}</h2>
-                  <span className="chip !py-0.5 text-[11px]">{t(`roles.${team.myRole}`)}</span>
-                  {admin && (
-                    <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={busy} onClick={() => rename(team)} aria-label={t("rename")} title={t("rename")}>
-                      <Pencil size={14} />
-                    </button>
-                  )}
+          {data.teams.map((team) => (
+            <section key={team.id} className="glass p-6" aria-label={team.name} data-testid="team">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <h2 className="mr-auto break-words text-xl font-semibold">{team.name}</h2>
+                <span className="chip !py-0.5 text-[11px]">{roleLabel(team, team.myRole, "")}</span>
+                {team.can.manage && (
+                  <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={busy} onClick={() => rename(team)} aria-label={t("rename")} title={t("rename")}>
+                    <Pencil size={14} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-icon btn-sm"
+                  disabled={busy}
+                  onClick={() => window.confirm(t("confirmLeave", { team: team.name })) && void run(() => api(`/api/teams/${team.id}/members/me`, { method: "DELETE" }))}
+                  aria-label={t("leave")}
+                  title={t("leave")}
+                >
+                  <LogOut size={14} />
+                </button>
+                {team.can.manage && (
                   <button
                     type="button"
-                    className="btn btn-ghost btn-icon btn-sm"
+                    className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
                     disabled={busy}
-                    onClick={() => window.confirm(t("confirmLeave", { team: team.name })) && void run(() => api(`/api/teams/${team.id}/members/me`, { method: "DELETE" }))}
-                    aria-label={t("leave")}
-                    title={t("leave")}
+                    onClick={() => window.confirm(t("confirmDelete", { team: team.name })) && void run(() => api(`/api/teams/${team.id}`, { method: "DELETE" }))}
+                    aria-label={t("delete")}
+                    title={t("delete")}
                   >
-                    <LogOut size={14} />
+                    <Trash2 size={14} />
                   </button>
-                  {admin && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
-                      disabled={busy}
-                      onClick={() => window.confirm(t("confirmDelete", { team: team.name })) && void run(() => api(`/api/teams/${team.id}`, { method: "DELETE" }))}
-                      aria-label={t("delete")}
-                      title={t("delete")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
+                )}
+              </div>
 
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{t("members")}</h3>
-                <ul className="mb-4 divide-y divide-fg/10 rounded-2xl border">
-                  {team.members.map((m) => (
-                    <li key={m.userId} className="flex flex-wrap items-center gap-3 px-3 py-2">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{t("members")}</h3>
+              <ul className="mb-4 divide-y divide-fg/10 rounded-2xl border">
+                {team.members.map((m) => {
+                  const options = team.roles.filter((r) => team.assignable.includes(r.id) || r.id === m.roleId);
+                  return (
+                    <li key={m.userId} className="flex flex-wrap items-center gap-3 px-3 py-2" data-testid="team-member">
                       <Initial name={m.name} />
                       <span className="min-w-0 flex-1 truncate text-sm">
                         {m.name} <span className="text-muted">@{m.username}</span>
                         {m.userId === meId && <span className="text-muted"> ({t("you")})</span>}
                       </span>
-                      {m.role === "ADMIN" && (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-400">
-                          <Crown size={12} /> {t("roles.ADMIN")}
-                        </span>
+                      {m.manager && <Crown size={12} className="text-amber-400" aria-hidden />}
+                      {team.can.roles && (m.manageable || m.userId === meId) ? (
+                        <select
+                          className="field !w-auto !py-1 text-xs"
+                          value={m.roleId}
+                          disabled={busy}
+                          aria-label={t("roleOf", { name: m.name })}
+                          onChange={(e) => void run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "PATCH", body: { roleId: e.target.value } }))}
+                        >
+                          {options.map((r) => (
+                            <option key={r.id} value={r.id} disabled={!team.assignable.includes(r.id)}>
+                              {roleName(r, tr)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="chip !py-0.5 text-[11px]">{roleLabel(team, m.role, m.roleId)}</span>
                       )}
-                      {admin && m.userId !== meId && (
-                        <>
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            disabled={busy}
-                            onClick={() => void run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "PATCH", body: { role: m.role === "ADMIN" ? "MEMBER" : "ADMIN" } }))}
-                          >
-                            {m.role === "ADMIN" ? t("makeMember") : t("makeAdmin")}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
-                            disabled={busy}
-                            onClick={() => window.confirm(t("confirmRemove", { name: m.name })) && void run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "DELETE" }))}
-                            aria-label={t("removeName", { name: m.name })}
-                            title={t("remove")}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
+                      {team.can.remove && m.manageable && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
+                          disabled={busy}
+                          onClick={() => window.confirm(t("confirmRemove", { name: m.name })) && void run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "DELETE" }))}
+                          aria-label={t("removeName", { name: m.name })}
+                          title={t("remove")}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                     </li>
-                  ))}
-                  {team.invites.map((i) => (
-                    <li key={`invite-${i.userId}`} className="flex flex-wrap items-center gap-3 px-3 py-2 opacity-70">
-                      <Initial name={i.name} />
-                      <span className="min-w-0 flex-1 truncate text-sm">
-                        {i.name} <span className="text-muted">@{i.username}</span>
-                      </span>
-                      <span className="text-xs text-muted" suppressHydrationWarning>{t("invite.pending")} · {f.ago(i.since)}</span>
-                      <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void run(() => api(`/api/teams/${team.id}/invites`, { method: "DELETE", body: { userId: i.userId } }))}>
-                        {t("invite.revoke")}
-                      </button>
+                  );
+                })}
+                {team.invites.map((i) => (
+                  <li key={`invite-${i.userId}`} className="flex flex-wrap items-center gap-3 px-3 py-2 opacity-70">
+                    <Initial name={i.name} />
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {i.name} <span className="text-muted">@{i.username}</span>
+                    </span>
+                    <span className="text-xs text-muted" suppressHydrationWarning>{t("invite.pending")} · {f.ago(i.since)}</span>
+                    <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void run(() => api(`/api/teams/${team.id}/invites`, { method: "DELETE", body: { userId: i.userId } }))}>
+                      {t("invite.revoke")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {team.can.invite && (
+                <form onSubmit={(e) => void sendInvite(team, e)} className="mb-5 flex flex-wrap gap-2">
+                  <input
+                    className="field min-w-0 flex-1"
+                    placeholder={t("invite.placeholder")}
+                    aria-label={t("invite.placeholder")}
+                    maxLength={64}
+                    autoComplete="off"
+                    value={invite[team.id] ?? ""}
+                    onChange={(e) => setInvite((s) => ({ ...s, [team.id]: e.target.value }))}
+                  />
+                  <button className="btn btn-sm" disabled={busy || !invite[team.id]?.trim()}>
+                    <UserPlus size={14} /> {t("invite.submit")}
+                  </button>
+                </form>
+              )}
+
+              {team.can.roles && (
+                <details className="mb-5 rounded-2xl border px-4 py-3" data-testid="team-roles">
+                  <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+                    <ShieldCheck size={14} className="text-accent-ink" /> {t("rolesTitle")}
+                  </summary>
+                  <div className="mt-3">
+                    <RolesManager mode="own" scope="team" teamId={team.id} onChanged={reload} />
+                  </div>
+                </details>
+              )}
+
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{t("projects")}</h3>
+              {team.projects.length === 0 ? (
+                <p className="text-sm text-muted">{t("noProjects")}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {team.projects.map((p) => (
+                    <li key={p.id} className="flex items-center gap-2 text-sm">
+                      <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate font-medium hover:text-accent-ink">{p.name}</Link>
+                      <span className="text-xs text-muted">{t("sharedBy", { name: p.owner })}</span>
+                      <span className="chip !py-0.5 text-[11px]">{p.role ? roleName(p.role, tr) : tsh("role.VIEWER")}</span>
                     </li>
                   ))}
                 </ul>
-
-                {admin && (
-                  <form onSubmit={(e) => void sendInvite(team, e)} className="mb-5 flex flex-wrap gap-2">
-                    <input
-                      className="field min-w-0 flex-1"
-                      placeholder={t("invite.placeholder")}
-                      aria-label={t("invite.placeholder")}
-                      maxLength={64}
-                      autoComplete="off"
-                      value={invite[team.id] ?? ""}
-                      onChange={(e) => setInvite((s) => ({ ...s, [team.id]: e.target.value }))}
-                    />
-                    <button className="btn btn-sm" disabled={busy || !invite[team.id]?.trim()}>
-                      <UserPlus size={14} /> {t("invite.submit")}
-                    </button>
-                  </form>
-                )}
-
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{t("projects")}</h3>
-                {team.projects.length === 0 ? (
-                  <p className="text-sm text-muted">{t("noProjects")}</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {team.projects.map((p) => (
-                      <li key={p.id} className="flex items-center gap-2 text-sm">
-                        <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate font-medium hover:text-accent-ink">{p.name}</Link>
-                        <span className="text-xs text-muted">{t("sharedBy", { name: p.owner })}</span>
-                        <span className="chip !py-0.5 text-[11px]">{tsh(`role.${p.role}`)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            );
-          })}
+              )}
+            </section>
+          ))}
         </div>
       )}
     </div>

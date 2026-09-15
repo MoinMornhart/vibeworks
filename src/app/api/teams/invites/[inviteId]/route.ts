@@ -18,7 +18,7 @@ export const POST = route<Params>(async (req, { params }) => {
   const { action } = await readBody(req, bodySchema, { maxBytes: 256 });
   if (action === "accept") {
     await db.$transaction([
-      db.teamMember.upsert({ where: { teamId_userId: { teamId: invite.teamId, userId: user.id } }, create: { teamId: invite.teamId, userId: user.id, role: "MEMBER" }, update: {} }),
+      db.teamMember.upsert({ where: { teamId_userId: { teamId: invite.teamId, userId: user.id } }, create: { teamId: invite.teamId, userId: user.id, role: "MEMBER", roleId: "role-team-member" }, update: {} }),
       db.teamInvite.delete({ where: { id: invite.id } }),
     ]);
   } else {

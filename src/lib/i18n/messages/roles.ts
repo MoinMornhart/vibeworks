@@ -16,8 +16,11 @@ const de = {
     project_contributor: { name: "Mitwirkender", description: "Arbeitet an Aufgaben mit und erfasst Zeit." },
     project_editor: { name: "Bearbeiter", description: "Ändert Inhalte, Status und Kosten – Mitglieder verwaltet er nicht." },
     project_manager: { name: "Manager", description: "Wie Bearbeiter und darf Mitglieder einladen und verwalten." },
+    team_admin: { name: "Admin", description: "Verwaltet Mitglieder, Einladungen, Rollen und das Team selbst." },
+    team_inviter: { name: "Einlader", description: "Darf Leute einladen, aber niemanden entfernen." },
+    team_member: { name: "Mitglied", description: "Nimmt teil und sieht die Team-Projekte." },
   },
-  kinds: { builtIn: "Standard", template: "Vorlage", own: "Eigene" },
+  kinds: { builtIn: "Standard", template: "Vorlage", own: "Eigene", team: "Dieses Team" },
   perms: {
     tasks_edit: "Aufgaben anlegen und bearbeiten",
     tasks_delete: "Aufgaben löschen",
@@ -35,6 +38,10 @@ const de = {
     team_manage: "Team umbenennen und löschen",
   },
   invitHint: "Nur Rollen mit höchstens den eigenen Rechten – und nur für Leute, die nicht mehr dürfen.",
+  teamHint: "Team-Rollen regeln, wer im Team einladen, entfernen, Rollen vergeben und das Team verwalten darf. Welche Rechte das Team an Projekten hat, legt der Projektbesitzer beim Freigeben fest.",
+  teamRolesHint: "Eigene Rollen dieses Teams – alle mit „Rollen vergeben“ können sie anlegen und ändern, aber nur bis zu ihren eigenen Rechten. Das Team behält immer jemanden, der es verwalten darf.",
+  teamRolesWhere: "Team-Rollen legst du direkt im jeweiligen Team an: Teams → Team → Rollen dieses Teams.",
+  openTeams: "Zu den Teams",
   none: "nur lesen",
   count: plural("{n} Recht", "{n} Rechte"),
   name: "Name",
@@ -57,6 +64,7 @@ const de = {
     nameEmpty: "Bitte einen Namen angeben.",
     nameLong: "Der Name ist zu lang.",
     tooMany: "Du hast schon sehr viele eigene Rollen.",
+    teamOnly: "Team-Rollen legst du direkt im Team an.",
   },
 };
 
@@ -73,8 +81,11 @@ const en: Shape<typeof de> = {
     project_contributor: { name: "Contributor", description: "Works on tasks and tracks time." },
     project_editor: { name: "Editor", description: "Changes content, status and costs – doesn't manage members." },
     project_manager: { name: "Manager", description: "Like Editor, and may invite and manage members." },
+    team_admin: { name: "Admin", description: "Manages members, invitations, roles and the team itself." },
+    team_inviter: { name: "Inviter", description: "May invite people, but can't remove anyone." },
+    team_member: { name: "Member", description: "Takes part and sees the team's projects." },
   },
-  kinds: { builtIn: "Built-in", template: "Template", own: "Own" },
+  kinds: { builtIn: "Built-in", template: "Template", own: "Own", team: "This team" },
   perms: {
     tasks_edit: "Create and edit tasks",
     tasks_delete: "Delete tasks",
@@ -92,6 +103,10 @@ const en: Shape<typeof de> = {
     team_manage: "Rename and delete the team",
   },
   invitHint: "Only roles with at most one's own permissions – and only for people who aren't allowed more.",
+  teamHint: "Team roles decide who in the team may invite, remove, assign roles and manage the team. What the team may do in a project is set by the project owner when sharing.",
+  teamRolesHint: "This team's own roles – everyone with “Assign roles in the team” can create and change them, but only up to their own permissions. The team always keeps someone who may manage it.",
+  teamRolesWhere: "You create team roles right in the team: Teams → team → This team's roles.",
+  openTeams: "Go to teams",
   none: "read only",
   count: plural("{n} permission", "{n} permissions"),
   name: "Name",
@@ -114,6 +129,7 @@ const en: Shape<typeof de> = {
     nameEmpty: "Please enter a name.",
     nameLong: "The name is too long.",
     tooMany: "You already have a lot of your own roles.",
+    teamOnly: "Create team roles right in the team.",
   },
 };
 

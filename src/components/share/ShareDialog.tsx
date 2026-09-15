@@ -9,6 +9,7 @@ import type { ShareState } from "@/lib/share";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { roleName } from "@/components/roles/roleName";
+import { RolesManager } from "@/components/roles/RolesManager";
 
 type RoleOption = ShareState["roles"][number];
 
@@ -63,6 +64,7 @@ export function ShareDialog({
   const [decisionRole, setDecisionRole] = useState<Record<string, string>>({});
   const [teamPick, setTeamPick] = useState("");
   const [teamRole, setTeamRole] = useState("");
+  const [rolesOpen, setRolesOpen] = useState(false);
   const linkRef = useRef<HTMLInputElement>(null);
   const onPendingRef = useRef(onPendingChange);
   onPendingRef.current = onPendingChange;
@@ -94,6 +96,12 @@ export function ShareDialog({
       setBusy(false);
     }
   }
+
+  // Nach Änderungen an den eigenen Rollen: Auswahl im Dialog neu laden
+  const reload = () =>
+    void api<{ share: ShareState }>(`/api/projects/${projectId}/share`)
+      .then((r) => apply(r.share))
+      .catch((e) => setError(errorMessage(e)));
 
   const roles = share?.roles ?? [];
   const addRole = role || defaultRole(roles);
@@ -243,7 +251,20 @@ export function ShareDialog({
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
             <ShieldCheck size={12} /> {t("dialog.rolesHint")}{" "}
             <Link href="/roles" className="text-accent-ink hover:underline">{t("dialog.rolesLink")}</Link>
+            {share?.isOwner && (
+              <>
+                {" · "}
+                <button type="button" className="text-accent-ink hover:underline" aria-expanded={rolesOpen} onClick={() => setRolesOpen((o) => !o)}>
+                  {t("dialog.rolesManage")}
+                </button>
+              </>
+            )}
           </p>
+          {share?.isOwner && rolesOpen && (
+            <div className="mt-3 rounded-2xl border p-4" data-testid="share-roles">
+              <RolesManager mode="own" onChanged={reload} />
+            </div>
+          )}
         </section>
 
         {share?.teamsEnabled && (

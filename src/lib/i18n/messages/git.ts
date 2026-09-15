@@ -58,9 +58,9 @@ const de = {
     tokenPlaceholder: "Token einfügen …",
     createOnGithub: "Token auf GitHub erstellen",
     githubHelp:
-      "Der Knopf öffnet GitHub mit allem vorausgefüllt: bei „Expiration“ eine Laufzeit wählen, unten auf {button} klicken und den Token (beginnt mit {prefix}) hier einfügen. Für private Repositories zusätzlich den Haken bei „repo“ setzen.",
+      "Der Knopf öffnet GitHub mit allen nötigen Rechten vorausgefüllt („repo“, „admin:repo_hook“, „workflow“): bei „Expiration“ eine Laufzeit wählen, unten auf {button} klicken und den Token (beginnt mit {prefix}) hier einfügen.",
     help: {
-      github: "GitHub: Token mit dem Recht „public_repo“ (bei privaten Repositories „repo“).",
+      github: "GitHub: klassisches Token mit „repo“, „admin:repo_hook“ (Webhook) und „workflow“ (Repo-Check).",
       gitlab: "GitLab: Projekt- oder Personal-Access-Token mit dem Scope „api“.",
       gitea: "Gitea/Forgejo: Token mit „repository: read“ und „issue: write“.",
       git: "Beliebiger Git-Server: Benutzername und Passwort oder Token als benutzer:token – Leserechte genügen.",
@@ -85,7 +85,7 @@ const de = {
     openTokenPage: "Token-Seite von {provider} öffnen",
     needServer: "Erst oben die Serveradresse eintragen – dann erscheint hier der Link",
     steps: {
-      github1: "{link} – Name und Recht „repo“ sind schon vorausgefüllt.",
+      github1: "{link} – Name und die Rechte „repo“, „admin:repo_hook“ und „workflow“ sind schon vorausgefüllt.",
       github2: "Bei „Expiration“ eine Laufzeit wählen, ganz unten auf {button} klicken.",
       gitlab1: "{link} – Name und Recht „api“ sind schon vorausgefüllt.",
       gitlab2: "Ablaufdatum wählen und auf {button} klicken.",
@@ -235,9 +235,9 @@ const en: Shape<typeof de> = {
     tokenPlaceholder: "Paste token …",
     createOnGithub: "Create token on GitHub",
     githubHelp:
-      "The button opens GitHub with everything pre-filled: choose a duration under “Expiration”, click {button} at the bottom and paste the token (starts with {prefix}) here. For private repositories, also check “repo”.",
+      "The button opens GitHub with all required scopes pre-filled (“repo”, “admin:repo_hook”, “workflow”): choose a duration under “Expiration”, click {button} at the bottom and paste the token (starts with {prefix}) here.",
     help: {
-      github: "GitHub: token with the “public_repo” scope (“repo” for private repositories).",
+      github: "GitHub: classic token with “repo”, “admin:repo_hook” (webhook) and “workflow” (repo check).",
       gitlab: "GitLab: project or personal access token with the “api” scope.",
       gitea: "Gitea/Forgejo: token with “repository: read” and “issue: write”.",
       git: "Any Git server: username and password or a token as user:token – read access is enough.",
@@ -262,7 +262,7 @@ const en: Shape<typeof de> = {
     openTokenPage: "Open the {provider} token page",
     needServer: "Enter the server address above first – then the link appears here",
     steps: {
-      github1: "{link} – the name and the “repo” scope are already pre-filled.",
+      github1: "{link} – the name and the “repo”, “admin:repo_hook” and “workflow” scopes are already pre-filled.",
       github2: "Choose a duration under “Expiration”, then click {button} at the very bottom.",
       gitlab1: "{link} – the name and the “api” scope are already pre-filled.",
       gitlab2: "Choose an expiration date and click {button}.",

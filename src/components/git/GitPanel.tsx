@@ -26,7 +26,7 @@ import type { RepoCacheView } from "@/lib/git/sync";
 import type { CiState, CiStatus } from "@/lib/git/ci";
 import type { IssueSyncResult } from "@/lib/git/issues";
 import type { CommitInfo } from "@/lib/git/providers";
-import { guessProvider, parseRepoUrl, PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
+import { GITHUB_NEW_TOKEN_URL, guessProvider, parseRepoUrl, PROVIDER_LABEL, type GitProvider } from "@/lib/git/parse";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
@@ -427,7 +427,7 @@ function AccessPanel({
         </div>
         {(provider === "github" || !provider) && (
           <a
-            href="https://github.com/settings/tokens/new?scopes=public_repo,admin:repo_hook,workflow&description=VibeWorks"
+            href={GITHUB_NEW_TOKEN_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-sm w-full justify-center sm:w-auto"

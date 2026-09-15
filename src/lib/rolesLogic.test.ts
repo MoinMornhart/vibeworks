@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_ROLES, cleanPermissions, EDITOR_PERMISSIONS, isSubset, legacyLevel, LEGACY_ROLE_ID, permissionsOf, PROJECT_PERMISSIONS } from "./rolesLogic";
+import { BUILTIN_ROLES, cleanPermissions, EDITOR_PERMISSIONS, isSubset, legacyLevel, LEGACY_ROLE_ID, permissionsOf, PROJECT_PERMISSIONS, teamPermissionsOf } from "./rolesLogic";
 
 describe("Rechte", () => {
   it("Standardrollen: steigend, Manager hat alles, Bearbeiter alles außer Mitglieder", () => {
@@ -22,6 +22,14 @@ describe("Rechte", () => {
     expect(permissionsOf([{ role: "VIEWER", roleRef: null }]).size).toBe(0);
     expect([...permissionsOf([{ role: "EDITOR", roleRef: null }])]).toEqual(EDITOR_PERMISSIONS);
     expect(permissionsOf([]).size).toBe(0);
+  });
+  it("Team-Rechte: Rolle oder alte Stufe", () => {
+    expect([...teamPermissionsOf({ role: "ADMIN", roleRef: null })]).toEqual(["team.invite", "team.remove", "team.roles", "team.manage"]);
+    expect(teamPermissionsOf({ role: "MEMBER", roleRef: null }).size).toBe(0);
+    expect([...teamPermissionsOf({ role: "ADMIN", roleRef: { permissions: ["team.invite", "tasks.edit"] } })]).toEqual(["team.invite"]);
+    const byKey = Object.fromEntries(BUILTIN_ROLES.map((r) => [r.key, r]));
+    expect(byKey["team.inviter"].permissions).toEqual(["team.invite"]);
+    expect(byKey["team.member"].permissions).toEqual([]);
   });
   it("aufräumen: nur bekannte Rechte, feste Reihenfolge", () => {
     expect(cleanPermissions("project", ["members.invite", "tasks.edit", "tasks.edit", "admin.all"])).toEqual(["tasks.edit", "members.invite"]);

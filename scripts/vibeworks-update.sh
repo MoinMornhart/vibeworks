@@ -218,32 +218,26 @@ tracked_branch() {
   printf '%s' "${b:-main}"
 }
 
-# Die Version eines Stands ergibt sich aus der Zahl seiner Commits: jedes
-# Update zählt eine Stufe weiter, mit Übertrag bei 9 (16 → 0.1.6,
-# 100 → 1.0.0) – dieselbe Rechnung wie in scripts/build-info.mjs.
-count_version() {
-  local n="$1"
-  printf '%d.%d.%d' $(( n / 100 )) $(( n / 10 % 10 )) $(( n % 10 ))
+# Die Version steht in package.json (npm run version:bump, passend zum
+# Änderungsverlauf). Die Zahl der Commits ist nur die Update-Nummer – sie
+# zählt auch Commits mit, die keine Updates sind (z. B. der Repo-Check-Workflow).
+version_from_json() {
+  sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
 }
 
 # Version eines Git-Stands (Branch, Tag oder Commit)
 pkg_version_at() {
-  local n
-  n="$(g rev-list --count "$1" 2>/dev/null)" || { printf '?'; return 0; }
-  count_version "$n"
+  local v
+  v="$(g show "$1:package.json" 2>/dev/null | version_from_json)"
+  printf '%s' "${v:-?}"
 }
 
-# Version eines gebauten Releases – Argument: <release>/package.json.
-# Maßgeblich ist der gespeicherte Commit, package.json nur als Notlösung.
+# Version eines gebauten Releases – Argument: <release>/package.json
 pkg_version() {
-  local file="$1" sha
-  sha="$(release_sha "$(dirname "$file")")"
-  if [[ -n "$sha" ]]; then
-    pkg_version_at "$sha"
-    return 0
-  fi
+  local file="$1" v
   [[ -r "$file" ]] || { printf '?'; return 0; }
-  sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$file" | head -n 1
+  v="$(version_from_json < "$file")"
+  printf '%s' "${v:-?}"
 }
 
 # Aufgelöster Pfad eines Release-Symlinks (leer, wenn nicht vorhanden)
