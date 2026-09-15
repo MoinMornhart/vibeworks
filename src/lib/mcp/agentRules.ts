@@ -23,11 +23,12 @@ description: Work with the user's VibeWorks project control center over MCP – 
 VibeWorks (${appUrl}) is the user's self-hosted project control center. You reach it through the MCP server "vibeworks".
 
 ## Before anything else
-1. Save this file locally so the rules survive new sessions:
+1. Ask the user once which AI tool you are running in and where the rules should live – suggest the matching path below instead of guessing, and only write the file after the user agrees.
+2. Save this file there so the rules survive new sessions:
    - Claude Code: \`~/.claude/skills/vibeworks/SKILL.md\`
    - Gemini CLI: append it to \`~/.gemini/GEMINI.md\`
-   - Other agents: \`AGENTS.md\` in the project root
-2. Call \`${CONFIRM_TOOL}\` with the path you used. Until then every tool result carries a reminder.
+   - Cline and other agents: \`AGENTS.md\` (or the tool's rules folder) in the project root
+3. Call \`${CONFIRM_TOOL}\` with the path you used. Until then every tool result carries a reminder.
 
 ## Ground rules
 - Only use the tools listed below. If something is not in the list, VibeWorks can't do it – say so instead of guessing or inventing a workaround.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bug, ExternalLink, KeyRound, ListTodo, RefreshCw, ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Bug, Check, Copy, ExternalLink, KeyRound, ListTodo, RefreshCw, ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { RepoCheckView } from "@/lib/git/repoCheck";
 import { blobUrl, checkIsUrgent, type CheckReport } from "@/lib/git/repoCheckLogic";
 import { GITHUB_NEW_TOKEN_URL } from "@/lib/git/parse";
@@ -24,13 +24,21 @@ interface Row {
   title: string;
   sub: string;
   href: string | null;
+  /** Werte für Erklärung und Prompt */
+  vars: Record<string, string>;
 }
 
 function rowsOf(kind: Kind, r: CheckReport, webUrl: string, branch: string | null): Row[] {
   const ref = r.commit || branch || "";
   const at = (file: string, line: number | null) => `${file}${line ? `:${line}` : ""}`;
   if (kind === "secrets") {
-    return r.secrets.map((s, i) => ({ key: `s${i}`, title: s.description || s.rule, sub: `${at(s.file, s.line)} · ${s.rule}${s.commit ? ` · ${s.commit.slice(0, 7)}` : ""}`, href: blobUrl(webUrl, s.commit || ref, s.file, s.line) }));
+    return r.secrets.map((s, i) => ({
+      key: `s${i}`,
+      title: s.description || s.rule,
+      sub: `${at(s.file, s.line)} · ${s.rule}${s.commit ? ` · ${s.commit.slice(0, 7)}` : ""}`,
+      href: blobUrl(webUrl, s.commit || ref, s.file, s.line),
+      vars: { rule: s.rule || "?", file: at(s.file, s.line) },
+    }));
   }
   if (kind === "vulnerabilities") {
     return r.vulnerabilities.map((v, i) => ({
@@ -38,12 +46,19 @@ function rowsOf(kind: Kind, r: CheckReport, webUrl: string, branch: string | nul
       title: `${v.package} ${v.version}`,
       sub: [v.id, v.severity && `CVSS ${v.severity}`, v.summary, v.source].filter(Boolean).join(" · "),
       href: /^[A-Za-z0-9._:-]+$/.test(v.id) ? `https://osv.dev/vulnerability/${encodeURIComponent(v.id)}` : null,
+      vars: { pkg: v.package, version: v.version || "?", id: v.id || "?" },
     }));
   }
   if (kind === "findings") {
-    return r.findings.map((x, i) => ({ key: `f${i}`, title: x.message || x.rule, sub: `${at(x.file, x.line)} · ${x.rule}${x.severity ? ` · ${x.severity}` : ""}`, href: blobUrl(webUrl, ref, x.file, x.line) }));
+    return r.findings.map((x, i) => ({
+      key: `f${i}`,
+      title: x.message || x.rule,
+      sub: `${at(x.file, x.line)} · ${x.rule}${x.severity ? ` · ${x.severity}` : ""}`,
+      href: blobUrl(webUrl, ref, x.file, x.line),
+      vars: { rule: x.rule || "?", file: at(x.file, x.line) },
+    }));
   }
-  return r.todos.map((x, i) => ({ key: `t${i}`, title: x.text, sub: at(x.file, x.line), href: blobUrl(webUrl, ref, x.file, x.line) }));
+  return r.todos.map((x, i) => ({ key: `t${i}`, title: x.text, sub: at(x.file, x.line), href: blobUrl(webUrl, ref, x.file, x.line), vars: {} }));
 }
 
 function countTone(kind: Kind, n: number) {
@@ -74,6 +89,18 @@ export function RepoCheckPanel({
   const [note, setNote] = useState<string | null>(null);
   const [open, setOpen] = useState<Kind | null>(null);
   const [shown, setShown] = useState(PAGE);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // Umsetzen macht Claude Code bei dir – VibeWorks erklärt und liefert den Auftrag (#29)
+  async function copyPrompt(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 2000);
+    } catch {
+      /* ohne Zwischenablage (kein HTTPS) steht der Text ja darüber */
+    }
+  }
   useEffect(() => setCheck(initial), [initial]);
 
   async function send(action: Action) {
@@ -234,6 +261,16 @@ export function RepoCheckPanel({
                             <span className="block break-words text-sm">{row.title}</span>
                           )}
                           <span className="block break-all font-mono text-[11px] text-muted">{row.sub}</span>
+                          {open !== "todos" && (
+                            <details className="mt-1 text-xs" data-testid="check-explain">
+                              <summary className="cursor-pointer text-accent-ink">{t("explain.toggle")}</summary>
+                              <p className="mt-1 text-muted">{t(`explain.${open}.why`, row.vars)}</p>
+                              <p className="mt-1">{t(`explain.${open}.fix`, row.vars)}</p>
+                              <button type="button" className="btn btn-sm mt-1.5" onClick={() => void copyPrompt(row.key, t(`explain.${open}.prompt`, row.vars))}>
+                                {copied === row.key ? <Check size={12} /> : <Copy size={12} />} {copied === row.key ? t("explain.copied") : t("explain.copy")}
+                              </button>
+                            </details>
+                          )}
                         </li>
                       ))}
                     </ul>

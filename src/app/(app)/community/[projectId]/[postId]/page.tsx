@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requirePageUser } from "@/lib/auth/guard";
+import { accessOf, canDo } from "@/lib/access";
 import { bannedHere, communityOn, loadThread, viewerOf } from "@/lib/community";
 import { canWrite } from "@/lib/communityLogic";
 import { getT } from "@/lib/i18n/server";
@@ -16,7 +17,7 @@ export default async function CommunityPostPage({ params }: Props) {
   const viewer = await viewerOf(user);
   const thread = await loadThread(postId, viewer);
   if (!thread || thread.project.id !== projectId) notFound();
-  const [t, banned] = await Promise.all([getT("community"), bannedHere(projectId, user.id)]);
+  const [t, banned, access] = await Promise.all([getT("community"), bannedHere(projectId, user.id), accessOf(user.id, projectId)]);
 
   return (
     <div className="fade-in space-y-4">
@@ -31,6 +32,7 @@ export default async function CommunityPostPage({ params }: Props) {
         moderator={thread.moderator}
         meId={user.id}
         ownerId={thread.project.ownerId}
+        canCreateTask={Boolean(access && canDo(access, "tasks.edit"))}
       />
     </div>
   );

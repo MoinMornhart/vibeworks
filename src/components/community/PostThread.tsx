@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDraft } from "@/lib/client/draft";
 import { useRouter } from "next/navigation";
-import { Ban, Check, CheckCircle2, Eye, EyeOff, Flag, Lock, LockOpen, Pencil, Send, Trash2 } from "lucide-react";
+import { Ban, Check, CheckCircle2, Eye, EyeOff, Flag, ListPlus, Lock, LockOpen, Pencil, Send, Trash2 } from "lucide-react";
 import type { PostItem, ReplyItem } from "@/lib/community";
 import { MAX_REPLY, REPORT_REASONS, type ReportReason } from "@/lib/communityLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -58,6 +58,7 @@ export function PostThread({
   moderator,
   meId,
   ownerId,
+  canCreateTask = false,
 }: {
   projectId: string;
   initialPost: PostItem;
@@ -66,6 +67,8 @@ export function PostThread({
   moderator: boolean;
   meId: string;
   ownerId: string;
+  /** Darf den Beitrag als Aufgabe übernehmen (Recht „Aufgaben anlegen“ im Projekt, #20) */
+  canCreateTask?: boolean;
 }) {
   const t = useT("community");
   const f = useFormat();
@@ -136,6 +139,12 @@ export function PostThread({
       else setReplies((list) => list.map((r) => (r.id === target.id ? { ...r, reports: 0 } : r)));
     });
 
+  const toTask = () =>
+    run(async () => {
+      await api(`/api/community/posts/${post.id}/task`, { body: {} });
+      setNotice(t("actions.taskCreated"));
+    });
+
   async function send(e: React.FormEvent) {
     e.preventDefault();
     await run(async () => {
@@ -177,6 +186,11 @@ export function PostThread({
         {moderator && !mine && item.author.id !== ownerId && (
           <button type="button" className="btn btn-ghost btn-sm hover:!text-red-400" disabled={busy} onClick={() => void ban(item.author.id, item.author.name)}>
             <Ban size={13} /> {t("actions.ban")}
+          </button>
+        )}
+        {target.type === "post" && canCreateTask && (
+          <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void toTask()} data-testid="post-to-task">
+            <ListPlus size={13} /> {t("actions.toTask")}
           </button>
         )}
         {!mine && (

@@ -75,7 +75,7 @@ export async function installWebhook(provider: GitProvider, repo: ParsedRepo, to
   }
 
   const hookConfig = { url, content_type: "json", secret, ...(provider === "github" ? { insecure_ssl: "0" } : {}) };
-  const events = provider === "github" ? ["push", "issues", "workflow_run", "check_suite", "status"] : ["push", "issues", "status"];
+  const events = provider === "github" ? ["push", "issues", "workflow_run", "check_suite", "status", "fork"] : ["push", "issues", "status", "fork"];
   if (existing) {
     await request("PATCH", `${api}/hooks/${existing.id}`, headers, { active: true, events, config: hookConfig });
   } else {

@@ -1,13 +1,13 @@
 // Benachrichtigungen ohne Netz und Datenbank: Anlässe, ntfy-Anfrage und
 // Webhook-Nutzlast – im Browser und in Tests nutzbar.
 
-export const NOTIFY_EVENTS = ["taskDue", "assigned", "accessRequest", "issueClosed", "ciFailed", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "news", "updated"] as const;
+export const NOTIFY_EVENTS = ["taskDue", "assigned", "accessRequest", "issueClosed", "ciFailed", "fork", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "news", "updated"] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
 
 /** Anlässe nach Themen für die Einstellungen – jeder genau einmal (Test). */
 export const NOTIFY_GROUPS: ReadonlyArray<{ key: "tasks" | "dev" | "people" | "account"; events: readonly NotifyEvent[] }> = [
   { key: "tasks", events: ["taskDue", "assigned", "issueClosed", "suggestions"] },
-  { key: "dev", events: ["ciFailed", "checkAlert", "gitFailed", "appError", "siteDown"] },
+  { key: "dev", events: ["ciFailed", "checkAlert", "gitFailed", "appError", "siteDown", "fork"] },
   { key: "people", events: ["accessRequest", "community", "team"] },
   { key: "account", events: ["passwordAge", "renewal", "news", "updated"] },
 ];
@@ -48,6 +48,7 @@ const TAGS: Record<Notice["event"], string> = {
   accessRequest: "raising_hand",
   issueClosed: "white_check_mark",
   ciFailed: "x",
+  fork: "fork_and_knife",
   checkAlert: "lock",
   appError: "bug",
   community: "speech_balloon",

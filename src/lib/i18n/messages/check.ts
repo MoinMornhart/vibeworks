@@ -33,6 +33,26 @@ const de = {
   },
   secretHint: "Gefunden von Gitleaks – der Wert selbst wird nie übertragen. Ein echtes Geheimnis im Verlauf gilt als verbrannt: beim Anbieter widerrufen und neu erzeugen.",
   toolMissing: "Dieses Werkzeug lieferte beim letzten Lauf kein Ergebnis.",
+  explain: {
+    toggle: "Was heißt das – und wie behebe ich es?",
+    copy: "Prompt für Claude Code kopieren",
+    copied: "Kopiert",
+    secrets: {
+      why: "Im Code oder in der Git-Historie steht etwas, das wie ein Zugangsschlüssel aussieht (Regel „{rule}“). Wer das Repository lesen kann, kann ihn benutzen – auch wenn er inzwischen gelöscht wurde.",
+      fix: "1. Den Schlüssel beim Anbieter widerrufen und neu erzeugen. 2. Den neuen nur als Umgebungsvariable oder Secret hinterlegen, nie im Code. 3. Ist es nur ein Beispielwert, die Stelle für Gitleaks als erlaubt markieren.",
+      prompt: "Im Repository wurde in {file} ein mögliches Geheimnis gefunden (Gitleaks-Regel „{rule}“). Prüfe, ob es ein echter Zugangsschlüssel ist. Wenn ja: entferne ihn aus dem Code, lies ihn stattdessen aus einer Umgebungsvariable, ergänze .env.example und sag mir, welchen Schlüssel ich beim Anbieter widerrufen muss. Wenn es ein Beispielwert ist, markiere ihn für Gitleaks als erlaubt. Erkläre mir kurz und einfach, was du gemacht hast.",
+    },
+    vulnerabilities: {
+      why: "Das Paket {pkg} in Version {version} hat eine bekannte Sicherheitslücke ({id}). Solange diese Version installiert ist, kann sie ausgenutzt werden.",
+      fix: "Auf eine Version ohne diese Lücke aktualisieren – bei npm z. B. „npm install {pkg}@latest“ oder die in {id} genannte Version – und danach testen. Kommt das Paket nur indirekt über ein anderes, dieses aktualisieren.",
+      prompt: "Das Paket {pkg} ({version}) hat die Sicherheitslücke {id}. Aktualisiere es auf die kleinste Version ohne diese Lücke (auch wenn es nur indirekt eingebunden ist), passe betroffene Stellen an und lass alle Tests und den Build laufen. Erkläre mir kurz und einfach, was sich geändert hat.",
+    },
+    findings: {
+      why: "Semgrep hat eine auffällige Stelle gefunden (Regel „{rule}“) – meist ein Muster, das zu Sicherheitslücken oder Fehlern führen kann.",
+      fix: "Die Stelle {file} ansehen: ist sie wirklich riskant, nach dem Hinweis der Regel umbauen; sonst mit einem kurzen Kommentar begründen, warum sie in Ordnung ist.",
+      prompt: "Semgrep meldet in {file} die Regel „{rule}“. Prüfe, ob die Stelle wirklich ein Problem ist, und behebe es, falls ja – ohne das Verhalten sonst zu ändern. Erkläre mir in einfachen Worten, was das Risiko war.",
+    },
+  },
   allGood: "Keine Geheimnisse und keine bekannten Lücken gefunden.",
   empty: "Nichts gefunden.",
   more: "{n} weitere zeigen",
@@ -82,6 +102,26 @@ const en: Shape<typeof de> = {
   },
   secretHint: "Found by Gitleaks – the value itself is never transferred. A real secret in the history counts as burned: revoke it with the provider and create a new one.",
   toolMissing: "This tool returned no result in the last run.",
+  explain: {
+    toggle: "What does this mean – and how do I fix it?",
+    copy: "Copy prompt for Claude Code",
+    copied: "Copied",
+    secrets: {
+      why: "The code or Git history contains something that looks like an access key (rule “{rule}”). Anyone who can read the repository can use it – even if it has been deleted since.",
+      fix: "1. Revoke the key with the provider and create a new one. 2. Store the new one only as an environment variable or secret, never in code. 3. If it's just an example value, mark the spot as allowed for Gitleaks.",
+      prompt: "A possible secret was found in {file} (Gitleaks rule “{rule}”). Check whether it is a real access key. If so: remove it from the code, read it from an environment variable instead, update .env.example and tell me which key I need to revoke with the provider. If it's an example value, mark it as allowed for Gitleaks. Briefly explain in simple words what you did.",
+    },
+    vulnerabilities: {
+      why: "The package {pkg} in version {version} has a known vulnerability ({id}). As long as this version is installed, it can be exploited.",
+      fix: "Update to a version without this vulnerability – with npm e.g. “npm install {pkg}@latest” or the version named in {id} – and test afterwards. If the package only comes in through another one, update that one.",
+      prompt: "The package {pkg} ({version}) has the vulnerability {id}. Update it to the smallest version without this vulnerability (even if it's only a transitive dependency), adjust affected code and run all tests and the build. Briefly explain in simple words what changed.",
+    },
+    findings: {
+      why: "Semgrep found a suspicious spot (rule “{rule}”) – usually a pattern that can lead to vulnerabilities or bugs.",
+      fix: "Look at {file}: if it's really risky, rework it following the rule's advice; otherwise add a short comment explaining why it's fine.",
+      prompt: "Semgrep reports the rule “{rule}” in {file}. Check whether it really is a problem and fix it if so – without changing the behaviour otherwise. Explain in simple words what the risk was.",
+    },
+  },
   allGood: "No secrets and no known vulnerabilities found.",
   empty: "Nothing found.",
   more: "Show {n} more",

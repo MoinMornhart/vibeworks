@@ -50,6 +50,7 @@ const de = {
     passwordAge: "Erinnerung, das Passwort zu wechseln (Abstand unter Konto → Passwort)",
     news: "Neue Funktionen nach einem Update – ein Klick führt direkt dorthin",
     assigned: "Dir wird eine Aufgabe zugewiesen (als Bearbeiter eingetragen)",
+    fork: "Jemand forkt eines deiner Repositories (Webhook nötig)",
     updated: "VibeWorks wurde aktualisiert",
   },
   save: "Speichern",
@@ -109,6 +110,11 @@ const de = {
     },
     news: { title: "Neu in VibeWorks {version}" },
     assigned: { title: "Dir zugewiesen: {title}", message: "{name} hat dich in „{project}“ als Bearbeiter eingetragen." },
+    fork: {
+      title: "Neuer Fork: {project}",
+      message: "{owner} hat das Repository geforkt: {fork} – nichts davon landet automatisch bei dir, Änderungen kämen nur als Pull Request, den du prüfst.",
+      messagePrivate: "{owner} hat das Repository privat geforkt: {fork}.",
+    },
     test: { title: "Test von VibeWorks", message: "Wenn du das liest, kommt der Kanal an. 🎉" },
   },
   errors: {
@@ -171,6 +177,7 @@ const en: Shape<typeof de> = {
     passwordAge: "Reminder to change your password (interval under Account → Password)",
     news: "New features after an update – a click takes you straight there",
     assigned: "A task is assigned to you (entered as assignee)",
+    fork: "Someone forks one of your repositories (needs the webhook)",
     updated: "VibeWorks was updated",
   },
   save: "Save",
@@ -230,6 +237,11 @@ const en: Shape<typeof de> = {
     },
     news: { title: "New in VibeWorks {version}" },
     assigned: { title: "Assigned to you: {title}", message: "{name} entered you as assignee in “{project}”." },
+    fork: {
+      title: "New fork: {project}",
+      message: "{owner} forked the repository: {fork} – nothing from it reaches you automatically, changes would only come as a pull request you review.",
+      messagePrivate: "{owner} forked the repository privately: {fork}.",
+    },
     test: { title: "Test from VibeWorks", message: "If you can read this, the channel works. 🎉" },
   },
   errors: {

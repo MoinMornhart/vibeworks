@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.8",
+    date: "2026-09-15",
+    title: "Befunde verständlich, Fork-Meldung, Beiträge als Aufgabe",
+    titleEn: "Findings explained, fork alerts, posts as tasks",
+    changes: [
+      {
+        type: "neu",
+        text: "Repo-Check erklärt jeden Befund in einfacher Sprache – was er bedeutet und wie man ihn behebt – und liefert einen fertigen Prompt für Claude Code zum Kopieren. Umgesetzt wird weiter bei dir, VibeWorks schreibt nichts ins Repository",
+        en: "The repo check explains every finding in plain words – what it means and how to fix it – and provides a ready-made prompt for Claude Code to copy. Fixing still happens on your side, VibeWorks writes nothing into the repository",
+      },
+      {
+        type: "neu",
+        text: "Fork-Meldung: forkt jemand ein Repository eines Projekts, kommt eine Nachricht mit Link zum Fork – nichts wird kopiert. Neuer Anlass „Fork“ (braucht den Webhook)",
+        en: "Fork alert: if someone forks a project's repository, you get a message with a link to the fork – nothing is copied. New event “Fork” (needs the webhook)",
+      },
+      {
+        type: "neu",
+        text: "Community: Mitglieder ab „Bearbeiter“ übernehmen einen Beitrag mit einem Klick als Aufgabe (mit Issue, wenn das Projekt spiegelt) – Beiträge anderer bleiben intern",
+        en: "Community: members from “Editor” up turn a post into a task with one click (with an issue if the project mirrors) – posts by others stay internal",
+      },
+      {
+        type: "besser",
+        text: "MCP-Regeln: die KI fragt vor dem Speichern, in welchem Werkzeug sie läuft und wohin die Regeln sollen",
+        en: "MCP rules: the AI asks which tool it runs in and where the rules should go before saving them",
+      },
+    ],
+  },
+  {
     version: "0.7.7",
     date: "2026-09-15",
     title: "Brett einstellen, Bearbeiter aus dem Team, neue Benachrichtigungs-Seite",

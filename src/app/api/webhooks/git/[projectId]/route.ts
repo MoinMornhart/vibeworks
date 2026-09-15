@@ -4,6 +4,7 @@ import { ApiError, json, notFound, route } from "@/lib/api";
 import { decrypt } from "@/lib/crypto";
 import { verifyWebhook } from "@/lib/git/webhook";
 import { syncProjectNow } from "@/lib/git/scheduler";
+import { notifyFork, parseFork } from "@/lib/git/forkNotify";
 import { tk } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
@@ -35,6 +36,12 @@ export const POST = route<Params>(async (req, { params }) => {
   // Ohne updatedAt anzufassen – ein Webhook ist keine Änderung am Projekt.
   await db.$executeRaw`UPDATE "Project" SET "webhookAt" = NOW() WHERE "id" = ${project.id}`;
   if (check.event === "ping") return json({ ok: true, event: "ping" });
+  // Fork: nur melden, nichts abgleichen oder kopieren (#23)
+  if (check.event === "fork") {
+    const fork = parseFork(raw);
+    if (fork) after(() => notifyFork(project.id, fork));
+    return json({ ok: true, event: "fork" }, { status: 202 });
+  }
   after(() => syncProjectNow(project.id));
   return json({ ok: true, event: check.event }, { status: 202 });
 });
