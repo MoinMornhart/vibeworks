@@ -8,6 +8,7 @@ import { snippets, type ErrorStatus } from "@/lib/bugsLogic";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/Toaster";
 
 type Filter = ErrorStatus | "all";
 type Snippet = "browser" | "node" | "curl";
@@ -105,7 +106,10 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
     const res = await run(() => api<{ item: AppErrorItem }>(`/api/projects/${projectId}/errors/${item.id}`, { method: "PATCH", body }));
     if (res) {
       replace(res.item);
-      if ("action" in body) router.refresh(); // neue Aufgabe im Board
+      if ("action" in body) {
+        toast(t("taskCreated"));
+        router.refresh(); // neue Aufgabe im Board
+      }
     }
   }
 

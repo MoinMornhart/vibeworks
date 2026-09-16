@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.3",
+    date: "2026-09-17",
+    title: "Klare Rückmeldungen",
+    titleEn: "Clear feedback",
+    changes: [
+      {
+        type: "besser",
+        text: "Legt man eine Aufgabe aus dem Repo-Check oder dem Fehler-Eingang an, erscheint unten rechts „Aufgabe erfolgreich erstellt“ – nicht mehr nur ein Hinweis irgendwo im Panel. Der Knopf heißt jetzt „Als Aufgabe erstellen“",
+        en: "Creating a task from the repo check or the error inbox now shows “Task created successfully” in the bottom right – no longer just a note somewhere in the panel. The button is now called “Create as task”",
+      },
+      {
+        type: "fix",
+        text: "Sicherheit: Das Muster in der Code-Dateiliste (z. B. „src/*.ts“) wird ohne regulären Ausdruck geprüft – ein Muster mit sehr vielen * konnte die Prüfung sonst extrem verlangsamen. Dazu meldet Firefox keinen CSP-Hinweis zu 'self' mehr",
+        en: "Security: the pattern in the code file list (e.g. “src/*.ts”) is checked without a regular expression – a pattern with very many * could otherwise slow the check down extremely. Firefox also no longer reports a CSP note about 'self'",
+      },
+    ],
+  },
+  {
     version: "0.9.2",
     date: "2026-09-17",
     title: "Memo-Netz und Zweige",

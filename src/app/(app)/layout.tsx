@@ -3,6 +3,7 @@ import { TopNav } from "@/components/TopNav";
 import { ChangelogButton } from "@/components/ChangelogButton";
 import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
+import { Toaster } from "@/components/ui/Toaster";
 import { DemoBanner } from "@/components/DemoBanner";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { getSettings, isSetupDone } from "@/lib/settings";
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </footer>
       <CommandPalette isAdmin={isAdmin} />
       <QuickCapture />
+      <Toaster />
     </div>
   );
 }

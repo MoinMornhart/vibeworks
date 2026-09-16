@@ -54,11 +54,34 @@ export function fileSummary(files: string[], top = 8) {
   };
 }
 
+/**
+ * Passt ein Pfad auf ein *-Muster? Ohne regulären Ausdruck (#61): ein aus
+ * Nutzereingaben gebauter Regex mit vielen „.*“ kann sich festrechnen (ReDoS).
+ * Hier: Anfang und Ende müssen passen, die Teile dazwischen der Reihe nach
+ * vorkommen – das ist genau „^a.*b.*c$“, aber immer in linearer Zeit.
+ */
+export function matchesWildcard(text: string, pattern: string): boolean {
+  const parts = pattern.split("*");
+  if (parts.length === 1) return text === pattern;
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  if (!text.startsWith(first) || !text.endsWith(last) || text.length < first.length + last.length) return false;
+  let at = first.length;
+  const end = text.length - last.length;
+  for (const part of parts.slice(1, -1)) {
+    if (!part) continue;
+    const found = text.indexOf(part, at);
+    if (found < 0 || found + part.length > end) return false;
+    at = found + part.length;
+  }
+  return true;
+}
+
 /** Dateien nach einem einfachen Muster filtern: Teilstring oder *-Platzhalter. */
 export function filterFiles(files: string[], pattern: string | null, limit = 200): string[] {
   const code = files.filter(isCodeFile);
   if (!pattern?.trim()) return code.slice(0, limit);
   const p = pattern.trim().toLowerCase();
-  const rx = p.includes("*") ? new RegExp(`^${p.split("*").map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`) : null;
-  return code.filter((f) => (rx ? rx.test(f.toLowerCase()) : f.toLowerCase().includes(p))).slice(0, limit);
+  const wildcard = p.includes("*");
+  return code.filter((f) => (wildcard ? matchesWildcard(f.toLowerCase(), p) : f.toLowerCase().includes(p))).slice(0, limit);
 }

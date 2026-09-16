@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fileSummary, filterFiles, isCodeFile, parseGrep } from "./codeIndexLogic";
+import { fileSummary, filterFiles, isCodeFile, matchesWildcard, parseGrep } from "./codeIndexLogic";
 
 const files = ["src/lib/foo.ts", "src/lib/bar.ts", "src/app/page.tsx", "README.md", "node_modules/x/index.js", "public/logo.png", "dist/main.js"];
 
@@ -32,5 +32,20 @@ describe("Code-Index", () => {
     expect(filterFiles(files, "src/lib/*.ts")).toEqual(["src/lib/foo.ts", "src/lib/bar.ts"]);
     expect(filterFiles(files, null)).toHaveLength(4);
     expect(filterFiles(files, "  ")).toHaveLength(4);
+  });
+
+  it("Platzhalter ohne Regex – gleiche Treffer, keine Festrechner (#61)", () => {
+    expect(matchesWildcard("src/lib/foo.ts", "src/*.ts")).toBe(true);
+    expect(matchesWildcard("src/lib/foo.ts", "*foo*")).toBe(true);
+    expect(matchesWildcard("src/lib/foo.ts", "src/*/bar.ts")).toBe(false);
+    expect(matchesWildcard("a.ts", "a*a.ts")).toBe(false); // Anfang und Ende dürfen sich nicht überlappen
+    expect(matchesWildcard("aba", "a*b*a")).toBe(true);
+    expect(matchesWildcard("ab", "a*b*a")).toBe(false);
+    expect(matchesWildcard("x", "*")).toBe(true);
+    expect(filterFiles(["src/[x]/(y).ts"], "src/[x]/*.ts")).toEqual(["src/[x]/(y).ts"]); // Sonderzeichen wörtlich
+    const evil = `${"a*".repeat(99)}b`;
+    const started = Date.now();
+    expect(matchesWildcard("a".repeat(5000), evil)).toBe(false);
+    expect(Date.now() - started).toBeLessThan(200);
   });
 });

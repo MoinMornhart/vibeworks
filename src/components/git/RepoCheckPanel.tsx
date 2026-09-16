@@ -5,6 +5,7 @@ import { Bug, Check, Copy, ExternalLink, KeyRound, ListPlus, ListTodo, RefreshCw
 import { CHECK_TASK_MODES, type CheckTaskMode } from "@/lib/git/checkTasksLogic";
 import { useRouter } from "next/navigation";
 import { TaskDialog, type TaskForm } from "@/components/tasks/TaskDialog";
+import { toast } from "@/components/ui/Toaster";
 import type { RepoCheckView } from "@/lib/git/repoCheck";
 import { blobUrl, checkIsUrgent, type CheckReport } from "@/lib/git/repoCheckLogic";
 import { GITHUB_NEW_TOKEN_URL } from "@/lib/git/parse";
@@ -108,7 +109,10 @@ export function RepoCheckPanel({
     setError(null);
     try {
       const res = await api<{ draft: { title: string; description: string; labels: string[]; priority: number; assignee: string; existing: { title: string } | null } | null }>(`/api/projects/${projectId}/check`, { body: { action: "draft", kind, index } });
-      if (res.draft?.existing) setNote(t("tasks.exists", { title: res.draft.existing.title }));
+      if (res.draft?.existing) {
+        setNote(t("tasks.exists", { title: res.draft.existing.title }));
+        toast(t("tasks.exists", { title: res.draft.existing.title }), "error");
+      }
       else if (res.draft) setDraft({ title: res.draft.title, description: res.draft.description, labels: res.draft.labels.join(", "), priority: res.draft.priority, assignee: res.draft.assignee });
     } catch (e) {
       setError(errorMessage(e));
@@ -141,7 +145,10 @@ export function RepoCheckPanel({
     setNote(null);
     try {
       const res = await send(action, extra);
-      if (action === "task" && res.task) setNote(t("tasks.created", { title: res.task.title }));
+      if (action === "task" && res.task) {
+        setNote(t("tasks.created", { title: res.task.title }));
+        toast(t("tasks.created", { title: res.task.title }));
+      }
       if (action === "autoTasks") setNote(t("tasks.saved"));
       if (action === "disable") setNote(res.warning ? t("removeFailed", { error: msg(res.warning) }) : res.removed ? t("removed") : null);
     } catch (e) {
@@ -349,6 +356,7 @@ export function RepoCheckPanel({
           onSave={async (form) => {
             const res = await api<{ task: { title: string } }>(`/api/projects/${projectId}/tasks`, { body: { ...form, recurrence: form.recurrence || null } });
             setNote(t("tasks.created", { title: res.task.title }));
+            toast(t("tasks.created", { title: res.task.title }));
             router.refresh();
           }}
         />

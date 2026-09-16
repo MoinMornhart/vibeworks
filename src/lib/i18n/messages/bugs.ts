@@ -46,6 +46,7 @@ const de = {
     delete: "Löschen",
   },
   confirmDelete: "Diesen Fehler löschen? Kommt er wieder, erscheint er neu.",
+  taskCreated: "Aufgabe erfolgreich erstellt – sie steht jetzt im Board.",
   task: {
     title: "Fehler beheben: {message}",
     notfixTitle: "Notfix: {message}",
@@ -101,6 +102,7 @@ const en: Shape<typeof de> = {
     delete: "Delete",
   },
   confirmDelete: "Delete this error? If it happens again, it shows up as new.",
+  taskCreated: "Task created successfully – it is on the board now.",
   task: {
     title: "Fix error: {message}",
     notfixTitle: "Notfix: {message}",

@@ -59,8 +59,8 @@ const de = {
   more: "{n} weitere zeigen",
   inCommit: "Commit {commit}",
   tasks: {
-    toTask: "Als Aufgabe für Claude",
-    created: "Aufgabe angelegt: {title}",
+    toTask: "Als Aufgabe erstellen",
+    created: "Aufgabe erfolgreich erstellt: {title}",
     exists: "Dafür gibt es schon eine offene Aufgabe: {title}",
     saved: "Gespeichert.",
     modeLabel: "Aufgaben automatisch anlegen:",
@@ -157,8 +157,8 @@ const en: Shape<typeof de> = {
   more: "Show {n} more",
   inCommit: "commit {commit}",
   tasks: {
-    toTask: "Task for Claude",
-    created: "Task created: {title}",
+    toTask: "Create as task",
+    created: "Task created successfully: {title}",
     exists: "There already is an open task for this: {title}",
     saved: "Saved.",
     modeLabel: "Create tasks automatically:",

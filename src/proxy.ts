@@ -20,7 +20,8 @@ function csp(nonce: string): string {
   const dev = process.env.NODE_ENV !== "production";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    // Ohne 'self': neben 'strict-dynamic' ignorieren es alle aktuellen Browser, Firefox meldet es nur (#63)
+    `script-src 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     // React setzt style-Attribute (Hintergrund-Einstellungen, Fortschrittsbalken).
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
