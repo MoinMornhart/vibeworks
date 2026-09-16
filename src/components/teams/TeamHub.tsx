@@ -10,6 +10,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { roleName } from "@/components/roles/roleName";
+import { WorkClock } from "@/components/tasks/TaskInfoPanel";
 import { cn } from "@/lib/utils";
 
 const CHAT_POLL_MS = 15_000;
@@ -129,8 +130,33 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
                       {x.title}
                     </Link>
                     <span className="text-xs text-muted">{x.project}</span>
+                    {x.status === "DOING" ? (
+                      <WorkClock since={x.since} who="Claude" />
+                    ) : (
+                      <span className="text-xs text-muted" suppressHydrationWarning>
+                        {f.ago(x.updatedAt)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <h3 className="mb-1 mt-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+              <Activity size={13} /> {t("ai.steps")}
+            </h3>
+            {hub.aiSteps.length === 0 ? (
+              <p className="text-xs text-muted">{t("ai.noSteps")}</p>
+            ) : (
+              <ul className="divide-y divide-fg/10 text-sm" data-testid="hub-ai-steps">
+                {hub.aiSteps.map((s, i) => (
+                  <li key={i} className="flex flex-wrap items-center gap-x-2 py-1">
+                    <code className={cn("text-xs", !s.ok && "text-amber-400")}>{s.tool}</code>
+                    <Link href={`/projects/${s.projectId}`} className="min-w-0 flex-1 truncate hover:text-accent-ink">
+                      {s.task}
+                    </Link>
+                    <span className="text-xs text-muted">{s.project}</span>
                     <span className="text-xs text-muted" suppressHydrationWarning>
-                      {f.ago(x.updatedAt)}
+                      {f.ago(s.at)}
                     </span>
                   </li>
                 ))}

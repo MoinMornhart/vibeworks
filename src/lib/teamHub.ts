@@ -38,7 +38,7 @@ export async function teamHub(teamId: string, userId: string) {
   if (!team) throw notFound(tk("teams", "errors.notFound"));
   const projectIds = team.projects.map((p) => p.project.id);
   const manage = perms.has("team.manage");
-  const [tasks, activity, wishes, usedToday, access] = await Promise.all([
+  const [tasks, activity, wishes, usedToday, access, steps] = await Promise.all([
     projectIds.length
       ? db.task.findMany({
           where: {
@@ -48,13 +48,14 @@ export async function teamHub(teamId: string, userId: string) {
           },
           orderBy: { updatedAt: "desc" },
           take: 30,
-          select: { id: true, title: true, status: true, projectId: true, updatedAt: true, assignee: true, issueAssignees: true },
+          select: { id: true, title: true, status: true, projectId: true, updatedAt: true, statusChangedAt: true, assignee: true, issueAssignees: true },
         })
       : [],
     projectIds.length ? db.activity.findMany({ where: { projectId: { in: projectIds } }, orderBy: { createdAt: "desc" }, take: 15, include: { user: userSelect } }) : [],
     db.teamWish.findMany({ where: { teamId }, orderBy: { createdAt: "desc" }, take: 50, include: { author: userSelect } }),
     db.teamWish.count({ where: { teamId, authorId: userId, createdAt: { gte: new Date(Date.now() - WISH_WINDOW_MS) } } }),
     manage ? Promise.all(projectIds.map(async (id) => ({ id, res: await accessOf(userId, id) }))) : Promise.resolve([]),
+    recentAiSteps(projectIds),
   ]);
   const projectName = new Map(team.projects.map((p) => [p.project.id, p.project.name]));
 
@@ -77,7 +78,10 @@ export async function teamHub(teamId: string, userId: string) {
       projectId: x.projectId,
       project: projectName.get(x.projectId) ?? "",
       updatedAt: x.updatedAt.toISOString(),
+      since: x.statusChangedAt.toISOString(),
     })),
+    /** Letzte MCP-Schritte zu Aufgaben der Team-Projekte (#56) */
+    aiSteps: steps.map((s) => ({ ...s, project: projectName.get(s.projectId) ?? "" })),
     activity: activity.map((a) => ({ id: a.id, summary: a.summary, projectId: a.projectId, project: projectName.get(a.projectId) ?? "", user: a.user ? displayNameOf(a.user) : null, at: a.createdAt.toISOString() })),
     wishes: wishes.map((w) => ({
       id: w.id,
@@ -96,6 +100,27 @@ export async function teamHub(teamId: string, userId: string) {
   };
 }
 export type TeamHubView = Awaited<ReturnType<typeof teamHub>>;
+
+/** Was die KI zuletzt an Aufgaben dieser Projekte getan hat – nur Werkzeug, Aufgabe und Zeit, keine Inhalte. */
+async function recentAiSteps(projectIds: string[]) {
+  if (!projectIds.length) return [];
+  const calls = await db.mcpCall.findMany({
+    where: { taskId: { not: null }, createdAt: { gte: new Date(Date.now() - 7 * 86_400_000) } },
+    orderBy: { createdAt: "desc" },
+    take: 300,
+    select: { taskId: true, tool: true, ok: true, createdAt: true },
+  });
+  const ids = [...new Set(calls.map((c) => c.taskId!))];
+  const tasks = ids.length ? await db.task.findMany({ where: { id: { in: ids }, projectId: { in: projectIds } }, select: { id: true, title: true, projectId: true } }) : [];
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  return calls
+    .filter((c) => byId.has(c.taskId!))
+    .slice(0, 15)
+    .map((c) => {
+      const task = byId.get(c.taskId!)!;
+      return { tool: c.tool, ok: c.ok, at: c.createdAt.toISOString(), taskId: task.id, task: task.title, projectId: task.projectId };
+    });
+}
 
 export async function teamMessages(teamId: string) {
   const rows = await db.teamMessage.findMany({ where: { teamId }, orderBy: { createdAt: "desc" }, take: 100, include: { author: userSelect } });

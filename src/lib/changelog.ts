@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.0",
+    date: "2026-09-17",
+    title: "Team sieht die KI arbeiten",
+    titleEn: "Team sees the AI at work",
+    changes: [
+      {
+        type: "neu",
+        text: "Die Team-Seite zeigt bei „Woran arbeitet Claude gerade?“ jetzt eine laufende Uhr an Aufgaben in Arbeit und darunter die letzten Schritte der KI in den Team-Projekten – welches Werkzeug, an welcher Aufgabe, wann. Schritte aus anderen Projekten bleiben draußen",
+        en: "The team page's “What is Claude working on?” now shows a running clock on tasks in progress and, below, the AI's latest steps in the team's projects – which tool, on which task, when. Steps from other projects stay out",
+      },
+    ],
+  },
+  {
     version: "0.8.9",
     date: "2026-09-17",
     title: "Code-Netz",

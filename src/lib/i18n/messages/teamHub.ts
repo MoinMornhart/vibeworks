@@ -15,6 +15,8 @@ const de = {
     title: "Woran arbeitet Claude gerade?",
     hint: "Aufgaben in den Team-Projekten mit Bearbeiter „Claude“ – Laufendes zuerst, direkt aus VibeWorks.",
     empty: "Gerade ist Claude für keine offene Aufgabe eingetragen.",
+    steps: "Letzte Schritte der KI",
+    noSteps: "In den letzten 7 Tagen keine KI-Schritte über MCP in den Team-Projekten.",
   },
   activity: { title: "Letzte Aktivität", empty: "Noch nichts passiert." },
   chat: {
@@ -66,6 +68,8 @@ const en: Shape<typeof de> = {
     title: "What is Claude working on?",
     hint: "Tasks in the team's projects with assignee “Claude” – ongoing first, straight from VibeWorks.",
     empty: "Claude isn't assigned to any open task right now.",
+    steps: "Latest AI steps",
+    noSteps: "No AI steps via MCP in the team's projects during the last 7 days.",
   },
   activity: { title: "Recent activity", empty: "Nothing happened yet." },
   chat: {
