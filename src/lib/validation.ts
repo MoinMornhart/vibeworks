@@ -369,6 +369,8 @@ export const taskCreateSchema = z.object({
   assignee: assigneeSchema.nullish().transform((v) => v || null),
   priority: z.number().int().min(1).max(4).default(2),
   aiLocked: z.boolean().default(false),
+  /** Zusatz-Spalte (#76) */
+  column: z.string().regex(/^x[1-9]$/).nullish().transform((v) => v ?? null),
 });
 
 // Dieselbe Aufgabe für mehrere Projekte (Aufgabenübersicht, MCP)
@@ -391,10 +393,13 @@ export const taskUpdateSchema = z.object({
   priority: z.number().int().min(1).max(4).optional(),
   aiNote: optionalText(4000).optional(),
   aiLocked: z.boolean().optional(),
+  column: z.string().regex(/^x[1-9]$/).nullable().optional(),
 });
 
 export const taskReorderSchema = z.object({
   status: taskStatusSchema,
+  /** Zusatz-Spalte, in die sortiert wird – null/fehlend: die Grundspalte */
+  column: z.string().regex(/^x[1-9]$/).nullish().transform((v) => v ?? null),
   ids: z.array(z.string().max(40)).max(2000),
 });
 

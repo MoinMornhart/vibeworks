@@ -15,7 +15,7 @@ import { TaskDialog, type TaskForm } from "./TaskDialog";
 import { PriorityBadge } from "@/components/projects/ProjectCard";
 import { TaskInfoPanel, WorkClock } from "./TaskInfoPanel";
 import { BoardSettings } from "./BoardSettings";
-import { DEFAULT_BOARD, type BoardConfig } from "@/lib/boardConfig";
+import { baseOf, columnKeyOf, DEFAULT_BOARD, isExtraKey, type BoardConfig } from "@/lib/boardConfig";
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
   TODO: "var(--vw-muted)",
@@ -160,7 +160,6 @@ function TaskCard({
 type TaskPatch = Partial<Omit<TaskForm, "recurrence">> & { recurrence?: Recurrence | null };
 
 const byPosition = (a: TaskItem, b: TaskItem) => a.position - b.position || a.createdAt.localeCompare(b.createdAt);
-const statusOf = (t: TaskItem) => t.status;
 
 export function TaskBoard({
   projectId,
@@ -197,8 +196,10 @@ export function TaskBoard({
   const [boardCfg, setBoardCfg] = useState<BoardConfig>(board ?? DEFAULT_BOARD);
   const [configuring, setConfiguring] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
-  const columnLabel = (s: TaskStatus) => boardCfg.labels[s] || ts(`task.${s}`);
+  const columnLabel = (k: string) => boardCfg.extra.find((x) => x.key === k)?.label || boardCfg.labels[k as TaskStatus] || ts(`task.${baseOf(boardCfg, k)}`);
+  const columnOf = (t: TaskItem) => columnKeyOf(boardCfg, t);
   const visibleColumns = boardCfg.order.filter((s) => showHidden || !boardCfg.hidden.includes(s));
+  const wide = visibleColumns.length > 4;
   const today = dayKey(new Date());
   const done = useMemo(() => tasks.filter((t) => t.status === "DONE").length, [tasks]);
   // Erledigtes und Blockiertes verschwindet nach zwei Tagen vom Board – auf Wunsch wieder einblendbar.
@@ -254,8 +255,11 @@ export function TaskBoard({
     }
   }
 
-  function reorder(status: string, ids: string[]) {
+  function reorder(key: string, ids: string[]) {
     const before = tasks;
+    // Zusatz-Spalte (#76): Status der Grundspalte, Spalte merken
+    const status = baseOf(boardCfg, key);
+    const column = isExtraKey(key) ? key : null;
     setTasks((ts) =>
       ts.map((t) => {
         const i = ids.indexOf(t.id);
@@ -263,7 +267,8 @@ export function TaskBoard({
         const moved = t.status !== status;
         return {
           ...t,
-          status: status as TaskStatus,
+          status,
+          column,
           position: i,
           doneAt: status === "DONE" ? t.doneAt ?? new Date().toISOString() : null,
           statusChangedAt: moved ? new Date().toISOString() : t.statusChangedAt,
@@ -271,7 +276,7 @@ export function TaskBoard({
       }),
     );
     setError(null);
-    api<{ spawned: TaskItem[] }>(`/api/projects/${projectId}/tasks/reorder`, { method: "PATCH", body: { status, ids } })
+    api<{ spawned: TaskItem[] }>(`/api/projects/${projectId}/tasks/reorder`, { method: "PATCH", body: { status, column, ids } })
       .then((res) => {
         merge(res.spawned);
         afterChange();
@@ -380,7 +385,7 @@ export function TaskBoard({
       <SortableColumns
         items={boardTasks}
         columns={visibleColumns}
-        columnOf={statusOf}
+        columnOf={columnOf}
         sort={byPosition}
         labelOf={(t) => t.title}
         onReorder={reorder}
@@ -388,12 +393,17 @@ export function TaskBoard({
         emptyText={t("board.empty")}
         renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onInfo={(x) => setInfoFor(x)} onToggle={toggle} readOnly={readOnly} />}
         renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
-        renderColumn={(status, count, body) => {
-          const label = columnLabel(status as TaskStatus);
+        renderColumn={(key, count, body) => {
+          const label = columnLabel(key);
           return (
-            <div className="flex min-w-0 flex-col rounded-2xl border bg-bg/25 p-2.5" aria-label={label} role="group">
+            <div
+              className={cn("flex min-w-0 flex-col rounded-2xl border bg-bg/25 p-2.5", wide && "w-72 shrink-0 snap-start", isExtraKey(key) && "border-dashed")}
+              aria-label={label}
+              role="group"
+              data-testid="board-column"
+            >
               <h3 className="mb-2.5 flex items-center gap-2 px-1 text-sm font-semibold">
-                <span className="h-2 w-2 rounded-full" style={{ background: COLUMN_COLOR[status as TaskStatus] }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: COLUMN_COLOR[baseOf(boardCfg, key)] }} />
                 {label}
                 <span className="ml-auto text-xs font-normal tabular-nums text-muted">{count}</span>
               </h3>
@@ -401,7 +411,12 @@ export function TaskBoard({
             </div>
           );
         }}
-        className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", visibleColumns.length >= 4 ? "xl:grid-cols-4" : visibleColumns.length === 3 && "xl:grid-cols-3")}
+        // Mehr als vier Spalten (#76): waagerecht scrollen statt quetschen
+        className={
+          wide
+            ? "-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2"
+            : cn("grid grid-cols-1 gap-3 sm:grid-cols-2", visibleColumns.length >= 4 ? "xl:grid-cols-4" : visibleColumns.length === 3 && "xl:grid-cols-3")
+        }
       />
 
       {!readOnly && (
@@ -409,6 +424,7 @@ export function TaskBoard({
         open={dialog !== null}
         task={dialog?.task ?? null}
         statusLabels={boardCfg.labels}
+        extraColumns={boardCfg.extra}
         defaultStatus={dialog?.status}
         onClose={() => setDialog(null)}
         onSave={save}

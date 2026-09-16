@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n/client";
 import { usePathname } from "next/navigation";
 import { useDraft } from "@/lib/client/draft";
 import { DraftNote } from "@/components/ui/DraftNote";
+import type { ExtraColumn } from "@/lib/boardConfig";
 
 export interface TaskForm {
   title: string;
@@ -26,6 +27,8 @@ export interface TaskForm {
   priority: number;
   /** Für KI gesperrt (#76) */
   aiLocked: boolean;
+  /** Zusatz-Spalte (#76) */
+  column: string | null;
 }
 
 function toForm(t: TaskItem | null, status: TaskStatus, initial?: Partial<TaskForm>): TaskForm {
@@ -37,7 +40,7 @@ function toForm(t: TaskItem | null, status: TaskStatus, initial?: Partial<TaskFo
   };
 }
 
-const EMPTY: TaskForm = { title: "", description: "", status: "TODO", dueDate: "", labels: "", recurrence: "", assignee: "", priority: 2, aiLocked: false };
+const EMPTY: TaskForm = { title: "", description: "", status: "TODO", dueDate: "", labels: "", recurrence: "", assignee: "", priority: 2, aiLocked: false, column: null };
 
 function fromTask(t: TaskItem): TaskForm {
   return {
@@ -50,6 +53,7 @@ function fromTask(t: TaskItem): TaskForm {
     assignee: t.assignee ?? "",
     priority: t.priority,
     aiLocked: t.aiLocked,
+    column: t.column,
   };
 }
 
@@ -64,6 +68,7 @@ export function TaskDialog({
   onInfo,
   initial,
   statusLabels,
+  extraColumns = [],
 }: {
   open: boolean;
   task: TaskItem | null;
@@ -79,6 +84,8 @@ export function TaskDialog({
   initial?: Partial<TaskForm>;
   /** Eigene Spaltennamen des Projekts (#72) */
   statusLabels?: Partial<Record<TaskStatus, string>>;
+  /** Zusatz-Spalten des Bretts (#76) */
+  extraColumns?: ExtraColumn[];
 }) {
   const t = useT("tasks");
   const tc = useT("common");
@@ -195,10 +202,25 @@ export function TaskDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="t-status">{t("dialog.column")}</label>
-            <select id="t-status" className="field" value={form.status} onChange={(e) => set("status", e.target.value as TaskStatus)}>
-              {TASK_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{statusLabels?.[s.value] || ts(`task.${s.value}`)}</option>
-              ))}
+            <select
+              id="t-status"
+              className="field"
+              value={extraColumns.some((x) => x.key === form.column && x.base === form.status) ? form.column! : form.status}
+              onChange={(e) => {
+                const extra = extraColumns.find((x) => x.key === e.target.value);
+                setForm((f) => (extra ? { ...f, status: extra.base, column: extra.key } : { ...f, status: e.target.value as TaskStatus, column: null }));
+              }}
+            >
+              {TASK_STATUSES.flatMap((s) => [
+                <option key={s.value} value={s.value}>{statusLabels?.[s.value] || ts(`task.${s.value}`)}</option>,
+                ...extraColumns
+                  .filter((x) => x.base === s.value)
+                  .map((x) => (
+                    <option key={x.key} value={x.key}>
+                      ↳ {x.label}
+                    </option>
+                  )),
+              ])}
             </select>
           </div>
           <div>

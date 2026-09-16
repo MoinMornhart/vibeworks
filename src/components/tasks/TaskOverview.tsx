@@ -212,7 +212,7 @@ export function TaskOverview({ initial, today, allProjects = [], focusIds = [] }
                           </button>
                         )}
                         <span className={cn("hidden w-20 shrink-0 text-right text-xs sm:inline", STATUS_TONE[task.status])}>
-                          {task.project.labels?.[task.status] || ts(`task.${task.status}`)}
+                          {(task.column && task.project.labels?.[task.column]) || task.project.labels?.[task.status] || ts(`task.${task.status}`)}
                         </span>
                         <span className="w-24 shrink-0 text-right">{task.dueDate && <DueBadge dueDate={task.dueDate} done={done} today={today} />}</span>
                       </li>

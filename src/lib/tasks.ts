@@ -31,6 +31,7 @@ export function serializeTask(t: Task) {
     createdVia: t.createdVia,
     aiNote: t.aiNote,
     aiLocked: t.aiLocked,
+    column: t.column,
   };
 }
 export type TaskItem = ReturnType<typeof serializeTask>;
@@ -63,6 +64,8 @@ export async function transitionTask(
 ): Promise<{ task: Task; spawned: Task | null }> {
   const from = task.status;
   const update: Prisma.TaskUncheckedUpdateInput = { ...data, status: to };
+  // Neuer Status ohne ausdrückliche Spalte: zurück in die Grundspalte (#76)
+  if (from !== to && !("column" in data)) update.column = null;
   if (from !== to) update.statusChangedAt = new Date();
   if (to === "DONE" && from !== "DONE") update.doneAt = new Date();
   if (from === "DONE" && to !== "DONE") update.doneAt = null;

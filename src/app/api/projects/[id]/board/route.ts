@@ -11,11 +11,12 @@ type Params = { id: string };
 
 const schema = z.object({
   board: z.object({
-    order: z.array(z.string().max(20)).max(8),
-    hidden: z.array(z.string().max(20)).max(8),
+    order: z.array(z.string().max(20)).max(12),
+    hidden: z.array(z.string().max(20)).max(12),
     labels: z.record(z.string().max(20), z.string().max(200)).optional(),
     collapseAfter: z.number().int().min(0).max(100),
-    aiLocked: z.array(z.string().max(20)).max(8).optional(),
+    aiLocked: z.array(z.string().max(20)).max(12).optional(),
+    extra: z.array(z.object({ key: z.string().max(4), label: z.string().max(200), base: z.string().max(20) })).max(6).optional(),
   }),
 });
 
@@ -29,5 +30,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
   if (hidesEverything(board)) throw new ApiError(400, tk("tasks", "board.settings.lastVisible"));
   const clean = normalizeBoard(board);
   await db.project.update({ where: { id }, data: { boardConfig: clean as unknown as Prisma.InputJsonValue } });
+  // Entfernte Zusatz-Spalten (#76): Aufgaben zurück in ihre Grundspalte
+  await db.task.updateMany({ where: { projectId: id, column: { not: null, notIn: clean.extra.map((x) => x.key) } }, data: { column: null } });
   return json({ board: clean });
 });

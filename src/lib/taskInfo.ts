@@ -46,7 +46,7 @@ export async function taskInfo(task: Task) {
   return {
     status: task.status,
     /** Eigener Spaltenname des Projekts (#72) – null heißt Standard */
-    statusLabel: statusLabelsOf(project?.boardConfig)[task.status] ?? null,
+    statusLabel: (task.column && statusLabelsOf(project?.boardConfig)[task.column]) || statusLabelsOf(project?.boardConfig)[task.status] || null,
     since: task.statusChangedAt.toISOString(),
     assignee: task.assignee,
     priority: task.priority,

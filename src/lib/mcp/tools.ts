@@ -32,7 +32,7 @@ import { config } from "@/lib/config";
 import type { PromptProvider, ResourceProvider, ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
-import { aiLockedStatuses, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
+import { aiLockedStatuses, aiProjectTaskFilter, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
 
 /** Wie requireTask – aber für KI gesperrte Aufgaben gibt es über MCP nicht (#76). */
 async function requireAiTask(userId: string, id: string, need?: Need) {
@@ -212,7 +212,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const { project, access } = await resolveProject(userId, ref.parse(args.project));
       const [tasks, notes, repo] = await Promise.all([
         db.task.findMany({
-          where: { projectId: project.id, aiLocked: false, status: { notIn: aiLockedStatuses(project.boardConfig) }, OR: [{ status: { not: "DONE" } }, { doneAt: { gte: new Date(Date.now() - 14 * DAY) } }] },
+          where: { ...aiProjectTaskFilter(project.id, project.boardConfig), projectId: project.id, OR: [{ status: { not: "DONE" } }, { doneAt: { gte: new Date(Date.now() - 14 * DAY) } }] },
           orderBy: TASK_ORDER,
           take: 300,
         }),
@@ -315,7 +315,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project), "tasks.edit");
-      const input = taskCreateSchema.omit({ aiLocked: true }).parse(args);
+      const input = taskCreateSchema.omit({ aiLocked: true, column: true }).parse(args);
       if (aiLockedStatuses(project.boardConfig).includes(input.status)) throw new ApiError(403, tk("tasks", "aiLock.columnLocked"));
       const { task, progress } = await createTask(userId, project.id, { ...input, aiLocked: false }, "mcp");
       return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
@@ -379,7 +379,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     run: async (args, { userId }) => {
       const { task: current } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
       // Die Sperre setzt nur der Mensch in VibeWorks
-      const result = await updateTask(userId, current, taskUpdateSchema.omit({ aiLocked: true }).parse(args));
+      const result = await updateTask(userId, current, taskUpdateSchema.omit({ aiLocked: true, column: true }).parse(args));
       return {
         task: taskView(result.task, { full: true }),
         ...(result.spawned ? { nextRecurrence: taskView(result.spawned) } : {}),

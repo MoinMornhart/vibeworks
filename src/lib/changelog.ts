@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.7",
+    date: "2026-09-16",
+    title: "Eigene Spalten im Aufgabenbrett",
+    titleEn: "Your own columns on the task board",
+    changes: [
+      {
+        type: "neu",
+        text: "Bis zu 6 eigene Spalten (z. B. „Review“ oder „Warten auf Kunde“) in den Brett-Einstellungen – jede gehört zu einer Grundspalte, damit Issues und Fortschritt stimmen. Karten lassen sich hineinziehen oder im Dialog auswählen",
+        en: "Up to 6 extra columns (e.g. “Review” or “Waiting for client”) in the board settings – each belongs to a base column so issues and progress stay right. Drag cards in or pick the column in the dialog",
+      },
+      {
+        type: "besser",
+        text: "Ab 5 Spalten scrollt das Brett seitlich, statt die Karten zu quetschen; auch Zusatz-Spalten lassen sich für KI sperren",
+        en: "With 5 or more columns the board scrolls sideways instead of squeezing the cards; extra columns can be locked for AI too",
+      },
+    ],
+  },
+  {
     version: "1.0.6",
     date: "2026-09-16",
     title: "Für KI gesperrte Bereiche, Issues nur unter eigenem Namen",

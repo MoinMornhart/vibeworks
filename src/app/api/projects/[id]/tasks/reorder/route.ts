@@ -19,7 +19,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   await requireProject(user.id, id, "tasks.edit");
-  const { status, ids } = await readBody(req, taskReorderSchema);
+  const { status, column, ids } = await readBody(req, taskReorderSchema);
 
   const tasks = await db.task.findMany({ where: { projectId: id, id: { in: ids } } });
   const byId = new Map(tasks.map((t) => [t.id, t]));
@@ -32,10 +32,10 @@ export const PATCH = route<Params>(async (req, { params }) => {
       const task = byId.get(taskId)!;
       if (task.status !== status) {
         moved.push(taskId);
-        const res = await transitionTask(tx, task, status, user.id, { position: index });
+        const res = await transitionTask(tx, task, status, user.id, { position: index, column });
         if (res.spawned) spawned.push(res.spawned);
-      } else if (task.position !== index) {
-        await tx.$executeRaw`UPDATE "Task" SET "position" = ${index} WHERE "id" = ${taskId} AND "projectId" = ${id}`;
+      } else if (task.position !== index || task.column !== column) {
+        await tx.$executeRaw`UPDATE "Task" SET "position" = ${index}, "column" = ${column} WHERE "id" = ${taskId} AND "projectId" = ${id}`;
       }
     }
   });

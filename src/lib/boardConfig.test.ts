@@ -1,6 +1,6 @@
 import { isAiLocked } from "./aiLock";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_BOARD, hidesEverything, normalizeBoard } from "./boardConfig";
+import { baseOf, columnKeyOf, DEFAULT_BOARD, hidesEverything, nextExtraKey, normalizeBoard } from "./boardConfig";
 
 describe("Brett-Einstellungen", () => {
   it("nichts oder Unsinn ergibt den Standard", () => {
@@ -32,5 +32,45 @@ describe("KI-Sperre je Spalte (#76)", () => {
     expect(isAiLocked({ aiLocked: true, status: "TODO" }, null)).toBe(true);
     expect(isAiLocked({ aiLocked: false, status: "BLOCKED" }, { aiLocked: ["BLOCKED"] })).toBe(true);
     expect(isAiLocked({ aiLocked: false, status: "TODO" }, { aiLocked: ["BLOCKED"] })).toBe(false);
+  });
+});
+
+describe("Zusatz-Spalten (#76)", () => {
+  const cfg = normalizeBoard({
+    extra: [
+      { key: "x1", label: " Review ", base: "DOING" },
+      { key: "x1", label: "doppelt", base: "TODO" },
+      { key: "y2", label: "falscher Schlüssel", base: "TODO" },
+      { key: "x2", label: "", base: "TODO" },
+      { key: "x3", label: "Warten", base: "QUATSCH" },
+    ],
+    order: ["x1", "TODO"],
+    aiLocked: ["x1", "x9"],
+  });
+  it("übernimmt nur gültige Spalten und hängt sie an die Reihenfolge", () => {
+    expect(cfg.extra).toEqual([{ key: "x1", label: "Review", base: "DOING" }]);
+    expect(cfg.order).toEqual(["x1", "TODO", "DOING", "BLOCKED", "DONE"]);
+    expect(cfg.aiLocked).toEqual(["x1"]);
+  });
+  it("Spalte einer Aufgabe folgt dem Status", () => {
+    expect(columnKeyOf(cfg, { status: "DOING", column: "x1" })).toBe("x1");
+    expect(columnKeyOf(cfg, { status: "DONE", column: "x1" })).toBe("DONE");
+    expect(columnKeyOf(cfg, { status: "TODO", column: "x7" })).toBe("TODO");
+    expect(baseOf(cfg, "x1")).toBe("DOING");
+    expect(baseOf(cfg, "BLOCKED")).toBe("BLOCKED");
+  });
+  it("vergibt freie Schlüssel, höchstens sechs Spalten", () => {
+    expect(nextExtraKey(cfg)).toBe("x2");
+    const full = normalizeBoard({ extra: [1, 2, 3, 4, 5, 6, 7].map((i) => ({ key: `x${i}`, label: `S${i}`, base: "TODO" })) });
+    expect(full.extra).toHaveLength(6);
+    expect(nextExtraKey(full)).toBeNull();
+  });
+  it("gesperrte Zusatz-Spalte sperrt nur ihre Aufgaben", () => {
+    expect(isAiLocked({ aiLocked: false, status: "DOING", column: "x1" }, cfg)).toBe(true);
+    expect(isAiLocked({ aiLocked: false, status: "DOING", column: null }, cfg)).toBe(false);
+  });
+  it("mit Zusatz-Spalten zählen alle zum Ausblenden", () => {
+    expect(hidesEverything({ extra: [{ key: "x1", label: "R", base: "DOING" }], hidden: ["TODO", "DOING", "BLOCKED", "DONE"] })).toBe(false);
+    expect(hidesEverything({ extra: [{ key: "x1", label: "R", base: "DOING" }], hidden: ["TODO", "DOING", "BLOCKED", "DONE", "x1"] })).toBe(true);
   });
 });
