@@ -6,7 +6,7 @@ import { adminSettingsSchema } from "@/lib/validation";
 import { tk } from "@/lib/i18n/messages";
 
 function view(s: Awaited<ReturnType<typeof getSettings>>) {
-  return { mode: s.mode, allowRegistration: s.allowRegistration, allowPasswordReset: s.allowPasswordReset, taskColumnLimit: s.taskColumnLimit };
+  return { mode: s.mode, allowRegistration: s.allowRegistration, allowPasswordReset: s.allowPasswordReset, taskColumnLimit: s.taskColumnLimit, wishLimit: s.wishLimit };
 }
 
 export const GET = route(async () => {
@@ -34,6 +34,7 @@ export const PATCH = route(async (req) => {
       // „Passwort vergessen“ geht auch im Einzelbetrieb – hängt nur am E-Mail-Versand.
       allowPasswordReset: input.allowPasswordReset ?? current.allowPasswordReset,
       ...(input.taskColumnLimit !== undefined ? { taskColumnLimit: input.taskColumnLimit } : {}),
+      ...(input.wishLimit !== undefined ? { wishLimit: input.wishLimit } : {}),
     },
   });
   return json({ settings: view(updated) });

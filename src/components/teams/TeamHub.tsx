@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { TaskStatus } from "@/generated/prisma/client";
 import { Activity, ArrowLeft, Bot, Check, FolderKanban, Lightbulb, MessageSquare, Send, UsersRound, X } from "lucide-react";
 import type { TeamChatMessage, TeamHubView } from "@/lib/teamHub";
-import { MAX_TEAM_MESSAGE, MAX_WISH_BODY, MAX_WISH_TITLE, WISH_LIMIT } from "@/lib/teamHubLogic";
+import { MAX_TEAM_MESSAGE, MAX_WISH_BODY, MAX_WISH_TITLE } from "@/lib/teamHubLogic";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
@@ -164,7 +164,7 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
             )}
           </Card>
 
-          <Card icon={<Lightbulb size={17} />} title={t("wishes.title")} hint={t("wishes.hint", { n: WISH_LIMIT })} testId="hub-wishes">
+          <Card icon={<Lightbulb size={17} />} title={t("wishes.title")} hint={t("wishes.hint", { n: hub.wishLimit })} testId="hub-wishes">
             <form onSubmit={submitWish} className="mb-4 space-y-2 rounded-xl border bg-bg/25 p-3">
               <input
                 className="field"

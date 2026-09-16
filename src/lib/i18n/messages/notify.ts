@@ -9,7 +9,7 @@ const de = {
     description: "VibeWorks meldet sich, wenn etwas passiert – per Push aufs Handy (ntfy), an einen Webhook (z. B. Discord) oder per E-Mail. Die Windows-App zeigt alles zusätzlich als Windows-Meldung.",
   },
   ntfy: {
-    label: "ntfy – Push aufs Handy",
+    label: "ntfy – Push aufs Handy (VibeWorks sendet)",
     placeholder: "https://ntfy.sh/dein-geheimes-thema",
     hint: "In der ntfy-App dasselbe Thema abonnieren. Den Namen am besten zufällig wählen – wer ihn kennt, kann mitlesen. Eigener ntfy-Server geht auch.",
     token: "Zugangstoken (optional)",
@@ -17,12 +17,12 @@ const de = {
     removeToken: "Token entfernen",
   },
   webhook: {
-    label: "Webhook",
+    label: "Webhook – VibeWorks sendet dorthin",
     placeholder: "https://discord.com/api/webhooks/…",
     hint: "Discord und Slack bekommen passend formatierte Nachrichten, alle anderen (z. B. Home Assistant) ein JSON mit Titel, Text und Link.",
   },
   email: {
-    label: "E-Mail",
+    label: "E-Mail für Benachrichtigungen",
     placeholder: "du@example.de",
     noSmtp: "Für E-Mails muss ein Admin zuerst den E-Mail-Versand einrichten (Admin → E-Mail-Versand).",
   },
@@ -151,7 +151,7 @@ const en: Shape<typeof de> = {
     description: "VibeWorks lets you know when something happens – as a push to your phone (ntfy), to a webhook (e.g. Discord) or by email. The Windows app also shows everything as a Windows notification.",
   },
   ntfy: {
-    label: "ntfy – push to your phone",
+    label: "ntfy – push to your phone (VibeWorks sends)",
     placeholder: "https://ntfy.sh/your-secret-topic",
     hint: "Subscribe to the same topic in the ntfy app. Pick a random name – anyone who knows it can read along. Your own ntfy server works too.",
     token: "Access token (optional)",
@@ -159,12 +159,12 @@ const en: Shape<typeof de> = {
     removeToken: "Remove token",
   },
   webhook: {
-    label: "Webhook",
+    label: "Webhook – VibeWorks sends there",
     placeholder: "https://discord.com/api/webhooks/…",
     hint: "Discord and Slack get properly formatted messages, everything else (e.g. Home Assistant) gets JSON with title, text and link.",
   },
   email: {
-    label: "Email",
+    label: "Email for notifications",
     placeholder: "you@example.com",
     noSmtp: "For email, an admin first has to set up email sending (Admin → Email sending).",
   },

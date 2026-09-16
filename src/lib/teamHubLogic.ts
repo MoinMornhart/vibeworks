@@ -23,4 +23,6 @@ export function sortByProgress<T extends { status: keyof typeof ORDER; updatedAt
   return [...list].sort((a, b) => ORDER[a.status] - ORDER[b.status] || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 }
 
-export const wishesLeft = (usedToday: number) => Math.max(0, WISH_LIMIT - usedToday);
+/** Grenze kommt aus den Admin-Einstellungen; WISH_LIMIT ist der Standard. */
+export const MAX_WISH_LIMIT = 20;
+export const wishesLeft = (usedToday: number, limit: number = WISH_LIMIT) => Math.max(0, limit - usedToday);

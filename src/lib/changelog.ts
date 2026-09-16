@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.6",
+    date: "2026-09-17",
+    title: "Wünsche pro Tag einstellbar",
+    titleEn: "Wishes per day configurable",
+    changes: [
+      {
+        type: "neu",
+        text: "Administration: Wie viele Wünsche (z. B. an Claude) jedes Team-Mitglied pro Tag einreichen darf, ist jetzt einstellbar – 1 bis 20, Standard 3",
+        en: "Administration: how many wishes (e.g. for Claude) each team member may submit per day is now configurable – 1 to 20, default 3",
+      },
+      {
+        type: "besser",
+        text: "Klarere Beschriftungen: Bei ntfy, Webhook und E-Mail steht jetzt, ob VibeWorks dorthin sendet (Benachrichtigungen) oder von dort empfängt (Ideen-Eingang)",
+        en: "Clearer labels: ntfy, webhook and e-mail now say whether VibeWorks sends there (notifications) or receives from there (idea inbox)",
+      },
+    ],
+  },
+  {
     version: "0.9.5",
     date: "2026-09-17",
     title: "Einstellungen je MCP-Schlüssel",

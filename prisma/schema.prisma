@@ -87,6 +87,8 @@ model Settings {
   allowPasswordReset Boolean     @default(false)
   /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
   taskColumnLimit   Int          @default(15)
+  /// Wünsche ans Team (an die KI) je Mitglied in 24 Stunden – vom Admin einstellbar (#48)
+  wishLimit         Int          @default(3)
   setupDoneAt       DateTime?
   /// SMTP für Benachrichtigungen per E-Mail (Passwort AES-256-GCM)
   smtpHost          String?

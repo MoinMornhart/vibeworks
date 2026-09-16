@@ -24,5 +24,8 @@ describe("Team-Seite", () => {
     expect(wishesLeft(0)).toBe(3);
     expect(wishesLeft(2)).toBe(1);
     expect(wishesLeft(5)).toBe(0);
+    // Vom Admin anders eingestellt
+    expect(wishesLeft(2, 5)).toBe(3);
+    expect(wishesLeft(9, 5)).toBe(0);
   });
 });

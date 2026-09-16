@@ -6,6 +6,7 @@ import { displayNameOf, requireApiUser } from "@/lib/auth/guard";
 import { requireTeamMember, requireTeams, teamMembersWithPerms } from "@/lib/teams";
 import { teamHub } from "@/lib/teamHub";
 import { MAX_WISH_BODY, MAX_WISH_TITLE, WISH_LIMIT, WISH_WINDOW_MS } from "@/lib/teamHubLogic";
+import { getSettings } from "@/lib/settings";
 import { appLink, notifyUser } from "@/lib/notify";
 import { tk } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
@@ -17,7 +18,7 @@ const schema = z.object({
   body: z.string().trim().max(MAX_WISH_BODY, tk("teamHub", "errors.tooLong")).nullish(),
 });
 
-// Wunsch ans Team einreichen: jedes Mitglied höchstens 3 in 24 Stunden.
+// Wunsch ans Team einreichen: jedes Mitglied höchstens n in 24 Stunden (Admin-Einstellung, Standard 3).
 // Wer das Team verwaltet, bekommt eine Meldung und entscheidet.
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
@@ -27,7 +28,8 @@ export const POST = route<Params>(async (req, { params }) => {
   limitOrThrow(`team-wish:${user.id}`, 10, 10 * MINUTE);
   const input = await readBody(req, schema, { maxBytes: MAX_WISH_BODY * 4 });
   const used = await db.teamWish.count({ where: { teamId, authorId: user.id, createdAt: { gte: new Date(Date.now() - WISH_WINDOW_MS) } } });
-  if (used >= WISH_LIMIT) throw new ApiError(409, tk("teamHub", "errors.wishLimit", { n: WISH_LIMIT }));
+  const limit = (await getSettings()).wishLimit || WISH_LIMIT;
+  if (used >= limit) throw new ApiError(409, tk("teamHub", "errors.wishLimit", { n: limit }));
   await db.teamWish.create({ data: { teamId, authorId: user.id, title: input.title, body: input.body || null } });
 
   const [team, members] = await Promise.all([db.team.findUnique({ where: { id: teamId }, select: { name: true } }), teamMembersWithPerms(teamId)]);

@@ -23,6 +23,8 @@ const de = {
     allowRegistrationHint: "Jeder, der die Adresse kennt, kann sich ein Konto anlegen",
     columnLimit: "Karten je Spalte im Aufgabenbrett",
     columnLimitHint: "Was darüber hinausgeht, steht hinter „n weitere anzeigen“. 0 = keine Begrenzung.",
+    wishLimit: "Wünsche ans Team pro Tag",
+    wishLimitHint: "Wie viele Wünsche (z. B. an Claude) jedes Team-Mitglied in 24 Stunden einreichen darf – 1 bis 20.",
     save: "Einstellungen speichern",
   },
   create: {
@@ -168,6 +170,8 @@ const en: Shape<typeof de> = {
     allowRegistrationHint: "Anyone who knows the address can create an account",
     columnLimit: "Cards per column on the task board",
     columnLimitHint: "Anything beyond that is hidden behind “show n more”. 0 = no limit.",
+    wishLimit: "Team wishes per day",
+    wishLimitHint: "How many wishes (e.g. for Claude) each team member may submit within 24 hours – 1 to 20.",
     save: "Save settings",
   },
   create: {

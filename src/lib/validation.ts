@@ -467,6 +467,7 @@ export const adminSettingsSchema = z.object({
   allowRegistration: z.boolean().optional(),
   allowPasswordReset: z.boolean().optional(),
   taskColumnLimit: z.number().int().min(0, tk("validation", "min0")).max(500, tk("validation", "max500")).optional(),
+  wishLimit: z.number().int().min(1).max(20).optional(),
 });
 
 export const adminUserCreateSchema = z.object({

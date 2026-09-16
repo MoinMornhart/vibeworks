@@ -39,6 +39,7 @@ interface Settings {
   allowRegistration: boolean;
   allowPasswordReset: boolean;
   taskColumnLimit: number;
+  wishLimit: number;
 }
 
 function SettingsForm({ initial, userCount }: { initial: Settings; userCount: number }) {
@@ -118,6 +119,20 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
           onChange={(e) => setS({ ...s, taskColumnLimit: Math.max(0, Number(e.target.value) || 0) })}
         />
         <p className="mt-1 text-xs text-muted">{t("settings.columnLimitHint")}</p>
+      </div>
+      <div className="max-w-xs">
+        <label className="label" htmlFor="wish-limit">{t("settings.wishLimit")}</label>
+        <input
+          id="wish-limit"
+          type="number"
+          min={1}
+          max={20}
+          className="field"
+          value={s.wishLimit}
+          onChange={(e) => setS({ ...s, wishLimit: Math.min(20, Math.max(1, Number(e.target.value) || 1)) })}
+          data-testid="wish-limit"
+        />
+        <p className="mt-1 text-xs text-muted">{t("settings.wishLimitHint")}</p>
       </div>
       <FormError message={error} />
       {notice && <p role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">{notice}</p>}
