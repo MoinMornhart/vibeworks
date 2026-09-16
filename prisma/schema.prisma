@@ -805,6 +805,12 @@ model GitCredential {
   importFails     Int       @default(0)
   /// Zuletzt gefundene Repositories (ohne Forks und archivierte)
   importCount     Int       @default(0)
+  /// Rechte-Prüfung (#98): Scopes laut Anbieter, Art des Tokens, letzte Prüfung, Fehler, zuletzt gemeldetes Problem
+  scopes          String[]  @default([])
+  scopeKind       String?
+  checkedAt       DateTime?
+  checkError      String?
+  checkNotified   String?
   /// host/pfad gelöschter oder umgehängter Projekte – werden nicht erneut importiert
   skipRepos       String[]  @default([])
   createdAt       DateTime  @default(now())

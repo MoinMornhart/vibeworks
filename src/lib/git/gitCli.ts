@@ -7,6 +7,7 @@ import { tk } from "@/lib/i18n/messages";
 import { assertFetchable, FetchBlockedError } from "@/lib/security/ssrf";
 import { splitCommitMessage, type ParsedRepo } from "./parse";
 import { GitError, type CommitInfo, type RepoSnapshot } from "./providers";
+import { GRAPH_PATHSPECS } from "@/lib/codeGraphLogic";
 
 // Beliebige Git-Server ohne GitHub-/GitLab-/Gitea-API: Commits (und die
 // package.json für den Abhängigkeiten-Check) direkt per git holen – flach, in
@@ -252,8 +253,13 @@ export function grepImportsViaGit(projectId: string, branch: string | null): Pro
         // Grob vorfiltern – die genaue Prüfung macht importOf()
         "-e", "(from|import|require)[[:space:]]*[(]?[[:space:]]*[\"']",
         "-e", "^[[:space:]]*(from[[:space:]]+[.[:alnum:]_]+[[:space:]]+import|import[[:space:]]+[[:alnum:]_.]+)",
+        // Go (auch in import-Blöcken), C/C++, Rust, Shell (#98)
+        "-e", "^[[:space:]]*(import[[:space:]]+)?([[:alnum:]_.]+[[:space:]]+)?\"[^\" ]+\"[[:space:]]*$",
+        "-e", "^[[:space:]]*#[[:space:]]*include[[:space:]]+\"",
+        "-e", "^[[:space:]]*(pub[^[:space:]]*[[:space:]]+)?(mod|use)[[:space:]]+[[:alnum:]_:]+",
+        "-e", "^[[:space:]]*(source|\\.)[[:space:]]+[^[:space:]]+\\.sh",
         `refs/heads/${branch}`, "--",
-        "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs", "*.py",
+        ...GRAPH_PATHSPECS,
       ],
       gitEnv(null),
       30_000,

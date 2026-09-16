@@ -8,6 +8,7 @@ import { encrypt } from "@/lib/crypto";
 import { credentialList, GitTokenError, whoAmI } from "@/lib/git/token";
 import { tokenHint, type GitProvider } from "@/lib/git/parse";
 import { importFromCredential } from "@/lib/git/importRepos";
+import { checkCredential } from "@/lib/git/tokenCheck";
 import { tk } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
@@ -15,6 +16,8 @@ type Params = { id: string };
 
 const updateSchema = z.object({
   autoImport: z.boolean().optional(),
+  /** Rechte jetzt prüfen (#98) */
+  check: z.boolean().optional(),
   /** Bot-Konto nur für Issues: Token setzen (wird beim Anbieter geprüft) oder mit null entfernen */
   botToken: z.string().trim().min(8).max(500).nullable().optional(),
 });
@@ -53,6 +56,10 @@ export const PATCH = route<Params>(async (req, { params }) => {
   }
 
   await db.gitCredential.update({ where: { id }, data });
+  if (input.check) {
+    limitOrThrow(`git-check:${user.id}`, 20, 10 * MINUTE);
+    await checkCredential(id);
+  }
   if (input.autoImport) after(() => importFromCredential(id));
   return json({ connections: await credentialList(user.id) });
 });

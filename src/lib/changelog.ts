@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.5",
+    date: "2026-09-16",
+    title: "Code-Netz für Kotlin, Java, Go, C, Rust – Tokens täglich geprüft",
+    titleEn: "Code network for Kotlin, Java, Go, C, Rust – tokens checked daily",
+    changes: [
+      {
+        type: "fix",
+        text: "Code-Netz: Repositories in Kotlin, Java, Go, C/C++, Rust und Shell werden jetzt verstanden – vorher blieb das Netz bei ihnen leer und meldete fälschlich „keine Dateien lesbar“. Enthält ein Repository gar keine unterstützte Sprache, steht das jetzt so da",
+        en: "Code network: repositories in Kotlin, Java, Go, C/C++, Rust and shell are now understood – before, the network stayed empty for them and wrongly reported “no files readable”. If a repository has no supported language at all, it now says so",
+      },
+      {
+        type: "neu",
+        text: "Git-Zugänge werden einmal am Tag geprüft: gilt der Token noch, hat er die nötigen Rechte (GitHub-Scopes, GitLab)? Fehlt etwas, kommt eine Benachrichtigung; unter Konto → Git-Zugänge stehen die Rechte samt „Jetzt prüfen“",
+        en: "Git access is checked once a day: is the token still valid, does it have the required permissions (GitHub scopes, GitLab)? If something is missing you get a notification; Account → Git access shows the permissions and “Check now”",
+        link: "/account#git-zugang",
+      },
+    ],
+  },
+  {
     version: "1.1.4",
     date: "2026-09-16",
     title: "Code-Netz: Verbindung prüfen",

@@ -38,6 +38,7 @@ export interface GitConnectionItem {
   botApp: { slug: string; installUrl: string; settingsUrl: string } | null;
   botAppPossible: boolean;
   autoImport: boolean;
+  check: { at: string | null; error: string | null; kind: string | null; scopes: string[]; missing: string[]; optionalMissing: Array<{ scope: string; feature: "workflow" | "webhook" }> };
   importedAt: string | null;
   importError: string | null;
   importCount: number;
@@ -174,6 +175,20 @@ export function GitConnectionsSection({
       else setError(errorMessage(err));
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** Token jetzt auf Gültigkeit und Rechte prüfen (#98). */
+  async function checkNow(c: GitConnectionItem) {
+    setBusyId(c.id);
+    setError(null);
+    try {
+      const res = await api<ListResponse>(`/api/account/git-credentials/${c.id}`, { method: "PATCH", body: { check: true } });
+      setList(res.connections);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -321,6 +336,30 @@ export function GitConnectionsSection({
                         {busyId === c.id
                           ? t("git.importing")
                           : t("git.importNow")}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs" data-testid="git-rights">
+                      {c.check.error ? (
+                        <span className="text-red-400">{t("git.rights.invalid", { error: msg(c.check.error) })}</span>
+                      ) : c.check.missing.length ? (
+                        <span className="text-red-400">{t("git.rights.missing", { list: c.check.missing.join(", ") })}</span>
+                      ) : c.check.kind === "classic" || c.check.kind === "gitlab" ? (
+                        <span className="text-emerald-400">{t("git.rights.ok", { list: c.check.scopes.join(", ") || "–" })}</span>
+                      ) : c.check.kind === "fine-grained" ? (
+                        <span className="text-muted">{t("git.rights.fineGrained")}</span>
+                      ) : (
+                        <span className="text-muted">{t("git.rights.unknown")}</span>
+                      )}
+                      {!c.check.error && c.check.optionalMissing.length > 0 && (
+                        <span className="text-amber-300">
+                          {t("git.rights.optional", { list: c.check.optionalMissing.map((o) => `${o.scope} (${t(`git.rights.feature.${o.feature}`)})`).join(", ") })}
+                        </span>
+                      )}
+                      <span className="text-muted" suppressHydrationWarning>
+                        {c.check.at ? t("git.rights.checkedAt", { ago: f.ago(c.check.at) }) : t("git.rights.never")}
+                      </span>
+                      <button type="button" className="btn btn-sm !py-0" disabled={busyId === c.id} onClick={() => void checkNow(c)} data-testid="git-rights-check">
+                        {t("git.rights.checkNow")}
                       </button>
                     </div>
                     {c.importError && (

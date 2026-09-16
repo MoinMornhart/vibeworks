@@ -44,8 +44,10 @@ export async function projectCodeGraph(projectId: string, wantedBranch?: string 
   const copy = await ensureCodeCopy(projectId, wantedBranch, { force: opts.refresh });
   const key = `${projectId}:${copy.branch}`;
   let graph = copy.head && cache.get(key)?.head === copy.head ? cache.get(key)!.graph : null;
+  let listed = graph ? graph.files : 0;
   if (!graph) {
     const files = copy.head ? await listFilesViaGit(projectId, copy.branch) : [];
+    listed = files.length;
     graph = files.length ? buildCodeGraph(await grepImportsViaGit(projectId, copy.branch), files) : { nodes: [], edges: [], files: 0, hidden: 0 };
     if (files.length && copy.head) cache.set(key, { head: copy.head, graph });
   }
@@ -58,7 +60,7 @@ export async function projectCodeGraph(projectId: string, wantedBranch?: string 
     commit: copy.head,
     webUrl: repo?.webUrl ?? "",
     empty: graph.files === 0,
-    error: graph.files === 0 ? (copy.error ?? (copy.head ? tk("graph", "errors.noFiles") : tk("graph", "errors.notSynced"))) : null,
+    error: graph.files === 0 ? (copy.error ?? (copy.head ? (listed > 0 ? tk("graph", "errors.unsupported", { n: listed }) : tk("graph", "errors.noFiles")) : tk("graph", "errors.notSynced"))) : null,
     staleError: graph.files > 0 ? copy.error : null,
     memos,
   };

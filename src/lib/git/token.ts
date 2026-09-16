@@ -5,6 +5,7 @@ import { tk } from "@/lib/i18n/messages";
 import { FetchBlockedError, safeFetch } from "@/lib/security/ssrf";
 import { appIssueToken } from "./botApp";
 import { botAppInstallUrl, botAppSettingsUrl } from "./botAppLogic";
+import { evaluateScopes, parseScopesHeader } from "./tokenCheckLogic";
 import { DEFAULT_SERVER, normalizeServer, parseRepoUrl, PROVIDER_LABEL, tokenHint, type GitProvider } from "./parse";
 
 // Welches Token gilt für ein Projekt? Zuerst ein projekteigenes, sonst die
@@ -88,6 +89,11 @@ export class GitTokenError extends Error {
 
 /** Fragt beim Anbieter nach, wem das Token gehört – und prüft es damit zugleich. */
 export async function whoAmI(provider: GitProvider, baseUrl: string, token: string): Promise<string | null> {
+  return (await probeToken(provider, baseUrl, token)).login;
+}
+
+/** Wem gehört der Token, und welche Rechte hat er? (#98) Wirft GitTokenError, wenn er nicht gilt. */
+export async function probeToken(provider: GitProvider, baseUrl: string, token: string): Promise<{ login: string | null; scopes: string[] | null }> {
   const label = PROVIDER_LABEL[provider];
   const url =
     provider === "github"
@@ -118,7 +124,15 @@ export async function whoAmI(provider: GitProvider, baseUrl: string, token: stri
     throw new GitTokenError(tk("git", "errors.noProvider", { provider: label }), 400);
   }
   // Ohne Namen bleibt das Feld leer – die Oberfläche zeigt dann einfach keinen an.
-  return data.login ?? data.username ?? null;
+  const login = data.login ?? data.username ?? null;
+  let scopes: string[] | null = null;
+  if (provider === "github") scopes = parseScopesHeader(res.headers.get("x-oauth-scopes"));
+  else if (provider === "gitlab") {
+    const self = await safeFetch(`${baseUrl}/api/v4/personal_access_tokens/self`, { headers: { Accept: "application/json", "User-Agent": "VibeWorks", ...auth } }).catch(() => null);
+    const body = self?.ok ? ((await self.json().catch(() => null)) as { scopes?: unknown } | null) : null;
+    scopes = Array.isArray(body?.scopes) ? body.scopes.filter((s): s is string => typeof s === "string") : null;
+  }
+  return { login, scopes };
 }
 
 /** Prüft das Token und liefert die Felder für db.gitCredential.create/upsert (ohne userId). */
@@ -126,8 +140,20 @@ export async function credentialData(provider: GitProvider, server: string, toke
   const norm = normalizeServer(server || DEFAULT_SERVER[provider]);
   if (!norm) throw new GitTokenError(tk("git", "errors.badServer"), 400);
   // Ein beliebiger Git-Server hat keine API zum Nachfragen – das Token zeigt sich beim ersten Abgleich.
-  const login = provider === "git" ? null : await whoAmI(provider, norm.baseUrl, token);
-  return { provider, host: norm.hostPort, baseUrl: norm.baseUrl, cipher: encrypt(token), hint: tokenHint(token), login };
+  const probe = provider === "git" ? { login: null, scopes: null } : await probeToken(provider, norm.baseUrl, token);
+  const report = evaluateScopes(provider, token, probe.scopes);
+  return {
+    provider,
+    host: norm.hostPort,
+    baseUrl: norm.baseUrl,
+    cipher: encrypt(token),
+    hint: tokenHint(token),
+    login: probe.login,
+    scopes: probe.scopes ?? [],
+    scopeKind: report.kind,
+    checkedAt: new Date(),
+    checkError: null,
+  };
 }
 
 /**
@@ -164,6 +190,21 @@ export async function credentialList(userId: string) {
     importedAt: c.importedAt?.toISOString() ?? null,
     importError: c.importError,
     importCount: c.importCount,
+    /** Rechte-Prüfung (#98) */
+    check: {
+      at: c.checkedAt?.toISOString() ?? null,
+      error: c.checkError,
+      kind: c.scopeKind,
+      scopes: c.scopes,
+      ...(c.provider === "github" || c.provider === "gitlab" ? evaluateScopesView(c.provider, c.scopeKind, c.scopes) : { missing: [], optionalMissing: [] }),
+    },
   }));
 }
+function evaluateScopesView(provider: string, kind: string | null, scopes: string[]) {
+  // Ohne bekannte Rechte (feingranular, noch nicht geprüft) nichts behaupten
+  if (kind !== "classic" && kind !== "gitlab") return { missing: [] as string[], optionalMissing: [] as Array<{ scope: string; feature: "workflow" | "webhook" }> };
+  const r = evaluateScopes(provider, kind === "classic" ? "ghp_" : "glpat", scopes);
+  return { missing: r.missing, optionalMissing: r.optionalMissing };
+}
+
 export type GitConnectionView = Awaited<ReturnType<typeof credentialList>>[number];
