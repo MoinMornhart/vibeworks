@@ -40,11 +40,12 @@ import teams from "./teams";
 import roles from "./roles";
 import teamHub from "./teamHub";
 import graph from "./graph";
+import links from "./links";
 
 // Alle Übersetzungen, nach Namensräumen. Übersetzungsdateien importieren nur
 // ../types und ../translate – nie App-Code, sonst entstehen Zirkelbezüge.
 
-export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides, teams, roles, teamHub, graph };
+export const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides, teams, roles, teamHub, graph, links };
 
 export type Namespace = keyof typeof MESSAGES;
 export type Key<N extends Namespace> = Leaves<(typeof MESSAGES)[N]["de"]>;

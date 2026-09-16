@@ -5,6 +5,11 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { guardedHref } from "@/lib/linkCheckLogic";
+
+// Feste Basis: Server und Browser rendern gleich; ob ein absoluter Link wirklich
+// intern ist, entscheidet die Hinweisseite mit der echten Adresse.
+const LINK_BASE = "https://vibeworks.invalid";
 
 // Markdown aus Benutzereingaben. Rohes HTML wird nicht interpretiert und
 // alles Übrige läuft durch rehype-sanitize – sonst wäre jede Notiz ein
@@ -19,7 +24,12 @@ export function Markdown({ children, className }: { children: string; className?
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
         components={{
-          a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer nofollow" />,
+          // Links laufen über die Hinweisseite (#65); gesperrte Ziele werden zu Text
+          a: ({ node: _node, href, ...props }) => {
+            const target = typeof href === "string" ? guardedHref(href, LINK_BASE) : null;
+            // Ohne noreferrer: die Hinweisseite erkennt so, dass der Klick aus VibeWorks kam – sie selbst gibt nichts weiter
+            return target ? <a {...props} href={target} target="_blank" rel="noopener nofollow" /> : <span {...props} />;
+          },
           img: ({ src, alt }) =>
             typeof src === "string" && src ? (
               <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="md-img">

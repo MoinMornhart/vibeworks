@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.3",
+    date: "2026-09-16",
+    title: "Links werden vor dem Öffnen geprüft",
+    titleEn: "Links are checked before opening",
+    changes: [
+      {
+        type: "neu",
+        text: "Links in Notizen, Docs und Community öffnen über eine Hinweisseite: Sie zeigt das echte Ziel und warnt bei Auffälligem – unverschlüsselt, IP-Adresse, nachgeahmte Marke, Kurz-Link, versteckte Zugangsdaten, verdächtige Endung. Geprüft wird nur die Adresse, kein fremder Dienst",
+        en: "Links in notes, docs and community open via a notice page: it shows the real destination and warns about anything suspicious – unencrypted, IP address, imitated brand, short link, hidden credentials, suspicious ending. Only the address is checked, no third-party service",
+      },
+      {
+        type: "besser",
+        text: "Links innerhalb von VibeWorks gehen nach 5 Sekunden automatisch weiter; unauffällige Links lassen sich ohne Nachfrage öffnen (abschaltbar) – gefährliche Adressen wie javascript: werden gar nicht erst verlinkt",
+        en: "Links within VibeWorks continue automatically after 5 seconds; unsuspicious links can open without asking (optional) – dangerous addresses like javascript: aren't linked at all",
+      },
+    ],
+  },
+  {
     version: "1.1.2",
     date: "2026-09-16",
     title: "KI sieht die echten Spaltennamen",
