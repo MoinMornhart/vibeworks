@@ -657,6 +657,8 @@ model Task {
   autoKey     String?
   /// Wer daran arbeitet – frei eingetragen (z. B. „anna“ oder „Claude“), steht auch im Issue
   assignee    String?
+  /// Priorität wie bei Projekten: 1 niedrig · 2 normal · 3 hoch · 4 dringend
+  priority    Int         @default(2)
   /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“
   issueAssignees String[] @default([])
   /// Wer die Aufgabe in VibeWorks angelegt hat – Name als Schnappschuss, steht auch im Issue

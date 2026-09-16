@@ -366,6 +366,7 @@ export const taskCreateSchema = z.object({
   labels: labelsSchema.default([]),
   recurrence: recurrenceSchema.nullish().transform((v) => v ?? null),
   assignee: assigneeSchema.nullish().transform((v) => v || null),
+  priority: z.number().int().min(1).max(4).default(2),
 });
 
 // Dieselbe Aufgabe für mehrere Projekte (Aufgabenübersicht, MCP)
@@ -385,6 +386,7 @@ export const taskUpdateSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => (v === undefined ? undefined : v || null)),
+  priority: z.number().int().min(1).max(4).optional(),
 });
 
 export const taskReorderSchema = z.object({

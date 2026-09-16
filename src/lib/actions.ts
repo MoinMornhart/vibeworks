@@ -23,7 +23,7 @@ export type TaskVia = "web" | "mcp";
 export async function createTask(
   userId: string,
   projectId: string,
-  input: Omit<z.output<typeof taskCreateSchema>, "assignee"> & { assignee?: string | null },
+  input: Omit<z.output<typeof taskCreateSchema>, "assignee" | "priority"> & { assignee?: string | null; priority?: number },
   via: TaskVia = "web",
 ) {
   const creator = await db.user.findUnique({ where: { id: userId }, select: { displayName: true, username: true } });
@@ -54,6 +54,7 @@ export async function updateTask(userId: string, current: Task, input: z.output<
   if (input.labels !== undefined) data.labels = input.labels;
   if (input.recurrence !== undefined) data.recurrence = input.recurrence;
   if (input.assignee !== undefined) data.assignee = input.assignee;
+  if (input.priority !== undefined) data.priority = input.priority;
   if (input.dueDate !== undefined) data.dueDate = input.dueDate ? dayKeyToDate(input.dueDate) : null;
 
   let result: { task: Task; spawned: Task | null };

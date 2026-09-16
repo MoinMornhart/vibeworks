@@ -41,7 +41,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 - Never put passwords, tokens or other secrets into tasks, notes, docs or descriptions.
 
 ## Working on a task
-1. Find it with list_tasks or get_task.
+1. Find it with list_tasks or get_task. Pick the highest priority first (4 urgent, 3 high, 2 normal, 1 low); tasks labelled "notfix" are urgent bug fixes.
 2. When you start: update_task with status DOING and assignee set to your name (e.g. "Claude"), so everyone sees who is on it.
 3. Stuck: status BLOCKED with a short reason in the description.
 4. Finished: status DONE. With issue sync the Git issue follows automatically; "Fixes #n" in a commit message closes it too.
@@ -49,6 +49,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 ## Problems and errors
 - list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site.
 - list_errors shows runtime errors of the user's apps with stack traces – fix the cause, then call resolve_error.
+- search_code and list_code_files look into the linked repository – use them instead of guessing file paths or function names.
 
 ## Available tools (${tools.length})
 ${list}

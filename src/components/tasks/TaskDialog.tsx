@@ -7,7 +7,8 @@ import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
 import type { TaskItem } from "@/lib/tasks";
 import { RECURRENCES } from "@/lib/taskDates";
-import { TASK_STATUSES } from "@/lib/status";
+import { PRIORITIES, TASK_STATUSES } from "@/lib/status";
+import { Segmented } from "@/components/theme/controls";
 import { ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { usePathname } from "next/navigation";
@@ -22,6 +23,7 @@ export interface TaskForm {
   labels: string;
   recurrence: Recurrence | "";
   assignee: string;
+  priority: number;
 }
 
 function toForm(t: TaskItem | null, status: TaskStatus): TaskForm {
@@ -33,6 +35,7 @@ function toForm(t: TaskItem | null, status: TaskStatus): TaskForm {
     labels: t?.labels.join(", ") ?? "",
     recurrence: t?.recurrence ?? "",
     assignee: t?.assignee ?? "",
+    priority: t?.priority ?? 2,
   };
 }
 
@@ -77,7 +80,7 @@ export function TaskDialog({
   const draft = useDraft(
     open && !task ? `task-new:${pathname}` : null,
     form,
-    (d) => setForm((f) => ({ ...f, title: d.title, description: d.description, dueDate: d.dueDate, labels: d.labels, recurrence: d.recurrence, assignee: d.assignee })),
+    (d) => setForm((f) => ({ ...f, title: d.title, description: d.description, dueDate: d.dueDate, labels: d.labels, recurrence: d.recurrence, assignee: d.assignee, priority: d.priority ?? 2 })),
     (f) => !f.title.trim() && !f.description.trim(),
   );
 
@@ -144,6 +147,15 @@ export function TaskDialog({
         <div>
           <label className="label" htmlFor="t-desc">{t("dialog.description")}</label>
           <textarea id="t-desc" className="field min-h-28" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={t("dialog.descriptionPlaceholder")} maxLength={20000} />
+        </div>
+        <div data-testid="task-priority">
+          <span className="label">{t("dialog.priority")}</span>
+          <Segmented
+            label={t("dialog.priority")}
+            value={String(form.priority)}
+            onChange={(v) => set("priority", Number(v))}
+            options={PRIORITIES.map((p) => ({ value: String(p.value), label: ts(`priority.${String(p.value) as "1" | "2" | "3" | "4"}`) }))}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

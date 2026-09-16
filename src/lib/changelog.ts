@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.5",
+    date: "2026-09-16",
+    title: "Prioritäten für Aufgaben",
+    titleEn: "Task priorities",
+    changes: [
+      {
+        type: "neu",
+        text: "Aufgaben haben jetzt eine Priorität – niedrig, normal, hoch oder dringend. Sie steht im Aufgaben-Dialog, als Zeichen auf der Karte und im gespiegelten Issue",
+        en: "Tasks now have a priority – low, normal, high or urgent. It sits in the task dialog, shows as a marker on the card and appears in the mirrored issue",
+      },
+      {
+        type: "besser",
+        text: "Die KI arbeitet nach Priorität: list_tasks liefert Dringendes zuerst, create_task und update_task setzen die Priorität, und die Agenten-Regeln sagen es ausdrücklich. Notfix und Repo-Check-Aufgaben sind automatisch dringend bzw. hoch",
+        en: "The AI works by priority: list_tasks returns urgent work first, create_task and update_task set the priority, and the agent rules say so explicitly. Notfix and repo check tasks are automatically urgent or high",
+      },
+    ],
+  },
+  {
     version: "0.8.4",
     date: "2026-09-16",
     title: "Repo-Check als Aufgaben",

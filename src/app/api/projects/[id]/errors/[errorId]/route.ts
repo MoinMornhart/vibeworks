@@ -50,7 +50,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
     title: (notfix ? t("task.notfixTitle", { message: truncate(e.message, 110) }) : t("task.title", { message: truncate(e.message, 120) })).slice(0, 200),
     description: notfix ? [t("task.notfixIntro"), "", description].join("\n") : description,
     labels: notfix ? [t("task.label"), t("task.notfixLabel")] : [t("task.label")],
-    ...(notfix ? { assignee: "Claude", dueDate: new Date().toISOString().slice(0, 10) } : {}),
+    ...(notfix ? { assignee: "Claude", priority: 4, dueDate: new Date().toISOString().slice(0, 10) } : {}),
   });
   const { task } = await createTask(user.id, id, input);
   const updated = await db.appError.update({ where: { id: e.id }, data: { taskId: task.id } });

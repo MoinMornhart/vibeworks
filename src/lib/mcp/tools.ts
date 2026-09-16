@@ -95,6 +95,7 @@ function taskView(t: Task, opts: { full?: boolean; project?: { id: string; name:
     ...(t.description ? { description: opts.full ? t.description : truncate(t.description, 500) } : {}),
     ...(t.issueUrl ? { issue: t.issueUrl } : {}),
     ...(t.assignee ? { assignee: t.assignee } : {}),
+    ...(t.priority !== 2 ? { priority: t.priority } : {}),
     ...(t.issueAssignees.length ? { issueAssignees: t.issueAssignees } : {}),
     ...(opts.project ? { project: opts.project } : {}),
   };
@@ -109,6 +110,7 @@ const S = {
   dueDate: { type: ["string", "null"], description: "Due date as YYYY-MM-DD, null to clear" },
   labels: { type: "array", items: { type: "string" }, description: "Short labels, e.g. [\"bug\", \"ui\"]" },
   recurrence: { type: ["string", "null"], enum: [...RECURRENCES, null] },
+  priority: { type: "integer", minimum: 1, maximum: 4, description: "1 low, 2 normal (default), 3 high, 4 urgent – work on higher priorities first" },
   assignee: {
     type: ["string", "null"],
     maxLength: 60,
@@ -216,7 +218,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "list_tasks",
     title: "List tasks",
     description:
-      "Tasks across all projects (or one project), sorted by due date. By default only unfinished tasks (TODO, DOING, BLOCKED) of non-archived projects.",
+      "Tasks across all projects (or one project), most urgent first (priority 4 → 1), then by due date. By default only unfinished tasks (TODO, DOING, BLOCKED) of non-archived projects.",
     inputSchema: {
       type: "object",
       properties: {
@@ -251,7 +253,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
               : {};
       const tasks = await db.task.findMany({
         where: { AND: [scope, due, input.status?.length ? { status: { in: input.status } } : { status: { not: "DONE" } }] },
-        orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+        orderBy: [{ priority: "desc" }, { dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
         take: input.limit,
         include: { project: { select: { id: true, name: true } } },
       });
@@ -284,6 +286,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         labels: S.labels,
         recurrence: S.recurrence,
         assignee: S.assignee,
+        priority: S.priority,
       },
       required: ["project", "title"],
       additionalProperties: false,
@@ -343,6 +346,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         labels: S.labels,
         recurrence: S.recurrence,
         assignee: S.assignee,
+        priority: S.priority,
       },
       required: ["task"],
       additionalProperties: false,

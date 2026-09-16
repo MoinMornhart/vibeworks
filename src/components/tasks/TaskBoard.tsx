@@ -12,6 +12,7 @@ import { useFormat, useLocale, useMsg, useT } from "@/lib/i18n/client";
 import { cn, dayKey } from "@/lib/utils";
 import { TimerButtons } from "@/components/time/TimerPill";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
+import { PriorityBadge } from "@/components/projects/ProjectCard";
 import { BoardSettings } from "./BoardSettings";
 import { DEFAULT_BOARD, type BoardConfig } from "@/lib/boardConfig";
 
@@ -91,8 +92,13 @@ function TaskCard({
         </button>
         {!done && !overlay && <TimerButtons taskId={t.id} hoverOnly />}
       </div>
-      {(t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
+      {(t.priority !== 2 || t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">
+          {t.priority !== 2 && (
+            <span className="text-[11px]" data-testid="task-priority-badge">
+              <PriorityBadge priority={t.priority} compact={t.priority < 3} />
+            </span>
+          )}
           {workers.length > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-px text-[11px] text-accent-ink" title={tr("card.assignee", { name: workers.join(", ") })} data-testid="task-assignee">
               <UserRound size={11} /> {workers.join(", ")}

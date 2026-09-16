@@ -68,7 +68,7 @@ export const POST = route<Params>(async (req, { params }) => {
     } else {
       const description = `${t(`explain.${body.kind}.prompt`, item.vars)}\n\n_${t("tasks.footer")}_`;
       const labels = body.kind === "findings" ? [t("tasks.label")] : [t("tasks.labelSecurity"), t("tasks.label")];
-      const input = taskCreateSchema.parse({ title, description, labels, assignee: "Claude" });
+      const input = taskCreateSchema.parse({ title, description, labels, assignee: "Claude", priority: body.kind === "findings" ? 3 : 4 });
       ({ task } = await createTask(user.id, id, input));
     }
   } else if (body.action === "autoTasks") {
