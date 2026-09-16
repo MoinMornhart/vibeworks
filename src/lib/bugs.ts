@@ -4,6 +4,8 @@ import { config } from "@/lib/config";
 import { sha256 } from "@/lib/crypto";
 import { appLink, notifyUser } from "@/lib/notify";
 import { hit, MINUTE } from "@/lib/security/rateLimit";
+import { after } from "next/server";
+import { autoTaskForError } from "./errorTasks";
 import { fingerprintSource, MAX_GROUPS, type ErrorReport, type ErrorStatus } from "./bugsLogic";
 
 // Fehler-Eingang: Berichte zusammenfassen (je Fingerabdruck eine Zeile mit
@@ -35,12 +37,16 @@ export async function ingestError(project: IngestProject, report: ErrorReport, u
         ...(back ? { status: "open", resolvedAt: null } : {}),
       },
     });
-    if (back) void notifyAppError(project, report, true);
+    if (back) {
+      void notifyAppError(project, report, true);
+      after(() => autoTaskForError(existing.id));
+    }
     return existing.status === "ignored" ? "ignored" : back ? "regression" : "again";
   }
   if ((await db.appError.count({ where: { projectId: project.id } })) >= MAX_GROUPS) return "full";
   try {
-    await db.appError.create({ data: { projectId: project.id, fingerprint, ...report, userAgent } });
+    const created = await db.appError.create({ data: { projectId: project.id, fingerprint, ...report, userAgent } });
+    after(() => autoTaskForError(created.id));
   } catch (err) {
     // Derselbe Fehler kam gleichzeitig zweimal an – dann eben mitzählen
     if (retry && err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") return ingestError(project, report, userAgent, false);

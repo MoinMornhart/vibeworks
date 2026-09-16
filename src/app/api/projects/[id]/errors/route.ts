@@ -6,17 +6,22 @@ import { requireProject } from "@/lib/access";
 import { randomToken } from "@/lib/crypto";
 import { errorEndpoint, loadErrors, serializeAppError } from "@/lib/bugs";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { AUTO_TASK_MODES } from "@/lib/errorTasks";
 
 type Params = { id: string };
 
-const bodySchema = z.object({ action: z.enum(["enable", "rotate", "disable"]) });
+const bodySchema = z.union([
+  z.object({ action: z.enum(["enable", "rotate", "disable"]) }),
+  // Fehler-Agent (#39): neue Fehler automatisch als Notfix-Aufgabe
+  z.object({ action: z.literal("autoTask"), mode: z.enum(AUTO_TASK_MODES) }),
+]);
 
 // Fehler-Eingang eines Projekts: die Fehler sehen alle Mitglieder, die
 // Adresse mit Schlüssel und das Ein-/Ausschalten nur der Besitzer.
 async function view(projectId: string, owner: boolean) {
-  const [project, errors] = await Promise.all([db.project.findUnique({ where: { id: projectId }, select: { errorKey: true } }), loadErrors(projectId)]);
+  const [project, errors] = await Promise.all([db.project.findUnique({ where: { id: projectId }, select: { errorKey: true, errorAutoTask: true } }), loadErrors(projectId)]);
   const key = project?.errorKey ?? null;
-  return { errors: errors.map(serializeAppError), enabled: Boolean(key), endpoint: owner && key ? errorEndpoint(key) : null, canManage: owner };
+  return { errors: errors.map(serializeAppError), enabled: Boolean(key), endpoint: owner && key ? errorEndpoint(key) : null, canManage: owner, autoTask: project?.errorAutoTask ?? "off" };
 }
 
 export const GET = route<Params>(async (_req, { params }) => {
@@ -30,7 +35,12 @@ export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { project } = await requireProject(user.id, (await params).id, "OWNER");
   limitOrThrow(`bugs-key:${user.id}`, 20, 10 * MINUTE);
-  const { action } = await readBody(req, bodySchema, { maxBytes: 512 });
+  const body = await readBody(req, bodySchema, { maxBytes: 512 });
+  if (body.action === "autoTask") {
+    await db.project.update({ where: { id: project.id }, data: { errorAutoTask: body.mode } });
+    return json(await view(project.id, true));
+  }
+  const { action } = body;
   const current = await db.project.findUnique({ where: { id: project.id }, select: { errorKey: true } });
   const errorKey = action === "disable" ? null : action === "rotate" || !current?.errorKey ? randomToken(24) : current.errorKey;
   await db.project.update({ where: { id: project.id }, data: { errorKey } });

@@ -1,6 +1,6 @@
 {
   "name": "vibeworks",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "private": true,
   "description": "VibeWorks – selbst gehostetes Kontrollzentrum für Vibe-Coding-Projekte",
   "scripts": {
@@ -51,7 +51,7 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.1"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "postcss": "^8.5.28",

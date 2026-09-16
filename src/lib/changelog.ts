@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.9",
+    date: "2026-09-17",
+    title: "Fehler-Agent",
+    titleEn: "Error agent",
+    changes: [
+      {
+        type: "neu",
+        text: "Fehler-Eingang: Mit dem Fehler-Agent wird jeder neue Fehler – und jeder erledigte, der wiederkommt – sofort zur Notfix-Aufgabe für Claude: dringend, heute fällig, ohne Stack-Details. Einschalten kann der Besitzer im Fehler-Eingang; höchstens 5 Aufgaben pro Stunde",
+        en: "Error inbox: with the error agent, every new error – and every resolved one that comes back – instantly becomes a Notfix task for Claude: urgent, due today, without stack details. The owner switches it on in the error inbox; at most 5 tasks per hour",
+      },
+      {
+        type: "fix",
+        text: "Entwicklung: Die Test-Umgebung ist zurück auf vitest 4 – vitest 5 brach unter Windows gelegentlich beim Start ab",
+        en: "Development: the test runner is back on vitest 4 – vitest 5 occasionally crashed on start under Windows",
+      },
+    ],
+  },
+  {
     version: "0.9.8",
     date: "2026-09-17",
     title: "Code-Netz: Vollbild und Mausrad",

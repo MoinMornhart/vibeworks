@@ -46,6 +46,10 @@ const de = {
     delete: "Löschen",
   },
   confirmDelete: "Diesen Fehler löschen? Kommt er wieder, erscheint er neu.",
+  autoTask: {
+    label: "Fehler-Agent: neue Fehler sofort als Notfix-Aufgabe für Claude",
+    hint: "Meldet deine App einen neuen Fehler – oder kommt ein erledigter wieder –, entsteht automatisch eine dringende Aufgabe für Claude (heute fällig, ohne Stack-Details). Höchstens 5 pro Stunde.",
+  },
   taskCreated: "Aufgabe erfolgreich erstellt – sie steht jetzt im Board.",
   task: {
     title: "Fehler beheben: {message}",
@@ -102,6 +106,10 @@ const en: Shape<typeof de> = {
     delete: "Delete",
   },
   confirmDelete: "Delete this error? If it happens again, it shows up as new.",
+  autoTask: {
+    label: "Error agent: new errors instantly become a Notfix task for Claude",
+    hint: "When your app reports a new error – or a resolved one comes back – an urgent task for Claude is created automatically (due today, without stack details). At most 5 per hour.",
+  },
   taskCreated: "Task created successfully – it is on the board now.",
   task: {
     title: "Fix error: {message}",

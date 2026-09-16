@@ -330,6 +330,8 @@ model Project {
   webhookAt           DateTime?
   /// Fehler-Eingang: geheimer Teil der Adresse /api/errors/in/<key> – null heißt „aus“
   errorKey            String? @unique
+  /// Fehler-Agent (#39): off · notfix – neue Fehler automatisch als Notfix-Aufgabe für Claude
+  errorAutoTask       String  @default("off")
   /// Live-Überwachung: die fertige Seite, alle 5 Minuten geprüft
   liveUrl        String?
   /// "up" | "down" – null, solange noch nicht geprüft

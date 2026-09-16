@@ -18,7 +18,7 @@ import type { noteCreateSchema, taskCreateSchema, taskUpdateSchema } from "./val
 // prüft der Aufrufer vorher.
 
 /** Weg, auf dem eine Aufgabe entsteht: Oberfläche oder KI über MCP. */
-export type TaskVia = "web" | "mcp";
+export type TaskVia = "web" | "mcp" | "auto";
 
 export async function createTask(
   userId: string,

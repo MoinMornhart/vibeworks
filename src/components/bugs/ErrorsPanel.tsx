@@ -17,6 +17,8 @@ interface Data {
   enabled: boolean;
   endpoint: string | null;
   canManage: boolean;
+  /** Fehler-Agent (#39): off · notfix */
+  autoTask: string;
 }
 
 const FILTERS: Filter[] = ["open", "resolved", "ignored", "all"];
@@ -90,6 +92,11 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
     }
   }
 
+  async function setAutoTask(mode: string) {
+    const res = await run(() => api<Data>(`/api/projects/${projectId}/errors`, { body: { action: "autoTask", mode } }));
+    if (res) setData(res);
+  }
+
   async function manage(action: "enable" | "rotate" | "disable") {
     const res = await run(() => api<Data>(`/api/projects/${projectId}/errors`, { body: { action } }));
     if (res) {
@@ -154,6 +161,23 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
         )}
       </div>
       <p className="mb-4 text-xs text-muted">{t("hint")}</p>
+      {data?.canManage && data.enabled && (
+        <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-xl border bg-bg/25 px-3 py-2" data-testid="auto-notfix">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-[var(--vw-accent)]"
+            checked={data.autoTask === "notfix"}
+            disabled={busy}
+            onChange={(e) => void setAutoTask(e.target.checked ? "notfix" : "off")}
+          />
+          <span className="text-sm">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Zap size={14} className="text-amber-400" /> {t("autoTask.label")}
+            </span>
+            <span className="block text-xs text-muted">{t("autoTask.hint")}</span>
+          </span>
+        </label>
+      )}
 
       {data && !data.enabled && errors.length === 0 && <p className="text-sm text-muted">{data.canManage ? t("off") : t("offMember")}</p>}
 
