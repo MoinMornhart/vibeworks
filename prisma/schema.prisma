@@ -289,6 +289,8 @@ model WebAuthnChallenge {
 // ── Projekte ────────────────────────────────────────────────
 
 model Project {
+  /// Bis hierhin wurden Issue-Kommentare auf Bot-Befehle geprüft (#79)
+  issueCommentsAt DateTime?
   id                  String         @id @default(cuid())
   ownerId             String
   owner               User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -860,8 +862,11 @@ model McpCall {
   ms        Int
   /// Aufgabe, um die es ging (aus den Argumenten oder dem Ergebnis) – fürs Info-Fenster
   taskId    String?
+  /// Aufgaben, die die KI mit diesem Aufruf gesehen hat (z. B. list_tasks) – #76
+  seenTaskIds String[] @default([])
   createdAt DateTime @default(now())
 
+  @@index([seenTaskIds], type: Gin)
   @@index([userId, createdAt])
   @@index([createdAt])
   @@index([taskId, createdAt])

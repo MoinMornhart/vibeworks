@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.5",
+    date: "2026-09-16",
+    title: "Bot mit Befehlen, Unterhaltung im Info-Fenster",
+    titleEn: "Bot commands, conversation in the info panel",
+    changes: [
+      {
+        type: "neu",
+        text: "Der Bot hört auf Befehle in Issue-Kommentaren: /status erledigt, /prio 3, /übernehmen, /fällig 01.10.2026, /ki Hinweis, /info, /hilfe – nur von Mitarbeitenden mit Schreibrecht, und er antwortet jedes Mal im Issue",
+        en: "The bot follows commands in issue comments: /status erledigt, /prio 3, /übernehmen, /fällig 01.10.2026, /ki note, /info, /hilfe – only from collaborators with write access, and it always replies in the issue",
+      },
+      {
+        type: "neu",
+        text: "Info-Fenster: die Unterhaltung aus dem Issue lesen und direkt aus VibeWorks antworten – dein Name steht dabei",
+        en: "Info panel: read the issue conversation and reply straight from VibeWorks – your name is added",
+      },
+      {
+        type: "besser",
+        text: "KI-Schritte im Info-Fenster zeigen jetzt auch, welche KI eine Aufgabe nur gelesen hat (z. B. per list_tasks), und jede KI hat eine feste Kennung (KI-ID), die auch bei den API-Schlüsseln steht",
+        en: "AI steps in the info panel now also show which AI only read a task (e.g. via list_tasks), and every AI has a fixed ID that also appears with the API keys",
+      },
+      {
+        type: "besser",
+        text: "Konto → Git-Zugänge erklärt, wie der Bot arbeitet",
+        en: "Account → Git access explains how the bot works",
+        link: "/account#git-zugang",
+      },
+    ],
+  },
+  {
     version: "1.0.4",
     date: "2026-09-16",
     title: "Code-Netz sagt, was los ist",

@@ -11,7 +11,7 @@ import { CHANGELOG } from "@/lib/changelog";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
-import { taskIdOfCall } from "@/lib/taskInfoLogic";
+import { seenTaskIdsOfResult, taskIdOfCall } from "@/lib/taskInfoLogic";
 import { reminderFor, toolAllowed } from "@/lib/mcp/keySettings";
 
 // MCP-Endpunkt für Claude Code: „Streamable HTTP“, zustandslos, Anmeldung
@@ -70,7 +70,9 @@ export async function POST(req: NextRequest) {
       `Note for the user: this MCP client asked for protocol version ${v}, which VibeWorks no longer supports natively. It still works, but please update the client.`,
     onToolCall: async (call) => {
       if (call.ok && call.tool === CONFIRM_TOOL) rulesAcked = true;
-      await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms, taskId: taskIdOfCall(call.args, call.result) } });
+      const taskId = taskIdOfCall(call.args, call.result);
+      const seenTaskIds = call.ok ? seenTaskIdsOfResult(call.result).filter((id) => id !== taskId) : [];
+      await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms, taskId, seenTaskIds } });
     },
     notice: async (tool) => {
       if (!rulesAcked && tool !== RULES_TOOL && tool !== CONFIRM_TOOL) return rulesOutdated ? RULES_UPDATED_REMINDER : RULES_REMINDER;

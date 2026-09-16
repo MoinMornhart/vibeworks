@@ -234,6 +234,23 @@ export interface IssueApi {
   recent(): Promise<IssueRef[]>;
   /** Genau ein Status-Label setzen (oder keins); fremde Labels bleiben stehen. */
   setStatusLabel(issue: IssueRef, label: StatusLabel | null): Promise<void>;
+  /** Neue Kommentare aller Issues seit einem Zeitpunkt, älteste zuerst (Bot-Befehle, #79). GitLab: leer. */
+  commentsSince(since: Date): Promise<IssueComment[]>;
+  /** Unterhaltung eines Issues, älteste zuerst (#76). */
+  comments(number: number): Promise<IssueComment[]>;
+  /** Kommentar schreiben. */
+  comment(number: number, body: string): Promise<void>;
+  /** Recht eines Kontos im Repository: admin, maintain, write, read, none – null, wenn unbekannt. */
+  permission(login: string): Promise<string | null>;
+}
+
+export interface IssueComment {
+  id: number;
+  issueNumber: number;
+  author: string;
+  body: string;
+  createdAt: string;
+  url: string;
 }
 
 type LabelList = Array<{ name: string } | string> | null | undefined;
@@ -242,6 +259,10 @@ const labelNames = (l: LabelList) => (l ?? []).map((x) => (typeof x === "string"
 interface GhIssue { number: number; html_url: string; state: string; updated_at: string; pull_request?: unknown; labels?: LabelList; assignees?: Array<{ login: string }> | null }
 interface GlIssue { iid: number; web_url: string; state: string; updated_at: string; labels?: string[]; assignees?: Array<{ username: string }> | null }
 interface GhLabel { id: number; name: string }
+interface GhComment { id: number; issue_url: string; html_url: string; body?: string | null; created_at: string; user?: { login: string } | null }
+interface GlNote { id: number; body: string; created_at: string; system?: boolean; author?: { username: string } | null }
+
+const LOGIN = /^[\w.-]{1,100}$/;
 
 export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string): IssueApi {
   const api = apiBase(provider, repo);
@@ -267,6 +288,22 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
         if (!remove.length && !add) return;
         // GitLab legt fehlende Labels beim Zuweisen selbst an.
         await request("PUT", `${api}/issues/${issue.number}`, headers, { add_labels: add ?? "", remove_labels: remove.join(",") });
+      },
+      // GitLab kennt keine Liste aller Kommentare eines Projekts – Bot-Befehle gibt es dort nicht
+      async commentsSince() {
+        return [];
+      },
+      async comments(number) {
+        const notes = await getJson<GlNote[]>(`${api}/issues/${number}/notes?sort=asc&per_page=100`, headers);
+        return notes
+          .filter((n) => !n.system)
+          .map((n) => ({ id: n.id, issueNumber: number, author: n.author?.username ?? "", body: n.body, createdAt: n.created_at, url: `${repo.origin}/${repo.path}/-/issues/${number}#note_${n.id}` }));
+      },
+      async comment(number, body) {
+        await request("POST", `${api}/issues/${number}/notes`, headers, { body });
+      },
+      async permission() {
+        return null;
       },
     };
   }
@@ -296,6 +333,14 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
     ...(provider === "github" && i.closed ? { state_reason: i.reason ?? "completed" } : {}),
   });
   const list = provider === "github" ? `${api}/issues?state=all&sort=updated&direction=desc&per_page=100` : `${api}/issues?state=all&type=issues&limit=50`;
+  const toComment = (c: GhComment): IssueComment => ({
+    id: c.id,
+    issueNumber: Number(c.issue_url.split("/").pop()),
+    author: c.user?.login ?? "",
+    body: c.body ?? "",
+    createdAt: c.created_at,
+    url: c.html_url,
+  });
   return {
     async create(input) {
       const created = ref(await request<GhIssue>("POST", `${api}/issues`, headers, { title: input.title, body: input.body }));
@@ -320,6 +365,29 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
       }
       if (add) {
         await request("POST", `${api}/issues/${issue.number}/labels`, headers, { labels: [provider === "github" ? add : ids.get(add.toLowerCase())] });
+      }
+    },
+    async commentsSince(since) {
+      const q = provider === "github" ? `sort=created&direction=asc&per_page=100` : `limit=50`;
+      const rows = await getJson<GhComment[]>(`${api}/issues/comments?since=${encodeURIComponent(since.toISOString())}&${q}`, headers);
+      return rows.map(toComment).filter((c) => Number.isInteger(c.issueNumber) && new Date(c.createdAt) > since);
+    },
+    async comments(number) {
+      const q = provider === "github" ? "per_page=100" : "limit=50";
+      return (await getJson<GhComment[]>(`${api}/issues/${number}/comments?${q}`, headers)).map(toComment);
+    },
+    async comment(number, body) {
+      await request("POST", `${api}/issues/${number}/comments`, headers, { body });
+    },
+    async permission(login) {
+      if (!LOGIN.test(login)) return null;
+      try {
+        const res = await getJson<{ permission?: string; role_name?: string }>(`${api}/collaborators/${encodeURIComponent(login)}/permission`, headers);
+        // GitHub meldet „maintain“ nur als role_name
+        return res.role_name === "maintain" ? "maintain" : (res.permission ?? null);
+      } catch (err) {
+        if (err instanceof GitError && err.status === 404) return "none";
+        throw err;
       }
     },
   };

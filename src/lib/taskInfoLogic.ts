@@ -32,6 +32,32 @@ export function shortDuration(seconds: number, unit: { s: string; min: string; h
   return `${Math.floor(h / 24)} ${unit.d} ${h % 24} ${unit.h}`;
 }
 
+const TASK_ID = /^[\w-]{1,40}$/;
+const MAX_SEEN = 100;
+
+/**
+ * Aufgaben, die ein MCP-Ergebnis enthält (list_tasks, get_today …): Objekte mit
+ * id, title und status, höchstens drei Ebenen tief (#76).
+ */
+export function seenTaskIdsOfResult(result: unknown): string[] {
+  const out = new Set<string>();
+  const walk = (v: unknown, depth: number) => {
+    if (out.size >= MAX_SEEN || depth > 3 || !v || typeof v !== "object") return;
+    if (Array.isArray(v)) {
+      for (const x of v) walk(x, depth + 1);
+      return;
+    }
+    const o = v as Record<string, unknown>;
+    if (typeof o.id === "string" && typeof o.title === "string" && typeof o.status === "string" && TASK_ID.test(o.id)) out.add(o.id);
+    for (const x of Object.values(o)) if (x && typeof x === "object") walk(x, depth + 1);
+  };
+  walk(result, 0);
+  return [...out];
+}
+
+/** Kurze, feste Kennung eines KI-Schlüssels – steht im Info-Fenster und bei den API-Schlüsseln (#76). */
+export const keyShortId = (tokenId: string) => tokenId.slice(-6).toUpperCase();
+
 /** Aufgaben-Id aus den Argumenten oder dem Ergebnis eines MCP-Aufrufs. */
 export function taskIdOfCall(args: Record<string, unknown> | undefined, result: unknown): string | null {
   const fromArgs = typeof args?.task === "string" ? args.task : null;

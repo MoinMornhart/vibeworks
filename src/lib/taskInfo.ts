@@ -1,7 +1,7 @@
 import type { Task } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { displayNameOf } from "@/lib/auth/guard";
-import { commitsForIssue, type CommitLike } from "./taskInfoLogic";
+import { commitsForIssue, keyShortId, type CommitLike } from "./taskInfoLogic";
 import { statusLabelsOf } from "./boardConfig";
 
 // Was im Info-Fenster einer Aufgabe steht (#48/#49): Verlauf, Schritte der KI,
@@ -16,7 +16,7 @@ export async function taskInfo(task: Task) {
       include: { user: { select: { username: true, displayName: true } } },
     }),
     db.mcpCall.findMany({
-      where: { taskId: task.id },
+      where: { OR: [{ taskId: task.id }, { seenTaskIds: { has: task.id } }] },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { token: { select: { name: true, clientName: true } } },
@@ -61,6 +61,10 @@ export async function taskInfo(task: Task) {
       error: c.error,
       who: callers.get(c.userId) ?? null,
       client: c.token.clientName ?? c.token.name,
+      /** Kennung des KI-Schlüssels (#76) */
+      keyId: keyShortId(c.tokenId),
+      /** Nur gesehen (z. B. in list_tasks), nicht gezielt bearbeitet */
+      seen: c.taskId !== task.id,
     })),
     commits: commits.map((c) => ({ sha: c.sha.slice(0, 7), title: c.title, author: c.author, date: c.date, url: c.url })),
     time,

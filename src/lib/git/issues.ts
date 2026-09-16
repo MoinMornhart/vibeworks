@@ -7,6 +7,7 @@ import { priorityLabel } from "@/lib/status";
 import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
 import { issueTokenFor } from "./token";
+import { runBotCommands } from "./botCommands";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
@@ -33,7 +34,14 @@ export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "du
   if (task.dueDate) meta.push(`📅 Fällig: ${task.dueDate.toISOString().slice(0, 10).split("-").reverse().join(".")}`);
   if (task.recurrence) meta.push(`🔁 ${recurrenceLabel(task.recurrence)}`);
   if (task.labels.length) meta.push(`🏷️ ${task.labels.join(", ")}`);
-  return [task.description?.trim(), meta.join(" · "), "---", "_Aus VibeWorks gespiegelt – Änderungen bitte dort vornehmen._", taskMarker(task.id)]
+  return [
+    task.description?.trim(),
+    meta.join(" · "),
+    "---",
+    "_Aus VibeWorks gespiegelt – Änderungen bitte dort vornehmen._",
+    "💬 Per Kommentar steuerbar: `/status erledigt` · `/prio 3` · `/übernehmen` · `/info` · `/hilfe`",
+    taskMarker(task.id),
+  ]
     .filter(Boolean)
     .join("\n\n");
 }
@@ -71,10 +79,12 @@ function describe(err: unknown): string {
   return tk("git", "errors.issueFailed");
 }
 
-interface IssueContext {
+export interface IssueContext {
   api: IssueApi;
   provider: GitProvider;
   projectId: string;
+  /** So heißt der Bot beim Anbieter – null ohne Bot */
+  botLogin: string | null;
 }
 
 const isIssuesDisabled = (err: unknown) => err instanceof GitError && err.status === 410;
@@ -103,7 +113,7 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
   if (!parsed || !provider || provider === "git") return null; // Anbieter erst nach dem ersten Abgleich bekannt; beliebige Git-Server kennen keine Issues
-  return { api: issueApi(provider, parsed, stored.token), provider, projectId };
+  return { api: issueApi(provider, parsed, stored.token), provider, projectId, botLogin: stored.botLogin };
 }
 
 const issueInput = (task: Task, reason?: IssueInput["reason"]): IssueInput => ({
@@ -170,6 +180,8 @@ export interface IssueSyncResult {
   created: number;
   tasksChanged: number;
   linked: number;
+  /** Aufgaben, die Bot-Befehle geändert haben */
+  commands: number;
   error: string | null;
 }
 
@@ -191,7 +203,7 @@ export function syncIssues(projectId: string): Promise<IssueSyncResult | null> {
 async function runSync(projectId: string): Promise<IssueSyncResult | null> {
   const ctx = await issueContext(projectId);
   if (!ctx) return null;
-  const result: IssueSyncResult = { created: 0, tasksChanged: 0, linked: 0, error: null };
+  const result: IssueSyncResult = { created: 0, tasksChanged: 0, linked: 0, commands: 0, error: null };
 
   const missing = await db.task.findMany({
     where: { projectId, issueNumber: null, status: { not: "DONE" } },
@@ -234,6 +246,10 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     }
     if (result.tasksChanged) await syncProjectProgress(projectId);
     if (closedViaGit.length) void notifyClosed(projectId, closedViaGit);
+    // Befehle an den Bot aus neuen Kommentaren (#79, #81)
+    const commanded = await runBotCommands(projectId, ctx.api, ctx.botLogin);
+    for (const id of commanded) await pushTaskIssue(id, ctx);
+    result.commands = commanded.length;
   } catch (err) {
     if (isIssuesDisabled(err)) {
       await markIssuesOff(projectId);

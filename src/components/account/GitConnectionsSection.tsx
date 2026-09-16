@@ -454,6 +454,16 @@ export function GitConnectionsSection({
                           {botErrors[c.id]}
                         </p>
                       )}
+                      <details className="mt-2 text-xs" data-testid="git-bot-how">
+                        <summary className="cursor-pointer text-muted">{t("git.botHow.title")}</summary>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted">
+                          <li>{t("git.botHow.issues")}</li>
+                          <li>{t("git.botHow.commands")}</li>
+                          <li>{t("git.botHow.rights")}</li>
+                          <li>{t("git.botHow.conversation")}</li>
+                          <li>{t("git.botHow.timing")}</li>
+                        </ul>
+                      </details>
                     </div>
                   </div>
                 )}

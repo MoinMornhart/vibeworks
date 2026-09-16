@@ -133,6 +133,14 @@ const de = {
     botAppExpired: "Der Vorgang ist abgelaufen – bitte „Bot per Klick erstellen“ noch einmal starten.",
     botAppFailed: "GitHub hat die App nicht übergeben – bitte noch einmal versuchen.",
     botTokenInstead: "Oder: Token eines eigenen Bot-Kontos eintragen",
+    botHow: {
+      title: "So arbeitet der Bot",
+      issues: "Er legt für jede Aufgabe ein Issue an und hält Titel, Text und die Labels „in Arbeit“/„blockiert“ aktuell.",
+      commands: "Im Issue lässt er sich per Kommentar steuern: /status erledigt, /prio 3, /übernehmen, /fällig 01.10.2026, /ki Hinweis, /info, /hilfe.",
+      rights: "Befehle nimmt er nur von Personen mit Schreibrecht im Repository an – alle anderen bekommen eine freundliche Absage.",
+      conversation: "Die Unterhaltung im Issue siehst du im Info-Fenster jeder Aufgabe und kannst dort antworten – dein Name steht dabei.",
+      timing: "Er antwortet beim nächsten Repo-Abgleich (automatisch alle paar Minuten oder sofort mit „Abgleichen“).",
+    },
     botAppReturn: {
       ready: "Bot ist eingerichtet. Issues erscheinen jetzt als Bot – in Repositories ohne installierte App weiter unter deinem Konto.",
       expired: "Der Vorgang ist abgelaufen – bitte „Bot per Klick erstellen“ noch einmal starten.",
@@ -293,6 +301,14 @@ const en: Shape<typeof de> = {
     botAppExpired: "This setup has expired – please start “Create bot in one click” again.",
     botAppFailed: "GitHub didn't hand over the app – please try again.",
     botTokenInstead: "Or: enter the token of your own bot account",
+    botHow: {
+      title: "How the bot works",
+      issues: "It creates an issue for every task and keeps title, text and the labels “in Arbeit”/“blockiert” up to date.",
+      commands: "In the issue you can control it by comment: /status erledigt, /prio 3, /übernehmen, /fällig 01.10.2026, /ki note, /info, /hilfe.",
+      rights: "It only accepts commands from people with write access to the repository – everyone else gets a polite refusal.",
+      conversation: "You see the issue conversation in every task's info panel and can reply there – your name is added.",
+      timing: "It answers on the next repository sync (automatically every few minutes, or right away with “Sync”).",
+    },
     botAppReturn: {
       ready: "The bot is set up. Issues now appear as the bot – in repositories without the app they still use your account.",
       expired: "This setup has expired – please start “Create bot in one click” again.",

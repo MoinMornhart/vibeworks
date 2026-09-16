@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { commitsForIssue, shortDuration, taskIdOfCall } from "./taskInfoLogic";
+import { commitsForIssue, keyShortId, seenTaskIdsOfResult, shortDuration, taskIdOfCall } from "./taskInfoLogic";
+
+describe("gesehene Aufgaben (#76)", () => {
+  it("findet Aufgaben in Listen und verschachtelten Ergebnissen", () => {
+    const result = { today: "2026-09-16", tasks: [{ id: "t1", title: "A", status: "TODO", project: { id: "p1", name: "P" } }, { id: "t2", title: "B", status: "DOING" }] };
+    expect(seenTaskIdsOfResult(result)).toEqual(["t1", "t2"]);
+    expect(seenTaskIdsOfResult({ created: [{ task: { id: "t3", title: "C", status: "TODO" } }] })).toEqual(["t3"]);
+    expect(seenTaskIdsOfResult({ projects: [{ id: "p1", name: "x", status: "OPEN" }] })).toEqual([]);
+    expect(seenTaskIdsOfResult("text")).toEqual([]);
+    expect(seenTaskIdsOfResult({ tasks: Array.from({ length: 300 }, (_, i) => ({ id: `t${i}`, title: "x", status: "TODO" })) })).toHaveLength(100);
+  });
+  it("Schlüssel-Kennung ist kurz und fest", () => {
+    expect(keyShortId("cmu41s8di0006e8hkkzgbzt8f")).toBe("GBZT8F");
+  });
+});
 
 const c = (title: string, body = "") => ({ sha: title, title, body, author: "a", date: "2026-09-16", url: null });
 const unit = { s: "s", min: "min", h: "h", d: "T" };

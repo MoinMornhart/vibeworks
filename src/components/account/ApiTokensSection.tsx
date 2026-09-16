@@ -6,6 +6,7 @@ import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { ApiTokenItem } from "@/lib/mcp/token";
+import { keyShortId } from "@/lib/taskInfoLogic";
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
 import { KeySettings } from "./KeySettings";
@@ -137,6 +138,9 @@ export function ApiTokensSection({
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
                   <span className="truncate">{item.name}</span>
+                  <span className="rounded bg-fg/10 px-1 font-mono text-[10px] text-muted" title={t("keyIdHint")} data-testid="api-token-id">
+                    {t("keyId", { id: keyShortId(item.id) })}
+                  </span>
                   {(() => {
                     const current = Boolean(item.rulesAckAt) && item.rulesVersion === rulesVersion;
                     const outdated = Boolean(item.rulesAckAt) && !current;

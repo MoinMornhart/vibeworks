@@ -76,6 +76,8 @@ const de = {
     outdated: "Regeln veraltet",
     outdatedHint: "Die Regeln haben sich seit der Bestätigung geändert – die KI wird bei jedem Aufruf erinnert, sie neu zu holen.",
   },
+  keyId: "KI-ID {id}",
+  keyIdHint: "Feste Kennung dieses Schlüssels – so steht er auch im Info-Fenster jeder Aufgabe.",
   calls: {
     title: "Letzte MCP-Aufrufe",
     hint: "Welche Werkzeuge deine Schlüssel aufgerufen haben – mit Ergebnis und Dauer, ohne Inhalte. Nach 30 Tagen gelöscht.",
@@ -174,6 +176,8 @@ const en: Shape<typeof de> = {
     outdated: "Rules outdated",
     outdatedHint: "The rules changed since they were confirmed – every call reminds the AI to fetch them again.",
   },
+  keyId: "AI ID {id}",
+  keyIdHint: "Fixed ID of this key – shown like this in every task's info panel.",
   calls: {
     title: "Recent MCP calls",
     hint: "Which tools your keys called – with result and duration, without contents. Deleted after 30 days.",

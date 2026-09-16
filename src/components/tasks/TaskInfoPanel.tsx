@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bot, Check, Clock, ExternalLink, GitCommit, History, MessageSquareText, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { Bot, Check, Clock, ExternalLink, GitCommit, History, MessageSquareText, MessagesSquare, RefreshCw, Send, TriangleAlert, X } from "lucide-react";
 import type { TaskInfo } from "@/lib/taskInfo";
 import { shortDuration } from "@/lib/taskInfoLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -128,7 +128,11 @@ export function TaskInfoPanel({ taskId, title, onClose, canEdit = false }: { tas
                   {s.ok ? <Check size={13} className="mt-0.5 shrink-0 text-emerald-400" /> : <TriangleAlert size={13} className="mt-0.5 shrink-0 text-amber-400" />}
                   <span className="min-w-0 flex-1">
                     <code className="text-xs">{s.tool}</code>
+                    {s.seen && <span className="ml-1.5 text-[11px] text-muted">{t("info.seen")}</span>}
                     <span className="block text-xs text-muted" suppressHydrationWarning>
+                      <span className="mr-1 rounded bg-fg/10 px-1 font-mono text-[10px]" title={t("info.keyIdHint")} data-testid="task-info-key-id">
+                        {t("info.keyId", { id: s.keyId })}
+                      </span>
                       {[s.client, s.who, f.ago(s.at)].filter(Boolean).join(" · ")}
                     </span>
                     {s.error && <span className="block break-words text-xs text-amber-400">{s.error}</span>}
@@ -136,6 +140,8 @@ export function TaskInfoPanel({ taskId, title, onClose, canEdit = false }: { tas
                 </li>
               ))}
             </Section>
+
+            {info.issueUrl && <Conversation taskId={taskId} canEdit={canEdit} />}
 
             <Section icon={<GitCommit size={14} />} title={t("info.commits")} empty={t("info.noCommits")} count={info.commits.length}>
               {info.commits.map((c) => (
@@ -249,6 +255,110 @@ function AiNote({ taskId, initial, canEdit }: { taskId: string; initial: string 
           <p className="mt-1 text-[11px] text-muted">{t("info.noteHint")}</p>
         </>
       )}
+    </section>
+  );
+}
+
+interface IssueCommentView {
+  id: number;
+  author: string;
+  body: string;
+  at: string;
+  url: string;
+  bot: boolean;
+  fromVibeWorks: boolean;
+}
+
+/** Unterhaltung im Issue (#76): erst auf Wunsch laden – das kostet Anfragen beim Anbieter. */
+function Conversation({ taskId, canEdit }: { taskId: string; canEdit: boolean }) {
+  const t = useT("tasks");
+  const f = useFormat();
+  const [comments, setComments] = useState<IssueCommentView[] | null>(null);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function load() {
+    setBusy(true);
+    setNote(null);
+    try {
+      setComments((await api<{ comments: IssueCommentView[] }>(`/api/tasks/${taskId}/comments`)).comments);
+    } catch (e) {
+      setNote(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function send() {
+    setBusy(true);
+    setNote(null);
+    try {
+      await api(`/api/tasks/${taskId}/comments`, { body: { text: text.trim() } });
+      setText("");
+      setNote(t("info.conversation.sent"));
+      setComments((await api<{ comments: IssueCommentView[] }>(`/api/tasks/${taskId}/comments`)).comments);
+    } catch (e) {
+      setNote(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section data-testid="task-conversation">
+      <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+        <MessagesSquare size={14} /> {t("info.conversation.title")} {comments && comments.length > 0 && <span className="tabular-nums">({comments.length})</span>}
+      </h3>
+      {comments === null ? (
+        <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void load()} data-testid="task-conversation-load">
+          {t("info.conversation.load")}
+        </button>
+      ) : (
+        <>
+          {comments.length === 0 ? (
+            <p className="text-xs text-muted">{t("info.conversation.empty")}</p>
+          ) : (
+            <ul className="max-h-72 space-y-2 overflow-y-auto">
+              {comments.map((c) => (
+                <li key={c.id} className={cn("rounded-lg border px-2 py-1.5", c.bot && "border-sky-400/30 bg-sky-400/5")} data-testid="task-conversation-item">
+                  <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted" suppressHydrationWarning>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer" className="font-medium text-fg hover:underline">
+                      @{c.author}
+                    </a>
+                    {c.bot && <span className="rounded bg-sky-400/15 px-1 text-[10px] text-sky-300">{t("info.conversation.bot")}</span>}
+                    {c.fromVibeWorks && <span className="rounded bg-fg/10 px-1 text-[10px]">{t("info.conversation.fromVibeWorks")}</span>}
+                    · {f.ago(c.at)}
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-wrap break-words text-xs">{c.body}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {canEdit && (
+            <div className="mt-2">
+              <textarea
+                className="field min-h-16 text-sm"
+                maxLength={5000}
+                value={text}
+                placeholder={t("info.conversation.placeholder")}
+                onChange={(e) => setText(e.target.value)}
+                data-testid="task-conversation-input"
+              />
+              <div className="mt-1.5 flex items-center gap-2">
+                <button type="button" className="btn btn-primary btn-sm" disabled={busy || !text.trim()} onClick={() => void send()} data-testid="task-conversation-send">
+                  <Send size={13} /> {t("info.conversation.send")}
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void load()} aria-label={t("info.reload")}>
+                  <RefreshCw size={13} className={cn(busy && "animate-spin")} />
+                </button>
+              </div>
+            </div>
+          )}
+          <p className="mt-1 text-[11px] text-muted">{t("info.conversation.commandsHint")}</p>
+        </>
+      )}
+      {note && <p className="mt-1 text-xs text-muted" role="status">{note}</p>}
     </section>
   );
 }

@@ -40,25 +40,25 @@ export async function tokenCipherFor(project: ProjectTokenInput): Promise<{ ciph
  * VibeWorks Issues nicht unter dem Profil des Besitzers an. Sonst wie gewohnt
  * Projekt- oder Konto-Token. Liefert das Token im Klartext.
  */
-export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token: string; source: TokenSource | "bot" } | null> {
+export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token: string; source: TokenSource | "bot"; botLogin: string | null } | null> {
   const parsed = parseRepoUrl(project.repoUrl);
   if (parsed) {
     const bot = await db.gitCredential.findUnique({
       where: { userId_host: { userId: project.ownerId, host: parsed.hostPort } },
-      select: { botCipher: true, botAppId: true, botAppKeyCipher: true },
+      select: { botCipher: true, botAppId: true, botAppKeyCipher: true, botLogin: true },
     });
     if (bot?.botAppId && bot.botAppKeyCipher) {
       // Nicht in diesem Repository installiert: wie früher über den eigenen Zugang
       const token = await appIssueToken({ botAppId: bot.botAppId, botAppKeyCipher: bot.botAppKeyCipher }, parsed);
-      if (token) return { token, source: "bot" };
+      if (token) return { token, source: "bot", botLogin: bot.botLogin };
     } else if (bot?.botCipher) {
       const token = tryDecrypt(bot.botCipher);
-      if (token) return { token, source: "bot" };
+      if (token) return { token, source: "bot", botLogin: bot.botLogin };
     }
   }
   const stored = await tokenCipherFor(project);
   const token = stored && tryDecrypt(stored.cipher);
-  return stored && token ? { token, source: stored.source } : null;
+  return stored && token ? { token, source: stored.source, botLogin: null } : null;
 }
 
 function tryDecrypt(cipher: string): string | null {
