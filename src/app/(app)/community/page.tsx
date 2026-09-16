@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { GitBranch, Globe, MessageCircle, Users } from "lucide-react";
 import { requirePageUser, displayNameOf } from "@/lib/auth/guard";
-import { communityOn, listCommunityProjects, myCommunityProjects, viewerOf } from "@/lib/community";
+import { communityOn, feedbackInbox, listCommunityProjects, myCommunityProjects, viewerOf } from "@/lib/community";
+import { FeedbackInbox } from "@/components/community/FeedbackInbox";
+import { OfficialBadge } from "@/components/community/OfficialToggle";
 import { PROJECT_ACCENTS, PROJECT_STATUS_MAP } from "@/lib/status";
 import { getT } from "@/lib/i18n/server";
 import { AccentStrip } from "@/components/projects/ProjectCard";
@@ -25,7 +27,7 @@ export default async function CommunityPage() {
       </section>
     );
   }
-  const [projects, mine, viewer] = await Promise.all([listCommunityProjects(), myCommunityProjects(user.id), viewerOf(user)]);
+  const [projects, mine, viewer, feedback] = await Promise.all([listCommunityProjects(), myCommunityProjects(user.id), viewerOf(user), feedbackInbox(user.id)]);
 
   return (
     <div className="fade-in space-y-6">
@@ -50,7 +52,10 @@ export default async function CommunityPage() {
                 <Link href={`/community/${p.id}`} className="break-words text-lg font-semibold hover:text-accent-ink">
                   {p.name}
                 </Link>
-                <p className="text-xs text-muted">{t("by", { name: displayNameOf(p.owner) })}</p>
+                <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                  {t("by", { name: displayNameOf(p.owner) })}
+                  {p.communityOfficial && <OfficialBadge />}
+                </p>
                 {p.summary && <p className="mt-1 text-sm text-muted">{p.summary}</p>}
                 <div className="mt-3 flex items-center gap-2 text-xs">
                   <span className="chip !py-0.5" style={{ color: `var(${status.cssVar})` }}>
@@ -81,6 +86,8 @@ export default async function CommunityPage() {
           })}
         </ul>
       )}
+
+      {mine.some((m) => m.inCommunity) && <FeedbackInbox items={feedback} />}
 
       <ChatPanel room={LOBBY} title={t("chat.lobby")} hint={t("chat.lobbyHint")} />
 

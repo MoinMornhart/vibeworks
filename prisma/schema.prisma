@@ -353,6 +353,8 @@ model Project {
   inPortfolio        Boolean @default(false)
   /// In der Community der Instanz vorstellen (nur für angemeldete Konten sichtbar)
   inCommunity        Boolean @default(false)
+  /// Von einem Admin als offizielles Projekt markiert – steht oben in der Community (#59)
+  communityOfficial  Boolean @default(false)
   /// „Später fragen“ – bis dahin kein Hinweis auf dem Dashboard
   nudgeSnoozedUntil  DateTime?
 

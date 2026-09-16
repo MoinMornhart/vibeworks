@@ -89,7 +89,7 @@ export function CommunityBoard({ projectId, initialPosts, canWrite, moderator }:
         ) : (
           <ul className="divide-y divide-fg/10" data-testid="community-posts">
             {shown.map((p) => (
-              <li key={p.id} className={cn("py-3", p.hidden && "opacity-60")}>
+              <li key={p.id} id={`post-${p.id}`} className={cn("scroll-mt-24 py-3", p.hidden && "opacity-60")}>
                 <Link href={`/community/${projectId}/${p.id}`} className="flex gap-3 rounded-lg transition hover:bg-fg/5">
                   <Avatar name={p.author.name} />
                   <span className="min-w-0 flex-1">

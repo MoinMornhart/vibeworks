@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.4",
+    date: "2026-09-17",
+    title: "Feedback-Eingang",
+    titleEn: "Feedback inbox",
+    changes: [
+      {
+        type: "neu",
+        text: "Community: Wer eigene Projekte vorstellt, sieht jetzt „Feedback zu deinen Projekten“ – alle Ideen, Fragen und Fehlerberichte an einem Ort, filterbar nach offen und Art, mit Direktlink zum Beitrag",
+        en: "Community: anyone showcasing projects now sees “Feedback on your projects” – all ideas, questions and bug reports in one place, filterable by open and kind, with a direct link to the post",
+        link: "/community",
+      },
+      {
+        type: "neu",
+        text: "Admins können Community-Projekte als „offiziell“ markieren – sie stehen dann ganz oben und tragen ein Abzeichen, damit Neue wissen, wo ihr Feedback besonders willkommen ist",
+        en: "Admins can mark community projects as “official” – they appear at the top with a badge, so newcomers know where their feedback is especially welcome",
+      },
+    ],
+  },
+  {
     version: "0.9.3",
     date: "2026-09-17",
     title: "Klare Rückmeldungen",

@@ -9,6 +9,7 @@ import { getT } from "@/lib/i18n/server";
 import { AccentStrip } from "@/components/projects/ProjectCard";
 import { CommunityBoard } from "@/components/community/CommunityBoard";
 import { ChatPanel } from "@/components/community/ChatPanel";
+import { OfficialBadge, OfficialToggle } from "@/components/community/OfficialToggle";
 
 type Props = { params: Promise<{ projectId: string }> };
 
@@ -35,7 +36,11 @@ export default async function CommunityProjectPage({ params }: Props) {
       <section className="glass relative p-6 sm:p-8">
         <AccentStrip accent={project.accent} />
         <h1 className="break-words text-3xl font-bold tracking-tight">{project.name}</h1>
-        <p className="text-sm text-muted">{t("by", { name: displayNameOf(project.owner) })}</p>
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          {t("by", { name: displayNameOf(project.owner) })}
+          {project.communityOfficial && <OfficialBadge />}
+          {viewer.isAdmin && <OfficialToggle projectId={project.id} official={project.communityOfficial} />}
+        </p>
         {project.summary && <p className="mt-3 max-w-3xl">{project.summary}</p>}
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
           <span className="chip !py-0.5" style={{ color: `var(${status.cssVar})` }}>

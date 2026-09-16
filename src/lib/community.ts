@@ -38,6 +38,7 @@ const projectSelect = {
   tags: true,
   liveUrl: true,
   repoUrl: true,
+  communityOfficial: true,
   ownerId: true,
   owner: { select: { username: true, displayName: true } },
 } as const;
@@ -59,13 +60,34 @@ export function listCommunityProjects() {
   return db.project.findMany({
     where: visibleProject,
     select: { ...projectSelect, _count: { select: { communityPosts: { where: { hidden: false, status: "open" } } } } },
-    orderBy: [{ updatedAt: "desc" }],
+    orderBy: [{ communityOfficial: "desc" }, { updatedAt: "desc" }],
     take: 200,
   });
 }
 
 export function myCommunityProjects(userId: string) {
   return db.project.findMany({ where: { ownerId: userId, buriedAt: null }, select: { id: true, name: true, inCommunity: true }, orderBy: { name: "asc" } });
+}
+
+/** Feedback-Eingang (#59): Beiträge zu den eigenen Projekten, neueste Aktivität zuerst. */
+export async function feedbackInbox(userId: string) {
+  const posts = await db.communityPost.findMany({
+    where: { project: { ownerId: userId, inCommunity: true, buriedAt: null } },
+    orderBy: { lastActivityAt: "desc" },
+    take: 60,
+    include: { author: authorSelect, project: { select: { id: true, name: true } } },
+  });
+  return posts.map((p) => ({
+    id: p.id,
+    projectId: p.project.id,
+    project: p.project.name,
+    kind: p.kind,
+    status: p.status,
+    title: p.title,
+    author: displayNameOf(p.author),
+    replies: p.replyCount,
+    at: p.lastActivityAt.toISOString(),
+  }));
 }
 
 /** Auswahl setzen – per SQL, damit „zuletzt geändert“ der Projekte nicht springt. */

@@ -15,6 +15,20 @@ const de = {
   backToProject: "Zurück zu {project}",
   live: "Live",
   code: "Code",
+  official: {
+    badge: "Offiziell",
+    hint: "Von den Admins dieser Instanz als offizielles Open-Source-Projekt markiert – hier ist Feedback besonders willkommen.",
+    mark: "Als offiziell markieren",
+    unmark: "Markierung „offiziell“ entfernen",
+    set: "Als offizielles Projekt markiert.",
+    removed: "Markierung entfernt.",
+  },
+  inbox: {
+    title: "Feedback zu deinen Projekten",
+    hint: "Ideen, Fragen und Fehlerberichte aus der Community zu allen deinen vorgestellten Projekten – neueste zuerst. Ein Klick führt zum Beitrag, dort kannst du antworten oder ihn als Aufgabe übernehmen.",
+    empty: "Noch kein Feedback zu deinen Projekten.",
+    emptyFilter: "Nichts für diesen Filter.",
+  },
   mine: {
     title: "Deine Projekte in der Community",
     hint: "Gezeigt werden nur Name, Kurzbeschreibung, Stand, Tags und Links – Notizen, Aufgaben und Beschreibung bleiben privat. Die Community gibt niemandem Zugriff auf dein Projekt.",
@@ -132,6 +146,20 @@ const en: Shape<typeof de> = {
   backToProject: "Back to {project}",
   live: "Live",
   code: "Code",
+  official: {
+    badge: "Official",
+    hint: "Marked by this instance's admins as an official open-source project – feedback is especially welcome here.",
+    mark: "Mark as official",
+    unmark: "Remove “official” mark",
+    set: "Marked as an official project.",
+    removed: "Mark removed.",
+  },
+  inbox: {
+    title: "Feedback on your projects",
+    hint: "Ideas, questions and bug reports from the community on all your showcased projects – newest first. A click takes you to the post, where you can reply or turn it into a task.",
+    empty: "No feedback on your projects yet.",
+    emptyFilter: "Nothing for this filter.",
+  },
   mine: {
     title: "Your projects in the community",
     hint: "Only name, summary, status, tags and links are shown – notes, tasks and the description stay private. The community gives nobody access to your project.",
