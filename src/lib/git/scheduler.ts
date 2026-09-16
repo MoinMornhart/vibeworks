@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { syncProjectRepository } from "./sync";
 import { syncIssues } from "./issues";
+import { checkPullRequestsQuietly } from "./fileFilter";
 import { tokenCipherFor } from "./token";
 import { runImports } from "./importRepos";
 
@@ -39,6 +40,7 @@ export async function runGitSyncOnce(): Promise<{ synced: number; skipped: numbe
     try {
       const cache = await syncProjectRepository(project);
       if (!cache.error) await syncIssues(project.id);
+      if (!cache.error) await checkPullRequestsQuietly(project.id);
       synced++;
     } catch (err) {
       console.error("[git-sync] Projekt %s:", project.id, err);
@@ -65,6 +67,8 @@ export function syncProjectNow(projectId: string): Promise<void> {
       if (!project?.repoUrl) break;
       const cache = await syncProjectRepository(project);
       if (!cache.error) await syncIssues(project.id);
+      // Webhook meldet neue Commits – auch in Pull Requests (#92)
+      if (!cache.error) await checkPullRequestsQuietly(project.id);
     } while (entry.rerun);
   })()
     .catch((err) => console.error("[git-sync] Webhook %s:", projectId, err))

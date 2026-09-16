@@ -26,7 +26,7 @@ describe("parseCheckReport", () => {
       todos: [{ file: "README.md", line: 12, text: "TODO: Doku" }],
     });
     expect(r.counts).toEqual({ secrets: 1, vulnerabilities: 1, findings: 0, todos: 1 });
-    expect(r.tools).toEqual({ gitleaks: true, osv: true, semgrep: false, todos: true });
+    expect(r.tools).toEqual({ gitleaks: true, osv: true, semgrep: false, todos: true, extra: [] });
     expect(r.secrets[0]).toMatchObject({ file: "src/a.ts", line: 3, rule: "generic-api-key" });
     expect(checkIsUrgent(r)).toBe(true);
   });
@@ -56,5 +56,14 @@ describe("blobUrl", () => {
     expect(blobUrl("https://github.com/a/b", "abc123", "src/my file.ts", 7)).toBe("https://github.com/a/b/blob/abc123/src/my%20file.ts#L7");
     expect(blobUrl("https://github.com/a/b/", "", "x.ts", null)).toBe("https://github.com/a/b/blob/HEAD/x.ts");
     expect(blobUrl("https://github.com/a/b", "abc", "../../etc/passwd", 1)).toBeNull();
+  });
+});
+
+describe("Sprachwerkzeuge (#92)", () => {
+  it("zählen als geprüfte Befunde und werden aufgelistet", () => {
+    const r = parseCheckReport({ tools: { bandit: true, hadolint: true, evil: true }, findings: Array.from({ length: 450 }, () => ({ file: "a.py", rule: "bandit:B101" })) });
+    expect(r.tools.semgrep).toBe(true);
+    expect(r.tools.extra).toEqual(["bandit", "hadolint"]);
+    expect(r.findings).toHaveLength(400);
   });
 });

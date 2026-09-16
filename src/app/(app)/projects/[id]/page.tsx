@@ -26,6 +26,7 @@ import { RepoCheckPanel } from "@/components/git/RepoCheckPanel";
 import { ErrorsPanel } from "@/components/bugs/ErrorsPanel";
 import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import { CodeGraphPanel } from "@/components/git/CodeGraphPanel";
+import { FileFilterPanel } from "@/components/git/FileFilterPanel";
 import { isImportMode, normalizeGitPeople } from "@/lib/git/issueImportLogic";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
@@ -173,6 +174,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         />
       )}
       {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
+      {project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
       {project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
       <AutoRefresh />
     </div>

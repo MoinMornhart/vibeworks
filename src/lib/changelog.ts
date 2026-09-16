@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.0",
+    date: "2026-09-16",
+    title: "Dateifilter und Sprachwerkzeuge im Repo-Check",
+    titleEn: "File filter and language tools in the repo check",
+    changes: [
+      {
+        type: "neu",
+        text: "Dateifilter: Müll-Muster (z. B. *.exe, .env, node_modules/) finden solche Dateien im Repository – mit Vorschlägen – und entfernen sie per Pull Request samt .gitignore-Eintrag",
+        en: "File filter: junk patterns (e.g. *.exe, .env, node_modules/) find such files in the repository – with suggestions – and remove them via pull request including a .gitignore entry",
+      },
+      {
+        type: "neu",
+        text: "Geschützte Dateien: Offene Pull Requests, die sie löschen, umbenennen oder ihre Endung ändern – oder Müll hinzufügen –, bekommen den roten Status „vibeworks/dateifilter“; mit einer Branch-Regel ist das Mergen gesperrt, bis man in VibeWorks erlaubt",
+        en: "Protected files: open pull requests that delete, rename or change their extension – or add junk – get the red status “vibeworks/dateifilter”; with a branch rule merging is blocked until you allow it in VibeWorks",
+      },
+      {
+        type: "besser",
+        text: "Repo-Check prüft je nach Sprache zusätzlich mit Bandit (Python), ShellCheck, Hadolint (Dockerfiles) und actionlint (Workflows) – alles kostenlos; bestehende Repositories bekommen das beim nächsten Check automatisch",
+        en: "The repo check additionally runs Bandit (Python), ShellCheck, Hadolint (Dockerfiles) and actionlint (workflows) depending on the language – all free; existing repositories get this automatically on the next check",
+      },
+    ],
+  },
+  {
     version: "1.0.9",
     date: "2026-09-16",
     title: "Issues aus GitHub werden Aufgaben, Rollen für Konten",

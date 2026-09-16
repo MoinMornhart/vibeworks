@@ -289,6 +289,8 @@ model WebAuthnChallenge {
 // ── Projekte ────────────────────────────────────────────────
 
 model Project {
+  /// Dateifilter: Müll- und Schutz-Muster, erlaubte Pull Requests (src/lib/git/fileFilterLogic.ts, #92)
+  fileFilter      Json?
   /// Neue Issues aus dem Git-System übernehmen: off | trusted | all (#69)
   issueImport     String    @default("trusted")
   /// GitHub-Konten mit Rolle im Projekt: [{ login, role: worker | bughunter }] (#69)
