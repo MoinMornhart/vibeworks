@@ -830,6 +830,8 @@ model ApiToken {
   lastUsedUserAgent String?
   /// Die KI hat die Agent-Regeln gespeichert und bestätigt (confirm_agent_rules)
   rulesAckAt        DateTime?
+  /// Fingerabdruck der bestätigten Regeln – weicht er ab, erinnert VibeWorks erneut (#79)
+  rulesVersion      String?
   /// Zuletzt gemeldeter Client (initialize): Name, Version, verlangte Protokollversion
   clientName        String?
   clientVersion     String?

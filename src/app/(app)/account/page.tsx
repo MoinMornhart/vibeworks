@@ -17,7 +17,7 @@ import { smtpReady } from "@/lib/notify/mail";
 import { ApiTokensSection } from "@/components/account/ApiTokensSection";
 import { serializeApiToken } from "@/lib/mcp/token";
 import { agentRules } from "@/lib/mcp/agentRules";
-import { allMcpTools } from "@/lib/mcp/agentTools";
+import { allMcpTools, rulesVersion } from "@/lib/mcp/agentTools";
 import { config } from "@/lib/config";
 import { InboxSection } from "@/components/account/InboxSection";
 import { inboxInfo } from "@/lib/inboxServer";
@@ -65,7 +65,7 @@ export default async function AccountPage() {
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
       <GitConnectionsSection initial={connections} />
-      <ApiTokensSection initial={apiTokens.map(serializeApiToken)} appUrl={config.appUrl} rules={agentRules(allMcpTools(), config.appUrl, user.locale === "en" ? "en" : "de")} sessionIdleHours={config.sessionIdleHours} sessionTtlDays={config.sessionTtlDays} />
+      <ApiTokensSection initial={apiTokens.map(serializeApiToken)} appUrl={config.appUrl} rules={agentRules(allMcpTools(), config.appUrl, user.locale === "en" ? "en" : "de")} rulesVersion={rulesVersion(user.locale === "en" ? "en" : "de")} sessionIdleHours={config.sessionIdleHours} sessionTtlDays={config.sessionTtlDays} />
       <InboxSection initial={inbox} />
       <PortfolioSection initial={portfolio} />
       <NotificationsSection initial={notificationView(notifications)} smtpReady={mailReady} isAdmin={user.role === "ADMIN"} />

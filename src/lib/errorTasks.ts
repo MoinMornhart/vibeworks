@@ -27,7 +27,7 @@ export async function taskFromError(userId: string, e: AppError, opts: { notfix:
     title: (opts.notfix ? t("task.notfixTitle", { message: truncate(e.message, 110) }) : t("task.title", { message: truncate(e.message, 120) })).slice(0, 200),
     description: opts.notfix ? [t("task.notfixIntro"), "", description].join("\n") : description,
     labels: opts.notfix ? [t("task.label"), t("task.notfixLabel")] : [t("task.label")],
-    ...(opts.notfix ? { assignee: "Claude", priority: 4, dueDate: new Date().toISOString().slice(0, 10) } : {}),
+    ...(opts.notfix ? { priority: 4, dueDate: new Date().toISOString().slice(0, 10) } : {}),
   });
   const { task } = await createTask(userId, e.projectId, input, opts.via ?? "web");
   return db.appError.update({ where: { id: e.id }, data: { taskId: task.id } });

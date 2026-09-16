@@ -738,7 +738,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       "State of a project's repository and live site: provider, branch, last sync and its error, recent commits, CI runs, outdated or vulnerable dependencies, the repo check (secrets, vulnerabilities, bug patterns found by the GitHub workflow), uptime and SSL.",
     inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
     annotations: { readOnlyHint: true },
-    run: async (args, { userId, locale }) => {
+    run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project));
       const cache = await db.repoCache.findUnique({ where: { projectId: project.id } });
       const commits = (cache?.commits as unknown as Array<{ sha: string; title: string; author: string; date: string }> | null) ?? [];
@@ -752,7 +752,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         ci: (cache?.ci as { state?: string } | null) ?? null,
         deps: (cache?.deps as { error?: string | null; manifest?: string | null } | null) ?? null,
       });
-      const limitations = areas.filter((a) => a.state !== "ok").map((a) => ({ area: a.area, state: a.state, note: a.note ? translateMessage(locale, a.note) : null }));
+      const limitations = areas.filter((a) => a.state !== "ok").map((a) => ({ area: a.area, state: a.state, note: a.note ? translateMessage("en", a.note) : null }));
       const ci = cache?.ci as { state?: string; runs?: unknown[] } | null;
       const deps = cache?.deps as {
         counts?: unknown;
@@ -769,21 +769,21 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
               provider: cache?.provider || null,
               defaultBranch: cache?.defaultBranch ?? null,
               syncedAt: cache?.fetchedAt.toISOString() ?? null,
-              syncError: cache?.error ? translateMessage(locale, cache.error) : null,
+              syncError: cache?.error ? translateMessage("en", cache.error) : null,
               failuresInRow: cache?.failCount ?? 0,
               recentCommits: commits.slice(0, 5).map((c) => ({ sha: c.sha.slice(0, 7), title: c.title, author: c.author, date: c.date })),
               ci: ci?.state ? { state: ci.state, runs: ci.runs ?? [] } : null,
               dependencies: deps
                 ? {
                     counts: deps.counts ?? null,
-                    error: deps.error ? translateMessage(locale, deps.error) : null,
+                    error: deps.error ? translateMessage("en", deps.error) : null,
                     attention: (deps.packages ?? [])
                       .filter((p) => p.level === "major" || p.advisories?.length)
                       .slice(0, 15)
                       .map((p) => ({ name: p.name, current: p.current, latest: p.latest, level: p.level, advisories: (p.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })),
                   }
                 : null,
-              repoCheck: repoCheckSummary(cache, locale),
+              repoCheck: repoCheckSummary(cache, "en"),
             }
           : null,
         liveSite: project.liveUrl
@@ -792,7 +792,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
               state: project.liveState,
               responseMs: project.liveMs,
               sslExpiresAt: project.sslExpiresAt?.toISOString() ?? null,
-              error: project.liveError ? translateMessage(locale, project.liveError) : null,
+              error: project.liveError ? translateMessage("en", project.liveError) : null,
             }
           : null,
         url: link(`/projects/${project.id}`),
@@ -929,7 +929,7 @@ function repoCheckSummary(cache: RepoCache | null, locale: Locale) {
   const r = cache.checkReport ? parseCheckReport(cache.checkReport) : null;
   return {
     status: cache.checkStatus,
-    error: cache.checkError ? translateMessage(locale, cache.checkError) : null,
+    error: cache.checkError ? translateMessage("en", cache.checkError) : null,
     finishedAt: r?.finishedAt ?? null,
     runUrl: cache.checkRunUrl,
     counts: r?.counts ?? null,
@@ -953,10 +953,10 @@ async function loadProblems(userId: string, locale: Locale) {
   const repoCheckAlerts: Array<{ project: string; id: string; secrets: number; vulnerabilities: number }> = [];
   for (const p of projects) {
     const cache = p.repoCache;
-    if (cache?.error) gitErrors.push({ project: p.name, id: p.id, error: translateMessage(locale, cache.error) });
+    if (cache?.error) gitErrors.push({ project: p.name, id: p.id, error: translateMessage("en", cache.error) });
     const ci = cache?.ci as { state?: string; runs?: Array<{ name: string; state: string; url: string | null }> } | null;
     if (ci?.state === "failure") redCi.push({ project: p.name, id: p.id, runs: (ci.runs ?? []).filter((r) => r.state === "failure").map((r) => ({ name: r.name, url: r.url })) });
-    if (p.liveState === "down") sitesDown.push({ project: p.name, id: p.id, url: p.liveUrl, error: p.liveError ? translateMessage(locale, p.liveError) : null });
+    if (p.liveState === "down") sitesDown.push({ project: p.name, id: p.id, url: p.liveUrl, error: p.liveError ? translateMessage("en", p.liveError) : null });
     const deps = cache?.deps as { packages?: Array<{ name: string; advisories?: Array<{ severity: string; title: string }> }> } | null;
     const risky = (deps?.packages ?? []).filter((x) => x.advisories?.length);
     if (risky.length) {
@@ -981,7 +981,7 @@ async function loadProblems(userId: string, locale: Locale) {
   return {
     appErrors: appErrors.map((e) => ({ project: e.project.name, projectId: e.project.id, id: e.id, type: e.type, message: e.message, count: e.count, lastSeen: e.lastSeen.toISOString() })),
     gitErrors,
-    gitConnections: connections.map((c) => ({ host: c.host, error: translateMessage(locale, c.importError ?? "") })),
+    gitConnections: connections.map((c) => ({ host: c.host, error: translateMessage("en", c.importError ?? "") })),
     redCi,
     sitesDown,
     vulnerableDependencies,

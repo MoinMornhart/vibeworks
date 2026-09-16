@@ -69,11 +69,11 @@ export const POST = route<Params>(async (req, { params }) => {
     const open = await db.task.findFirst({ where: { projectId: id, title, status: { not: "DONE" } }, select: { id: true, title: true } });
     if (body.action === "draft") {
       // Fürs Aufgaben-Fenster (#60): vorausgefüllt, angelegt wird erst beim Speichern
-      draft = { title, description, labels, priority, assignee: "Claude", existing: open };
+      draft = { title, description, labels, priority, assignee: "", existing: open };
     } else if (open) {
       task = open;
     } else {
-      const input = taskCreateSchema.parse({ title, description, labels, assignee: "Claude", priority });
+      const input = taskCreateSchema.parse({ title, description, labels, priority });
       ({ task } = await createTask(user.id, id, input));
     }
   } else if (body.action === "autoTasks") {

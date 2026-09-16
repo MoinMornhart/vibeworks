@@ -42,9 +42,13 @@ export interface CodeCopy {
 
 /** Sorgt dafür, dass der Zweig lokal auf dem aktuellen Stand liegt. Wirft nie. */
 export async function ensureCodeCopy(projectId: string, wanted?: string | null, opts: { force?: boolean } = {}): Promise<CodeCopy> {
-  const cache = await db.repoCache.findUnique({ where: { projectId }, select: { provider: true, defaultBranch: true, commits: true } });
+  const cache = await db.repoCache.findUnique({ where: { projectId }, select: { provider: true, defaultBranch: true, commits: true, error: true } });
   const branch = wanted || cache?.defaultBranch || null;
-  if (!cache || !branch) return { branch, head: null, error: null };
+  // Nicht still scheitern (#54, #79): sagen, dass erst der Abgleich klappen muss
+  if (!cache || !branch) {
+    const error = cache?.error || tk("graph", "errors.notSynced");
+    return { branch, head: null, error };
+  }
   const head = await localHeadViaGit(projectId, branch);
   const isDefault = branch === cache.defaultBranch;
   const latest = isDefault ? (((cache.commits as unknown as Array<{ sha?: string }> | null) ?? [])[0]?.sha ?? null) : null;

@@ -6,6 +6,9 @@
 export const RULES_TOOL = "get_agent_rules";
 export const CONFIRM_TOOL = "confirm_agent_rules";
 
+/** Hinweis, wenn sich die Regeln seit der Bestätigung geändert haben (#79). */
+export const RULES_UPDATED_REMINDER = `VibeWorks: the agent rules have changed since you saved them. Call ${RULES_TOOL} again, replace your saved copy, then call ${CONFIRM_TOOL}. This reminder disappears afterwards.`;
+
 /** Hinweis in jeder Werkzeug-Antwort, bis die Regeln bestätigt sind. */
 export const RULES_REMINDER = `VibeWorks: please call ${RULES_TOOL} once, save the rules locally as described there, then call ${CONFIRM_TOOL}. This reminder disappears afterwards.`;
 

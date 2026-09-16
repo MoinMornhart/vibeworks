@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.4",
+    date: "2026-09-16",
+    title: "Code-Netz sagt, was los ist",
+    titleEn: "Code network tells you what's going on",
+    changes: [
+      {
+        type: "fix",
+        text: "Code-Netz scheitert nicht mehr still: Es sagt, wenn das Repository noch nicht abgeglichen ist, der Abgleich scheitert, keine Dateien lesbar sind oder nur ein älterer Stand gezeigt wird – und meldet kurz, wenn das Laden geklappt hat",
+        en: "The code network no longer fails silently: it says when the repository hasn't been synced, sync fails, no files are readable or only an older state is shown – and briefly confirms when loading worked",
+      },
+      {
+        type: "fix",
+        text: "Automatische Aufgaben (Fehler als Aufgabe, Repo-Check) tragen nicht mehr „Claude“ als Bearbeiter ein – das Feld bleibt leer, bis jemand die Aufgabe übernimmt",
+        en: "Automatic tasks (error to task, repo check) no longer fill in “Claude” as assignee – the field stays empty until someone takes the task",
+      },
+      {
+        type: "besser",
+        text: "MCP: Fehlermeldungen und Hinweise für die KI sind immer englisch; Inhalte bleiben in deiner Sprache",
+        en: "MCP: error messages and notes for the AI are always English; content stays in your language",
+      },
+      {
+        type: "neu",
+        text: "Ändern sich die Agenten-Regeln, erinnert VibeWorks die KI, sie neu zu holen – unter Konto → API-Schlüssel steht dann „Regeln veraltet“",
+        en: "When the agent rules change, VibeWorks reminds the AI to fetch them again – Account → API keys then shows “Rules outdated”",
+      },
+    ],
+  },
+  {
     version: "1.0.3",
     date: "2026-09-16",
     title: "Absturzberichte kommen an",

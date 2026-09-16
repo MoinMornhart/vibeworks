@@ -45,6 +45,7 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
       tokenId: row.id,
       user: row.user,
       rulesAckAt: row.rulesAckAt,
+      rulesVersion: row.rulesVersion,
       settings: { scope: row.scope, reminderMode: row.reminderMode, reminderText: row.reminderText, reminderEvery: row.reminderEvery },
     },
   };
@@ -65,6 +66,7 @@ export function serializeApiToken(t: ApiToken) {
     lastUsedAt: t.lastUsedAt?.toISOString() ?? null,
     createdAt: t.createdAt.toISOString(),
     rulesAckAt: t.rulesAckAt?.toISOString() ?? null,
+    rulesVersion: t.rulesVersion,
     clientName: t.clientName,
     clientVersion: t.clientVersion,
     clientProtocol: t.clientProtocol,

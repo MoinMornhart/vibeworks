@@ -167,7 +167,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           hasToken={Boolean(repoTokenHint || account)}
         />
       )}
-      {project.repoUrl && repoCache?.provider && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
+      {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
+      {project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
       <AutoRefresh />
     </div>
   );

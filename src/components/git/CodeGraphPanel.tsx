@@ -9,6 +9,7 @@ import { neighborsOf } from "@/lib/codeGraphLogic";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/Toaster";
 
 // Code-Netz (#57): Kräfte-Layout ohne Bibliothek. Knoten stoßen sich ab,
 // Importe ziehen zusammen, Bereiche (oberste Ordner) bekommen eine Farbe.
@@ -67,12 +68,15 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       setSelected(null);
       setView({ x: 0, y: 0, k: 1 });
       setGraph(res.graph);
+      // Rückmeldung, dass es geklappt hat (#54)
+      if (!res.graph.empty && !res.graph.staleError) toast(t("loaded", { files: res.graph.files, commit: (res.graph.commit ?? "").slice(0, 7) }));
     } catch (e) {
       setError(errorMessage(e));
+      toast(errorMessage(e), "error");
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, t]);
 
   const baseNodes = useMemo(
     () => (graph?.nodes ?? []).filter((n) => (showPkgs || n.kind !== "package") && (!onlyGroup || n.group === onlyGroup || (n.kind === "package" && showPkgs))),
@@ -310,6 +314,14 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       </div>
       <p className="mb-4 text-xs text-muted">{t("hint")}</p>
       {error && <p className="text-sm text-red-400">{error}</p>}
+      {graph?.staleError && !graph.empty && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm" data-testid="code-graph-stale">
+          <p className="min-w-0 flex-1">{t("stale", { commit: (graph.commit ?? "").slice(0, 7), error: msg(graph.staleError) })}</p>
+          <button type="button" className="btn btn-sm" onClick={() => void load(branch, true)} disabled={loading}>
+            <Download size={14} /> {t("fetchNow")}
+          </button>
+        </div>
+      )}
       {graph?.empty && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-bg/25 px-3 py-2 text-sm" data-testid="code-graph-empty">
           <p className="min-w-0 flex-1 text-muted">{graph.error ? t("fetchFailed", { error: msg(graph.error) }) : t("empty")}</p>

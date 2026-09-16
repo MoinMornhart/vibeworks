@@ -27,12 +27,15 @@ export function ApiTokensSection({
   initial,
   appUrl,
   rules,
+  rulesVersion,
   sessionIdleHours,
   sessionTtlDays,
 }: {
   initial: ApiTokenItem[];
   appUrl: string;
   rules: string;
+  /** Aktuelle Fassung der Regeln – ältere Bestätigungen gelten als veraltet (#79) */
+  rulesVersion: string;
   sessionIdleHours: number;
   sessionTtlDays: number;
 }) {
@@ -134,13 +137,20 @@ export function ApiTokensSection({
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
                   <span className="truncate">{item.name}</span>
-                  <span
-                    className={cn("chip !py-0.5 text-[11px]", item.rulesAckAt ? "border-emerald-500/40 text-emerald-400" : "border-amber-500/40 text-amber-400")}
-                    title={item.rulesAckAt ? t("rules.ackedAt", { ago: f.ago(item.rulesAckAt) }) : t("rules.pendingHint")}
-                    suppressHydrationWarning
-                  >
-                    {item.rulesAckAt ? <ShieldCheck size={11} /> : <CircleAlert size={11} />} {item.rulesAckAt ? t("rules.acked") : t("rules.pending")}
-                  </span>
+                  {(() => {
+                    const current = Boolean(item.rulesAckAt) && item.rulesVersion === rulesVersion;
+                    const outdated = Boolean(item.rulesAckAt) && !current;
+                    return (
+                      <span
+                        className={cn("chip !py-0.5 text-[11px]", current ? "border-emerald-500/40 text-emerald-400" : "border-amber-500/40 text-amber-400")}
+                        title={current && item.rulesAckAt ? t("rules.ackedAt", { ago: f.ago(item.rulesAckAt) }) : outdated ? t("rules.outdatedHint") : t("rules.pendingHint")}
+                        data-testid="api-token-rules"
+                        suppressHydrationWarning
+                      >
+                        {current ? <ShieldCheck size={11} /> : <CircleAlert size={11} />} {current ? t("rules.acked") : outdated ? t("rules.outdated") : t("rules.pending")}
+                      </span>
+                    );
+                  })()}
                 </p>
                 <p className="text-xs text-muted" suppressHydrationWarning>
                   <span className="font-mono">{item.hint}</span> · {item.lastUsedAt ? t("lastUsed", { ago: f.ago(item.lastUsedAt) }) : t("neverUsed")} · {t("created", { ago: f.ago(item.createdAt) })}

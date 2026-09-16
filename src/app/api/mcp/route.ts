@@ -5,8 +5,8 @@ import { db } from "@/lib/db";
 import { checkApiToken } from "@/lib/mcp/token";
 import { handleBody, RPC, rpcError } from "@/lib/mcp/protocol";
 import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, type McpContext } from "@/lib/mcp/tools";
-import { allMcpTools } from "@/lib/mcp/agentTools";
-import { CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL } from "@/lib/mcp/agentRules";
+import { allMcpTools, rulesVersion } from "@/lib/mcp/agentTools";
+import { CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL, RULES_UPDATED_REMINDER } from "@/lib/mcp/agentRules";
 import { CHANGELOG } from "@/lib/changelog";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
     );
   }
   const locale: Locale = isLocale(auth.user.locale) ? auth.user.locale : "de";
-  const tr = (text: string) => translateMessage(locale, text);
+  // Meldungen liest die KI, nicht der Mensch – immer englisch (#79). Inhalte bleiben in der Kontosprache.
+  const tr = (text: string) => translateMessage("en", text);
 
   try {
     limitOrThrow(`mcp:${auth.tokenId}`, 600, MINUTE);
@@ -52,7 +53,9 @@ export async function POST(req: NextRequest) {
   if (raw.length > MAX_BODY) return NextResponse.json(rpcError(null, RPC.INVALID_REQUEST, "Request too large"), { status: 413 });
 
   const ctx: McpContext = { userId: auth.user.id, locale, tokenId: auth.tokenId };
-  let rulesAcked = Boolean(auth.rulesAckAt);
+  // Bestätigt heißt: genau diese Fassung der Regeln – sonst neu erinnern (#79)
+  const rulesOutdated = Boolean(auth.rulesAckAt) && auth.rulesVersion !== rulesVersion(locale);
+  let rulesAcked = Boolean(auth.rulesAckAt) && !rulesOutdated;
   const { status, body } = await handleBody(raw, ctx, {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
       await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms, taskId: taskIdOfCall(call.args, call.result) } });
     },
     notice: async (tool) => {
-      if (!rulesAcked && tool !== RULES_TOOL && tool !== CONFIRM_TOOL) return RULES_REMINDER;
+      if (!rulesAcked && tool !== RULES_TOOL && tool !== CONFIRM_TOOL) return rulesOutdated ? RULES_UPDATED_REMINDER : RULES_REMINDER;
       if (auth.settings.reminderMode === "off") return null;
       // Erinnerung bei jedem n-ten Aufruf dieses Schlüssels (#48/#49)
       return reminderFor(auth.settings, await db.mcpCall.count({ where: { tokenId: auth.tokenId } }));

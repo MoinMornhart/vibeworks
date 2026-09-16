@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
@@ -31,11 +32,16 @@ const ruleTools: ToolDef<McpContext>[] = [
     annotations: { idempotentHint: true },
     run: async (args, ctx) => {
       const savedTo = z.string().trim().min(1).max(300).parse(args.saved_to);
-      if (ctx.tokenId) await db.apiToken.update({ where: { id: ctx.tokenId }, data: { rulesAckAt: new Date() } });
+      if (ctx.tokenId) await db.apiToken.update({ where: { id: ctx.tokenId }, data: { rulesAckAt: new Date(), rulesVersion: rulesVersion(ctx.locale) } });
       return { confirmed: true, savedTo };
     },
   },
 ];
+
+/** Fingerabdruck der Regeln, wie die KI sie bekommt – ändern sich Regeln oder Werkzeuge, ändert er sich mit (#79). */
+export function rulesVersion(locale: McpContext["locale"]): string {
+  return createHash("sha256").update(agentRules(allMcpTools(), config.appUrl, locale)).digest("hex").slice(0, 16);
+}
 
 let all: ToolDef<McpContext>[] | null = null;
 

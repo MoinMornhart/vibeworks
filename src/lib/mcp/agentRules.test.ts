@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agentRules, CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL } from "./agentRules";
+import { agentRules, CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL, RULES_UPDATED_REMINDER } from "./agentRules";
 
 const tools = [
   { name: "list_projects", title: "List projects", description: "All projects the user can see. Includes shared ones." },
@@ -31,5 +31,13 @@ describe("Regeln für KI-Agenten", () => {
     expect(md).toContain(CONFIRM_TOOL);
     expect(md).toContain("https://vw.example");
     expect(RULES_REMINDER).toContain(RULES_TOOL);
+  });
+});
+
+describe("Erinnerung bei geänderten Regeln (#79)", () => {
+  it("nennt die echten Werkzeugnamen", () => {
+    expect(RULES_UPDATED_REMINDER).toContain(`Call ${RULES_TOOL} again`);
+    expect(RULES_UPDATED_REMINDER).toContain(CONFIRM_TOOL);
+    expect(RULES_UPDATED_REMINDER).not.toContain("${");
   });
 });

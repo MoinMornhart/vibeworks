@@ -73,6 +73,8 @@ const de = {
     ackedAt: "Bestätigt {ago}",
     pending: "Regeln offen",
     pendingHint: "Die KI hat die Agent-Regeln mit diesem Schlüssel noch nicht bestätigt.",
+    outdated: "Regeln veraltet",
+    outdatedHint: "Die Regeln haben sich seit der Bestätigung geändert – die KI wird bei jedem Aufruf erinnert, sie neu zu holen.",
   },
   calls: {
     title: "Letzte MCP-Aufrufe",
@@ -169,6 +171,8 @@ const en: Shape<typeof de> = {
     ackedAt: "Confirmed {ago}",
     pending: "Rules pending",
     pendingHint: "The AI hasn't confirmed the agent rules with this key yet.",
+    outdated: "Rules outdated",
+    outdatedHint: "The rules changed since they were confirmed – every call reminds the AI to fetch them again.",
   },
   calls: {
     title: "Recent MCP calls",

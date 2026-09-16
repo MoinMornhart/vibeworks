@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { grepImportsViaGit, listFilesViaGit } from "@/lib/git/gitCli";
 import { ensureCodeCopy, projectBranches } from "@/lib/git/codeCopy";
+import { tk } from "@/lib/i18n/messages";
 import { buildCodeGraph, type CodeGraph } from "./codeGraphLogic";
 
 // Code-Netz eines Projekts (#57, #60) aus der lokalen Code-Kopie – kein
@@ -28,6 +29,8 @@ export interface ProjectCodeGraph extends CodeGraph {
   /** Keine Kopie – erst den Repo-Abgleich laufen lassen (oder das Holen scheiterte) */
   empty: boolean;
   error: string | null;
+  /** Netz aus einer älteren Kopie – der neueste Stand ließ sich nicht holen */
+  staleError: string | null;
   memos: CodeMemoView[];
 }
 
@@ -55,7 +58,8 @@ export async function projectCodeGraph(projectId: string, wantedBranch?: string 
     commit: copy.head,
     webUrl: repo?.webUrl ?? "",
     empty: graph.files === 0,
-    error: graph.files === 0 ? copy.error : null,
+    error: graph.files === 0 ? (copy.error ?? (copy.head ? tk("graph", "errors.noFiles") : tk("graph", "errors.notSynced"))) : null,
+    staleError: graph.files > 0 ? copy.error : null,
     memos,
   };
 }
