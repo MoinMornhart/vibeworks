@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.2",
+    date: "2026-09-16",
+    title: "KI sieht die echten Spaltennamen",
+    titleEn: "AI sees the real column names",
+    changes: [
+      {
+        type: "fix",
+        text: "MCP: Jede Aufgabe nennt jetzt die Spalte, wie sie im Brett heißt – umbenannte und eigene Spalten inklusive –, und get_project liefert alle Spalten. Eine KI sieht also „Kann gelöscht werden“ statt nur BLOCKED",
+        en: "MCP: every task now names its column as shown on the board – renamed and custom columns included – and get_project lists all columns. An AI now sees “Can be deleted” instead of just BLOCKED",
+      },
+      {
+        type: "besser",
+        text: "create_task und update_task nehmen auch den Spaltennamen als Status an; unbekannte Namen werden mit der Liste der gültigen Spalten abgelehnt",
+        en: "create_task and update_task also accept the column name as status; unknown names are rejected with the list of valid columns",
+      },
+      {
+        type: "fix",
+        text: "Repo-Check-Befunde in den Installations- und Update-Skripten behoben (ShellCheck ohne Meldung)",
+        en: "Fixed repo check findings in the install and update scripts (ShellCheck clean)",
+      },
+    ],
+  },
+  {
     version: "1.1.1",
     date: "2026-09-16",
     title: "Merge-Konflikte im Browser lösen",

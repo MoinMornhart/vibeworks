@@ -6,7 +6,7 @@ import { projectCodeGraph } from "@/lib/codeGraph";
 import { ensureCodeCopy } from "@/lib/git/codeCopy";
 import { addCodeMemo, deleteCodeMemo } from "@/lib/codeMemo";
 import { memoCreateSchema } from "@/lib/codeMemoLogic";
-import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
+import type { Prisma, RepoCache, Task, TaskStatus } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
 import { repoAreas } from "@/lib/git/repoAreasLogic";
 import { serializeAppError, setErrorStatus } from "@/lib/bugs";
@@ -14,7 +14,7 @@ import { ERROR_STATUSES, type ErrorStatus } from "@/lib/bugsLogic";
 import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { accessOf, canDo, requireNote, requireTask, visibleTo, type Need } from "@/lib/access";
-import { tk, translateMessage } from "@/lib/i18n/messages";
+import { makeT, tk, translateMessage } from "@/lib/i18n/messages";
 import { docCreateSchema, docUpdateSchema, noteCreateSchema, projectUpdateSchema, taskBulkSchema, taskCreateSchema, taskUpdateSchema } from "@/lib/validation";
 import { createNote, createTask, createTaskInProjects, updateTask } from "@/lib/actions";
 import { searchContent } from "@/lib/searchQuery";
@@ -32,7 +32,8 @@ import { config } from "@/lib/config";
 import type { PromptProvider, ResourceProvider, ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
-import { aiLockedStatuses, aiProjectTaskFilter, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
+import { boardColumns, columnNameOf, DEFAULT_BOARD, normalizeBoard, resolveColumnInput, type BoardConfig } from "@/lib/boardConfig";
+import { aiProjectTaskFilter, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
 
 /** Gerade eben aus einer wiederkehrenden Aufgabe entstanden? (#89) */
 const justRecurred = (task: { recurredFrom: string | null; createdAt: Date }) => Boolean(task.recurredFrom) && Date.now() - task.createdAt.getTime() < 10 * 60_000;
@@ -108,11 +109,42 @@ async function resolveProject(userId: string, value: string, min: Need = "VIEWER
   return res;
 }
 
-function taskView(t: Task, opts: { full?: boolean; project?: { id: string; name: string } } = {}) {
+/** Spalten der Projekte samt Standardnamen in der Sprache des Kontos (#96). */
+interface Boards {
+  of(projectId: string): BoardConfig;
+  names: (s: TaskStatus) => string;
+}
+
+async function boardsFor(projectIds: string[], locale: Locale): Promise<Boards> {
+  const ids = [...new Set(projectIds)];
+  const rows = ids.length ? await db.project.findMany({ where: { id: { in: ids } }, select: { id: true, boardConfig: true } }) : [];
+  const map = new Map(rows.map((r) => [r.id, normalizeBoard(r.boardConfig)]));
+  const t = makeT(locale, "status");
+  return { of: (id) => map.get(id) ?? DEFAULT_BOARD, names: (s) => t(`task.${s}`) };
+}
+
+/** Status aus einer Eingabe: TODO/DOING/BLOCKED/DONE oder der Name einer Spalte, wie er im Brett steht (#96). */
+async function statusFromInput(projectId: string, input: unknown, locale: Locale): Promise<{ status: TaskStatus; column: string | null } | null> {
+  if (input === undefined || input === null) return null;
+  const boards = await boardsFor([projectId], locale);
+  const cfg = boards.of(projectId);
+  const hit = typeof input === "string" ? resolveColumnInput(cfg, input, boards.names) : null;
+  if (!hit) {
+    const names = boardColumns(cfg, boards.names).map((c) => `"${c.name}"`).join(", ");
+    throw new ApiError(400, `Unknown status or column "${String(input).slice(0, 60)}". Use TODO, DOING, BLOCKED, DONE or one of the column names: ${names}.`);
+  }
+  if (cfg.aiLocked.includes(hit.key)) throw new ApiError(403, tk("tasks", "aiLock.columnLocked"));
+  return { status: hit.status, column: hit.column };
+}
+
+function taskView(t: Task, opts: { full?: boolean; project?: { id: string; name: string }; boards?: Boards } = {}) {
+  const board = opts.boards?.of(t.projectId);
   return {
     id: t.id,
     title: t.title,
     status: t.status,
+    // Name der Spalte, wie er im Brett steht – umbenannte und eigene Spalten (#96)
+    ...(board && opts.boards ? { column: columnNameOf(board, t, opts.boards.names) } : {}),
     dueDate: t.dueDate ? dayKey(t.dueDate) : null,
     ...(t.labels.length ? { labels: t.labels } : {}),
     ...(t.recurrence ? { recurrence: t.recurrence } : {}),
@@ -132,6 +164,11 @@ const highlight = (s: string) => s.replaceAll(HIT_START, "**").replaceAll(HIT_EN
 const S = {
   project: { type: "string", description: "Project id or exact project name" },
   taskStatus: { type: "string", enum: TASK_STATUSES },
+  columnInput: {
+    type: "string",
+    maxLength: 60,
+    description: "TODO, DOING, BLOCKED or DONE – or the exact name of a board column as shown in get_project → columns (custom and renamed columns included)",
+  },
   dueDate: { type: ["string", "null"], description: "Due date as YYYY-MM-DD, null to clear" },
   labels: { type: "array", items: { type: "string" }, description: "Short labels, e.g. [\"bug\", \"ui\"]" },
   recurrence: { type: ["string", "null"], enum: [...RECURRENCES, null] },
@@ -212,8 +249,9 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       "Details of one project: description, repository, all open tasks (plus tasks finished in the last 14 days) and the list of notes with a short preview. Use get_note for the full text of a note.",
     inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
     annotations: { readOnlyHint: true },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const { project, access } = await resolveProject(userId, ref.parse(args.project));
+      const boards = await boardsFor([project.id], locale);
       const [tasks, notes, repo] = await Promise.all([
         db.task.findMany({
           where: { ...aiProjectTaskFilter(project.id, project.boardConfig), projectId: project.id, OR: [{ status: { not: "DONE" } }, { doneAt: { gte: new Date(Date.now() - 14 * DAY) } }] },
@@ -235,7 +273,9 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         yourAccess: access,
         url: link(`/projects/${project.id}`),
         repository: project.repoUrl ? { url: project.repoUrl, name: repo?.fullName ?? null, ci: (repo?.ci as { state?: string } | null)?.state ?? null } : null,
-        tasks: tasks.map((t) => taskView(t)),
+        // So heißen die Spalten im Brett – die KI soll diese Namen benutzen (#96)
+        columns: boardColumns(boards.of(project.id), boards.names).filter((c) => !c.aiLocked).map((c) => ({ name: c.name, status: c.status, ...(c.extra ? { custom: true } : {}), ...(c.hidden ? { hidden: true } : {}) })),
+        tasks: tasks.map((t) => taskView(t, { boards })),
         notes: notes.map((n) => ({ id: n.id, title: noteLabel(n), pinned: n.pinned, updatedAt: n.updatedAt.toISOString(), preview: truncate(n.content.replace(/\s+/g, " "), 200) })),
       };
     },
@@ -256,7 +296,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     annotations: { readOnlyHint: true },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const input = z
         .object({
           project: ref.optional(),
@@ -283,7 +323,8 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         take: input.limit,
         include: { project: { select: { id: true, name: true } } },
       });
-      return { today, tasks: tasks.map((t) => taskView(t, { project: t.project })) };
+      const boards = await boardsFor(tasks.map((t) => t.projectId), locale);
+      return { today, tasks: tasks.map((t) => taskView(t, { project: t.project, boards })) };
     },
   },
   {
@@ -292,9 +333,10 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     description: "One task with its full description. If it has \"instructions\", they come from the user for you – follow them while working on this task.",
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { readOnlyHint: true },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const { task, project } = await requireAiTask(userId, ref.parse(args.task));
-      return { ...taskView(task, { full: true, project: { id: project.id, name: project.name } }), url: link(`/projects/${project.id}`) };
+      const boards = await boardsFor([project.id], locale);
+      return { ...taskView(task, { full: true, project: { id: project.id, name: project.name }, boards }), url: link(`/projects/${project.id}`) };
     },
   },
   {
@@ -307,7 +349,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         project: S.project,
         title: { type: "string", maxLength: 200 },
         description: { type: "string", description: "Markdown" },
-        status: { ...S.taskStatus, description: "Default TODO" },
+        status: { ...S.columnInput, description: `${S.columnInput.description}. Default TODO` },
         dueDate: S.dueDate,
         labels: S.labels,
         recurrence: S.recurrence,
@@ -317,12 +359,14 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       required: ["project", "title"],
       additionalProperties: false,
     },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project), "tasks.edit");
-      const input = taskCreateSchema.omit({ aiLocked: true, column: true }).parse(args);
-      if (aiLockedStatuses(project.boardConfig).includes(input.status)) throw new ApiError(403, tk("tasks", "aiLock.columnLocked"));
-      const { task, progress } = await createTask(userId, project.id, { ...input, aiLocked: false }, "mcp");
-      return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
+      // Status als Spaltenname erlaubt (#96) – gesperrte Spalten lehnt statusFromInput ab
+      const target = (await statusFromInput(project.id, args.status ?? "TODO", locale))!;
+      const input = taskCreateSchema.omit({ aiLocked: true, column: true }).parse({ ...args, status: target.status });
+      const { task, progress } = await createTask(userId, project.id, { ...input, column: target.column, aiLocked: false }, "mcp");
+      const boards = await boardsFor([project.id], locale);
+      return { task: taskView(task, { full: true, boards }), projectProgress: progress, url: link(`/projects/${project.id}`) };
     },
   },
   {
@@ -367,7 +411,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       type: "object",
       properties: {
         task: { type: "string", description: "Task id" },
-        status: S.taskStatus,
+        status: S.columnInput,
         title: { type: "string", maxLength: 200 },
         description: { type: ["string", "null"], description: "Markdown; replaces the old description" },
         dueDate: S.dueDate,
@@ -380,17 +424,21 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     annotations: { idempotentHint: true },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const { task: current } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
+      const target = await statusFromInput(current.projectId, args.status, locale);
+      if (target) args = { ...args, status: target.status };
       // Kette verhindern (#89): eine gerade erst erzeugte Wiederholung nicht sofort wieder erledigen
       if (args.status === "DONE" && current.status !== "DONE" && justRecurred(current)) {
         throw new ApiError(409, "This is the next occurrence of a recurring task, created moments ago. It is due later – leave it open and only mark it DONE when its work is actually done.");
       }
       // Die Sperre setzt nur der Mensch in VibeWorks
-      const result = await updateTask(userId, current, taskUpdateSchema.omit({ aiLocked: true, column: true }).parse(args));
+      const parsed = taskUpdateSchema.omit({ aiLocked: true, column: true }).parse(args);
+      const result = await updateTask(userId, current, target ? { ...parsed, column: target.column } : parsed);
+      const boards = await boardsFor([current.projectId], locale);
       return {
-        task: taskView(result.task, { full: true }),
-        ...(result.spawned ? { nextRecurrence: taskView(result.spawned) } : {}),
+        task: taskView(result.task, { full: true, boards }),
+        ...(result.spawned ? { nextRecurrence: taskView(result.spawned, { boards }) } : {}),
         projectProgress: result.progress,
       };
     },
@@ -878,7 +926,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     description: "The user's plan for today (tasks they picked), suggestions (overdue, due today, in progress) and the running timer.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
-    run: async (_args, { userId }) => loadToday(userId),
+    run: async (_args, { userId, locale }) => loadToday(userId, locale),
   },
   {
     name: "add_to_today",
@@ -886,7 +934,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     description: "Put a task on the user's list for today.",
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { idempotentHint: true },
-    run: async (args, { userId }) => {
+    run: async (args, { userId, locale }) => {
       const { task } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
       const today = dayKey(new Date());
       await db.taskFocus.deleteMany({ where: { userId, day: { lt: today } } }); // gestern ist vorbei
@@ -897,7 +945,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         create: { userId, taskId: task.id, day: today, position: count },
         update: {},
       });
-      return { ok: true, day: today, task: taskView(task) };
+      return { ok: true, day: today, task: taskView(task, { boards: await boardsFor([task.projectId], locale) }) };
     },
   },
   {
@@ -1001,6 +1049,7 @@ async function loadProblems(userId: string, locale: Locale) {
     take: 20,
     include: { project: { select: { id: true, name: true } } },
   });
+  const boards = await boardsFor(tasks.map((t) => t.projectId), locale);
   return {
     appErrors: appErrors.map((e) => ({ project: e.project.name, projectId: e.project.id, id: e.id, type: e.type, message: e.message, count: e.count, lastSeen: e.lastSeen.toISOString() })),
     gitErrors,
@@ -1009,12 +1058,12 @@ async function loadProblems(userId: string, locale: Locale) {
     sitesDown,
     vulnerableDependencies,
     repoCheckAlerts,
-    overdueTasks: tasks.filter((t) => t.status !== "BLOCKED").map((t) => taskView(t, { project: t.project })),
-    blockedTasks: tasks.filter((t) => t.status === "BLOCKED").map((t) => taskView(t, { project: t.project })),
+    overdueTasks: tasks.filter((t) => t.status !== "BLOCKED").map((t) => taskView(t, { project: t.project, boards })),
+    blockedTasks: tasks.filter((t) => t.status === "BLOCKED").map((t) => taskView(t, { project: t.project, boards })),
   };
 }
 
-async function loadToday(userId: string) {
+async function loadToday(userId: string, locale: Locale) {
   const today = dayKey(new Date());
   const hide = await aiTaskFilter(userId);
   const focus = await db.taskFocus.findMany({
@@ -1034,10 +1083,11 @@ async function loadToday(userId: string) {
     orderBy: { dueDate: "asc" },
     take: 15,
   });
+  const boards = await boardsFor([...focus.map((f) => f.task.projectId), ...suggestions.map((t) => t.projectId)], locale);
   return {
     day: today,
-    planned: focus.map((f) => taskView(f.task, { project: f.task.project })),
-    suggestions: suggestions.map((t) => taskView(t, { project: t.project })),
+    planned: focus.map((f) => taskView(f.task, { project: f.task.project, boards })),
+    suggestions: suggestions.map((t) => taskView(t, { project: t.project, boards })),
     timer: await currentEntry(userId),
     url: link("/today"),
   };
@@ -1118,11 +1168,11 @@ export const MCP_RESOURCES: ResourceProvider<McpContext> = {
       return { mimeType: "text/markdown", text: lines.join("\n") };
     }
     if (uri === "vibeworks://today") {
-      const d = await loadToday(userId);
+      const d = await loadToday(userId, locale);
       const lines = [
         `# Today (${d.day})`,
         "",
-        ...markdownList("Planned", d.planned.map((t) => `${t.project?.name ?? ""}: ${t.title} [${t.status}] (task ${t.id})`)),
+        ...markdownList("Planned", d.planned.map((t) => `${t.project?.name ?? ""}: ${t.title} [${t.column ?? t.status}] (task ${t.id})`)),
         ...markdownList("Suggestions", d.suggestions.map((t) => `${t.project?.name ?? ""}: ${t.title} [${t.status}]${t.dueDate ? ` due ${t.dueDate}` : ""} (task ${t.id})`)),
       ];
       if (lines.length === 2) lines.push("Nothing planned and nothing due.");

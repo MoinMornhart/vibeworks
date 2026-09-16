@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1111 # „…“ sind deutsche Anführungszeichen im Text, keine Shell-Quotes
 # =============================================================================
 #  VibeWorks – Installer für Proxmox VE 8/9 (läuft auf dem PVE-Host als root)
 #

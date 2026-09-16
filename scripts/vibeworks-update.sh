@@ -488,7 +488,7 @@ backup_database() {
   local old
   while IFS= read -r old; do
     [[ -n "$old" ]] && rm -f -- "$old"
-  done < <(ls -1t "$backups"/vibeworks-*.sql.gz 2>/dev/null | tail -n +$(( KEEP_BACKUPS + 1 )))
+  done < <(find "$backups" -maxdepth 1 -type f -name 'vibeworks-*.sql.gz' -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | tail -n +$(( KEEP_BACKUPS + 1 )))
 }
 
 migrate_database() {
@@ -524,7 +524,7 @@ cleanup_releases() {
     fi
     info "Entferne alten Release $(basename "$dir")"
     rm -rf -- "$dir"
-  done < <(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null | sed 's#/$##')
+  done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
 }
 
 # ----------------------------------------------------------------------------
@@ -734,7 +734,7 @@ do_status() {
     ver="$(pkg_version "$dir/package.json")"
     printf '  %-14s Version %-10s %s%s\n' "$name" "$ver" \
       "$(date -r "$dir" '+%d.%m.%Y %H:%M' 2>/dev/null || true)" "$marks"
-  done < <(ls -1dt "$RELEASES_DIR"/*/ 2>/dev/null | sed 's#/$##')
+  done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
 
   printf '\n%sNächster Auto-Update-Lauf:%s\n' "$C_BOLD" "$C_RESET"
   systemctl list-timers "$TIMER" --all --no-pager 2>/dev/null | sed 's/^/  /' || true
@@ -866,7 +866,8 @@ do_from_app() {
   # Die Anfrage schreibt der App-Benutzer – sie ist nicht vertrauenswürdig:
   # nur eine gewöhnliche Datei (kein Symlink, keine FIFO), nur zwei Wörter.
   if [[ -f "$req" && ! -L "$req" ]]; then
-    action="$(head -c 16 -- "$req" 2>/dev/null | tr -cd 'a-z')"
+    # Nur ASCII-Kleinbuchstaben – in der C-Locale ohne Umlaute
+    action="$(head -c 16 -- "$req" 2>/dev/null | LC_ALL=C tr -cd '[:lower:]')"
   fi
   rm -f -- "$req"
   [[ "$action" == "check" || "$action" == "update" ]] || exit 0
@@ -908,6 +909,7 @@ do_domain() {
   printf '\n%sBitte beachten:%s\n' "$C_BOLD" "$C_RESET"
   if [[ "$url" == https://* ]]; then
     printf '  • HTTPS kommt vom Reverse Proxy (z. B. Caddy, nginx, Nginx Proxy Manager) – er leitet auf Port %s dieses Containers weiter\n' "$(app_port)"
+    # shellcheck disable=SC2016 # $host ist nginx-Syntax und soll wörtlich erscheinen
     printf '    und muss den Host-Header durchreichen (Caddy: automatisch, nginx: proxy_set_header Host $host;).\n'
   fi
   printf '  • Passkeys hängen an der Adresse – nach einem Wechsel unter „Mein Konto“ neu anlegen.\n'

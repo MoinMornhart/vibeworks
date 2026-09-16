@@ -1,6 +1,6 @@
 import { isAiLocked } from "./aiLock";
 import { describe, expect, it } from "vitest";
-import { baseOf, columnKeyOf, DEFAULT_BOARD, hidesEverything, nextExtraKey, normalizeBoard } from "./boardConfig";
+import { baseOf, boardColumns, columnKeyOf, columnNameOf, DEFAULT_BOARD, hidesEverything, nextExtraKey, normalizeBoard, resolveColumnInput } from "./boardConfig";
 
 describe("Brett-Einstellungen", () => {
   it("nichts oder Unsinn ergibt den Standard", () => {
@@ -72,5 +72,25 @@ describe("Zusatz-Spalten (#76)", () => {
   it("mit Zusatz-Spalten zählen alle zum Ausblenden", () => {
     expect(hidesEverything({ extra: [{ key: "x1", label: "R", base: "DOING" }], hidden: ["TODO", "DOING", "BLOCKED", "DONE"] })).toBe(false);
     expect(hidesEverything({ extra: [{ key: "x1", label: "R", base: "DOING" }], hidden: ["TODO", "DOING", "BLOCKED", "DONE", "x1"] })).toBe(true);
+  });
+});
+
+describe("Spaltennamen für die KI (#96)", () => {
+  const names = (s: string) => ({ TODO: "Offen", DOING: "In Arbeit", BLOCKED: "Blockiert", DONE: "Erledigt" })[s] ?? s;
+  const cfg = normalizeBoard({ labels: { BLOCKED: "Kann gelöscht werden" }, extra: [{ key: "x1", label: "Review", base: "DOING" }], order: ["TODO", "DOING", "x1", "BLOCKED", "DONE"], aiLocked: ["x1"] });
+  it("liefert alle Spalten mit sichtbarem Namen", () => {
+    expect(boardColumns(cfg, names).map((c) => `${c.key}=${c.name}${c.aiLocked ? "🔒" : ""}`)).toEqual(["TODO=Offen", "DOING=In Arbeit", "x1=Review🔒", "BLOCKED=Kann gelöscht werden", "DONE=Erledigt"]);
+  });
+  it("Aufgabe trägt den umbenannten Namen, nicht den Status", () => {
+    expect(columnNameOf(cfg, { status: "BLOCKED" }, names)).toBe("Kann gelöscht werden");
+    expect(columnNameOf(cfg, { status: "DOING", column: "x1" }, names)).toBe("Review");
+    expect(columnNameOf(cfg, { status: "DONE", column: "x1" }, names)).toBe("Erledigt");
+  });
+  it("nimmt Status, Schlüssel und Namen an", () => {
+    expect(resolveColumnInput(cfg, "kann  gelöscht WERDEN", names)).toEqual({ key: "BLOCKED", status: "BLOCKED", column: null });
+    expect(resolveColumnInput(cfg, "Review", names)).toEqual({ key: "x1", status: "DOING", column: "x1" });
+    expect(resolveColumnInput(cfg, "done", names)).toEqual({ key: "DONE", status: "DONE", column: null });
+    expect(resolveColumnInput(cfg, "Blockiert", names)).toEqual({ key: "BLOCKED", status: "BLOCKED", column: null });
+    expect(resolveColumnInput(cfg, "Irgendwas", names)).toBeNull();
   });
 });

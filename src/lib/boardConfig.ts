@@ -110,3 +110,52 @@ export function nextExtraKey(cfg: Pick<BoardConfig, "extra">): string | null {
   for (let i = 1; i <= 9; i++) if (!cfg.extra.some((x) => x.key === `x${i}`)) return `x${i}`;
   return null;
 }
+
+/** Eine Spalte, wie Menschen und KI sie sehen (#96). */
+export interface BoardColumnView {
+  key: ColumnKey;
+  name: string;
+  status: TaskStatus;
+  extra: boolean;
+  hidden: boolean;
+  aiLocked: boolean;
+}
+
+/** Alle Spalten in der Reihenfolge des Bretts – mit dem Namen, der dort steht. */
+export function boardColumns(cfg: BoardConfig, defaultName: (s: TaskStatus) => string): BoardColumnView[] {
+  return cfg.order.map((key) => {
+    const extra = cfg.extra.find((x) => x.key === key);
+    const status = baseOf(cfg, key);
+    return {
+      key,
+      name: extra?.label ?? cfg.labels[key as TaskStatus] ?? defaultName(status),
+      status,
+      extra: Boolean(extra),
+      hidden: cfg.hidden.includes(key),
+      aiLocked: cfg.aiLocked.includes(key),
+    };
+  });
+}
+
+/** Name der Spalte, in der die Aufgabe gerade steht. */
+export function columnNameOf(cfg: BoardConfig, task: { status: TaskStatus; column?: string | null }, defaultName: (s: TaskStatus) => string): string {
+  const key = columnKeyOf(cfg, task);
+  return cfg.extra.find((x) => x.key === key)?.label ?? cfg.labels[key as TaskStatus] ?? defaultName(task.status);
+}
+
+const squash = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * Spalte aus einer Eingabe: Status (TODO …), Schlüssel (x1 …) oder der Name,
+ * wie er im Brett steht (auch der Standardname) – null, wenn nichts passt.
+ */
+export function resolveColumnInput(cfg: BoardConfig, input: string, defaultName: (s: TaskStatus) => string): { key: ColumnKey; status: TaskStatus; column: string | null } | null {
+  const wanted = squash(input);
+  if (!wanted) return null;
+  const columns = boardColumns(cfg, defaultName);
+  const hit =
+    columns.find((c) => c.key.toLowerCase() === wanted) ??
+    columns.find((c) => squash(c.name) === wanted) ??
+    columns.find((c) => !c.extra && squash(defaultName(c.status)) === wanted);
+  return hit ? { key: hit.key, status: hit.status, column: hit.extra ? hit.key : null } : null;
+}

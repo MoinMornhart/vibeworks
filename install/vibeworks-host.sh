@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1111 # „…“ sind deutsche Anführungszeichen im Text, keine Shell-Quotes
 # =============================================================================
 #  VibeWorks – Befehl „vibeworks“ für den Proxmox-VE-Host
 #  Steuert den VibeWorks-Container vom Host aus, ohne erst hineinzuwechseln.
