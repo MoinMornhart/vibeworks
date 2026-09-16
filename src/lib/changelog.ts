@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.8",
+    date: "2026-09-17",
+    title: "Konsole bleibt sauber",
+    titleEn: "Clean console",
+    changes: [
+      {
+        type: "fix",
+        text: "Die Meldung „eval blockiert“ konnte auf einzelnen Seiten wiederkommen, wenn dort ein Formular geladen wurde, bevor die Einstellung dagegen griff. Sie gilt jetzt, bevor irgendein anderer Code der App im Browser läuft",
+        en: "The “eval blocked” message could come back on some pages when a form loaded before the setting against it took effect. It now applies before any other app code runs in the browser",
+      },
+    ],
+  },
+  {
     version: "0.8.7",
     date: "2026-09-17",
     title: "Info-Fenster: sehen, was Claude macht",
