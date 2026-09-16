@@ -8,6 +8,7 @@ import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
 import { issueTokenFor, userIssueToken } from "./token";
 import { runBotCommands } from "./botCommands";
+import { importNewIssues } from "./issueImport";
 import { taskIsAiLocked } from "@/lib/aiLock";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
@@ -176,7 +177,13 @@ export function pushTaskIssue(taskId: string, ctx?: IssueContext | null): Promis
       return;
     }
     try {
-      const ref = task.issueNumber ? await ctx.api.update(task.issueNumber, issueInput(task, undefined, locked)) : await createWith!.create(issueInput(task));
+      const input = issueInput(task, undefined, locked);
+      // Aus dem Git-System übernommen (#69): nur Status und Labels abgleichen
+      if (task.createdVia === "issue") {
+        delete input.title;
+        delete input.body;
+      }
+      const ref = task.issueNumber ? await ctx.api.update(task.issueNumber, input) : await createWith!.create(issueInput(task));
       // Sofort merken – falls das Label danach scheitert, entsteht kein zweites Issue.
       await db.$executeRaw`UPDATE "Task" SET "issueNumber" = ${ref.number}, "issueUrl" = ${ref.url}, "issueError" = NULL WHERE "id" = ${task.id}`;
       await ctx.api.setStatusLabel(ref, task.status === "DONE" ? null : labelForStatus(task.status));
@@ -212,6 +219,8 @@ export interface IssueSyncResult {
   linked: number;
   /** Aufgaben, die Bot-Befehle geändert haben */
   commands: number;
+  /** Aus dem Git-System übernommene Issues */
+  imported: number;
   error: string | null;
 }
 
@@ -233,7 +242,7 @@ export function syncIssues(projectId: string): Promise<IssueSyncResult | null> {
 async function runSync(projectId: string): Promise<IssueSyncResult | null> {
   const ctx = await issueContext(projectId);
   if (!ctx) return null;
-  const result: IssueSyncResult = { created: 0, tasksChanged: 0, linked: 0, commands: 0, error: null };
+  const result: IssueSyncResult = { created: 0, tasksChanged: 0, linked: 0, commands: 0, imported: 0, error: null };
 
   // Aufgaben ohne erlaubten Weg (#76) nicht vorne festhängen lassen – nur ein paar je Lauf erneut versuchen
   const needsAccount = tk("git", "errors.issueNeedsAccount");
@@ -279,6 +288,8 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     const commanded = await runBotCommands(projectId, ctx.api, ctx.botLogin);
     for (const id of commanded) await pushTaskIssue(id, ctx);
     result.commands = commanded.length;
+    // Neue Issues aus dem Git-System als Aufgaben (#69)
+    result.imported = await importNewIssues(projectId, ctx.api, recent, ctx.botLogin);
   } catch (err) {
     if (isIssuesDisabled(err)) {
       await markIssuesOff(projectId);

@@ -154,7 +154,7 @@ export const HELP_TEXT = [
   "| `/info` | Stand der Aufgabe anzeigen |",
   "| `/hilfe` | Diese Übersicht |",
   "",
-  "Befehle dürfen alle mit Schreibrecht im Repository geben. Der Bot antwortet, sobald VibeWorks das Repository abgleicht (spätestens nach ein paar Minuten).",
+  "Befehle dürfen alle mit Schreibrecht im Repository oder einer Rolle im Projekt (Arbeiter, Bughunter) geben. Der Bot antwortet, sobald VibeWorks das Repository abgleicht (spätestens nach ein paar Minuten).",
 ].join("\n");
 
 export interface TaskInfoForBot {

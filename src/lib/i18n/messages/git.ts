@@ -80,6 +80,26 @@ const de = {
     issueSync: "Aufgaben automatisch als Issues anlegen",
     issueSyncHint:
       "Jede Aufgabe wird zum Issue. Die Labels „in Arbeit“ und „blockiert“ sowie geschlossene Issues sortieren die Aufgabe hier in die passende Spalte – in beide Richtungen. Gelöschte Aufgaben schließen ihr Issue als „nicht geplant“.",
+    import: {
+      title: "Neue Issues aus dem Repository übernehmen",
+      trusted: "Nur von vertrauenswürdigen Konten",
+      all: "Alle – fremde für KI gesperrt",
+      off: "Nicht übernehmen",
+      hint: {
+        trusted: "Issues von Konten mit Schreibrecht im Repository oder mit Rolle (unten) werden beim Abgleich zu Aufgaben. Fremde Issues bleiben draußen – so kann niemand der KI Anweisungen unterschieben.",
+        all: "Auch Issues fremder Konten werden Aufgaben – aber für KI gesperrt und mit dem Label „extern“. Erst wenn du die Sperre aufhebst, sieht die KI sie.",
+        off: "Aufgaben entstehen nur in VibeWorks; Issues aus dem Repository bleiben dort.",
+      },
+    },
+    people: {
+      title: "GitHub-Konten mit Rolle",
+      hint: "Arbeiter und Bughunter gelten als vertrauenswürdig, auch ohne Schreibrecht: ihre Issues werden Aufgaben (Bughunter mit Label „bug“ und hoher Priorität), und sie dürfen dem Bot Befehle geben.",
+      placeholder: "GitHub-Name, z. B. JONIMONI09",
+      role: "Rolle",
+      roles: { worker: "Arbeiter", bughunter: "Bughunter" },
+      add: "Hinzufügen",
+      remove: "@{login} entfernen",
+    },
   },
   fields: {
     providerGroup: "Git-Anbieter",
@@ -270,6 +290,26 @@ const en: Shape<typeof de> = {
     issueSync: "Automatically create tasks as issues",
     issueSyncHint:
       "Every task becomes an issue. The labels “in Arbeit” (in progress) and “blockiert” (blocked), as well as closed issues, sort the task into the matching column here – in both directions. Deleted tasks close their issue as “not planned”.",
+    import: {
+      title: "Take over new issues from the repository",
+      trusted: "Only from trusted accounts",
+      all: "All – others locked for AI",
+      off: "Don't take over",
+      hint: {
+        trusted: "Issues from accounts with write access to the repository or with a role (below) become tasks on sync. Other issues stay out – so nobody can slip instructions to the AI.",
+        all: "Issues from other accounts become tasks too – but locked for AI and labelled “extern”. The AI only sees them once you remove the lock.",
+        off: "Tasks are only created in VibeWorks; issues from the repository stay there.",
+      },
+    },
+    people: {
+      title: "GitHub accounts with a role",
+      hint: "Workers and bug hunters count as trusted, even without write access: their issues become tasks (bug hunters with the label “bug” and high priority), and they may give the bot commands.",
+      placeholder: "GitHub name, e.g. JONIMONI09",
+      role: "Role",
+      roles: { worker: "Worker", bughunter: "Bug hunter" },
+      add: "Add",
+      remove: "Remove @{login}",
+    },
   },
   fields: {
     providerGroup: "Git provider",

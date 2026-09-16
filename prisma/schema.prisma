@@ -289,6 +289,10 @@ model WebAuthnChallenge {
 // ── Projekte ────────────────────────────────────────────────
 
 model Project {
+  /// Neue Issues aus dem Git-System übernehmen: off | trusted | all (#69)
+  issueImport     String    @default("trusted")
+  /// GitHub-Konten mit Rolle im Projekt: [{ login, role: worker | bughunter }] (#69)
+  gitPeople       Json?
   /// Bis hierhin wurden Issue-Kommentare auf Bot-Befehle geprüft (#79)
   issueCommentsAt DateTime?
   id                  String         @id @default(cuid())

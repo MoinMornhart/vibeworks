@@ -11,12 +11,13 @@ import { syncIssues } from "@/lib/git/issues";
 import { GitError } from "@/lib/git/providers";
 import { installWebhook, isPublicUrl, webhookUrl } from "@/lib/git/webhook";
 import { tk } from "@/lib/i18n/messages";
+import { isImportMode, normalizeGitPeople } from "@/lib/git/issueImportLogic";
 import { repoAccessSchema } from "@/lib/validation";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { id: string };
 
-type AccessProject = Pick<Project, "id" | "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync" | "issuesOffAt" | "webhookSecretCipher" | "webhookAt">;
+type AccessProject = Pick<Project, "id" | "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync" | "issuesOffAt" | "webhookSecretCipher" | "webhookAt" | "issueImport" | "gitPeople">;
 
 // Token- und Webhook-Angaben sieht nur der Besitzer; Mitglieder erfahren nur, ob gespiegelt wird.
 async function accessInfo(project: AccessProject, access: ProjectAccess) {
@@ -35,6 +36,8 @@ async function accessInfo(project: AccessProject, access: ProjectAccess) {
     tokenHint: owner ? project.repoTokenHint : null,
     issueSync: project.issueSync,
     issuesOffAt: project.issuesOffAt?.toISOString() ?? null,
+    issueImport: isImportMode(project.issueImport) ? project.issueImport : "trusted",
+    gitPeople: owner ? normalizeGitPeople(project.gitPeople) : [],
     accountToken: account ? { hint: account.hint, login: account.login } : null,
     webhook,
   };
@@ -74,6 +77,8 @@ export const PUT = route<Params>(async (req, { params }) => {
     data.repoTokenHint = input.token ? tokenHint(input.token) : null;
   }
   if (input.issueSync !== undefined) data.issueSync = input.issueSync;
+  if (input.issueImport !== undefined) data.issueImport = input.issueImport;
+  if (input.gitPeople !== undefined) data.gitPeople = normalizeGitPeople(input.gitPeople) as unknown as Prisma.InputJsonValue;
   // Einschalten oder „erneut prüfen“ hebt die Pause wegen abgeschalteter Issues auf (#66)
   if (input.issueSync === true || input.issuesRetry) data.issuesOffAt = null;
   const needsSecret = input.webhook === "renew" || ((input.webhook === "on" || input.webhook === "install") && !project.webhookSecretCipher);

@@ -34,12 +34,17 @@ import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
 import type { TFunction } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 import { richText } from "./GitProviderFields";
+import { IssueImportSection } from "./IssueImportSection";
+import type { GitPerson, IssueImportMode } from "@/lib/git/issueImportLogic";
 
 interface Access {
   tokenHint: string | null;
   issueSync: boolean;
   /** Issues im Repository abgeschaltet – seit wann VibeWorks pausiert (#66) */
   issuesOffAt?: string | null;
+  /** Neue Issues übernehmen und Rollen (#69) */
+  issueImport?: IssueImportMode;
+  gitPeople?: GitPerson[];
   /** Konto-Token des Besitzers, das greift, wenn das Projekt kein eigenes hat */
   accountToken?: { hint: string | null; login: string | null } | null;
   /** Eingehender Webhook – nur für den Besitzer */
@@ -47,6 +52,7 @@ interface Access {
 }
 
 type WebhookAction = "on" | "renew" | "off" | "install";
+type AccessBody = { token?: string | null; issueSync?: boolean; issuesRetry?: boolean; issueImport?: IssueImportMode; gitPeople?: GitPerson[] };
 
 const STALE_MS = 5 * 60_000;
 const PAGE = 20;
@@ -375,7 +381,7 @@ function AccessPanel({
   access: Access;
   busy: boolean;
   error: string | null;
-  onSave: (body: { token?: string | null; issueSync?: boolean }) => void;
+  onSave: (body: AccessBody) => void;
   webhookNote: string | null;
   onWebhook: (action: WebhookAction) => void;
 }) {
@@ -463,6 +469,7 @@ function AccessPanel({
               <span className="block text-xs text-muted">{t("access.issueSyncHint")}</span>
             </span>
           </label>
+          {access.issueSync && <IssueImportSection mode={access.issueImport ?? "trusted"} people={access.gitPeople ?? []} busy={busy} onSave={onSave} />}
           <WebhookSection provider={provider} access={access} busy={busy} note={webhookNote} onWebhook={onWebhook} />
         </>
       )}
@@ -549,7 +556,7 @@ export function GitPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei neuem Repository neu starten
   }, [repoUrl]);
 
-  async function saveAccess(body: { token?: string | null; issueSync?: boolean; issuesRetry?: boolean }) {
+  async function saveAccess(body: AccessBody) {
     setAccessBusy(true);
     setAccessError(null);
     try {

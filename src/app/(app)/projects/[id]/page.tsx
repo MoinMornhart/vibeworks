@@ -26,6 +26,7 @@ import { RepoCheckPanel } from "@/components/git/RepoCheckPanel";
 import { ErrorsPanel } from "@/components/bugs/ErrorsPanel";
 import { serializeRepoCheck } from "@/lib/git/repoCheck";
 import { CodeGraphPanel } from "@/components/git/CodeGraphPanel";
+import { isImportMode, normalizeGitPeople } from "@/lib/git/issueImportLogic";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
 import type { ProjectPermission } from "@/lib/rolesLogic";
@@ -44,6 +45,8 @@ const loadProject = cache(async (id: string) => {
       repoTokenHint: true,
       issueSync: true,
       issuesOffAt: true,
+      issueImport: true,
+      gitPeople: true,
       repoCheck: true,
       checkTasks: true,
       errorKey: true,
@@ -76,7 +79,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access, perms } = loaded;
   const can = (p: ProjectPermission) => perms.has(p);
-  const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, issueImport, gitPeople, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds, people] = await Promise.all([
     project.liveUrl ? liveStats(project.id) : null,
     sumSeconds({ projectId: project.id }),
@@ -149,6 +152,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           tokenHint: isOwner ? repoTokenHint : null,
           issueSync,
           issuesOffAt: issuesOffAt?.toISOString() ?? null,
+          issueImport: isImportMode(issueImport) ? issueImport : "trusted",
+          gitPeople: isOwner ? normalizeGitPeople(gitPeople) : [],
           accountToken: account ? { hint: account.hint, login: account.login } : null,
         }}
         linkedIssues={tasks.filter((t) => t.issueNumber !== null).length}

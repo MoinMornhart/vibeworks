@@ -252,6 +252,13 @@ export const templateCreateSchema = z.object({
 });
 
 export const repoAccessSchema = z.object({
+  /** Neue Issues übernehmen (#69) */
+  issueImport: z.enum(["off", "trusted", "all"]).optional(),
+  /** GitHub-Konten mit Rolle (#69) */
+  gitPeople: z
+    .array(z.object({ login: z.string().trim().max(100), role: z.enum(["worker", "bughunter"]) }))
+    .max(50)
+    .optional(),
   issuesRetry: z.boolean().optional(),
   // null entfernt das Token, undefined lässt es stehen
   token: z

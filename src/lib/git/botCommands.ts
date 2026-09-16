@@ -5,6 +5,7 @@ import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tas
 import { dayKeyToDate } from "@/lib/taskDates";
 import { statusLabelsOf } from "@/lib/boardConfig";
 import { isAiLocked } from "@/lib/aiLock";
+import { normalizeGitPeople, roleOf } from "./issueImportLogic";
 import type { IssueApi, IssueComment } from "./providers";
 import { describeCommand, HELP_TEXT, infoText, mayCommand, mentionsBot, parseCommands, replyText, type BotCommand } from "./botCommandsLogic";
 
@@ -19,7 +20,7 @@ const MAX_COMMENTS = 30;
 const PERMISSION_TTL = 10 * 60_000;
 const permissions = new Map<string, { at: number; value: string | null }>();
 
-async function permissionOf(api: IssueApi, projectId: string, login: string): Promise<string | null> {
+export async function permissionOf(api: IssueApi, projectId: string, login: string): Promise<string | null> {
   const key = `${projectId}:${login.toLowerCase()}`;
   const hit = permissions.get(key);
   if (hit && Date.now() - hit.at < PERMISSION_TTL) return hit.value;
@@ -64,7 +65,7 @@ async function applyCommands(task: Task, commands: BotCommand[], login: string):
  * Aufgaben – deren Issues bringt der Abgleich danach auf den neuen Stand.
  */
 export async function runBotCommands(projectId: string, api: IssueApi, botLogin: string | null): Promise<string[]> {
-  const project = await db.project.findUnique({ where: { id: projectId }, select: { issueCommentsAt: true, boardConfig: true } });
+  const project = await db.project.findUnique({ where: { id: projectId }, select: { issueCommentsAt: true, boardConfig: true, gitPeople: true } });
   if (!project) return [];
   const now = Date.now();
   const stored = project.issueCommentsAt?.getTime() ?? 0;
@@ -92,6 +93,7 @@ export async function runBotCommands(projectId: string, api: IssueApi, botLogin:
   const tasks = await db.task.findMany({ where: { projectId, issueNumber: { in: [...new Set(relevant.map((x) => x.c.issueNumber))] } } });
   const byNumber = new Map(tasks.map((t) => [t.issueNumber!, t]));
   const labels = statusLabelsOf(project.boardConfig);
+  const people = normalizeGitPeople(project.gitPeople);
   const changedIds = new Set<string>();
 
   for (const { c, commands } of relevant) {
@@ -104,7 +106,8 @@ export async function runBotCommands(projectId: string, api: IssueApi, botLogin:
         await api.comment(c.issueNumber, replyText([], HELP_TEXT, c.author));
         continue;
       }
-      if (!mayCommand(await permissionOf(api, projectId, c.author))) {
+      // Rolle im Projekt (Arbeiter, Bughunter) oder Schreibrecht im Repository (#69)
+      if (!roleOf(people, c.author) && !mayCommand(await permissionOf(api, projectId, c.author))) {
         await api.comment(c.issueNumber, replyText(["⛔ Befehle dürfen nur Mitarbeitende mit Schreibrecht in diesem Repository geben."], null, c.author));
         continue;
       }

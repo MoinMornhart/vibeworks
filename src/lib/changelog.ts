@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.9",
+    date: "2026-09-16",
+    title: "Issues aus GitHub werden Aufgaben, Rollen für Konten",
+    titleEn: "GitHub issues become tasks, roles for accounts",
+    changes: [
+      {
+        type: "neu",
+        text: "Neue Issues, die direkt im Repository entstehen, landen beim Abgleich als Aufgaben in VibeWorks – von Konten mit Schreibrecht oder mit Rolle. Wahlweise auch alle, fremde dann für KI gesperrt",
+        en: "New issues created directly in the repository become tasks in VibeWorks on sync – from accounts with write access or a role. Optionally all of them, with others locked for AI",
+      },
+      {
+        type: "neu",
+        text: "GitHub-Konten lassen sich im Projekt als Arbeiter oder Bughunter eintragen: ihre Issues gelten als vertrauenswürdig (Bughunter mit Label „bug“ und hoher Priorität), und sie dürfen dem Bot Befehle geben",
+        en: "GitHub accounts can be added to a project as worker or bug hunter: their issues count as trusted (bug hunters with the label “bug” and high priority), and they may give the bot commands",
+      },
+      {
+        type: "besser",
+        text: "Übernommene Issues behalten ihren Text – VibeWorks gleicht dort nur Status und Labels ab",
+        en: "Taken-over issues keep their text – VibeWorks only syncs status and labels there",
+      },
+    ],
+  },
+  {
     version: "1.0.8",
     date: "2026-09-16",
     title: "MCP per Einzeiler, strengere Regeln für KI",

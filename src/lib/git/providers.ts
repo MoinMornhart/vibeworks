@@ -210,6 +210,10 @@ export interface IssueRef {
   labels: string[];
   /** Zugewiesene Konten (Login bzw. Benutzername) */
   assignees: string[];
+  title: string;
+  body: string | null;
+  /** Wer das Issue angelegt hat */
+  author: string;
 }
 
 /** Labels, über die ein offenes Issue in die Spalten „In Arbeit“ bzw. „Blockiert“ fällt. */
@@ -220,8 +224,9 @@ const ALL_STATUS_LABELS = Object.values(STATUS_LABELS);
 const hasLabel = (labels: string[], name: string) => labels.some((l) => l.toLowerCase() === name.toLowerCase());
 
 export interface IssueInput {
-  title: string;
-  body: string;
+  /** Fehlt beim Aktualisieren: Titel bzw. Text bleiben, wie sie sind (übernommene Issues, #69) */
+  title?: string;
+  body?: string;
   closed: boolean;
   /** Nur GitHub unterscheidet, warum ein Issue geschlossen wurde. */
   reason?: "completed" | "not_planned";
@@ -256,8 +261,8 @@ export interface IssueComment {
 type LabelList = Array<{ name: string } | string> | null | undefined;
 const labelNames = (l: LabelList) => (l ?? []).map((x) => (typeof x === "string" ? x : x.name));
 
-interface GhIssue { number: number; html_url: string; state: string; updated_at: string; pull_request?: unknown; labels?: LabelList; assignees?: Array<{ login: string }> | null }
-interface GlIssue { iid: number; web_url: string; state: string; updated_at: string; labels?: string[]; assignees?: Array<{ username: string }> | null }
+interface GhIssue { number: number; html_url: string; state: string; updated_at: string; pull_request?: unknown; labels?: LabelList; assignees?: Array<{ login: string }> | null; title?: string; body?: string | null; user?: { login: string } | null }
+interface GlIssue { iid: number; web_url: string; state: string; updated_at: string; labels?: string[]; assignees?: Array<{ username: string }> | null; title?: string; description?: string | null; author?: { username: string } | null }
 interface GhLabel { id: number; name: string }
 interface GhComment { id: number; issue_url: string; html_url: string; body?: string | null; created_at: string; user?: { login: string } | null }
 interface GlNote { id: number; body: string; created_at: string; system?: boolean; author?: { username: string } | null }
@@ -269,8 +274,18 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
   const headers = authHeaders(provider, token);
 
   if (provider === "gitlab") {
-    const ref = (i: GlIssue): IssueRef => ({ number: i.iid, url: i.web_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: i.labels ?? [], assignees: (i.assignees ?? []).map((a) => a.username) });
-    const write = (i: IssueInput) => ({ title: i.title, description: i.body });
+    const ref = (i: GlIssue): IssueRef => ({
+      number: i.iid,
+      url: i.web_url,
+      closed: i.state === "closed",
+      updatedAt: i.updated_at,
+      labels: i.labels ?? [],
+      assignees: (i.assignees ?? []).map((a) => a.username),
+      title: i.title ?? "",
+      body: i.description ?? null,
+      author: i.author?.username ?? "",
+    });
+    const write = (i: IssueInput) => ({ ...(i.title !== undefined ? { title: i.title } : {}), ...(i.body !== undefined ? { description: i.body } : {}) });
     return {
       async create(input) {
         const created = ref(await request<GlIssue>("POST", `${api}/issues`, headers, write(input)));
@@ -309,7 +324,17 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
   }
 
   // GitHub und Gitea sprechen fast dieselbe Sprache.
-  const ref = (i: GhIssue): IssueRef => ({ number: i.number, url: i.html_url, closed: i.state === "closed", updatedAt: i.updated_at, labels: labelNames(i.labels), assignees: (i.assignees ?? []).map((a) => a.login) });
+  const ref = (i: GhIssue): IssueRef => ({
+    number: i.number,
+    url: i.html_url,
+    closed: i.state === "closed",
+    updatedAt: i.updated_at,
+    labels: labelNames(i.labels),
+    assignees: (i.assignees ?? []).map((a) => a.login),
+    title: i.title ?? "",
+    body: i.body ?? null,
+    author: i.user?.login ?? "",
+  });
 
   // Status-Labels einmal pro Lauf anlegen; Gitea braucht zudem ihre IDs.
   let labelIds: Promise<Map<string, number>> | null = null;
@@ -327,8 +352,8 @@ export function issueApi(provider: GitProvider, repo: ParsedRepo, token: string)
     })());
 
   const write = (i: IssueInput) => ({
-    title: i.title,
-    body: i.body,
+    ...(i.title !== undefined ? { title: i.title } : {}),
+    ...(i.body !== undefined ? { body: i.body } : {}),
     state: i.closed ? "closed" : "open",
     ...(provider === "github" && i.closed ? { state_reason: i.reason ?? "completed" } : {}),
   });
