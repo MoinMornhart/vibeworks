@@ -462,6 +462,7 @@ export const passkeyRenameSchema = z.object({ name: z.string().trim().min(1, tk(
 export const adminSettingsSchema = z.object({
   mode: z.enum(["SINGLE", "MULTI"]).optional(),
   allowRegistration: z.boolean().optional(),
+  allowPasswordReset: z.boolean().optional(),
   taskColumnLimit: z.number().int().min(0, tk("validation", "min0")).max(500, tk("validation", "max500")).optional(),
 });
 

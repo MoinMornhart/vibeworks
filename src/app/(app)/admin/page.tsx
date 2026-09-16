@@ -18,7 +18,7 @@ export default async function AdminPage() {
   return (
     <AdminManager
       meId={me.id}
-      initialSettings={{ mode: settings.mode, allowRegistration: settings.allowRegistration, taskColumnLimit: settings.taskColumnLimit }}
+      initialSettings={{ mode: settings.mode, allowRegistration: settings.allowRegistration, allowPasswordReset: settings.allowPasswordReset, taskColumnLimit: settings.taskColumnLimit }}
       initialUsers={users}
       build={{ ...publicBuildInfo(), builtAt: buildInfo().builtAt, source: buildInfo().source }}
       appUrl={config.appUrl}

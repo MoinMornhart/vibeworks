@@ -9,7 +9,8 @@ const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
 // /s/<token>: geteilte Projekte, auch ohne Anmeldung lesbar
 // /api/mcp: Claude Code meldet sich per API-Schlüssel an, nicht per Cookie
 // /u/<name>: öffentliches Portfolio (nur wenn eingeschaltet)
-const PUBLIC_PATHS = ["/login", "/setup", "/register", "/s", "/u","/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in","/manifest.webmanifest"];
+// /reset: „Passwort vergessen“ – wer sein Passwort vergessen hat, ist gerade nicht angemeldet
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/reset", "/s", "/u","/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in","/manifest.webmanifest"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

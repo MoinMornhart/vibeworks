@@ -37,6 +37,7 @@ import { RolesManager } from "@/components/roles/RolesManager";
 interface Settings {
   mode: "SINGLE" | "MULTI";
   allowRegistration: boolean;
+  allowPasswordReset: boolean;
   taskColumnLimit: number;
 }
 
@@ -97,6 +98,14 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
           />
         </div>
       )}
+      <div className="max-w-md" data-testid="settings-reset">
+        <Toggle
+          label={t("settings.allowPasswordReset")}
+          hint={t("settings.allowPasswordResetHint")}
+          checked={s.allowPasswordReset}
+          onChange={(allowPasswordReset) => setS({ ...s, allowPasswordReset })}
+        />
+      </div>
       <div className="max-w-xs">
         <label className="label" htmlFor="col-limit">{t("settings.columnLimit")}</label>
         <input

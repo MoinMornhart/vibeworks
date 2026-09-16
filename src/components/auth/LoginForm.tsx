@@ -8,7 +8,7 @@ import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useT } from "@/lib/i18n/client";
 
-export function LoginForm({ next, allowRegistration }: { next: string; allowRegistration: boolean }) {
+export function LoginForm({ next, allowRegistration, allowReset }: { next: string; allowRegistration: boolean; allowReset?: boolean }) {
   const t = useT("auth");
   const [step, setStep] = useState<"password" | "mfa">("password");
   const [username, setUsername] = useState("");
@@ -142,6 +142,11 @@ export function LoginForm({ next, allowRegistration }: { next: string; allowRegi
             <Fingerprint size={16} /> {t("login.passkey")}
           </button>
         </>
+      )}
+      {allowReset && (
+        <p className="text-center text-sm">
+          <Link href="/reset" className="text-accent-ink hover:underline" data-testid="forgot-link">{t("login.forgot")}</Link>
+        </p>
       )}
       {allowRegistration && (
         <p className="text-center text-sm text-muted">

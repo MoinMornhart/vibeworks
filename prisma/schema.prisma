@@ -83,6 +83,8 @@ model Settings {
   id                String       @id @default("instance")
   mode              InstanceMode @default(SINGLE)
   allowRegistration Boolean      @default(false)
+  /// „Passwort vergessen“ per E-Mail erlauben (braucht SMTP) – aus, bis ein Admin es einschaltet
+  allowPasswordReset Boolean     @default(false)
   /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
   taskColumnLimit   Int          @default(15)
   setupDoneAt       DateTime?
@@ -157,6 +159,7 @@ model User {
   sessions      Session[]
   passkeys      Passkey[]
   recoveryCodes RecoveryCode[]
+  passwordResets PasswordReset[]
   mfaPending    MfaPending[]
   projects      Project[]
   activities    Activity[]
@@ -249,6 +252,21 @@ model Invite {
   usedAt      DateTime?
   usedById    String?
 
+  @@index([expiresAt])
+}
+
+/// Rücksetz-Link für „Passwort vergessen“: gespeichert wird nur der SHA-256, eine Stunde gültig, einmal nutzbar.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
   @@index([expiresAt])
 }
 

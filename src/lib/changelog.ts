@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.1",
+    date: "2026-09-16",
+    title: "Passwort vergessen",
+    titleEn: "Forgot password",
+    changes: [
+      {
+        type: "neu",
+        text: "„Passwort vergessen?“ auf der Anmeldeseite: Link an die im Konto hinterlegte E-Mail, eine Stunde gültig, nur einmal nutzbar; danach sind alle anderen Geräte abgemeldet. Muss ein Admin erst einschalten (Administration → Einstellungen) und braucht eingerichteten E-Mail-Versand. Ob es ein Konto gibt, verrät die Seite nie",
+        en: "“Forgot your password?” on the sign-in page: a link to the e-mail in your account, valid for one hour, single use; afterwards all other devices are signed out. An admin has to enable it first (Administration → Settings) and e-mail sending must be configured. The page never reveals whether an account exists",
+      },
+      {
+        type: "besser",
+        text: "Sicherheitsfragen gibt es bewusst nicht – sie sind ratbar. Wer keine E-Mail hinterlegt hat, bekommt sein Passwort weiterhin vom Admin gesetzt",
+        en: "Deliberately no security questions – they're guessable. Without an e-mail address, an admin still sets the password for you",
+      },
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-09-15",
     title: "Kritisches kommt immer durch",

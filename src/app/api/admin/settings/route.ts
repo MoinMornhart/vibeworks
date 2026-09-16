@@ -6,7 +6,7 @@ import { adminSettingsSchema } from "@/lib/validation";
 import { tk } from "@/lib/i18n/messages";
 
 function view(s: Awaited<ReturnType<typeof getSettings>>) {
-  return { mode: s.mode, allowRegistration: s.allowRegistration, taskColumnLimit: s.taskColumnLimit };
+  return { mode: s.mode, allowRegistration: s.allowRegistration, allowPasswordReset: s.allowPasswordReset, taskColumnLimit: s.taskColumnLimit };
 }
 
 export const GET = route(async () => {
@@ -31,6 +31,8 @@ export const PATCH = route(async (req) => {
       mode,
       // Registrierung ergibt nur im Mehrbenutzerbetrieb Sinn.
       allowRegistration: mode === "MULTI" ? (input.allowRegistration ?? current.allowRegistration) : false,
+      // „Passwort vergessen“ geht auch im Einzelbetrieb – hängt nur am E-Mail-Versand.
+      allowPasswordReset: input.allowPasswordReset ?? current.allowPasswordReset,
       ...(input.taskColumnLimit !== undefined ? { taskColumnLimit: input.taskColumnLimit } : {}),
     },
   });
