@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { AlignLeft, Bot, Check, Lock, CircleDot, Eye, EyeOff, Info, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
+import { AlignLeft, Bot, Check, Lock, CircleDot, Eye, EyeOff, Info, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, Trash2, TriangleAlert, UserRound } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
 import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
@@ -15,6 +15,7 @@ import { TaskDialog, type TaskForm } from "./TaskDialog";
 import { PriorityBadge } from "@/components/projects/ProjectCard";
 import { TaskInfoPanel, WorkClock } from "./TaskInfoPanel";
 import { BoardSettings } from "./BoardSettings";
+import { toast } from "@/components/ui/Toaster";
 import { baseOf, columnKeyOf, DEFAULT_BOARD, isExtraKey, type BoardConfig } from "@/lib/boardConfig";
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
@@ -169,6 +170,7 @@ export function TaskBoard({
   readOnly = false,
   board,
   canConfigure = false,
+  canDelete = false,
   people = [],
 }: {
   projectId: string;
@@ -181,6 +183,8 @@ export function TaskBoard({
   board?: BoardConfig;
   /** Darf das Brett einstellen (Recht „Projektangaben ändern“) */
   canConfigure?: boolean;
+  /** Darf Aufgaben löschen – dann „Erledigte löschen“ in der Erledigt-Spalte (#100) */
+  canDelete?: boolean;
   /** Wer im Projekt ist – Vorschläge für „Bearbeiter“ */
   people?: Array<{ username: string; name: string }>;
 }) {
@@ -304,6 +308,23 @@ export function TaskBoard({
     afterChange();
   }
 
+  const [clearing, setClearing] = useState(false);
+  async function clearDone() {
+    if (!window.confirm(t("board.clearDoneConfirm", { n: done }))) return;
+    setClearing(true);
+    try {
+      const res = await api<{ deleted: number; ids: string[] }>(`/api/projects/${projectId}/tasks?status=DONE`, { method: "DELETE" });
+      const gone = new Set(res.ids);
+      setTasks((ts) => ts.filter((x) => !gone.has(x.id)));
+      toast(t("board.clearDoneOk", { n: res.deleted }), "success");
+      afterChange();
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   const toggle = (t: TaskItem) => void patch(t, { status: t.status === "DONE" ? "TODO" : "DONE" }).catch((e) => setError(errorMessage(e)));
   const open = (t: TaskItem) => setDialog({ task: t, status: t.status });
   const [infoFor, setInfoFor] = useState<TaskItem | null>(null);
@@ -406,6 +427,19 @@ export function TaskBoard({
                 <span className="h-2 w-2 rounded-full" style={{ background: COLUMN_COLOR[baseOf(boardCfg, key)] }} />
                 {label}
                 <span className="ml-auto text-xs font-normal tabular-nums text-muted">{count}</span>
+                {key === "DONE" && canDelete && done > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-icon btn-sm -my-1 hover:text-red-400"
+                    disabled={clearing}
+                    onClick={() => void clearDone()}
+                    aria-label={t("board.clearDone", { n: done })}
+                    title={t("board.clearDone", { n: done })}
+                    data-testid="clear-done"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </h3>
               {body}
             </div>

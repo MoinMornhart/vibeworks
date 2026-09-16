@@ -45,6 +45,7 @@ export function activityText(a: ActivityLike, t: TFunction<"review">, ts: TFunct
       if (title) return t("activity.taskAdded", { title });
       break;
     case "TASK_DELETED":
+      if (typeof m.cleared === "number") return t("activity.tasksCleared", { n: m.cleared });
       if (title) return t("activity.taskDeleted", { title });
       break;
     case "NOTE_ADDED":

@@ -24,6 +24,8 @@ import { inboxInfo } from "@/lib/inboxServer";
 import { PortfolioSection } from "@/components/account/PortfolioSection";
 import { portfolioView } from "@/lib/portfolio";
 import { getT } from "@/lib/i18n/server";
+import { OnboardingRestore } from "@/components/OnboardingCard";
+import { readPrefs } from "@/lib/onboarding";
 
 export async function generateMetadata() {
   const t = await getT("account");
@@ -45,7 +47,7 @@ export default async function AccountPage() {
     db.apiToken.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     inboxInfo(user.id),
     portfolioView(user.id),
-    db.user.findUnique({ where: { id: user.id }, select: { passwordChangedAt: true, passwordReminderDays: true } }),
+    db.user.findUnique({ where: { id: user.id }, select: { passwordChangedAt: true, passwordReminderDays: true, onboarding: true } }),
   ]);
   return (
     <AccountManager
@@ -61,6 +63,7 @@ export default async function AccountPage() {
       }}
       sessions={sessions}
     >
+      {readPrefs(pw?.onboarding).dismissed && <OnboardingRestore />}
       <LanguageSection />
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
       <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />

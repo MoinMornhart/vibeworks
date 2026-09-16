@@ -22,9 +22,19 @@ export function toolAllowed(tool: { name: string; annotations?: { readOnlyHint?:
 export const DEFAULT_REMINDER =
   "VibeWorks reminder: keep the task in VibeWorks up to date – status DOING with your name as assignee while you work, BLOCKED with a reason if you are stuck, DONE when finished – follow the task's instructions and pin what you learned with add_code_memo.";
 
-/** Erinnerung für diesen Aufruf – nur bei jedem n-ten (n = every), sonst null. */
-export function reminderFor(settings: { reminderMode: string; reminderText: string | null; reminderEvery: number }, callNumber: number): string | null {
+/** Wie lange die Erinnerung gilt (#100): unbegrenzt oder so viele Tage ab dem Speichern. */
+export const REMINDER_DURATIONS = ["forever", "1", "7", "30"] as const;
+export type ReminderDuration = (typeof REMINDER_DURATIONS)[number];
+export const reminderUntilFor = (duration: ReminderDuration, now = Date.now()): Date | null => (duration === "forever" ? null : new Date(now + Number(duration) * 24 * 60 * 60_000));
+
+/** Erinnerung für diesen Aufruf – nur bei jedem n-ten (n = every), nur bis zum Ablauf, sonst null. */
+export function reminderFor(
+  settings: { reminderMode: string; reminderText: string | null; reminderEvery: number; reminderUntil?: Date | string | null },
+  callNumber: number,
+  now = Date.now(),
+): string | null {
   if (settings.reminderMode === "off") return null;
+  if (settings.reminderUntil && new Date(settings.reminderUntil).getTime() <= now) return null;
   const every = Math.min(100, Math.max(1, settings.reminderEvery || 10));
   if (callNumber <= 0 || callNumber % every !== 0) return null;
   const custom = settings.reminderText?.trim();
@@ -36,4 +46,6 @@ export const keySettingsSchema = z.object({
   reminderMode: z.enum(REMINDER_MODES).optional(),
   reminderText: z.string().trim().max(1000).nullable().optional(),
   reminderEvery: z.number().int().min(1).max(100).optional(),
+  /** Ab jetzt gültig für … (#100) */
+  reminderDuration: z.enum(REMINDER_DURATIONS).optional(),
 });

@@ -46,7 +46,7 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
       user: row.user,
       rulesAckAt: row.rulesAckAt,
       rulesVersion: row.rulesVersion,
-      settings: { scope: row.scope, reminderMode: row.reminderMode, reminderText: row.reminderText, reminderEvery: row.reminderEvery },
+      settings: { scope: row.scope, reminderMode: row.reminderMode, reminderText: row.reminderText, reminderEvery: row.reminderEvery, reminderUntil: row.reminderUntil },
     },
   };
 }
@@ -76,6 +76,7 @@ export function serializeApiToken(t: ApiToken) {
     reminderMode: t.reminderMode,
     reminderText: t.reminderText,
     reminderEvery: t.reminderEvery,
+    reminderUntil: t.reminderUntil?.toISOString() ?? null,
   };
 }
 export type ApiTokenItem = ReturnType<typeof serializeApiToken>;

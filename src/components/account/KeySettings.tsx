@@ -3,28 +3,33 @@
 import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
-import { useT } from "@/lib/i18n/client";
+import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
 import type { ApiTokenItem } from "@/lib/mcp/token";
-import { KEY_SCOPES, REMINDER_MODES, type KeyScope, type ReminderMode } from "@/lib/mcp/keySettings";
+import { KEY_SCOPES, REMINDER_DURATIONS, REMINDER_MODES, type KeyScope, type ReminderDuration, type ReminderMode } from "@/lib/mcp/keySettings";
+import { cn } from "@/lib/utils";
 
 /** Einstellungen je Schlüssel (#48/#49): Werkzeug-Umfang und Erinnerungen an die KI. */
 export function KeySettings({ item, onSaved }: { item: ApiTokenItem; onSaved: (next: ApiTokenItem) => void }) {
   const t = useT("mcp");
+  const f = useFormat();
+  // Nur beim Rendern gebraucht – ein veralteter Wert schadet nicht
+  const [expired] = useState(() => Boolean(item.reminderUntil && Date.parse(item.reminderUntil) <= Date.now()));
   const [form, setForm] = useState({
     scope: item.scope as KeyScope,
     reminderMode: item.reminderMode as ReminderMode,
     reminderText: item.reminderText ?? "",
     reminderEvery: item.reminderEvery,
+    reminderDuration: null as ReminderDuration | null,
   });
   const [busy, setBusy] = useState(false);
   const dirty =
-    form.scope !== item.scope || form.reminderMode !== item.reminderMode || form.reminderText !== (item.reminderText ?? "") || form.reminderEvery !== item.reminderEvery;
+    form.scope !== item.scope || form.reminderMode !== item.reminderMode || form.reminderText !== (item.reminderText ?? "") || form.reminderEvery !== item.reminderEvery || form.reminderDuration !== null;
 
   async function save() {
     setBusy(true);
     try {
-      const res = await api<{ item: ApiTokenItem }>(`/api/account/api-tokens/${item.id}`, { method: "PATCH", body: { ...form, reminderText: form.reminderText.trim() || null } });
+      const res = await api<{ item: ApiTokenItem }>(`/api/account/api-tokens/${item.id}`, { method: "PATCH", body: { ...form, reminderText: form.reminderText.trim() || null, reminderDuration: form.reminderDuration ?? undefined } });
       onSaved(res.item);
       toast(t("keySettings.saved"));
     } catch (e) {
@@ -66,6 +71,26 @@ export function KeySettings({ item, onSaved }: { item: ApiTokenItem; onSaved: (n
               </select>
             )}
           </div>
+          {form.reminderMode !== "off" && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <label htmlFor={`until-${item.id}`}>{t("keySettings.durationLabel")}</label>
+              <select
+                id={`until-${item.id}`}
+                className="field w-auto !py-1 text-xs"
+                value={form.reminderDuration ?? ""}
+                onChange={(e) => setForm({ ...form, reminderDuration: (e.target.value || null) as ReminderDuration | null })}
+                data-testid="key-duration"
+              >
+                <option value="">{t("keySettings.durationKeep")}</option>
+                {REMINDER_DURATIONS.map((d) => (
+                  <option key={d} value={d}>{t(`keySettings.duration.${d}`)}</option>
+                ))}
+              </select>
+              <span className={cn("text-muted", expired && "text-amber-300")} data-testid="key-until" suppressHydrationWarning>
+                {item.reminderUntil ? t(expired ? "keySettings.expired" : "keySettings.until", { date: f.dateTime(item.reminderUntil) }) : t("keySettings.forever")}
+              </span>
+            </div>
+          )}
           <p className="mt-1 text-xs text-muted">{t("keySettings.reminderHint")}</p>
           {form.reminderMode === "default" && <p className="mt-1 text-xs text-muted">{t("keySettings.defaultText")}</p>}
           {form.reminderMode === "custom" && (

@@ -142,6 +142,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         readOnly={!can("tasks.edit")}
         board={normalizeBoard(boardConfig)}
         canConfigure={can("project.edit")}
+        canDelete={can("tasks.delete")}
         people={people.map(({ username, name }) => ({ username, name }))}
       />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />

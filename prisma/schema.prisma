@@ -138,6 +138,9 @@ model User {
   /// Sprache der Oberfläche ("de" | "en") – null heißt: Browsersprache
   locale String?
 
+  /// Erste Schritte (#100): { hideDone, dismissed }
+  onboarding Json?
+
   /// Ideen-Eingang: geheimer Teil der Einwurf-Adresse /api/inbox/in/<token>
   inboxToken     String? @unique
   /// ntfy-Thema, das VibeWorks nach neuen Ideen abfragt, und die letzte gelesene Nachricht
@@ -848,6 +851,8 @@ model ApiToken {
   lastUsedUserAgent String?
   /// Die KI hat die Agent-Regeln gespeichert und bestätigt (confirm_agent_rules)
   rulesAckAt        DateTime?
+  /// Eigene Erinnerung an die KI gilt nur bis hier (#100) – null: unbegrenzt
+  reminderUntil     DateTime?
   /// Fingerabdruck der bestätigten Regeln – weicht er ab, erinnert VibeWorks erneut (#79)
   rulesVersion      String?
   /// Zuletzt gemeldeter Client (initialize): Name, Version, verlangte Protokollversion

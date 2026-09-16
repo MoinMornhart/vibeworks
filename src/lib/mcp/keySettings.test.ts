@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_REMINDER, keySettingsSchema, reminderFor, toolAllowed } from "./keySettings";
+import { DEFAULT_REMINDER, keySettingsSchema, reminderFor, toolAllowed, reminderUntilFor } from "./keySettings";
 
 const read = { name: "list_tasks", annotations: { readOnlyHint: true } };
 const task = { name: "update_task" };
@@ -33,6 +33,16 @@ describe("Einstellungen je MCP-Schlüssel", () => {
   it("eigener Text, aus, und leerer eigener Text fällt auf den Standard zurück", () => {
     expect(reminderFor({ reminderMode: "custom", reminderText: "Immer auf Deutsch antworten", reminderEvery: 1 }, 1)).toBe("VibeWorks reminder from the user: Immer auf Deutsch antworten");
     expect(reminderFor({ reminderMode: "custom", reminderText: "  ", reminderEvery: 1 }, 1)).toBe(DEFAULT_REMINDER);
+  });
+
+  it("verfällt nach Ablauf (#100)", () => {
+    const now = Date.parse("2026-09-16T12:00:00Z");
+    const s = { reminderMode: "custom", reminderText: "Nur heute: keine Releases", reminderEvery: 1 };
+    expect(reminderFor({ ...s, reminderUntil: reminderUntilFor("1", now) }, 1, now + 60_000)).toContain("Nur heute");
+    expect(reminderFor({ ...s, reminderUntil: reminderUntilFor("1", now) }, 1, now + 25 * 3600_000)).toBeNull();
+    expect(reminderFor({ ...s, reminderUntil: null }, 1, now + 1e12)).toContain("Nur heute");
+    expect(reminderUntilFor("forever", now)).toBeNull();
+    expect(reminderUntilFor("7", now)?.toISOString()).toBe("2026-09-23T12:00:00.000Z");
     expect(reminderFor({ reminderMode: "off", reminderText: null, reminderEvery: 1 }, 1)).toBeNull();
     expect(reminderFor({ reminderMode: "default", reminderText: null, reminderEvery: 0 }, 10)).toBe(DEFAULT_REMINDER);
   });

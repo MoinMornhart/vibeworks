@@ -3,7 +3,7 @@ import { json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { tk } from "@/lib/i18n/messages";
 import { serializeApiToken } from "@/lib/mcp/token";
-import { keySettingsSchema } from "@/lib/mcp/keySettings";
+import { keySettingsSchema, reminderUntilFor } from "@/lib/mcp/keySettings";
 
 type Params = { id: string };
 
@@ -11,7 +11,17 @@ type Params = { id: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const input = await readBody(req, keySettingsSchema, { maxBytes: 4096 });
-  const { count } = await db.apiToken.updateMany({ where: { id: (await params).id, userId: user.id }, data: { ...input, reminderText: input.reminderText || null } });
+  const { count } = await db.apiToken.updateMany({
+    where: { id: (await params).id, userId: user.id },
+    data: {
+      scope: input.scope,
+      reminderMode: input.reminderMode,
+      reminderEvery: input.reminderEvery,
+      ...(input.reminderText !== undefined ? { reminderText: input.reminderText || null } : {}),
+      // Ablauf gilt ab dem Speichern (#100)
+      ...(input.reminderDuration ? { reminderUntil: reminderUntilFor(input.reminderDuration) } : {}),
+    },
+  });
   if (!count) throw notFound(tk("mcp", "errors.notFound"));
   const row = await db.apiToken.findUniqueOrThrow({ where: { id: (await params).id } });
   return json({ item: serializeApiToken(row) });

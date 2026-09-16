@@ -12,6 +12,8 @@ import { SleepingProjects } from "@/components/grave/SleepingProjects";
 import { roleSelect, visibleTo } from "@/lib/access";
 import { WeeklySuggestions } from "@/components/WeeklySuggestions";
 import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
+import { OnboardingCard } from "@/components/OnboardingCard";
+import { onboardingFor } from "@/lib/onboarding";
 
 export default async function Dashboard() {
   const user = await requirePageUser();
@@ -62,7 +64,7 @@ export default async function Dashboard() {
     db.project.count({ where: { ownerId: user.id, buriedAt: { not: null } } }),
     getT("grave"),
   ]);
-  const [inboxCount, ti, gitFailing, gitFailingCount, brokenConnections, tgit, locale] = await Promise.all([
+  const [inboxCount, ti, gitFailing, gitFailingCount, brokenConnections, tgit, locale, onboarding] = await Promise.all([
     db.inboxItem.count({ where: { userId: user.id } }),
     getT("inbox"),
     // Git-Probleme: Projekte, deren letzter Abgleich scheiterte, und Verbindungen mit Import-Fehler
@@ -76,6 +78,7 @@ export default async function Dashboard() {
     db.gitCredential.findMany({ where: { userId: user.id, importError: { not: null } }, select: { id: true, host: true, importError: true } }),
     getT("git"),
     getLocale(),
+    onboardingFor(user.id),
   ]);
   // Wochen-Vorschläge: beim ersten Besuch der Woche anlegen, dann nur lesen
   await ensureWeeklySuggestions(user.id, now, locale);
@@ -120,6 +123,7 @@ export default async function Dashboard() {
           </ul>
         </section>
       )}
+      {!onboarding.dismissed && <OnboardingCard initial={onboarding} />}
       <WeeklySuggestions initial={suggestions} />
       <SleepingProjects items={sleeping} />
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />

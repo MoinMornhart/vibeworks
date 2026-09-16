@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { grepViaGit, listFilesViaGit } from "@/lib/git/gitCli";
+import { grepViaGit, listFilesViaGit, localHeadViaGit } from "@/lib/git/gitCli";
+import { FINDING_HINTS, reviewProject } from "@/lib/projectReviewLogic";
 import { fileSummary, filterFiles, parseGrep } from "@/lib/codeIndexLogic";
 import { neighborsOf } from "@/lib/codeGraphLogic";
 import { projectCodeGraph } from "@/lib/codeGraph";
@@ -782,7 +783,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         doc: { type: "string", description: "Doc id" },
         title: { type: "string", maxLength: 200 },
         content: { type: "string", description: "Replaces the whole content" },
-        append: { type: "string", description: "Appended to the end (after a blank line)" },
+        append: { type: ["string", "boolean"], description: "Text appended to the end (after a blank line) – or true to append \"content\" instead of replacing" },
       },
       required: ["doc"],
       additionalProperties: false,
@@ -791,8 +792,13 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const current = await findOwnDoc(userId, ref.parse(args.doc));
       if (!current) throw notFound(tk("mcp", "errors.docNotFound"));
       const input = z
-        .object({ title: docUpdateSchema.shape.title, content: docUpdateSchema.shape.content, append: z.string().max(MAX_TEXT).optional() })
+        .object({ title: docUpdateSchema.shape.title, content: docUpdateSchema.shape.content, append: z.union([z.string().max(MAX_TEXT), z.boolean()]).optional() })
         .parse(args);
+      // append: true heißt „content anhängen“ – so rufen KIs das oft auf (#100)
+      if (input.append === true) {
+        input.append = input.content;
+        input.content = undefined;
+      } else if (input.append === false) input.append = undefined;
       const data: Prisma.DocUpdateInput = {};
       if (input.title !== undefined) data.title = input.title;
       let content = input.content;
@@ -909,6 +915,91 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       await resolveProject(userId, row.projectId, "errors.manage");
       const status = typeof args.status === "string" && (ERROR_STATUSES as readonly string[]).includes(args.status) ? (args.status as ErrorStatus) : "resolved";
       return serializeAppError(await setErrorStatus(row.id, status));
+    },
+  },
+  {
+    name: "review_projects",
+    title: "Review projects",
+    description:
+      "Checks projects for complete documentation (description, notes, README and CLAUDE.md in the repository) and open work (overdue, blocked, stale tasks, tasks in progress without assignee, failing sync or CI). Use team to review all projects of a team. Returns a score per project, findings with what to do, and task counts – worst first.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        team: { type: "string", maxLength: 200, description: "Team id or exact team name – only its projects" },
+        project: S.project,
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const input = z.object({ team: z.string().trim().max(200).optional(), project: ref.optional() }).parse(args);
+      let where: Prisma.ProjectWhereInput = OPEN_PROJECT(userId);
+      let teamName: string | null = null;
+      if (input.project) where = { id: (await resolveProject(userId, input.project)).project.id };
+      else if (input.team) {
+        const team = await db.team.findFirst({
+          where: { members: { some: { userId } }, OR: [{ id: input.team }, { name: { equals: input.team, mode: "insensitive" } }] },
+          select: { id: true, name: true },
+        });
+        if (!team) throw new ApiError(404, "Team not found – use the team id or its exact name (you must be a member).");
+        teamName = team.name;
+        where = { AND: [OPEN_PROJECT(userId), { teams: { some: { teamId: team.id } } }] };
+      }
+      const projects = await db.project.findMany({
+        where,
+        take: 100,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          summary: true,
+          progress: true,
+          repoUrl: true,
+          boardConfig: true,
+          _count: { select: { notes: true } },
+          repoCache: { select: { error: true, ci: true, defaultBranch: true } },
+        },
+      });
+      const hide = await aiTaskFilter(userId);
+      const reviews = [];
+      for (const p of projects) {
+        const tasks = await db.task.findMany({ where: { AND: [{ projectId: p.id }, hide] }, select: { status: true, dueDate: true, updatedAt: true, assignee: true } });
+        const branch = p.repoCache?.defaultBranch ?? null;
+        const repoFiles = branch && (await localHeadViaGit(p.id, branch)) ? await listFilesViaGit(p.id, branch) : null;
+        const review = reviewProject({
+          description: p.description,
+          summary: p.summary,
+          notes: p._count.notes,
+          repoFiles,
+          hasRepo: Boolean(p.repoUrl),
+          syncError: p.repoCache?.error ?? null,
+          ciState: (p.repoCache?.ci as { state?: string } | null)?.state ?? null,
+          progress: p.progress,
+          tasks,
+        });
+        reviews.push({
+          id: p.id,
+          name: p.name,
+          score: review.score,
+          openTasks: review.open,
+          doneTasks: review.done,
+          findings: review.findings.map((code) => ({ code, hint: FINDING_HINTS[code] })),
+          ...(repoFiles === null && p.repoUrl ? { note: "No local code copy yet – README/CLAUDE.md not checked (list_code_files fetches it)." } : {}),
+          url: link(`/projects/${p.id}`),
+        });
+      }
+      reviews.sort((a, b) => a.score - b.score || a.name.localeCompare(b.name));
+      const open = reviews.reduce((s, r) => s + r.openTasks.todo + r.openTasks.doing + r.openTasks.blocked, 0);
+      return {
+        ...(teamName ? { team: teamName } : {}),
+        summary: {
+          projects: reviews.length,
+          openTasks: open,
+          averageScore: reviews.length ? Math.round(reviews.reduce((s, r) => s + r.score, 0) / reviews.length) : null,
+          needAttention: reviews.filter((r) => r.findings.length).length,
+        },
+        projects: reviews,
+      };
     },
   },
   {

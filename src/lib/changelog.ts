@@ -28,6 +28,41 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.7",
+    date: "2026-09-16",
+    title: "Erste Schritte, Erledigte löschen, Projekt-Überblick für die KI",
+    titleEn: "Getting started, clear done tasks, project review for the AI",
+    changes: [
+      {
+        type: "neu",
+        text: "Erste Schritte auf dem Dashboard: zeigt, was noch offen ist (Git, Repository, KI-Anbindung, Bot, zweiter Faktor, Benachrichtigungen, Fehler-Eingang, Team) – Erledigtes lässt sich ausblenden oder die Liste ganz schließen",
+        en: "Getting started on the dashboard: shows what's still open (Git, repository, AI connection, bot, second factor, notifications, error inbox, team) – hide what's done or close the list",
+        link: "/#erste-schritte",
+      },
+      {
+        type: "neu",
+        text: "Erledigte auf einmal löschen: Papierkorb-Knopf in der Erledigt-Spalte, mit Rückfrage – die Issues bleiben geschlossen",
+        en: "Clear done tasks in one go: bin button in the Done column, with confirmation – issues stay closed",
+      },
+      {
+        type: "neu",
+        text: "MCP-Werkzeug review_projects: die KI prüft alle eigenen oder die Projekte eines Teams auf einmal – vollständige Doku (Beschreibung, Notizen, README und CLAUDE.md im Repository) und offene Arbeit (überfällige, blockierte, liegengebliebene Aufgaben, rote CI, Abgleichfehler) – und bekommt eine Bewertung mit Hinweisen, schwächste zuerst",
+        en: "MCP tool review_projects: the AI checks all own projects or a team’s projects at once – complete docs (description, notes, README and CLAUDE.md in the repository) and open work (overdue, blocked, stale tasks, red CI, sync errors) – and gets a score with hints, weakest first",
+      },
+      {
+        type: "neu",
+        text: "Eigene Erinnerung an die KI mit Ablauf: gilt unbegrenzt, 1 Tag, 1 Woche oder 1 Monat",
+        en: "Custom AI reminder with expiry: indefinitely, 1 day, 1 week or 1 month",
+        link: "/account#mcp",
+      },
+      {
+        type: "fix",
+        text: "update_doc nimmt append auch als true (hängt dann content an) – vorher kam ein Fehler",
+        en: "update_doc also accepts append as true (then appends content) – it used to fail",
+      },
+    ],
+  },
+  {
     version: "1.1.6",
     date: "2026-09-16",
     title: "TypeScript 7 und vitest 5",

@@ -79,7 +79,7 @@ export function PasskeySection({ initial, hasPassword, rpID }: { initial: Passke
   }
 
   return (
-    <AccountSection icon={<Fingerprint size={18} />} title={t("passkeys.title")} description={t("passkeys.description")}>
+    <AccountSection id="passkeys" icon={<Fingerprint size={18} />} title={t("passkeys.title")} description={t("passkeys.description")}>
       <div className="space-y-4">
         {passkeys.length > 0 ? (
           <ul className="space-y-2">
