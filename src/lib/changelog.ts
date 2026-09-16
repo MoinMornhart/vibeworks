@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.4",
+    date: "2026-09-16",
+    title: "Code-Netz: Verbindung prüfen",
+    titleEn: "Code network: check the connection",
+    changes: [
+      {
+        type: "neu",
+        text: "„Verbindung prüfen“ im Code-Netz: Schritt für Schritt – Adresse, Abgleich, Zugang, git auf dem Server, Leserecht beim Anbieter, Erreichbarkeit per git, lokale Kopie – mit Grund und passendem Knopf (z. B. „Token prüfen“, wenn eine Berechtigung fehlt)",
+        en: "“Check connection” in the code network: step by step – address, sync, access, git on the server, read access at the provider, reachability via git, local copy – with the reason and a matching button (e.g. “Check token” when a permission is missing)",
+      },
+      {
+        type: "fix",
+        text: "Code-Netz: Jede Aktion bekommt jetzt eine Meldung – auch wenn das Holen scheitert oder nur ein alter Stand da ist; dann startet die Prüfung gleich mit",
+        en: "Code network: every action now gets a message – also when fetching fails or only an old state is there; the check then starts right away",
+      },
+      {
+        type: "fix",
+        text: "Auch Bild-Links in Notizen laufen über die Link-Hinweisseite",
+        en: "Image links in notes also go through the link notice page",
+      },
+    ],
+  },
+  {
     version: "1.1.3",
     date: "2026-09-16",
     title: "Links werden vor dem Öffnen geprüft",

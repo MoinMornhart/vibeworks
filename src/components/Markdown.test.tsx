@@ -21,8 +21,16 @@ describe("Markdown", () => {
     expect(html).toContain("checked");
   });
 
-  it("öffnet Links in neuem Tab ohne Referrer", () => {
-    expect(render("[VibeWorks](https://github.com)")).toContain('rel="noopener noreferrer nofollow"');
+  it("öffnet externe Links in neuem Tab über die Hinweisseite (#65)", () => {
+    const html = render("[VibeWorks](https://github.com)");
+    expect(html).toContain('href="/go?to=https%3A%2F%2Fgithub.com%2F"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener nofollow"');
+  });
+
+  it("interne Links direkt, Bild-Links ebenfalls über die Hinweisseite", () => {
+    expect(render("[Aufgaben](/tasks)")).toContain('href="/tasks"');
+    expect(render("![Bild](https://tracker.example/p.gif)")).toContain("/go?to=https%3A%2F%2Ftracker.example%2Fp.gif");
   });
 
   it("lädt keine fremden Bilder", () => {

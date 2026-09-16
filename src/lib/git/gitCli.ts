@@ -391,3 +391,8 @@ export function pushMergeViaGit(
     }
   });
 }
+
+/** Installierte git-Version – null, wenn git fehlt (Diagnose, #97). */
+export async function gitVersion(): Promise<string | null> {
+  return (await git(["--version"], gitEnv(null), 10_000).catch(() => "")).trim().replace(/^git version\s*/, "") || null;
+}

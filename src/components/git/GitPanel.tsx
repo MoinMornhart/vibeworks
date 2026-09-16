@@ -619,7 +619,7 @@ export function GitPanel({
   const cacheError = cache?.error ? msg(cache.error) : null;
 
   return (
-    <section className="glass p-6 sm:p-8" aria-labelledby="git-heading">
+    <section id="git" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="git-heading">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-ink">

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, ExternalLink, Expand, GitBranch, Maximize2, Minimize2, Network, RefreshCw, Search, StickyNote, Trash2, X } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, Expand, GitBranch, Maximize2, Minimize2, MinusCircle, Network, RefreshCw, Search, Stethoscope, StickyNote, Trash2, TriangleAlert, X, XCircle } from "lucide-react";
+import type { DiagnoseStep } from "@/lib/git/codeDiagnose";
+import { tk } from "@/lib/i18n/messages";
 import type { ProjectCodeGraph } from "@/lib/codeGraph";
 import { blobUrl } from "@/lib/git/repoCheckLogic";
 import { neighborsOf } from "@/lib/codeGraphLogic";
@@ -68,15 +70,39 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       setSelected(null);
       setView({ x: 0, y: 0, k: 1 });
       setGraph(res.graph);
-      // Rückmeldung, dass es geklappt hat (#54)
-      if (!res.graph.empty && !res.graph.staleError) toast(t("loaded", { files: res.graph.files, commit: (res.graph.commit ?? "").slice(0, 7) }));
+      // Jede Aktion bekommt eine Antwort (#54, #97) – bei Problemen gleich die Prüfung dazu
+      if (res.graph.empty) {
+        toast(t("fetchFailedToast", { error: msg(res.graph.error ?? tk("graph", "errors.notSynced")) }), "error");
+        void runDiagnose();
+      } else if (res.graph.staleError) {
+        toast(t("staleToast"), "error");
+        void runDiagnose();
+      } else toast(t("loaded", { files: res.graph.files, commit: (res.graph.commit ?? "").slice(0, 7) }));
     } catch (e) {
       setError(errorMessage(e));
       toast(errorMessage(e), "error");
+      void runDiagnose();
     } finally {
       setLoading(false);
     }
-  }, [projectId, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runDiagnose hängt nur an projectId
+  }, [projectId, t, msg]);
+
+  const [diagnose, setDiagnose] = useState<DiagnoseStep[] | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
+  async function runDiagnose() {
+    setDiagnosing(true);
+    try {
+      const res = await api<{ diagnose: DiagnoseStep[] }>(`/api/projects/${projectId}/graph?diagnose=1`);
+      setDiagnose(res.diagnose);
+      const bad = res.diagnose.find((s) => s.state === "error");
+      if (bad) toast(t("diagnose.found", { step: t(`diagnose.steps.${bad.key}`), detail: bad.detail ? msg(bad.detail) : "" }), "error");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setDiagnosing(false);
+    }
+  }
 
   const baseNodes = useMemo(
     () => (graph?.nodes ?? []).filter((n) => (showPkgs || n.kind !== "package") && (!onlyGroup || n.group === onlyGroup || (n.kind === "package" && showPkgs))),
@@ -313,6 +339,52 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
         </div>
       </div>
       <p className="mb-4 text-xs text-muted">{t("hint")}</p>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button type="button" className="btn btn-sm" onClick={() => void runDiagnose()} disabled={diagnosing} data-testid="code-graph-diagnose">
+          <Stethoscope size={14} className={cn(diagnosing && "animate-pulse")} /> {diagnosing ? t("diagnose.running") : t("diagnose.run")}
+        </button>
+      </div>
+      {diagnose && (
+        <div className="mb-4 rounded-xl border px-3 py-2 text-sm" data-testid="code-graph-diagnose-result">
+          <p className="mb-1 font-medium">{t("diagnose.title")}</p>
+          <ul className="space-y-1">
+            {diagnose.map((s) => (
+              <li key={s.key} className="flex flex-wrap items-start gap-2 text-xs" data-testid={`diagnose-${s.key}`} data-state={s.state}>
+                {s.state === "ok" ? (
+                  <CheckCircle2 size={14} className="mt-px shrink-0 text-emerald-400" />
+                ) : s.state === "warn" ? (
+                  <TriangleAlert size={14} className="mt-px shrink-0 text-amber-300" />
+                ) : s.state === "error" ? (
+                  <XCircle size={14} className="mt-px shrink-0 text-red-400" />
+                ) : (
+                  <MinusCircle size={14} className="mt-px shrink-0 text-muted" />
+                )}
+                <span className="min-w-0 flex-1">
+                  <b>{t(`diagnose.steps.${s.key}`)}</b>
+                  {s.detail && <span className="text-muted"> – {msg(s.detail)}</span>}
+                </span>
+                {s.state !== "ok" && s.fix === "fetch" && (
+                  <button type="button" className="btn btn-sm !py-0" onClick={() => void load(branch, true)} disabled={loading}>
+                    {t("diagnose.fix.fetch")}
+                  </button>
+                )}
+                {s.state !== "ok" && (s.fix === "projectAccess" || s.fix === "sync") && (
+                  <a className="btn btn-sm !py-0" href="#git">
+                    {t(`diagnose.fix.${s.fix}`)}
+                  </a>
+                )}
+                {s.state !== "ok" && s.fix === "account" && (
+                  <a className="btn btn-sm !py-0" href="/account#git-zugang">
+                    {t("diagnose.fix.account")}
+                  </a>
+                )}
+                {s.state !== "ok" && s.fix === "server" && <span className="text-muted">{t("diagnose.fix.server")}</span>}
+              </li>
+            ))}
+          </ul>
+          {diagnose.every((s) => s.state !== "error") && <p className="mt-1 text-xs text-emerald-400">{t("diagnose.allOk")}</p>}
+        </div>
+      )}
       {error && <p className="text-sm text-red-400">{error}</p>}
       {graph?.staleError && !graph.empty && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm" data-testid="code-graph-stale">

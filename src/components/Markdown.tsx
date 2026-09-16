@@ -31,8 +31,8 @@ export function Markdown({ children, className }: { children: string; className?
             return target ? <a {...props} href={target} target="_blank" rel="noopener nofollow" /> : <span {...props} />;
           },
           img: ({ src, alt }) =>
-            typeof src === "string" && src ? (
-              <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="md-img">
+            typeof src === "string" && src && guardedHref(src, LINK_BASE) ? (
+              <a href={guardedHref(src, LINK_BASE)!} target="_blank" rel="noopener nofollow" className="md-img">
                 🖼 {alt || t("markdown.image")}
               </a>
             ) : null,
