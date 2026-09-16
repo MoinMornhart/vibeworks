@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.3",
+    date: "2026-09-16",
+    title: "Absturzberichte kommen an",
+    titleEn: "Crash reports get through",
+    changes: [
+      {
+        type: "fix",
+        text: "Fehler-Eingang: Eine Absturzschleife mit Hunderten Meldungen blockiert nicht mehr alles – Apps schicken bis zu 50 Berichte in einer Anfrage, gleiche Abstürze werden zusammengezählt",
+        en: "Error inbox: a crash loop with hundreds of reports no longer blocks everything – apps send up to 50 reports in one request, identical crashes are counted together",
+      },
+      {
+        type: "besser",
+        text: "Der Fehler-Eingang versteht mehr Formate: verschachtelte Fehler, deutsche Feldnamen (nachricht, typ), Zusatzangaben wie Absturzgrund und Exit-Code sowie Log-Zeilen wie „<Zeit> [CRASH] Text“",
+        en: "The error inbox understands more formats: nested errors, German field names (nachricht, typ), extra details like crash reason and exit code, and log lines like “<time> [CRASH] text”",
+      },
+      {
+        type: "neu",
+        text: "Einbau-Schnipsel für Electron-Apps: meldet abgestürzte Renderer- und GPU-Prozesse gesammelt",
+        en: "Snippet for Electron apps: reports crashed renderer and GPU processes in batches",
+      },
+    ],
+  },
+  {
     version: "1.0.2",
     date: "2026-09-16",
     title: "Bot per Klick, KI-Agenten schreiben Deutsch",

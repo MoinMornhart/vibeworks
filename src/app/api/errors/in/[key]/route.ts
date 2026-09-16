@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { clientIp } from "@/lib/api";
 import { config } from "@/lib/config";
 import { ingestError } from "@/lib/bugs";
-import { MAX_REPORT_BYTES, parseErrorReport } from "@/lib/bugsLogic";
+import { MAX_BATCH, MAX_REPORT_BYTES, parseErrorBatch } from "@/lib/bugsLogic";
 import { hit, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { key: string };
@@ -21,6 +21,9 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
 };
+
+/** Hilfe in der Antwort, wenn nichts Brauchbares ankam (#75). */
+const EXPECTED = `JSON {"message": "...", "type": "...", "stack": "..."}, a list of up to ${MAX_BATCH} such objects, or log lines like "<time> [CRASH] text"`;
 
 const reply = (status: number, body: Record<string, unknown>) => NextResponse.json(body, { status, headers: CORS });
 
@@ -41,16 +44,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
     if (Number(req.headers.get("content-length") ?? 0) > MAX_REPORT_BYTES) return reply(413, { error: "too large" });
     const text = await req.text();
     if (text.length > MAX_REPORT_BYTES) return reply(413, { error: "too large" });
-    let raw: unknown;
-    try {
-      raw = JSON.parse(text);
-    } catch {
-      return reply(400, { error: "invalid json" });
+    const batch = parseErrorBatch(text);
+    if (!batch) return reply(400, { error: "message missing", expected: EXPECTED });
+    const userAgent = req.headers.get("user-agent")?.slice(0, 300) ?? null;
+    // Einzelbericht: Grenze schon oben gezählt; Stapel zählen je Bericht – ein Absturz-Sturm füllt so nicht die Datenbank
+    const results: string[] = [];
+    for (const [i, report] of batch.reports.entries()) {
+      if (i > 0 && !hit(`errors-in:${project.id}`, 300, 10 * MINUTE).ok) {
+        results.push("limited");
+        continue;
+      }
+      results.push(await ingestError(project, report, userAgent));
     }
-    const report = parseErrorReport(raw);
-    if (!report) return reply(400, { error: "message missing" });
-    const result = await ingestError(project, report, req.headers.get("user-agent")?.slice(0, 300) ?? null);
-    return reply(202, { ok: true, result });
+    if (batch.single) return reply(202, { ok: true, result: results[0] });
+    return reply(202, { ok: true, results, skipped: batch.skipped });
   } catch (err) {
     console.error("[errors-in]", err);
     return reply(500, { error: "internal error" });

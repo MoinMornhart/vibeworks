@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fingerprintSource, normalizeMessage, parseErrorReport, snippets, topFrame } from "./bugsLogic";
+import { fingerprintSource, MAX_BATCH, normalizeMessage, parseErrorBatch, parseErrorReport, parseLogLines, snippets, topFrame } from "./bugsLogic";
 
 describe("parseErrorReport", () => {
   it("liest die üblichen Felder und kappt sie", () => {
@@ -12,6 +12,42 @@ describe("parseErrorReport", () => {
     expect(parseErrorReport(null)).toBeNull();
     expect(parseErrorReport(["a"])).toBeNull();
     expect(parseErrorReport({ message: "a", url: "javascript:alert(1)", stack: 5 })).toMatchObject({ url: null, stack: null });
+  });
+});
+
+describe("Absturzberichte (#75)", () => {
+  it("versteht verschachtelte Fehler, deutsche Felder und Details", () => {
+    expect(parseErrorReport({ error: { message: "kaputt", name: "TypeError", stack: "at x" } })).toMatchObject({ message: "kaputt", type: "TypeError", stack: "at x" });
+    const r = parseErrorReport({ nachricht: "Renderer weg", typ: "CRASH", daten: { grund: "crashed", code: -2147483645 } });
+    expect(r).toMatchObject({ message: "Renderer weg", type: "CRASH" });
+    expect(r?.stack).toBe('Details: {"grund":"crashed","code":-2147483645}');
+  });
+
+  it("liest Log-Zeilen, nur Fehler, jede Zeile einmal", () => {
+    const log = [
+      '2026-09-15T18:04:38.818Z [CRASH] Renderer weg {"grund":"crashed","code":-2147483645}',
+      '2026-09-15T18:04:38.902Z [CRASH] Renderer weg {"grund":"crashed","code":-2147483645}',
+      "2026-09-15T18:04:39.163Z [START] Julia startet",
+      "2026-09-16T10:57:28.940Z [FATAL] GPU-Absturz trotz Software-Rendering – Start abgesichert abgebrochen.",
+      "kein Log",
+    ].join("\r\n");
+    const lines = parseLogLines(log);
+    expect(lines.map((l) => [l.type, l.message])).toEqual([
+      ["CRASH", "Renderer weg"],
+      ["FATAL", "GPU-Absturz trotz Software-Rendering – Start abgesichert abgebrochen."],
+    ]);
+    expect(lines[0].stack).toContain('"grund":"crashed"');
+  });
+
+  it("nimmt Einzelberichte, Listen und Log-Text an", () => {
+    expect(parseErrorBatch('{"message":"a"}')).toMatchObject({ single: true, reports: [{ message: "a" }] });
+    expect(parseErrorBatch('[{"message":"a"},{"x":1},{"msg":"b"}]')).toMatchObject({ single: false, skipped: 1, reports: [{ message: "a" }, { message: "b" }] });
+    expect(parseErrorBatch('{"reports":[{"message":"a"}]}')?.reports).toHaveLength(1);
+    expect(parseErrorBatch("t [ERROR] weg")?.reports[0]).toMatchObject({ type: "ERROR", message: "weg" });
+    expect(parseErrorBatch("kein json")).toBeNull();
+    expect(parseErrorBatch('{"type":"X"}')).toBeNull();
+    const many = JSON.stringify(Array.from({ length: 80 }, (_, i) => ({ message: `m${i}` })));
+    expect(parseErrorBatch(many)?.reports).toHaveLength(MAX_BATCH);
   });
 });
 
@@ -42,6 +78,8 @@ describe("Schnipsel", () => {
     expect(s.browser).toContain('"https://vw.example/api/errors/in/abc_DEF-123456789012"');
     expect(() => new Function(s.browser.replace(/<\/?script>/g, ""))).not.toThrow();
     expect(() => new Function(s.node)).not.toThrow();
+    expect(() => new Function(s.electron)).not.toThrow();
+    expect(s.electron).toContain("child-process-gone");
     expect(s.curl).toContain("curl -X POST https://vw.example/api/errors/in/abc_DEF-123456789012");
   });
   it("die Adresse kann nicht aus dem String ausbrechen", () => {

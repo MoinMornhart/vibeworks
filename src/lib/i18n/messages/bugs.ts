@@ -16,11 +16,12 @@ const de = {
   endpoint: "Adresse",
   keyHint:
     "Der Schlüssel steckt in der Adresse. Er erlaubt nur, Fehler in dieses Projekt zu schreiben – lesen kann damit niemand etwas. Im Browser ist er für jeden sichtbar, das ist so gewollt; bei Missbrauch einfach einen neuen erzeugen.",
-  snippets: { browser: "Browser", node: "Node.js", curl: "Skript / curl" },
+  snippets: { browser: "Browser", node: "Node.js", electron: "Electron", curl: "Skript / curl" },
   snippetHint: {
     browser: "Vor allen anderen Skripten in die Seite einfügen.",
     node: "Früh beim Start laden (Node.js 18+).",
-    curl: "Für Cron-Jobs, Backups und Shell-Skripte.",
+    electron: "Im Hauptprozess laden. Meldet abgestürzte Renderer- und GPU-Prozesse – gesammelt, auch bei einer Absturzschleife.",
+    curl: "Für Cron-Jobs, Backups und Shell-Skripte. Log-Zeilen wie „<Zeit> [CRASH] Text“ gehen auch direkt (bis 128 KB): tail -c 100000 start.log | curl … --data-binary @-",
   },
   copy: "Kopieren",
   copied: "Kopiert",
@@ -76,11 +77,12 @@ const en: Shape<typeof de> = {
   endpoint: "Address",
   keyHint:
     "The key is part of the address. It only allows writing errors into this project – nobody can read anything with it. In the browser it's visible to anyone, that's intended; if it gets abused, just create a new one.",
-  snippets: { browser: "Browser", node: "Node.js", curl: "Script / curl" },
+  snippets: { browser: "Browser", node: "Node.js", electron: "Electron", curl: "Script / curl" },
   snippetHint: {
     browser: "Add it to the page before all other scripts.",
     node: "Load it early at startup (Node.js 18+).",
-    curl: "For cron jobs, backups and shell scripts.",
+    electron: "Load it in the main process. Reports crashed renderer and GPU processes – batched, even during a crash loop.",
+    curl: "For cron jobs, backups and shell scripts. Log lines like “<time> [CRASH] text” work directly too (up to 128 KB): tail -c 100000 start.log | curl … --data-binary @-",
   },
   copy: "Copy",
   copied: "Copied",

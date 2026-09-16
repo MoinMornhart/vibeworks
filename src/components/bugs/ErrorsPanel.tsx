@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/Toaster";
 
 type Filter = ErrorStatus | "all";
-type Snippet = "browser" | "node" | "curl";
+type Snippet = "browser" | "node" | "electron" | "curl";
 interface Data {
   errors: AppErrorItem[];
   enabled: boolean;
@@ -22,7 +22,7 @@ interface Data {
 }
 
 const FILTERS: Filter[] = ["open", "resolved", "ignored", "all"];
-const SNIPPETS: Snippet[] = ["browser", "node", "curl"];
+const SNIPPETS: Snippet[] = ["browser", "node", "electron", "curl"];
 const POLL_MS = 60_000;
 
 function CopyButton({ text }: { text: string }) {
