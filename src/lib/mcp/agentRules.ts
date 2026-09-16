@@ -50,6 +50,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 - list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site.
 - list_errors shows runtime errors of the user's apps with stack traces – fix the cause, then call resolve_error.
 - search_code and list_code_files look into the linked repository – use them instead of guessing file paths or function names.
+- get_code_graph shows which files import a file and what it imports – check it before changing a shared file.
 
 ## Available tools (${tools.length})
 ${list}

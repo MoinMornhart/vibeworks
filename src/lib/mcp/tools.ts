@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { grepViaGit, listFilesViaGit } from "@/lib/git/gitCli";
 import { fileSummary, filterFiles, parseGrep } from "@/lib/codeIndexLogic";
+import { neighborsOf } from "@/lib/codeGraphLogic";
+import { projectCodeGraph } from "@/lib/codeGraph";
 import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
 import { serializeAppError, setErrorStatus } from "@/lib/bugs";
@@ -537,6 +539,39 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       if (!files.length) return { project: { id: project.id, name: project.name }, files: [], note: "No fetched copy of the repository. Sync the project's repository in VibeWorks first." };
       const pattern = typeof args.pattern === "string" ? args.pattern : null;
       return { project: { id: project.id, name: project.name }, branch: cache?.defaultBranch ?? null, summary: fileSummary(files), matches: filterFiles(files, pattern) };
+    },
+  },
+  {
+    name: "get_code_graph",
+    title: "Get code network",
+    description:
+      "How the linked repository's files connect through imports (the synapse map VibeWorks shows on the project page). With a file: what it imports and which files import it – use it before changing a file to see what might break. Without a file: the most connected files, the areas and the external packages.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, file: { type: "string", maxLength: 300, description: "Repository path, e.g. src/lib/db.ts; packages as pkg:<name>" } },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const graph = await projectCodeGraph(project.id);
+      const head = { project: { id: project.id, name: project.name }, branch: graph.branch, files: graph.files, connections: graph.edges.length };
+      if (graph.empty) return { ...head, note: "No fetched copy of the repository. Sync the project's repository in VibeWorks first." };
+      const file = typeof args.file === "string" ? args.file.trim() : "";
+      if (file) {
+        const node = graph.nodes.find((n) => n.id === file);
+        if (!node) return { ...head, note: `${file} is not in the network (unknown path, no imports, or hidden as one of the ${graph.hidden} least connected files). Use list_code_files to check the path.` };
+        return { ...head, file, area: node.group, ...neighborsOf(graph, file) };
+      }
+      const areas = new Map<string, number>();
+      for (const n of graph.nodes) if (n.kind === "file") areas.set(n.group, (areas.get(n.group) ?? 0) + 1);
+      return {
+        ...head,
+        hubs: graph.nodes.filter((n) => n.kind === "file").slice(0, 20).map((n) => ({ file: n.id, connections: n.degree })),
+        areas: [...areas.entries()].sort((a, b) => b[1] - a[1]).map(([area, files]) => ({ area, files })),
+        packages: graph.nodes.filter((n) => n.kind === "package").map((n) => ({ name: n.label, usedBy: n.degree })),
+      };
     },
   },
   {

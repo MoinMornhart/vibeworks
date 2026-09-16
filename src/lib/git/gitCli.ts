@@ -187,6 +187,27 @@ export function grepViaGit(projectId: string, branch: string | null, needle: str
   });
 }
 
+/** Alle Import-Zeilen (JS/TS, Python) des geholten Stands – fürs Code-Netz. */
+export function grepImportsViaGit(projectId: string, branch: string | null): Promise<string> {
+  if (!branch || !SAFE_BRANCH.test(branch)) return Promise.resolve("");
+  return locked(projectId, async () => {
+    const dir = repoDir(projectId);
+    if (!(await exists(path.join(dir, "HEAD")))) return "";
+    return git(
+      [
+        "-C", dir, "grep", "-n", "-I", "-E",
+        // Grob vorfiltern – die genaue Prüfung macht importOf()
+        "-e", "(from|import|require)[[:space:]]*[(]?[[:space:]]*[\"']",
+        "-e", "^[[:space:]]*(from[[:space:]]+[.[:alnum:]_]+[[:space:]]+import|import[[:space:]]+[[:alnum:]_.]+)",
+        `refs/heads/${branch}`, "--",
+        "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs", "*.py",
+      ],
+      gitEnv(null),
+      30_000,
+    ).catch(() => "");
+  });
+}
+
 export async function dropGitCache(projectId: string): Promise<void> {
   try {
     await rm(repoDir(projectId), { recursive: true, force: true });

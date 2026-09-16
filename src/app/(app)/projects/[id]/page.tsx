@@ -25,6 +25,7 @@ import { DepsPanel } from "@/components/git/DepsPanel";
 import { RepoCheckPanel } from "@/components/git/RepoCheckPanel";
 import { ErrorsPanel } from "@/components/bugs/ErrorsPanel";
 import { serializeRepoCheck } from "@/lib/git/repoCheck";
+import { CodeGraphPanel } from "@/components/git/CodeGraphPanel";
 import type { DepsReport } from "@/lib/git/depsLogic";
 import { dayKey } from "@/lib/utils";
 import type { ProjectPermission } from "@/lib/rolesLogic";
@@ -164,6 +165,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           hasToken={Boolean(repoTokenHint || account)}
         />
       )}
+      {project.repoUrl && repoCache?.provider && <CodeGraphPanel projectId={project.id} />}
       <AutoRefresh />
     </div>
   );

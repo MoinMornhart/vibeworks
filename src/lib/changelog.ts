@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.9",
+    date: "2026-09-17",
+    title: "Code-Netz",
+    titleEn: "Code network",
+    changes: [
+      {
+        type: "neu",
+        text: "Neues „Code-Netz“ auf der Projektseite: jede Datei ein Punkt, jeder Import eine Linie, farbig nach Bereich. Ziehen, zoomen, suchen – ein Klick zeigt, was eine Datei nutzt und wer sie nutzt, mit Link ins Repository. Abhängigkeiten und Repo-Check bleiben wie sie sind",
+        en: "New “Code network” on the project page: each file a dot, each import a line, colored by area. Drag, zoom, search – a click shows what a file uses and who uses it, with a link into the repository. Dependencies and repo check stay as they are",
+      },
+      {
+        type: "neu",
+        text: "Die KI sieht das Netz auch: get_code_graph zeigt, welche Dateien eine Datei einbinden – damit sie vor einer Änderung weiß, was betroffen ist",
+        en: "The AI sees the network too: get_code_graph shows which files import a file – so it knows what a change affects",
+      },
+    ],
+  },
+  {
     version: "0.8.8",
     date: "2026-09-17",
     title: "Konsole bleibt sauber",
