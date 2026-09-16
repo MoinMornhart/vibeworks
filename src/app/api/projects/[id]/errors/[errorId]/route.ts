@@ -16,7 +16,7 @@ import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { id: string; errorId: string };
 
-const bodySchema = z.union([z.object({ status: z.enum(ERROR_STATUSES) }), z.object({ action: z.literal("task") })]);
+const bodySchema = z.union([z.object({ status: z.enum(ERROR_STATUSES) }), z.object({ action: z.enum(["task", "notfix"]) })]);
 
 async function find(projectId: string, errorId: string) {
   const e = await db.appError.findFirst({ where: { id: errorId, projectId } });
@@ -44,7 +44,14 @@ export const PATCH = route<Params>(async (req, { params }) => {
   // deshalb nur Nachricht und Anzahl, keine Stack-, Seiten- oder Client-Angaben.
   // Die Details bleiben im Fehler-Eingang, der Link führt dorthin.
   const description = [t("task.intro", { n: e.count, date }), "", `**${e.type ? `${e.type}: ` : ""}${e.message}**`, "", `${config.appUrl}/projects/${id}#fehler`].join("\n");
-  const input = taskCreateSchema.parse({ title: t("task.title", { message: truncate(e.message, 120) }).slice(0, 200), description, labels: [t("task.label")] });
+  // „Notfix“ (#39): dieselbe Aufgabe, aber heute fällig, für Claude und deutlich gekennzeichnet.
+  const notfix = body.action === "notfix";
+  const input = taskCreateSchema.parse({
+    title: (notfix ? t("task.notfixTitle", { message: truncate(e.message, 110) }) : t("task.title", { message: truncate(e.message, 120) })).slice(0, 200),
+    description: notfix ? [t("task.notfixIntro"), "", description].join("\n") : description,
+    labels: notfix ? [t("task.label"), t("task.notfixLabel")] : [t("task.label")],
+    ...(notfix ? { assignee: "Claude", dueDate: new Date().toISOString().slice(0, 10) } : {}),
+  });
   const { task } = await createTask(user.id, id, input);
   const updated = await db.appError.update({ where: { id: e.id }, data: { taskId: task.id } });
   return json({ item: serializeAppError(updated) });

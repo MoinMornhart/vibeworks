@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.3",
+    date: "2026-09-16",
+    title: "Notfix und Code-Suche",
+    titleEn: "Notfix and code search",
+    changes: [
+      {
+        type: "neu",
+        text: "„Notfix“ im Fehler-Eingang: ein Klick macht aus einem Fehler eine dringende Aufgabe für Claude – heute fällig, klar gekennzeichnet. Stack und Seitenangaben bleiben wie bisher im Eingang und wandern nicht ins Issue",
+        en: "“Notfix” in the error inbox: one click turns an error into an urgent task for Claude – due today, clearly marked. Stack traces and page details stay in the inbox and never reach the issue",
+      },
+      {
+        type: "neu",
+        text: "Zwei neue MCP-Werkzeuge: Claude kann jetzt die Dateien des verknüpften Repositories auflisten und im Code nach einer Stelle suchen – mit Datei, Zeile und Fundstelle, statt Pfade zu raten. Gesucht wird in der Kopie, die VibeWorks ohnehin schon geholt hat",
+        en: "Two new MCP tools: Claude can list the files of the linked repository and search the code, with file, line and the matching line, instead of guessing paths. It searches the copy VibeWorks has already fetched",
+      },
+    ],
+  },
+  {
     version: "0.8.2",
     date: "2026-09-16",
     title: "Admin vergibt ein neues Passwort",

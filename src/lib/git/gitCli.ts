@@ -159,6 +159,34 @@ export function readFileViaGit(projectId: string, branch: string | null, file: s
   });
 }
 
+/** Alle Dateipfade des zuletzt geholten Stands – ohne Inhalte, ohne Netz. */
+export function listFilesViaGit(projectId: string, branch: string | null): Promise<string[]> {
+  if (!branch || !SAFE_BRANCH.test(branch)) return Promise.resolve([]);
+  return locked(projectId, async () => {
+    const dir = repoDir(projectId);
+    if (!(await exists(path.join(dir, "HEAD")))) return [];
+    const out = await git(["-C", dir, "ls-tree", "-r", "--name-only", `refs/heads/${branch}`], gitEnv(null), 20_000).catch(() => "");
+    return out.split("\n").map((l) => l.trim()).filter(Boolean);
+  });
+}
+
+/**
+ * Im Code suchen – „git grep“ im schon vorhandenen Klon. Gesucht wird
+ * wortwörtlich (-F), damit niemand über ein Muster die Suche lahmlegen kann.
+ */
+export function grepViaGit(projectId: string, branch: string | null, needle: string): Promise<string> {
+  if (!branch || !SAFE_BRANCH.test(branch) || !needle.trim()) return Promise.resolve("");
+  return locked(projectId, async () => {
+    const dir = repoDir(projectId);
+    if (!(await exists(path.join(dir, "HEAD")))) return "";
+    return git(
+      ["-C", dir, "grep", "-n", "-I", "-i", "-F", "--max-count=5", "-e", needle.slice(0, 200), `refs/heads/${branch}`],
+      gitEnv(null),
+      20_000,
+    ).catch(() => "");
+  });
+}
+
 export async function dropGitCache(projectId: string): Promise<void> {
   try {
     await rm(repoDir(projectId), { recursive: true, force: true });

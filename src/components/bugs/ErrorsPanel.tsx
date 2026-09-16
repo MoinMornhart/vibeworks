@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bug, Check, ChevronDown, Copy, EyeOff, KeyRound, ListPlus, RotateCcw, Trash2 } from "lucide-react";
+import { Bug, Check, ChevronDown, Copy, EyeOff, KeyRound, ListPlus, RotateCcw, Trash2, Zap } from "lucide-react";
 import type { AppErrorItem } from "@/lib/bugs";
 import { snippets, type ErrorStatus } from "@/lib/bugsLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -101,7 +101,7 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
     setData((d) => (d ? { ...d, errors: d.errors.map((x) => (x.id === item.id ? item : x)) } : d));
   }
 
-  async function patch(item: AppErrorItem, body: { status: ErrorStatus } | { action: "task" }) {
+  async function patch(item: AppErrorItem, body: { status: ErrorStatus } | { action: "task" | "notfix" }) {
     const res = await run(() => api<{ item: AppErrorItem }>(`/api/projects/${projectId}/errors/${item.id}`, { method: "PATCH", body }));
     if (res) {
       replace(res.item);
@@ -251,6 +251,11 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
                             <button type="button" className="btn btn-sm" disabled={busy || Boolean(e.taskId)} onClick={() => void patch(e, { action: "task" })}>
                               <ListPlus size={14} /> {e.taskId ? t("actions.taskDone") : t("actions.task")}
                             </button>
+                            {!e.taskId && (
+                              <button type="button" className="btn btn-sm !text-amber-400" disabled={busy} data-testid="notfix" title={t("actions.notfixHint")} onClick={() => void patch(e, { action: "notfix" })}>
+                                <Zap size={14} /> {t("actions.notfix")}
+                              </button>
+                            )}
                             <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => void remove(e)}>
                               <Trash2 size={14} /> {t("actions.delete")}
                             </button>

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { grepViaGit, listFilesViaGit } from "@/lib/git/gitCli";
+import { fileSummary, filterFiles, parseGrep } from "@/lib/codeIndexLogic";
 import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
 import { serializeAppError, setErrorStatus } from "@/lib/bugs";
@@ -510,6 +512,47 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         tasks: res.tasks.map((t) => ({ ...t, snippet: highlight(t.snippet) })),
         docs: res.docs.map((d) => ({ ...d, snippet: highlight(d.snippet) })),
       };
+    },
+  },
+  {
+    name: "list_code_files",
+    title: "List code files",
+    description:
+      "Files of the project's linked repository (from the copy VibeWorks already fetched, no network call). Without a pattern you get a summary plus the first files; with a pattern (substring or * wildcard, e.g. 'src/lib/*.ts') you get the matching paths. Use it before guessing a path.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, pattern: { type: "string", maxLength: 200, description: "Substring or * wildcard" } },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { defaultBranch: true } });
+      const files = await listFilesViaGit(project.id, cache?.defaultBranch ?? null);
+      if (!files.length) return { project: { id: project.id, name: project.name }, files: [], note: "No fetched copy of the repository. Sync the project's repository in VibeWorks first." };
+      const pattern = typeof args.pattern === "string" ? args.pattern : null;
+      return { project: { id: project.id, name: project.name }, branch: cache?.defaultBranch ?? null, summary: fileSummary(files), matches: filterFiles(files, pattern) };
+    },
+  },
+  {
+    name: "search_code",
+    title: "Search code",
+    description:
+      "Search the project's linked repository for a literal string (case-insensitive) and get file, line number and the matching line – the fast way to find a function, a component or a call site. Works on the copy VibeWorks already fetched.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, query: { type: "string", minLength: 2, maxLength: 200 } },
+      required: ["project", "query"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { defaultBranch: true } });
+      const out = await grepViaGit(project.id, cache?.defaultBranch ?? null, z.string().min(2).max(200).parse(args.query));
+      const hits = parseGrep(out);
+      return { project: { id: project.id, name: project.name }, branch: cache?.defaultBranch ?? null, hits, note: hits.length ? undefined : "Nothing found – or the repository has not been fetched yet." };
     },
   },
   {
