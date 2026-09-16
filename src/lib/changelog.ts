@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.6",
+    date: "2026-09-16",
+    title: "TypeScript 7 und vitest 5",
+    titleEn: "TypeScript 7 and vitest 5",
+    changes: [
+      {
+        type: "besser",
+        text: "TypeScript 7 (der neue, deutlich schnellere Compiler) prüft jetzt Code und Build; vitest 5 führt die Tests aus – beide ohne Änderungen am Code, alle Tests grün",
+        en: "TypeScript 7 (the new, much faster compiler) now checks code and build; vitest 5 runs the tests – both without code changes, all tests green",
+      },
+    ],
+  },
+  {
     version: "1.1.5",
     date: "2026-09-16",
     title: "Code-Netz für Kotlin, Java, Go, C, Rust – Tokens täglich geprüft",
