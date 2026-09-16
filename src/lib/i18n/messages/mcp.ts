@@ -3,6 +3,34 @@ import type { Shape } from "../types";
 // Namensraum „mcp“: API-Schlüssel für Claude Code und Meldungen des MCP-Servers.
 
 const de = {
+  keySettings: {
+    open: "Einstellungen",
+    scopeLabel: "Darf nutzen",
+    scope: {
+      read: "Nur lesen",
+      tasks: "Lesen und Aufgaben",
+      all: "Alles",
+    },
+    scopeHint: {
+      read: "Die KI sieht Projekte, Aufgaben, Fehler und Code, ändert aber nichts.",
+      tasks: "Dazu Aufgaben anlegen und bearbeiten, Tagesplan, Zeiten, Fehler erledigen und Memos anheften – Projekte, Notizen und Docs bleiben unangetastet.",
+      all: "Alle Werkzeuge – so wie bisher.",
+    },
+    reminderLabel: "Erinnerungen an die KI",
+    reminder: {
+      default: "Standard",
+      custom: "Eigener Text",
+      off: "Aus",
+    },
+    reminderHint: "Die KI bekommt den Hinweis mit einer Werkzeug-Antwort – damit sie nicht vergisst, den Status in VibeWorks aktuell zu halten.",
+    defaultText: "Standard: Status aktuell halten (In Arbeit mit Namen, Blockiert mit Grund, Erledigt am Ende), Hinweise der Aufgabe befolgen, Gelerntes als Memo anheften.",
+    textPlaceholder: "z. B. „Antworte immer auf Deutsch und frag vor jedem Push nach.“",
+    every: "Bei jedem {n}. Aufruf",
+    everyLabel: "Wie oft",
+    save: "Speichern",
+    saved: "Einstellungen gespeichert.",
+    summary: "{scope} · Erinnerung: {reminder}",
+  },
   section: {
     title: "Claude Code & API-Schlüssel",
     description: "Mit einem API-Schlüssel arbeitet Claude Code (oder ein anderer MCP-Client) direkt mit deinen Projekten, Aufgaben, Notizen und Docs – mit deinen Rechten.",
@@ -71,6 +99,34 @@ const de = {
 };
 
 const en: Shape<typeof de> = {
+  keySettings: {
+    open: "Settings",
+    scopeLabel: "May use",
+    scope: {
+      read: "Read only",
+      tasks: "Read and tasks",
+      all: "Everything",
+    },
+    scopeHint: {
+      read: "The AI sees projects, tasks, errors and code but changes nothing.",
+      tasks: "Plus creating and editing tasks, the day plan, timers, resolving errors and pinning memos – projects, notes and docs stay untouched.",
+      all: "All tools – as before.",
+    },
+    reminderLabel: "Reminders for the AI",
+    reminder: {
+      default: "Default",
+      custom: "Custom text",
+      off: "Off",
+    },
+    reminderHint: "The AI gets the note along with a tool result – so it doesn't forget to keep the status in VibeWorks up to date.",
+    defaultText: "Default: keep the status up to date (in progress with a name, blocked with a reason, done at the end), follow the task's instructions, pin what was learned as a memo.",
+    textPlaceholder: "e.g. “Always reply in German and ask before every push.”",
+    every: "On every {n}th call",
+    everyLabel: "How often",
+    save: "Save",
+    saved: "Settings saved.",
+    summary: "{scope} · reminder: {reminder}",
+  },
   section: {
     title: "Claude Code & API keys",
     description: "With an API key, Claude Code (or any other MCP client) works directly with your projects, tasks, notes and docs – with your permissions.",

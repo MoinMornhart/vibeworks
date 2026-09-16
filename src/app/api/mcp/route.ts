@@ -12,6 +12,7 @@ import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { taskIdOfCall } from "@/lib/taskInfoLogic";
+import { reminderFor, toolAllowed } from "@/lib/mcp/keySettings";
 
 // MCP-Endpunkt für Claude Code: „Streamable HTTP“, zustandslos, Anmeldung
 // per API-Schlüssel (Mein Konto → Claude Code & API-Schlüssel).
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
   const { status, body } = await handleBody(raw, ctx, {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,
-    tools: allMcpTools(),
+    // Nur die Werkzeuge, die dieser Schlüssel nutzen darf – andere gibt es für ihn nicht
+    tools: allMcpTools().filter((tool) => toolAllowed(tool, auth.settings.scope)),
     prompts: MCP_PROMPTS,
     resources: MCP_RESOURCES,
     onInitialize: async (client) => {
@@ -67,7 +69,12 @@ export async function POST(req: NextRequest) {
       if (call.ok && call.tool === CONFIRM_TOOL) rulesAcked = true;
       await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms, taskId: taskIdOfCall(call.args, call.result) } });
     },
-    notice: (tool) => (rulesAcked || tool === RULES_TOOL || tool === CONFIRM_TOOL ? null : RULES_REMINDER),
+    notice: async (tool) => {
+      if (!rulesAcked && tool !== RULES_TOOL && tool !== CONFIRM_TOOL) return RULES_REMINDER;
+      if (auth.settings.reminderMode === "off") return null;
+      // Erinnerung bei jedem n-ten Aufruf dieses Schlüssels (#48/#49)
+      return reminderFor(auth.settings, await db.mcpCall.count({ where: { tokenId: auth.tokenId } }));
+    },
     describeError: async (err) => {
       if (err instanceof ZodError) return err.issues.map((i) => `${i.path.join(".") || "input"}: ${tr(i.message)}`).join("\n");
       if (err instanceof ApiError) {

@@ -8,6 +8,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import type { ApiTokenItem } from "@/lib/mcp/token";
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
+import { KeySettings } from "./KeySettings";
 
 /** Programmname aus dem User-Agent, z. B. „claude-cli/2.1.0“. */
 const shortAgent = (ua: string | null) => (ua ? ua.split(/[\s(]/)[0].slice(0, 40) : "?");
@@ -155,6 +156,7 @@ export function ApiTokensSection({
                   </p>
                 )}
               </div>
+              <KeySettings item={item} onSaved={(next) => setItems((list) => list.map((x) => (x.id === next.id ? next : x)))} />
               {confirming === item.id ? (
                 <div className="flex gap-2">
                   <button type="button" className="btn btn-sm text-red-400" disabled={busy} onClick={() => void revoke(item.id)}>{t("revokeConfirm")}</button>

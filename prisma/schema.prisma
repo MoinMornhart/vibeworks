@@ -824,6 +824,12 @@ model ApiToken {
   clientName     String?
   clientVersion  String?
   clientProtocol String?
+  /// Werkzeug-Umfang: read · tasks · all
+  scope          String  @default("all")
+  /// Erinnerungen an die KI: default · custom · off, Text und „jeder n-te Aufruf“
+  reminderMode   String  @default("default")
+  reminderText   String?
+  reminderEvery  Int     @default(10)
   calls      McpCall[]
   createdAt  DateTime  @default(now())
 
@@ -847,6 +853,7 @@ model McpCall {
   @@index([userId, createdAt])
   @@index([createdAt])
   @@index([taskId, createdAt])
+  @@index([tokenId, createdAt])
 }
 
 /// Ideen-Eingang: schnell Eingeworfenes, später zu Projekt oder Aufgabe gemacht (dann gelöscht).

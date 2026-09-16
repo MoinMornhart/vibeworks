@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.5",
+    date: "2026-09-17",
+    title: "Einstellungen je MCP-Schlüssel",
+    titleEn: "Settings per MCP key",
+    changes: [
+      {
+        type: "neu",
+        text: "Jeder API-Schlüssel hat jetzt eigene Einstellungen: was die KI damit darf (nur lesen, lesen und Aufgaben, alles) und wie sie erinnert wird – Standard-Erinnerung, eigener Text oder aus, bei jedem n-ten Aufruf. So vergisst die KI nicht, den Status aktuell zu halten",
+        en: "Every API key now has its own settings: what the AI may do with it (read only, read and tasks, everything) and how it is reminded – default reminder, custom text or off, on every n-th call. That way the AI doesn't forget to keep the status up to date",
+        link: "/account#mcp",
+      },
+    ],
+  },
+  {
     version: "0.9.4",
     date: "2026-09-17",
     title: "Feedback-Eingang",

@@ -40,7 +40,14 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
       .update({ where: { id: row.id }, data: { lastUsedAt: new Date(), lastUsedIp: meta.ip?.slice(0, 64) ?? null, lastUsedUserAgent: meta.userAgent?.slice(0, 300) ?? null } })
       .catch(() => undefined);
   }
-  return { auth: { tokenId: row.id, user: row.user, rulesAckAt: row.rulesAckAt } };
+  return {
+    auth: {
+      tokenId: row.id,
+      user: row.user,
+      rulesAckAt: row.rulesAckAt,
+      settings: { scope: row.scope, reminderMode: row.reminderMode, reminderText: row.reminderText, reminderEvery: row.reminderEvery },
+    },
+  };
 }
 
 /** Konto zum Bearer-Schlüssel – null bei fehlendem, kaputtem, unbekanntem, widerrufenem Schlüssel oder gesperrtem Konto. */
@@ -63,6 +70,10 @@ export function serializeApiToken(t: ApiToken) {
     clientProtocol: t.clientProtocol,
     lastUsedIp: t.lastUsedIp,
     lastUsedUserAgent: t.lastUsedUserAgent,
+    scope: t.scope,
+    reminderMode: t.reminderMode,
+    reminderText: t.reminderText,
+    reminderEvery: t.reminderEvery,
   };
 }
 export type ApiTokenItem = ReturnType<typeof serializeApiToken>;
