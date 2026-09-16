@@ -21,6 +21,22 @@ describe("Platzhalter", () => {
   });
 });
 
+describe("CLAUDE.md mit Aufbau (#101)", () => {
+  it("setzt die Aufbau-Tabelle vor die Aufgaben", () => {
+    const md = buildClaudeMd(
+      {
+        name: "X", summary: null, description: null, status: "OPEN", priority: 2, progress: 0, tags: [], repoUrl: null, liveUrl: null, issueSync: false, url: "u", tasks: [], notes: [],
+        structure: { overview: "Next.js", rows: [{ area: "API", path: "src/app/api/", purpose: "Endpunkte", how: "" }], updatedAt: null, updatedBy: null },
+      },
+      makeT("de", "prompts"),
+      makeT("de", "status"),
+    );
+    expect(md).toContain("## Aufbau\n\nNext.js\n\n| Bereich | Pfad | Zweck | So funktioniert’s |");
+    expect(md.indexOf("## Aufbau")).toBeLessThan(md.indexOf("## Offene Aufgaben"));
+    expect(md).toContain("list_workflows");
+  });
+});
+
 describe("CLAUDE.md", () => {
   const md = buildClaudeMd(
     {

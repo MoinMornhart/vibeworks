@@ -13,6 +13,10 @@ import { tk, translateMessage } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { seenTaskIdsOfResult, taskIdOfCall } from "@/lib/taskInfoLogic";
 import { reminderFor, toolAllowed } from "@/lib/mcp/keySettings";
+import { runNoticeFor } from "@/lib/aiWorkflows";
+
+/** Werkzeuge, die den Schritt selbst nennen – dort kein zusätzlicher Workflow-Hinweis. */
+const WORKFLOW_TOOLS = new Set(["start_workflow", "complete_workflow_step"]);
 
 // MCP-Endpunkt für Claude Code: „Streamable HTTP“, zustandslos, Anmeldung
 // per API-Schlüssel (Mein Konto → Claude Code & API-Schlüssel).
@@ -76,9 +80,11 @@ export async function POST(req: NextRequest) {
     },
     notice: async (tool) => {
       if (!rulesAcked && tool !== RULES_TOOL && tool !== CONFIRM_TOOL) return rulesOutdated ? RULES_UPDATED_REMINDER : RULES_REMINDER;
-      if (auth.settings.reminderMode === "off") return null;
+      // Offener Workflow: nächster Schritt bei jedem Aufruf, bis er fertig ist (#101)
+      const workflow = WORKFLOW_TOOLS.has(tool) ? null : await runNoticeFor(auth.tokenId);
       // Erinnerung bei jedem n-ten Aufruf dieses Schlüssels (#48/#49)
-      return reminderFor(auth.settings, await db.mcpCall.count({ where: { tokenId: auth.tokenId } }));
+      const reminder = auth.settings.reminderMode === "off" ? null : reminderFor(auth.settings, await db.mcpCall.count({ where: { tokenId: auth.tokenId } }));
+      return [workflow, reminder].filter(Boolean).join("\n\n") || null;
     },
     describeError: async (err) => {
       if (err instanceof ZodError) return err.issues.map((i) => `${i.path.join(".") || "input"}: ${tr(i.message)}`).join("\n");

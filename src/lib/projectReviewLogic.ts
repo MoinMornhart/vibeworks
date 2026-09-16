@@ -7,6 +7,8 @@ export type ReviewFinding =
   | "noNotes"
   | "noReadme"
   | "noClaudeMd"
+  | "noStructure"
+  | "structureOutdated"
   | "overdueTasks"
   | "blockedTasks"
   | "staleTasks"
@@ -22,6 +24,9 @@ export interface ProjectFacts {
   /** Dateien im Repository – null, wenn es keine lokale Kopie gibt */
   repoFiles: string[] | null;
   hasRepo: boolean;
+  /** Zeilen im Projektaufbau (#101) und Pfade darin, die es nicht gibt */
+  structureRows?: number;
+  structureMissing?: number;
   syncError: string | null;
   ciState: string | null;
   progress: number;
@@ -49,6 +54,8 @@ export function reviewProject(p: ProjectFacts, now = Date.now()): ProjectReview 
     if (!p.repoFiles.some((f) => /^readme(\.\w+)?$/i.test(f))) findings.push("noReadme");
     if (!hasFile(p.repoFiles, "CLAUDE.md") && !hasFile(p.repoFiles, "AGENTS.md")) findings.push("noClaudeMd");
   }
+  if (p.hasRepo && p.structureRows === 0) findings.push("noStructure");
+  if (p.structureMissing) findings.push("structureOutdated");
   if (p.hasRepo && p.syncError) findings.push("syncError");
   if (p.ciState === "failure") findings.push("ciFailing");
 
@@ -77,7 +84,7 @@ export function reviewProject(p: ProjectFacts, now = Date.now()): ProjectReview 
   // Fortschritt passt nicht zu den Aufgaben (mehr als 30 Punkte daneben)
   if (total >= 3 && Math.abs(Math.round((done / total) * 100) - p.progress) > 30) findings.push("progressMismatch");
 
-  const weights: Partial<Record<ReviewFinding, number>> = { noDescription: 25, shortDescription: 10, noNotes: 10, noReadme: 15, noClaudeMd: 10, syncError: 15, ciFailing: 10, overdueTasks: 10, blockedTasks: 5, staleTasks: 5, doingWithoutAssignee: 5, progressMismatch: 5 };
+  const weights: Partial<Record<ReviewFinding, number>> = { noDescription: 25, shortDescription: 10, noNotes: 10, noReadme: 15, noClaudeMd: 10, noStructure: 10, structureOutdated: 5, syncError: 15, ciFailing: 10, overdueTasks: 10, blockedTasks: 5, staleTasks: 5, doingWithoutAssignee: 5, progressMismatch: 5 };
   const score = Math.max(0, 100 - findings.reduce((s, f) => s + (weights[f] ?? 0), 0));
   return { findings, open, done, score };
 }
@@ -89,6 +96,8 @@ export const FINDING_HINTS: Record<ReviewFinding, string> = {
   noNotes: "No notes yet – document decisions, setup or links as a note (create_note).",
   noReadme: "The repository has no README.",
   noClaudeMd: "The repository has no CLAUDE.md/AGENTS.md – get_claude_md returns a template.",
+  noStructure: "The project structure table is empty – run the \"structure\" workflow or save it with update_project_structure.",
+  structureOutdated: "The project structure names paths that no longer exist – update it (get_project_structure shows them).",
   overdueTasks: "Some open tasks are overdue – finish them or move the due date (update_task).",
   blockedTasks: "Some tasks are blocked – check the reason in their description.",
   staleTasks: "Some open tasks have not changed for 14 days – update or close them.",

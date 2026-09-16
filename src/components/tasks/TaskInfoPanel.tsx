@@ -32,7 +32,13 @@ export function WorkClock({ since, who }: { since: string; who: string | null })
   const duration = useDuration();
   const seconds = (now - new Date(since).getTime()) / 1000;
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-md bg-violet-500/15 px-1.5 py-px text-[11px] text-violet-300" title={t("info.workingSince", { who: who ?? "?", time: duration(seconds) })} data-testid="task-work-clock">
+    <span
+      className="inline-flex items-center gap-0.5 rounded-md bg-violet-500/15 px-1.5 py-px text-[11px] text-violet-300"
+      title={t("info.workingSince", { who: who ?? "?", time: duration(seconds) })}
+      data-testid="task-work-clock"
+      // Server und Browser rechnen mit verschiedenen „jetzt“ – kein Hydrationsfehler an der Minutengrenze
+      suppressHydrationWarning
+    >
       <Clock size={11} className="animate-pulse" /> {duration(seconds)}
     </span>
   );

@@ -1,6 +1,7 @@
 import type { ProjectStatus, TaskStatus } from "@/generated/prisma/client";
 import type { TFunction } from "./i18n/messages";
 import { dayKey, truncate } from "./utils";
+import { structureMarkdown, type ProjectStructure } from "./projectStructureLogic";
 
 // CLAUDE.md eines Projekts: alles, was Claude Code zum Einstieg wissen
 // sollte – Beschreibung, Stand, offene Aufgaben, wichtige Notizen und die
@@ -20,6 +21,8 @@ export interface ClaudeMdInput {
   url: string;
   tasks: Array<{ title: string; status: TaskStatus; dueDate: Date | null; issueNumber: number | null; description: string | null }>;
   notes: Array<{ title: string | null; content: string; pinned: boolean }>;
+  /** Projektaufbau (#101) */
+  structure?: ProjectStructure;
 }
 
 export function buildClaudeMd(p: ClaudeMdInput, t: TFunction<"prompts">, ts: TFunction<"status">): string {
@@ -34,6 +37,11 @@ export function buildClaudeMd(p: ClaudeMdInput, t: TFunction<"prompts">, ts: TFu
   if (p.liveUrl) out.push(`- ${t("md.live")}: ${p.liveUrl}`);
   if (p.tags.length) out.push(`- ${t("md.tags")}: ${p.tags.join(", ")}`);
   out.push(`- VibeWorks: ${p.url}`, "");
+
+  const structure = p.structure
+    ? structureMarkdown(p.structure, { area: t("md.col.area"), path: t("md.col.path"), purpose: t("md.col.purpose"), how: t("md.col.how") })
+    : "";
+  if (structure) out.push(`## ${t("md.structure")}`, "", structure, "");
 
   const open = p.tasks.filter((x) => x.status !== "DONE");
   out.push(`## ${t("md.openTasks")}`, "");
@@ -66,5 +74,6 @@ export function buildClaudeMd(p: ClaudeMdInput, t: TFunction<"prompts">, ts: TFu
   out.push(`- ${t("md.w1", { name: p.name })}`);
   out.push(`- ${t("md.w2")}`);
   if (p.repoUrl && p.issueSync) out.push(`- ${t("md.w3")}`);
+  out.push(`- ${t("md.w4")}`);
   return `${out.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n`;
 }

@@ -28,6 +28,40 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.8",
+    date: "2026-09-16",
+    title: "KI-Workflows, Projektaufbau und strengere KI-Regeln",
+    titleEn: "AI workflows, project structure and stricter AI rules",
+    changes: [
+      {
+        type: "neu",
+        text: "KI-Workflows: Checklisten, die die KI Schritt für Schritt abarbeitet – jeder Schritt mit Prüfung und Beleg, feste Reihenfolge, bis zum Ende erinnert VibeWorks bei jedem Aufruf an den nächsten Schritt. Mitgeliefert: Feature, Fehler beheben, Release, Durchsicht, Projektaufbau; eigene legt man im Projekt an (oder die KI mit save_workflow)",
+        en: "AI workflows: checklists the AI works through step by step – each step with a check and evidence, fixed order, and VibeWorks reminds the AI of the next step with every call until the end. Built-in: feature, bug fix, release, review, project structure; add your own in the project (or let the AI use save_workflow)",
+      },
+      {
+        type: "neu",
+        text: "Projektaufbau: Tabelle je Projekt mit Bereich, Pfad, Zweck und Funktionsweise – die KI legt sie per MCP aus dem echten Code an und hält sie aktuell, VibeWorks markiert Pfade, die es nicht mehr gibt, und schreibt die Tabelle in die CLAUDE.md",
+        en: "Project structure: a table per project with area, path, purpose and how it works – the AI builds it from the real code over MCP and keeps it current, VibeWorks flags paths that no longer exist and adds the table to CLAUDE.md",
+      },
+      {
+        type: "besser",
+        text: "Regeln für die KI: neue Abschnitte „Before you say done“ und „Don't guess“ – nichts als fertig melden, was nicht geprüft ist, keine erfundenen Dateien oder Testergebnisse; die Standard-Erinnerung sagt das auch. Workflows stehen der KI zusätzlich als Befehle (MCP-Prompts) zur Verfügung",
+        en: "AI rules: new sections “Before you say done” and “Don't guess” – nothing reported as done without verification, no invented files or test results; the default reminder says so too. Workflows are also offered to the AI as commands (MCP prompts)",
+        link: "/account#mcp",
+      },
+      {
+        type: "besser",
+        text: "review_projects meldet fehlenden oder veralteten Projektaufbau",
+        en: "review_projects reports a missing or outdated project structure",
+      },
+      {
+        type: "fix",
+        text: "Laufende Arbeitsuhr an Aufgaben löste beim Laden gelegentlich einen Darstellungsfehler aus, wenn die Aufgabe gerade erst begonnen wurde",
+        en: "The running work clock on tasks occasionally caused a rendering error on load when the task had just been started",
+      },
+    ],
+  },
+  {
     version: "1.1.7",
     date: "2026-09-16",
     title: "Erste Schritte, Erledigte löschen, Projekt-Überblick für die KI",

@@ -3,6 +3,8 @@
 // AGENTS.md). Die Werkzeugliste entsteht aus den echten Werkzeugen, damit die
 // KI nur kennt, was es wirklich gibt.
 
+import { VERIFY_BEFORE_DONE, WORKFLOW_GUIDE } from "@/lib/aiWorkflowLogic";
+
 export const RULES_TOOL = "get_agent_rules";
 export const CONFIRM_TOOL = "confirm_agent_rules";
 
@@ -41,10 +43,22 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 These rules are not optional. Follow them in every session and every reply.
 1. Start of every reply: call list_tasks (and list_problems when something may be broken) before you do anything else.
 2. No work without a task: before you change code or files, find the matching task (get_task). If there is none, create one with create_task first.
-3. Status always true: set DOING with your name as assignee the moment you start, BLOCKED with a reason when stuck, DONE only when the work is really finished.
+3. Status always true: set DOING with your name as assignee the moment you start, BLOCKED with a reason when stuck, DONE only when the work is really finished and verified (see "Before you say done").
 4. End of every reply: never end a reply without having used VibeWorks in it – check the open tasks again and name what is still waiting.
 5. Work through open tasks completely, highest priority first – don't stop halfway and don't leave tasks in DOING when you are done.
 6. Recurring tasks: marking one DONE creates its next occurrence. Never mark that new occurrence DONE to clear the list – it is due later; leave it open.
+7. Bigger jobs (a feature, a bug fix, a release, a review) run as a workflow: list_workflows, then start_workflow – see "Workflows".
+
+## Before you say done
+Never tell the user something is finished until you have gone through this list:
+${VERIFY_BEFORE_DONE.map((v, i) => `${i + 1}. ${v}`).join("\n")}
+
+## Don't guess
+- If you are not sure a file, function, task or setting exists, look it up (list_code_files, search_code, get_code_graph, list_tasks) – don't write from memory.
+- Never claim a command, test or build passed without running it and seeing the output. If you could not run it, say so plainly.
+- Report failures and partial results honestly – a clear "this is still broken" beats a confident wrong answer.
+- Don't widen or shrink the request on your own. If something is unclear or you had to decide something, say it in your reply.
+- Before you create a task, note or workflow, check whether it already exists.
 
 ## Language
 - Write everything you store in VibeWorks – task titles, descriptions, notes, docs, memos – in ${language}, the user's language, even though these rules are in English. Keep existing titles in their language.
@@ -65,6 +79,16 @@ These rules are not optional. Follow them in every session and every reply.
    Columns can be renamed or added by the user: every task carries "column" (the name on the board) and get_project lists all "columns". Always talk about a task by its column name, re-read the task before you rely on its column, and you may pass a column name as status to update_task.
 3. Stuck: status BLOCKED with a short reason in the description.
 4. Finished: status DONE. With issue sync the Git issue follows automatically; "Fixes #n" in a commit message closes it too.
+
+## Workflows
+- A workflow is a checklist for a kind of job. Built-in: feature, bugfix, release, review, structure; projects can add their own (list_workflows).
+- start_workflow returns the steps with a check for each. Work through them in order and report every step with complete_workflow_step – done with evidence (what you did, what the check showed) or skipped with a reason. Never tick off a step you didn't do.
+- Until the run is finished every tool result names the next step. A run ends by itself after the last step; stop it with cancel only when the user wants to.
+- When the user describes a routine they repeat, offer to save it with save_workflow. ${WORKFLOW_GUIDE}
+
+## Project structure
+- get_project_structure shows how a project is built: areas, real paths, purpose and how they work. Read it before you touch code you don't know yet.
+- Keep it true: after adding, moving or removing an area, update it with update_project_structure (merge: true for single rows). Only describe code you actually read and only use paths from list_code_files – the tool reports paths that don't exist.
 
 ## Problems and errors
 - list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site. Its "limitations" list areas that are off or limited (e.g. issues disabled in the repository) – the rest of the repository still works, so keep going and tell the user what is limited.

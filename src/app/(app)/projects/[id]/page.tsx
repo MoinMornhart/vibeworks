@@ -34,6 +34,8 @@ import { dayKey } from "@/lib/utils";
 import type { ProjectPermission } from "@/lib/rolesLogic";
 import { normalizeBoard } from "@/lib/boardConfig";
 import { projectPeople } from "@/lib/projectPeople";
+import { StructurePanel } from "@/components/projects/StructurePanel";
+import { WorkflowPanel } from "@/components/projects/WorkflowPanel";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -146,6 +148,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         people={people.map(({ username, name }) => ({ username, name }))}
       />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />
+      <StructurePanel projectId={project.id} projectName={project.name} canEdit={can("notes.edit")} />
+      <WorkflowPanel projectId={project.id} projectName={project.name} canEdit={can("project.edit")} canRun={can("tasks.edit")} />
       <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />
       <GitPanel
         projectId={project.id}

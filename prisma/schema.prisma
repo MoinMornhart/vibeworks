@@ -298,6 +298,8 @@ model Project {
   issueImport     String    @default("trusted")
   /// GitHub-Konten mit Rolle im Projekt: [{ login, role: worker | bughunter }] (#69)
   gitPeople       Json?
+  /// Projektaufbau: { overview, rows: [{ area, path, purpose, how }], updatedAt, updatedBy } (#101)
+  structure       Json?
   /// Bis hierhin wurden Issue-Kommentare auf Bot-Befehle geprüft (#79)
   issueCommentsAt DateTime?
   id                  String         @id @default(cuid())
@@ -388,6 +390,8 @@ model Project {
   suggestions       Suggestion[]
   appErrors         AppError[]
   codeMemos         CodeMemo[]
+  aiWorkflows       AiWorkflow[]
+  workflowRuns      WorkflowRun[]
   communityPosts    CommunityPost[]
   communityBans     CommunityBan[]
   communityMessages CommunityMessage[]
@@ -610,6 +614,51 @@ model CommunityBan {
   createdAt   DateTime @default(now())
 
   @@unique([projectId, userId])
+}
+
+/// Eigener KI-Workflow eines Projekts (#101) – mitgelieferte stehen in src/lib/aiWorkflowLogic.ts
+model AiWorkflow {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key         String
+  title       String
+  description String   @default("")
+  /// [{ title, check }]
+  steps       Json
+  authorName  String?
+  /// web · mcp
+  via         String   @default("web")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, key])
+}
+
+/// Ein Durchlauf eines KI-Workflows (#101) – Schritte als Kopie, damit spätere Änderungen ihn nicht verbiegen
+model WorkflowRun {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String
+  /// API-Schlüssel, mit dem die KI gestartet hat – für die Hinweise
+  tokenId     String?
+  taskId      String?
+  workflowKey String
+  title       String
+  /// [{ title, check }]
+  steps       Json
+  /// [{ step, status: done | skipped, note, at }]
+  results     Json      @default("[]")
+  /// running · done · cancelled
+  status      String    @default("running")
+  summary     String?
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  finishedAt  DateTime?
+
+  @@index([tokenId, status])
+  @@index([projectId, startedAt])
 }
 
 /// Memo-Netz (#60): Notiz an einer Datei des Repositories – im Code-Netz sichtbar, auch über MCP

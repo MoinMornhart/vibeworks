@@ -49,6 +49,17 @@ import { fillPrompt } from "@/lib/prompts";
 import { protectedChanges } from "@/lib/protect";
 import { currentEntry, stopRunning } from "@/lib/timeServer";
 import { MAX_FOCUS } from "@/lib/today";
+import { missingPaths, readStructure, structureInputSchema } from "@/lib/projectStructureLogic";
+import { saveStructure, structureView } from "@/lib/projectStructure";
+import { BUILTIN_WORKFLOWS, VERIFY_BEFORE_DONE, WORKFLOW_GUIDE, workflowSaveSchema } from "@/lib/aiWorkflowLogic";
+import { cancelRun, completeStep, findWorkflow, saveWorkflow, serializeRun, startRun, workflowsFor } from "@/lib/aiWorkflows";
+
+/** Wer über MCP etwas speichert – „KI · Schlüsselname“ (#101). */
+async function aiName(ctx: McpContext): Promise<string> {
+  const ai = ctx.locale === "en" ? "AI" : "KI";
+  const token = ctx.tokenId ? await db.apiToken.findUnique({ where: { id: ctx.tokenId }, select: { name: true } }) : null;
+  return token ? `${ai} · ${token.name}` : ai;
+}
 
 /** Zweig aus den Argumenten – nur harmlose Namen, sonst der Hauptzweig. */
 const branchArg = (v: unknown) => (typeof v === "string" && /^(?!.*\.\.)[\w][\w./-]{0,200}$/.test(v) ? v : null);
@@ -81,6 +92,7 @@ export const MCP_INSTRUCTIONS = [
   "The user's day: get_today shows planned tasks and suggestions, add_to_today/remove_from_today plan it, start_timer/stop_timer track time on a task.",
   "Runtime errors of the user's apps land in the error inbox: list_errors shows them with stack traces – fix the cause, then mark them with resolve_error.",
   "Starred projects are protected: their status and repository can't be changed via MCP – ask the user to do it in VibeWorks.",
+  "Bigger jobs run as workflows (list_workflows, start_workflow, complete_workflow_step) – never say you are done before you verified the result; get_project_structure explains how a project is built.",
   "First, call get_agent_rules once, save the rules locally as described there and call confirm_agent_rules – until then tool results carry a reminder.",
 ].join(" ");
 
@@ -956,6 +968,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
           progress: true,
           repoUrl: true,
           boardConfig: true,
+          structure: true,
           _count: { select: { notes: true } },
           repoCache: { select: { error: true, ci: true, defaultBranch: true } },
         },
@@ -972,6 +985,8 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
           notes: p._count.notes,
           repoFiles,
           hasRepo: Boolean(p.repoUrl),
+          structureRows: readStructure(p.structure).rows.length,
+          structureMissing: repoFiles ? missingPaths(readStructure(p.structure).rows, repoFiles).length : 0,
           syncError: p.repoCache?.error ?? null,
           ciState: (p.repoCache?.ci as { state?: string } | null)?.state ?? null,
           progress: p.progress,
@@ -1000,6 +1015,223 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         },
         projects: reviews,
       };
+    },
+  },
+  {
+    name: "get_project_structure",
+    title: "Get project structure",
+    description:
+      "The project's structure table – one row per area with path, purpose and how it works – plus an overview. Also returns paths in the table that don't exist in the repository (missingPaths) and real folders as a starting point (suggestedAreas). Read it before changing code you don't know yet.",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const view = await structureView(project.id);
+      return {
+        project: { id: project.id, name: project.name },
+        ...view,
+        ...(view.rows.length ? {} : { hint: "No structure yet – build it from list_code_files and the code you read, then save it with update_project_structure." }),
+        ...(view.checked ? {} : { note: "No local code copy – paths were not checked (list_code_files fetches it)." }),
+        url: link(`/projects/${project.id}#aufbau`),
+      };
+    },
+  },
+  {
+    name: "update_project_structure",
+    title: "Update project structure",
+    description:
+      "Save the project's structure table, shown in VibeWorks and in CLAUDE.md. rows replaces the whole table; with merge: true only the given rows are added or replaced (matched by path, else area); remove deletes rows by path or area. Only describe code you actually read – use real paths from list_code_files. Write in the user's language. Update it whenever you add, move or remove an area.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project: S.project,
+        overview: { type: "string", maxLength: 2000, description: "Short overview: stack, architecture, data flow" },
+        rows: {
+          type: "array",
+          maxItems: 80,
+          items: {
+            type: "object",
+            properties: {
+              area: { type: "string", maxLength: 80, description: "Name of the area, e.g. \"API\"" },
+              path: { type: "string", maxLength: 200, description: "Real path in the repository, e.g. \"src/app/api/\"" },
+              purpose: { type: "string", maxLength: 300, description: "What it is for" },
+              how: { type: "string", maxLength: 600, description: "How it works – key files, flow, pitfalls" },
+            },
+            required: ["area", "purpose"],
+            additionalProperties: false,
+          },
+        },
+        merge: { type: "boolean", description: "Add or replace only the given rows instead of replacing the table" },
+        remove: { type: "array", items: { type: "string" }, description: "Paths or area names of rows to delete" },
+      },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    run: async (args, ctx) => {
+      const { project } = await resolveProject(ctx.userId, ref.parse(args.project), "notes.edit");
+      const { project: _p, ...rest } = args;
+      const input = structureInputSchema.parse(rest);
+      if (input.overview === undefined && !input.rows && !input.remove) throw new ApiError(400, "Nothing to save – pass overview, rows or remove.");
+      const view = await saveStructure(project.id, input, await aiName(ctx));
+      await logActivity({ projectId: project.id, userId: ctx.userId, kind: "PROJECT_UPDATED", summary: "Projektaufbau aktualisiert", meta: { fields: ["structure"] } });
+      return {
+        saved: true,
+        rows: view.rows.length,
+        missingPaths: view.missingPaths,
+        ...(view.missingPaths.length ? { warning: "Some paths don't exist in the repository – check and fix them." } : {}),
+        url: link(`/projects/${project.id}#aufbau`),
+      };
+    },
+  },
+  {
+    name: "list_workflows",
+    title: "List workflows",
+    description:
+      "Workflows of a project: checklists you work through step by step – built-in ones (feature, bugfix, release, review, structure) and the project's own. Start one with start_workflow when a task matches it.",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const [workflows, runs] = await Promise.all([
+        workflowsFor(project.id, "en"),
+        db.workflowRun.findMany({ where: { projectId: project.id, status: "running" }, orderBy: { updatedAt: "desc" }, take: 10 }),
+      ]);
+      return {
+        workflows: workflows.map((w) => ({ key: w.key, title: w.title, description: w.description, steps: w.steps.length, builtin: w.builtin })),
+        running: runs.map(serializeRun).map((r) => ({ id: r.id, workflow: r.workflow, title: r.title, done: r.done, total: r.total, taskId: r.taskId })),
+      };
+    },
+  },
+  {
+    name: "start_workflow",
+    title: "Start workflow",
+    description:
+      "Start a workflow for a project (optionally for one task) and get its checklist. Work through the steps in order and report each with complete_workflow_step – until the run is finished, every tool result reminds you of the next step. Starting the same workflow again continues the open run.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project: S.project,
+        workflow: { type: "string", maxLength: 80, description: "Workflow key from list_workflows, e.g. \"feature\"" },
+        task: { type: "string", description: "Task id this run belongs to" },
+      },
+      required: ["project", "workflow"],
+      additionalProperties: false,
+    },
+    run: async (args, ctx) => {
+      const input = z.object({ project: ref, workflow: z.string().trim().min(1).max(80), task: ref.optional() }).parse(args);
+      const { project } = await resolveProject(ctx.userId, input.project, "tasks.edit");
+      let taskId: string | null = null;
+      if (input.task) {
+        const { task } = await requireAiTask(ctx.userId, input.task, "tasks.edit");
+        if (task.projectId !== project.id) throw new ApiError(400, "The task belongs to another project.");
+        taskId = task.id;
+      }
+      const workflow = await findWorkflow(project.id, input.workflow, "en");
+      const { run, resumed } = await startRun({ userId: ctx.userId, tokenId: ctx.tokenId ?? null, projectId: project.id, workflow, taskId });
+      const view = serializeRun(run);
+      const next = view.steps.find((s) => s.status === "current");
+      return {
+        run: run.id,
+        workflow: workflow.key,
+        title: workflow.title,
+        resumed,
+        checklist: view.steps.map((s) => `${s.status === "done" ? "[x]" : s.status === "skipped" ? "[-]" : "[ ]"} ${s.n}. ${s.title}${s.check ? ` – Check: ${s.check}` : ""}`),
+        next: next ? { step: next.n, title: next.title, check: next.check } : null,
+        rules: [
+          "Work through the steps in order. After each step call complete_workflow_step with evidence (what you did, what the check showed).",
+          "If a step doesn't apply, mark it skipped with a reason – never tick off a step you didn't do.",
+          ...VERIFY_BEFORE_DONE,
+        ],
+      };
+    },
+  },
+  {
+    name: "complete_workflow_step",
+    title: "Complete workflow step",
+    description:
+      "Report a step of a running workflow as done (with evidence: what you did and what the check showed) or skipped (with a reason). Steps go in order. Returns the next step; after the last one the run is finished. cancel: true stops the run (give the reason in note).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        run: { type: "string", description: "Run id from start_workflow" },
+        step: { type: "integer", minimum: 1, maximum: 20, description: "Number of the step you finished" },
+        status: { type: "string", enum: ["done", "skipped"], description: "Default: done" },
+        note: { type: "string", maxLength: 2000, description: "Evidence (done) or reason (skipped / cancel)" },
+        cancel: { type: "boolean", description: "Stop the whole run instead" },
+      },
+      required: ["run"],
+      additionalProperties: false,
+    },
+    run: async (args, { userId }) => {
+      const input = z
+        .object({
+          run: ref,
+          step: z.number().int().min(1).max(20).optional(),
+          status: z.enum(["done", "skipped"]).default("done"),
+          note: z.string().max(2000).default(""),
+          cancel: z.boolean().optional(),
+        })
+        .parse(args);
+      if (input.cancel) {
+        const run = await cancelRun(userId, input.run, input.note.trim() || null);
+        return { run: run.id, status: run.status };
+      }
+      if (!input.step) throw new ApiError(400, "step is required – the number of the step you finished.");
+      const view = serializeRun(await completeStep(userId, input.run, input.step, input.status, input.note));
+      const next = view.steps.find((s) => s.status === "current");
+      return {
+        run: view.id,
+        status: view.status,
+        progress: `${view.done}/${view.total}`,
+        next: next ? { step: next.n, title: next.title, check: next.check } : null,
+        ...(view.status === "done"
+          ? { finished: "All steps are handled. Before you tell the user you are done, go through this once more:", verify: VERIFY_BEFORE_DONE }
+          : {}),
+      };
+    },
+  },
+  {
+    name: "save_workflow",
+    title: "Save workflow",
+    description: `Create or change one of the project's own workflows (built-in ones can't be changed). ${WORKFLOW_GUIDE} Pass workflow to change an existing one, delete: true to remove it.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        project: S.project,
+        workflow: { type: "string", maxLength: 80, description: "Key of an own workflow to change or delete; leave out to create a new one" },
+        title: { type: "string", maxLength: 80 },
+        description: { type: "string", maxLength: 1000, description: "When to use it and what it achieves" },
+        steps: {
+          type: "array",
+          minItems: 1,
+          maxItems: 20,
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", maxLength: 200, description: "One imperative action" },
+              check: { type: "string", maxLength: 300, description: "How to prove the step is done" },
+            },
+            required: ["title"],
+            additionalProperties: false,
+          },
+        },
+        delete: { type: "boolean" },
+      },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    run: async (args, ctx) => {
+      const { project } = await resolveProject(ctx.userId, ref.parse(args.project), "project.edit");
+      const key = args.workflow === undefined ? undefined : z.string().trim().min(1).max(80).parse(args.workflow);
+      if (args.delete === true) {
+        if (!key) throw new ApiError(400, "workflow is required to delete.");
+        const { count } = await db.aiWorkflow.deleteMany({ where: { projectId: project.id, key } });
+        if (!count) throw new ApiError(404, "Workflow not found (built-in workflows can't be deleted).");
+        return { deleted: key };
+      }
+      const input = workflowSaveSchema.parse({ title: args.title, description: args.description, steps: args.steps });
+      const saved = await saveWorkflow(project.id, input, { key, authorName: await aiName(ctx), via: "mcp" });
+      return { key: saved.key, title: saved.title, steps: input.steps.length, url: link(`/projects/${project.id}#workflows`) };
     },
   },
   {
@@ -1202,15 +1434,39 @@ async function promptEntries(userId: string) {
   });
 }
 
+const WORKFLOW_PROMPT = /^workflow-([a-z]+)$/;
+
 export const MCP_PROMPTS: PromptProvider<McpContext> = {
-  list: async ({ userId }) =>
-    (await promptEntries(userId)).map(({ name, prompt }) => ({
+  list: async ({ userId }) => [
+    // Mitgelieferte Workflows als Befehle (#101)
+    ...BUILTIN_WORKFLOWS.map((w) => ({
+      name: `workflow-${w.key}`,
+      title: `VibeWorks workflow: ${w.title.en}`,
+      description: w.description.en,
+      arguments: [
+        { name: "project", description: "Project id or exact name", required: true },
+        { name: "task", description: "Task id (optional)", required: false },
+      ],
+    })),
+    ...(await promptEntries(userId)).map(({ name, prompt }) => ({
       name,
       title: prompt.title,
       description: truncate(prompt.body.replace(/\s+/g, " "), 160),
       arguments: [{ name: "project", description: "Project id or exact name – fills {{projekt}}, {{repo}}, {{live}}, {{summary}}", required: false }],
     })),
+  ],
   get: async (name, args, { userId }) => {
+    const wf = name.match(WORKFLOW_PROMPT);
+    const builtin = wf ? BUILTIN_WORKFLOWS.find((w) => w.key === wf[1]) : null;
+    if (builtin) {
+      const project = args.project ? (await resolveProject(userId, ref.parse(args.project))).project : null;
+      const target = project ? `project "${project.name}" (${project.id})` : "the project the user means (ask if unclear)";
+      const task = args.task ? `, task "${ref.parse(args.task)}"` : "";
+      return {
+        description: builtin.title.en,
+        text: `Run the VibeWorks workflow "${builtin.key}" (${builtin.title.en}) for ${target}${task}: call start_workflow with workflow "${builtin.key}", work through every step in order and report each one with complete_workflow_step. Don't tell me you are done before the run is finished.`,
+      };
+    }
     const entry = (await promptEntries(userId)).find((e) => e.name === name);
     if (!entry) return null;
     const project = args.project ? (await resolveProject(userId, ref.parse(args.project))).project : null;

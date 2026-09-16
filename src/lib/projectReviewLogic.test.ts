@@ -38,6 +38,12 @@ describe("Projekt-Prüfung (#100)", () => {
     expect(r.findings).toEqual(["syncError", "ciFailing", "overdueTasks", "blockedTasks", "staleTasks", "doingWithoutAssignee", "progressMismatch"]);
     expect(r.open).toEqual({ todo: 1, doing: 1, blocked: 1, overdue: 1, stale: 1 });
   });
+  it("meldet fehlenden oder veralteten Projektaufbau (#101)", () => {
+    const facts = { ...base, description: "Eine ausführliche Beschreibung des Projekts mit Ziel und Technik.", notes: 1, hasRepo: true };
+    expect(reviewProject({ ...facts, structureRows: 0 }, NOW).findings).toContain("noStructure");
+    expect(reviewProject({ ...facts, structureRows: 4, structureMissing: 1 }, NOW).findings).toEqual(["structureOutdated"]);
+    expect(reviewProject({ ...facts, hasRepo: false, structureRows: 0 }, NOW).findings).not.toContain("noStructure");
+  });
   it("jeder Befund hat einen englischen Hinweis", () => {
     for (const hint of Object.values(FINDING_HINTS)) expect(hint).not.toMatch(/[äöüß]/);
   });

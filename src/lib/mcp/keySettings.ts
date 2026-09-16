@@ -11,7 +11,7 @@ export type ReminderMode = (typeof REMINDER_MODES)[number];
 /** Immer erlaubt – ohne sie kann die KI die Regeln nicht holen. */
 const ALWAYS = new Set(["get_agent_rules", "confirm_agent_rules"]);
 /** Zusätzlich zu den lesenden Werkzeugen bei „tasks“. */
-const TASK_TOOLS = new Set(["create_task", "create_task_in_projects", "update_task", "add_to_today", "remove_from_today", "start_timer", "stop_timer", "resolve_error", "add_code_memo"]);
+const TASK_TOOLS = new Set(["create_task", "create_task_in_projects", "update_task", "add_to_today", "remove_from_today", "start_timer", "stop_timer", "resolve_error", "add_code_memo", "start_workflow", "complete_workflow_step"]);
 
 export function toolAllowed(tool: { name: string; annotations?: { readOnlyHint?: boolean } }, scope: string): boolean {
   if (scope === "all" || ALWAYS.has(tool.name)) return true;
@@ -20,7 +20,7 @@ export function toolAllowed(tool: { name: string; annotations?: { readOnlyHint?:
 }
 
 export const DEFAULT_REMINDER =
-  "VibeWorks reminder: keep the task in VibeWorks up to date – status DOING with your name as assignee while you work, BLOCKED with a reason if you are stuck, DONE when finished – follow the task's instructions and pin what you learned with add_code_memo.";
+  "VibeWorks reminder: keep the task in VibeWorks up to date – status DOING with your name as assignee while you work, BLOCKED with a reason if you are stuck, DONE only after you verified the result (tests/build run, request re-read, nothing invented). Follow the task's instructions, use a workflow (list_workflows) for bigger jobs, keep the project structure current (update_project_structure) and pin what you learned with add_code_memo.";
 
 /** Wie lange die Erinnerung gilt (#100): unbegrenzt oder so viele Tage ab dem Speichern. */
 export const REMINDER_DURATIONS = ["forever", "1", "7", "30"] as const;

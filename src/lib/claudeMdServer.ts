@@ -7,6 +7,7 @@ import { TASK_ORDER } from "./tasks";
 import { aiProjectTaskFilter } from "./aiLock";
 import { NOTE_ORDER } from "./notes";
 import { buildClaudeMd } from "./claudeMd";
+import { readStructure } from "./projectStructureLogic";
 
 /** CLAUDE.md eines Projekts – für die Oberfläche und für Claude (MCP). Rechte prüft der Aufrufer. */
 export async function claudeMdFor(project: Project, locale: Locale): Promise<string> {
@@ -16,7 +17,7 @@ export async function claudeMdFor(project: Project, locale: Locale): Promise<str
     db.note.findMany({ where: { projectId: project.id }, orderBy: NOTE_ORDER, take: 50 }),
   ]);
   return buildClaudeMd(
-    { ...project, url: `${config.appUrl}/projects/${project.id}`, tasks, notes },
+    { ...project, url: `${config.appUrl}/projects/${project.id}`, tasks, notes, structure: readStructure(project.structure) },
     makeT(locale, "prompts"),
     makeT(locale, "status"),
   );
