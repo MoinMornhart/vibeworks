@@ -4,6 +4,9 @@ import { ChangelogButton } from "@/components/ChangelogButton";
 import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Toaster } from "@/components/ui/Toaster";
+import { BetaBanner } from "@/components/BetaBanner";
+import { cookies } from "next/headers";
+import { BETA_COOKIE } from "@/lib/betaLogic";
 import { DemoBanner } from "@/components/DemoBanner";
 import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { getSettings, isSetupDone } from "@/lib/settings";
@@ -18,10 +21,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requirePageUser();
   const isAdmin = user.role === "ADMIN";
   const community = (await getSettings()).mode === "MULTI";
+  const beta = (await cookies()).get(BETA_COOKIE)?.value === "1";
 
   return (
     <div className="flex min-h-dvh flex-col">
       {config.demoMode && <DemoBanner />}
+      {beta && <BetaBanner />}
       <TopNav appName={config.appName} user={{ name: displayNameOf(user), username: user.username, isAdmin, community }} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 sm:px-5 sm:py-8">{children}</main>
       <footer className="mx-auto w-full max-w-7xl px-5 pb-6 text-center text-xs text-muted">

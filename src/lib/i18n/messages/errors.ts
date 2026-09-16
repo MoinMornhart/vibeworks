@@ -18,6 +18,7 @@ const de = {
   internal: "Interner Fehler",
   rateLimited: plural("Zu viele Versuche. Bitte in {n} Minute erneut versuchen.", "Zu viele Versuche. Bitte in {n} Minuten erneut versuchen."),
   demoReadOnly: "Das ist eine Demo – hier lässt sich nichts ändern. Installiere VibeWorks selbst, um alles auszuprobieren.",
+  betaReadOnly: "Beta-Ansicht: hier lässt sich nichts ändern. Beende sie mit dem roten ✕ oben.",
 };
 
 const en: Shape<typeof de> = {
@@ -34,6 +35,7 @@ const en: Shape<typeof de> = {
   internal: "Internal error",
   rateLimited: plural("Too many attempts. Please try again in {n} minute.", "Too many attempts. Please try again in {n} minutes."),
   demoReadOnly: "This is a demo – nothing can be changed here. Install VibeWorks yourself to try everything.",
+  betaReadOnly: "Beta view: nothing can be changed here. Exit it with the red ✕ at the top.",
 };
 
 export default { de, en };

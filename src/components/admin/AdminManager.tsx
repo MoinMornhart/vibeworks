@@ -25,6 +25,7 @@ import { AccountSection } from "@/components/account/AccountManager";
 import type { AdminUser } from "@/lib/admin";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
+import { BetaStartButton } from "@/components/BetaBanner";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { PublicBuildInfo } from "@/lib/buildInfo";
 import { CloudDownload } from "lucide-react";
@@ -119,6 +120,11 @@ function SettingsForm({ initial, userCount }: { initial: Settings; userCount: nu
           onChange={(e) => setS({ ...s, taskColumnLimit: Math.max(0, Number(e.target.value) || 0) })}
         />
         <p className="mt-1 text-xs text-muted">{t("settings.columnLimitHint")}</p>
+      </div>
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-3 py-2" data-testid="beta-section">
+        <p className="text-sm font-medium">{t("beta.title")}</p>
+        <p className="mb-2 text-xs text-muted">{t("beta.hint")}</p>
+        <BetaStartButton />
       </div>
       <div className="max-w-xs">
         <label className="label" htmlFor="wish-limit">{t("settings.wishLimit")}</label>

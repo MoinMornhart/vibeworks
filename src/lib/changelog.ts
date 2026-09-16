@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.0",
+    date: "2026-09-17",
+    title: "Beta-Ansicht für Admins",
+    titleEn: "Beta view for admins",
+    changes: [
+      {
+        type: "neu",
+        text: "Admins können unter Administration → Einstellungen die Beta-Ansicht starten: Dort erscheinen künftig neue Oberflächen zuerst – nur zum Ansehen, das Backend nimmt in dieser Zeit keine Änderungen an. Ein roter Balken oben zeigt den Modus, das rote ✕ beendet ihn. Andere Konten merken davon nichts",
+        en: "Admins can start the beta view under Administration → Settings: upcoming screens will appear there first – for looking only, the backend accepts no changes meanwhile. A red bar at the top shows the mode, the red ✕ ends it. Other accounts are not affected",
+        link: "/admin",
+      },
+    ],
+  },
+  {
     version: "0.9.9",
     date: "2026-09-17",
     title: "Fehler-Agent",
@@ -40,8 +54,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         type: "fix",
-        text: "Entwicklung: Die Test-Umgebung ist zurück auf vitest 4 – vitest 5 brach unter Windows gelegentlich beim Start ab",
-        en: "Development: the test runner is back on vitest 4 – vitest 5 occasionally crashed on start under Windows",
+        text: "Entwicklung: Die Test-Umgebung ist zurück auf vitest 4",
+        en: "Development: the test runner is back on vitest 4",
       },
     ],
   },

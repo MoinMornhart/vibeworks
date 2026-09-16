@@ -8,6 +8,14 @@ const de = {
     title: "Administration",
     intro: "Konten und Einstellungen der Instanz. Fremde Projekte sind auch hier nicht einsehbar.",
   },
+  beta: {
+    title: "Beta-Ansicht",
+    hint: "Nur für Admins: zeigt kommende Oberflächen, ohne dass sich etwas ändern lässt – das Backend nimmt in dieser Zeit keine Änderungen an. Oben erscheint ein roter Balken, das ✕ beendet die Ansicht.",
+    start: "Beta-Ansicht starten",
+    banner: "Beta-Ansicht – nur ansehen, Änderungen sind abgeschaltet.",
+    exit: "Beta-Ansicht beenden",
+    adminOnly: "Die Beta-Ansicht können nur Admins starten.",
+  },
   settings: {
     title: "Einstellungen",
     saved: "Einstellungen gespeichert.",
@@ -154,6 +162,14 @@ const en: Shape<typeof de> = {
   page: {
     title: "Administration",
     intro: "Accounts and settings of this instance. Other people's projects aren't visible here either.",
+  },
+  beta: {
+    title: "Beta view",
+    hint: "Admins only: shows upcoming screens without letting anything change – the backend accepts no changes meanwhile. A red bar appears at the top, the ✕ ends the view.",
+    start: "Start beta view",
+    banner: "Beta view – look only, changes are switched off.",
+    exit: "End beta view",
+    adminOnly: "Only admins can start the beta view.",
   },
   settings: {
     title: "Settings",
