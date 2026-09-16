@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.6",
+    date: "2026-09-16",
+    title: "Abhängigkeiten aktualisiert",
+    titleEn: "Dependencies updated",
+    changes: [
+      {
+        type: "besser",
+        text: "React 19.3, lucide-react 1.x (Symbole), vitest 5 und neuere Typdefinitionen – ohne sichtbare Änderungen. TypeScript 7 bleibt vorerst draußen, bis Next.js die neue Fassung unterstützt",
+        en: "React 19.3, lucide-react 1.x (icons), vitest 5 and newer type definitions – with no visible changes. TypeScript 7 stays out for now until Next.js supports the new version",
+      },
+    ],
+  },
+  {
     version: "0.8.5",
     date: "2026-09-16",
     title: "Prioritäten für Aufgaben",
