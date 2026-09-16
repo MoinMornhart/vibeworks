@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { appLink } from "@/lib/notify";
+import { appLink, notifyUser } from "@/lib/notify";
 import { sendMail, smtpReady } from "@/lib/notify/mail";
 import { getSettings } from "@/lib/settings";
 import { randomToken, sha256 } from "@/lib/crypto";
@@ -18,16 +18,21 @@ export async function resetAllowed(): Promise<boolean> {
   return s.allowPasswordReset && (await smtpReady());
 }
 
+/** Konto zu Benutzername oder E-Mail – beides ist als Eingabe erlaubt. */
+function findByLogin(value: string) {
+  return db.user.findFirst({
+    where: { active: true, OR: [{ username: value }, { email: { equals: value, mode: "insensitive" } }] },
+    select: { id: true, username: true, displayName: true, email: true, locale: true, resetRequestedAt: true },
+  });
+}
+
 /** Link anfordern. Wirft nie und sagt nichts darüber, ob es das Konto gibt. */
 export async function requestReset(login: string, ip: string | null): Promise<void> {
   try {
     if (!(await resetAllowed())) return;
     const value = login.trim().toLowerCase();
     if (!value) return;
-    const user = await db.user.findFirst({
-      where: { active: true, OR: [{ username: value }, { email: { equals: value, mode: "insensitive" } }] },
-      select: { id: true, username: true, email: true, locale: true },
-    });
+    const user = await findByLogin(value);
     if (!user?.email) return;
     const since = new Date(Date.now() - 60 * 60_000);
     if ((await db.passwordReset.count({ where: { userId: user.id, createdAt: { gte: since } } })) >= RESET_MAX_PER_HOUR) return;
@@ -47,6 +52,37 @@ export async function requestReset(login: string, ip: string | null): Promise<vo
   }
 }
 
+/**
+ * Bitte an die Administratoren, ein neues Passwort zu vergeben (#43) – der Weg
+ * für alle ohne hinterlegte E-Mail-Adresse. Höchstens eine Bitte pro Stunde.
+ */
+export async function askAdmins(login: string): Promise<void> {
+  try {
+    const value = login.trim().toLowerCase();
+    if (!value) return;
+    const user = await findByLogin(value);
+    if (!user) return;
+    if (user.resetRequestedAt && Date.now() - user.resetRequestedAt.getTime() < 60 * 60_000) return;
+    await db.user.update({ where: { id: user.id }, data: { resetRequestedAt: new Date() } });
+
+    const admins = await db.user.findMany({ where: { role: "ADMIN", active: true }, select: { id: true } });
+    const name = user.displayName || user.username;
+    await Promise.all(
+      admins.map((a) =>
+        notifyUser(a.id, "passwordAsk", (t) => ({
+          event: "passwordAsk",
+          title: t("events.passwordAsk.title", { name }),
+          message: t("events.passwordAsk.message", { name }),
+          url: appLink("/admin"),
+          priority: "high",
+        })),
+      ),
+    );
+  } catch (err) {
+    console.error("[reset-ask]", err);
+  }
+}
+
 /** Konto zum Link – null, wenn unbekannt, abgelaufen oder schon benutzt. */
 export async function resetTarget(token: string) {
   const row = await db.passwordReset.findUnique({
@@ -61,7 +97,10 @@ export async function resetTarget(token: string) {
 export async function completeReset(resetId: string, userId: string, password: string): Promise<void> {
   const { count } = await db.passwordReset.updateMany({ where: { id: resetId, usedAt: null }, data: { usedAt: new Date() } });
   if (!count) return;
-  await db.user.update({ where: { id: userId }, data: { passwordHash: await hashPassword(password), passwordChangedAt: new Date(), passwordRemindedAt: null, failedLogins: 0, lockedUntil: null } });
+  await db.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(password), passwordChangedAt: new Date(), passwordRemindedAt: null, resetRequestedAt: null, failedLogins: 0, lockedUntil: null },
+  });
   // Alte Links des Kontos entwerten und überall abmelden
   await db.passwordReset.updateMany({ where: { userId, usedAt: null }, data: { usedAt: new Date() } });
   await destroyAllSessions(userId);

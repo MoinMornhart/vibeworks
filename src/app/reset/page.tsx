@@ -16,19 +16,13 @@ export async function generateMetadata() {
 export default async function ResetPage({ searchParams }: Props) {
   if (!(await isSetupDone())) redirect("/setup");
   const t = await getT("auth");
+  // Ohne E-Mail-Versand gibt es keinen Link – die Bitte an den Admin bleibt aber immer möglich (#43).
   const allowed = await resetAllowed();
   const token = (await searchParams).token?.trim() ?? "";
-  // Mit Link: prüfen, ob er noch gilt – ohne Link: nur das Anfrage-Feld
   const target = allowed && token ? await resetTarget(token) : null;
   return (
-    <AuthShell title={t("reset.title")} subtitle={t(token ? "reset.subtitleToken" : "reset.subtitle")}>
-      {!allowed ? (
-        <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-300" data-testid="reset-off">
-          {t("reset.off")}
-        </p>
-      ) : (
-        <ResetForm token={token} valid={Boolean(target)} username={target?.user.username ?? null} />
-      )}
+    <AuthShell title={t("reset.title")} subtitle={t(token && allowed ? "reset.subtitleToken" : "reset.subtitle")}>
+      <ResetForm token={token} valid={Boolean(target)} username={target?.user.username ?? null} allowed={allowed} />
     </AuthShell>
   );
 }

@@ -122,6 +122,8 @@ model User {
   /// Nach wie vielen Tagen an einen Wechsel erinnern (0 = nie)
   passwordReminderDays Int       @default(180)
   passwordRemindedAt   DateTime?
+  /// Bittet darum, dass ein Admin ein neues Passwort vergibt (#43)
+  resetRequestedAt     DateTime?
 
   /// TOTP-Schlüssel (verschlüsselt). Scharf erst mit totpEnabledAt.
   totpSecret     String?

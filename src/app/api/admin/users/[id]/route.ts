@@ -46,6 +46,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
     if (policy) throw new ApiError(400, policy, { password: policy });
     data.passwordHash = await hashPassword(input.password);
     data.passwordChangedAt = new Date();
+    data.resetRequestedAt = null;
     // Ein neu gesetztes Passwort beendet alle Sitzungen des Kontos sofort.
     endSessions = true;
   }

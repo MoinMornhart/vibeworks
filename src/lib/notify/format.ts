@@ -1,7 +1,7 @@
 // Benachrichtigungen ohne Netz und Datenbank: Anlässe, ntfy-Anfrage und
 // Webhook-Nutzlast – im Browser und in Tests nutzbar.
 
-export const NOTIFY_EVENTS = ["taskDue", "assigned", "accessRequest", "issueClosed", "ciFailed", "fork", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "news", "updated"] as const;
+export const NOTIFY_EVENTS = ["taskDue", "assigned", "accessRequest", "issueClosed", "ciFailed", "fork", "checkAlert", "appError", "community", "team", "gitFailed", "siteDown", "renewal", "suggestions", "passwordAge", "passwordAsk", "news", "updated"] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
 
 /** Anlässe nach Themen für die Einstellungen – jeder genau einmal (Test). */
@@ -9,7 +9,7 @@ export const NOTIFY_GROUPS: ReadonlyArray<{ key: "tasks" | "dev" | "people" | "a
   { key: "tasks", events: ["taskDue", "assigned", "issueClosed", "suggestions"] },
   { key: "dev", events: ["ciFailed", "checkAlert", "gitFailed", "appError", "siteDown", "fork"] },
   { key: "people", events: ["accessRequest", "community", "team"] },
-  { key: "account", events: ["passwordAge", "renewal", "news", "updated"] },
+  { key: "account", events: ["passwordAge", "passwordAsk", "renewal", "news", "updated"] },
 ];
 export type EventSwitches = Record<NotifyEvent, boolean>;
 
@@ -62,6 +62,7 @@ const TAGS: Record<Notice["event"], string> = {
   renewal: "moneybag",
   suggestions: "bulb",
   passwordAge: "key",
+  passwordAsk: "key",
   news: "sparkles",
   updated: "rocket",
   test: "wave",

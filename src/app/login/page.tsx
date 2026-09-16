@@ -4,7 +4,6 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { DemoLogin } from "@/components/auth/DemoLogin";
 import { config } from "@/lib/config";
 import { isSetupDone, registrationOpen } from "@/lib/settings";
-import { resetAllowed } from "@/lib/auth/passwordReset";
 import { currentUser } from "@/lib/auth/guard";
 import { safeNext } from "@/lib/validation";
 import { getT } from "@/lib/i18n/server";
@@ -31,7 +30,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </p>
       )}
       {config.demoMode && <DemoLogin next={next} />}
-      <LoginForm next={next} allowRegistration={await registrationOpen()} allowReset={await resetAllowed()} />
+      <LoginForm next={next} allowRegistration={await registrationOpen()} allowReset />
     </AuthShell>
   );
 }

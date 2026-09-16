@@ -229,6 +229,7 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
             {isMe && <span className="rounded-full bg-fg/10 px-2 py-0.5 text-[11px] text-muted">{t("users.you")}</span>}
             {!u.active && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] text-red-400">{t("users.disabled")}</span>}
             {u.locked && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-400">{t("users.locked")}</span>}
+            {u.wantsPassword && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-accent-ink" data-testid="wants-password">{t("users.wantsPassword")}</span>}
           </p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted" suppressHydrationWarning>
             <span>{t("users.projects", { n: u.projects })}</span>

@@ -50,6 +50,7 @@ const de = {
     renewal: "Eine Verlängerung steht an (z. B. Domain) – zwei Wochen vorher",
     suggestions: "Neue Wochen-Vorschläge – montags ab 8 Uhr",
     passwordAge: "Erinnerung, das Passwort zu wechseln (Abstand unter Konto → Passwort)",
+    passwordAsk: "Jemand bittet dich als Admin um ein neues Passwort",
     news: "Neue Funktionen nach einem Update – ein Klick führt direkt dorthin",
     assigned: "Dir wird eine Aufgabe zugewiesen (als Bearbeiter eingetragen)",
     fork: "Jemand forkt eines deiner Repositories (Webhook nötig)",
@@ -109,6 +110,10 @@ const de = {
     passwordAge: {
       title: "Zeit für ein neues Passwort",
       message: plural("Dein Passwort ist {n} Tag alt – ein Klick führt zur Einstellung.", "Dein Passwort ist {n} Tage alt – ein Klick führt zur Einstellung."),
+    },
+    passwordAsk: {
+      title: "{name} bittet um ein neues Passwort",
+      message: "In der Administration kannst du unter „Benutzer“ ein neues Passwort setzen und es weitergeben.",
     },
     news: { title: "Neu in VibeWorks {version}" },
     assigned: { title: "Dir zugewiesen: {title}", message: "{name} hat dich in „{project}“ als Bearbeiter eingetragen." },
@@ -187,6 +192,7 @@ const en: Shape<typeof de> = {
     renewal: "A renewal is coming up (e.g. a domain) – two weeks ahead",
     suggestions: "New weekly suggestions – Mondays from 8 am",
     passwordAge: "Reminder to change your password (interval under Account → Password)",
+    passwordAsk: "Someone asks you as an admin for a new password",
     news: "New features after an update – a click takes you straight there",
     assigned: "A task is assigned to you (entered as assignee)",
     fork: "Someone forks one of your repositories (needs the webhook)",
@@ -246,6 +252,10 @@ const en: Shape<typeof de> = {
     passwordAge: {
       title: "Time for a new password",
       message: plural("Your password is {n} day old – a click takes you to the setting.", "Your password is {n} days old – a click takes you to the setting."),
+    },
+    passwordAsk: {
+      title: "{name} asks for a new password",
+      message: "In the administration you can set a new password under “Users” and pass it on.",
     },
     news: { title: "New in VibeWorks {version}" },
     assigned: { title: "Assigned to you: {title}", message: "{name} entered you as assignee in “{project}”." },

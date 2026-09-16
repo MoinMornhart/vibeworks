@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.2",
+    date: "2026-09-16",
+    title: "Admin vergibt ein neues Passwort",
+    titleEn: "Admin sets a new password",
+    changes: [
+      {
+        type: "neu",
+        text: "Auf „Passwort vergessen?“ gibt es jetzt den kurzen Weg: einen Admin um ein neues Passwort bitten. Das geht auch ohne hinterlegte E-Mail-Adresse und ohne eingerichteten E-Mail-Versand",
+        en: "“Forgot your password?” now has a short path: ask an admin for a new password. This works without an e-mail address in the account and without a configured e-mail sender",
+        link: "/reset",
+      },
+      {
+        type: "besser",
+        text: "Admins bekommen die Bitte als Benachrichtigung und sehen sie in der Benutzerliste; sobald sie ein Passwort setzen, verschwindet der Hinweis wieder. Höchstens eine Bitte pro Stunde und Konto",
+        en: "Admins receive the request as a notification and see it in the user list; once they set a password, the marker disappears. At most one request per account per hour",
+      },
+    ],
+  },
+  {
     version: "0.8.1",
     date: "2026-09-16",
     title: "Passwort vergessen",
