@@ -15,13 +15,15 @@ export interface BoardConfig {
   hidden: TaskStatus[];
   labels: Partial<Record<TaskStatus, string>>;
   collapseAfter: number;
+  /** Für KI gesperrte Spalten (#76) */
+  aiLocked: TaskStatus[];
 }
 
 /** Eigene Spaltennamen eines Projekts (#72) – für Liste, Dialog, Info-Fenster und Team-Seite. */
 export type StatusLabels = BoardConfig["labels"];
 export const statusLabelsOf = (stored: unknown): StatusLabels => normalizeBoard(stored).labels;
 
-export const DEFAULT_BOARD: BoardConfig = { order: [...BOARD_STATUSES], hidden: [], labels: {}, collapseAfter: 0 };
+export const DEFAULT_BOARD: BoardConfig = { order: [...BOARD_STATUSES], hidden: [], labels: {}, collapseAfter: 0, aiLocked: [] };
 
 const isStatus = (v: unknown): v is TaskStatus => typeof v === "string" && (BOARD_STATUSES as readonly string[]).includes(v);
 
@@ -41,7 +43,8 @@ export function normalizeBoard(input: unknown): BoardConfig {
   }
   const c = Number(o.collapseAfter);
   const collapseAfter = (COLLAPSE_OPTIONS as readonly number[]).includes(c) ? c : 0;
-  return { order, hidden, labels, collapseAfter };
+  const aiLocked = [...new Set((Array.isArray(o.aiLocked) ? o.aiLocked : []).filter(isStatus))];
+  return { order, hidden, labels, collapseAfter, aiLocked };
 }
 
 /** Würden alle Spalten ausgeblendet? (Das lehnt die API ab.) */

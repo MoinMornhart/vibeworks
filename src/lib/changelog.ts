@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.6",
+    date: "2026-09-16",
+    title: "Für KI gesperrte Bereiche, Issues nur unter eigenem Namen",
+    titleEn: "Areas locked for AI, issues only under your own name",
+    changes: [
+      {
+        type: "neu",
+        text: "Aufgaben und ganze Spalten lassen sich „für KI sperren“: Über MCP sind sie unsichtbar (Listen, Suche, Heute, Probleme, CLAUDE.md), direkte Zugriffe melden „nicht gefunden“, und das Issue zeigt keinen Inhalt",
+        en: "Tasks and whole columns can be “locked for AI”: they are invisible over MCP (lists, search, today, problems, CLAUDE.md), direct access reports “not found”, and the issue shows no content",
+      },
+      {
+        type: "fix",
+        text: "Sicherheit: Aufgaben, die nicht der Projektbesitzer angelegt hat, landen nicht mehr unter dessen GitHub-Konto – das Issue schreibt der eigene Git-Zugang der Person oder der Bot, sonst gibt es einen klaren Hinweis",
+        en: "Security: tasks not created by the project owner no longer appear under the owner's GitHub account – the person's own Git access or the bot writes the issue, otherwise there's a clear notice",
+      },
+    ],
+  },
+  {
     version: "1.0.5",
     date: "2026-09-16",
     title: "Bot mit Befehlen, Unterhaltung im Info-Fenster",

@@ -368,6 +368,7 @@ export const taskCreateSchema = z.object({
   recurrence: recurrenceSchema.nullish().transform((v) => v ?? null),
   assignee: assigneeSchema.nullish().transform((v) => v || null),
   priority: z.number().int().min(1).max(4).default(2),
+  aiLocked: z.boolean().default(false),
 });
 
 // Dieselbe Aufgabe für mehrere Projekte (Aufgabenübersicht, MCP)
@@ -389,6 +390,7 @@ export const taskUpdateSchema = z.object({
     .transform((v) => (v === undefined ? undefined : v || null)),
   priority: z.number().int().min(1).max(4).optional(),
   aiNote: optionalText(4000).optional(),
+  aiLocked: z.boolean().optional(),
 });
 
 export const taskReorderSchema = z.object({

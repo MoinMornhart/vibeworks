@@ -41,6 +41,7 @@ export async function tokenCipherFor(project: ProjectTokenInput): Promise<{ ciph
  * Projekt- oder Konto-Token. Liefert das Token im Klartext.
  */
 export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token: string; source: TokenSource | "bot"; botLogin: string | null } | null> {
+  // Hinweis: source „bot“ heißt, Issues laufen nicht unter dem Konto des Besitzers
   const parsed = parseRepoUrl(project.repoUrl);
   if (parsed) {
     const bot = await db.gitCredential.findUnique({
@@ -59,6 +60,14 @@ export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token
   const stored = await tokenCipherFor(project);
   const token = stored && tryDecrypt(stored.cipher);
   return stored && token ? { token, source: stored.source, botLogin: null } : null;
+}
+
+/** Eigener Git-Zugang einer Person für den Server dieses Repositories (#76) – im Klartext. */
+export async function userIssueToken(userId: string, repoUrl: string | null): Promise<string | null> {
+  const parsed = parseRepoUrl(repoUrl);
+  if (!parsed) return null;
+  const cred = await db.gitCredential.findUnique({ where: { userId_host: { userId, host: parsed.hostPort } }, select: { cipher: true, provider: true } });
+  return cred && cred.provider !== "git" ? tryDecrypt(cred.cipher) : null;
 }
 
 function tryDecrypt(cipher: string): string | null {

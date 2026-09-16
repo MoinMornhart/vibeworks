@@ -687,6 +687,8 @@ model Task {
   assignee        String?
   /// Hinweis an die KI (eigener Prompt, Arbeitsweise) – privat, nie im Issue
   aiNote          String?
+  /// Für KI gesperrt: über MCP unsichtbar, Issue ohne Inhalt (#76)
+  aiLocked        Boolean     @default(false)
   /// Priorität wie bei Projekten: 1 niedrig · 2 normal · 3 hoch · 4 dringend
   priority        Int         @default(2)
   /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“

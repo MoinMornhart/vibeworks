@@ -4,6 +4,7 @@ import { appLink } from "@/lib/notify";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { dayKeyToDate } from "@/lib/taskDates";
 import { statusLabelsOf } from "@/lib/boardConfig";
+import { isAiLocked } from "@/lib/aiLock";
 import type { IssueApi, IssueComment } from "./providers";
 import { describeCommand, HELP_TEXT, infoText, mayCommand, mentionsBot, parseCommands, replyText, type BotCommand } from "./botCommandsLogic";
 
@@ -96,6 +97,7 @@ export async function runBotCommands(projectId: string, api: IssueApi, botLogin:
   for (const { c, commands } of relevant) {
     const task = byNumber.get(c.issueNumber);
     if (!task) continue; // kein Issue aus VibeWorks
+    if (isAiLocked(task, project.boardConfig)) continue; // gesperrt (#76): nur in VibeWorks bearbeiten
     try {
       // Nur angesprochen: Hilfe zeigen – das darf jeder sehen
       if (!commands.length) {

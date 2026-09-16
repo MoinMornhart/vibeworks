@@ -30,6 +30,7 @@ export function serializeTask(t: Task) {
     createdByName: t.createdByName,
     createdVia: t.createdVia,
     aiNote: t.aiNote,
+    aiLocked: t.aiLocked,
   };
 }
 export type TaskItem = ReturnType<typeof serializeTask>;

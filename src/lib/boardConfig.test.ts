@@ -1,3 +1,4 @@
+import { isAiLocked } from "./aiLock";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_BOARD, hidesEverything, normalizeBoard } from "./boardConfig";
 
@@ -19,5 +20,17 @@ describe("Brett-Einstellungen", () => {
     expect(normalizeBoard({ hidden: ["TODO", "DOING", "BLOCKED", "DONE"] }).hidden).toEqual([]);
     expect(hidesEverything({ hidden: ["TODO", "DOING", "BLOCKED", "DONE"] })).toBe(true);
     expect(hidesEverything({ hidden: ["TODO"] })).toBe(false);
+  });
+});
+
+describe("KI-Sperre je Spalte (#76)", () => {
+  it("übernimmt nur echte Spalten, ohne Doppelte", () => {
+    expect(normalizeBoard({ aiLocked: ["BLOCKED", "BLOCKED", "QUATSCH", 3] }).aiLocked).toEqual(["BLOCKED"]);
+    expect(normalizeBoard(null).aiLocked).toEqual([]);
+  });
+  it("sperrt Aufgabe selbst oder über ihre Spalte", () => {
+    expect(isAiLocked({ aiLocked: true, status: "TODO" }, null)).toBe(true);
+    expect(isAiLocked({ aiLocked: false, status: "BLOCKED" }, { aiLocked: ["BLOCKED"] })).toBe(true);
+    expect(isAiLocked({ aiLocked: false, status: "TODO" }, { aiLocked: ["BLOCKED"] })).toBe(false);
   });
 });

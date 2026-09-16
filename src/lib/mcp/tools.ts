@@ -32,6 +32,14 @@ import { config } from "@/lib/config";
 import type { PromptProvider, ResourceProvider, ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
+import { aiLockedStatuses, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
+
+/** Wie requireTask – aber für KI gesperrte Aufgaben gibt es über MCP nicht (#76). */
+async function requireAiTask(userId: string, id: string, need?: Need) {
+  const res = await requireTask(userId, id, need);
+  if (await taskIsAiLocked(res.task)) throw new ApiError(404, tk("projects", "errors.taskNotFound"));
+  return res;
+}
 import { fillPrompt } from "@/lib/prompts";
 import { protectedChanges } from "@/lib/protect";
 import { currentEntry, stopRunning } from "@/lib/timeServer";
@@ -204,7 +212,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const { project, access } = await resolveProject(userId, ref.parse(args.project));
       const [tasks, notes, repo] = await Promise.all([
         db.task.findMany({
-          where: { projectId: project.id, OR: [{ status: { not: "DONE" } }, { doneAt: { gte: new Date(Date.now() - 14 * DAY) } }] },
+          where: { projectId: project.id, aiLocked: false, status: { notIn: aiLockedStatuses(project.boardConfig) }, OR: [{ status: { not: "DONE" } }, { doneAt: { gte: new Date(Date.now() - 14 * DAY) } }] },
           orderBy: TASK_ORDER,
           take: 300,
         }),
@@ -266,7 +274,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
               ? { dueDate: { lt: dayKeyToDate(addDaysKey(today, 8)) } }
               : {};
       const tasks = await db.task.findMany({
-        where: { AND: [scope, due, input.status?.length ? { status: { in: input.status } } : { status: { not: "DONE" } }] },
+        where: { AND: [scope, due, input.status?.length ? { status: { in: input.status } } : { status: { not: "DONE" } }, await aiTaskFilter(userId)] },
         orderBy: [{ priority: "desc" }, { dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
         take: input.limit,
         include: { project: { select: { id: true, name: true } } },
@@ -281,7 +289,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {
-      const { task, project } = await requireTask(userId, ref.parse(args.task));
+      const { task, project } = await requireAiTask(userId, ref.parse(args.task));
       return { ...taskView(task, { full: true, project: { id: project.id, name: project.name } }), url: link(`/projects/${project.id}`) };
     },
   },
@@ -307,7 +315,9 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project), "tasks.edit");
-      const { task, progress } = await createTask(userId, project.id, taskCreateSchema.parse(args), "mcp");
+      const input = taskCreateSchema.omit({ aiLocked: true }).parse(args);
+      if (aiLockedStatuses(project.boardConfig).includes(input.status)) throw new ApiError(403, tk("tasks", "aiLock.columnLocked"));
+      const { task, progress } = await createTask(userId, project.id, { ...input, aiLocked: false }, "mcp");
       return { task: taskView(task, { full: true }), projectProgress: progress, url: link(`/projects/${project.id}`) };
     },
   },
@@ -367,8 +377,9 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     annotations: { idempotentHint: true },
     run: async (args, { userId }) => {
-      const { task: current } = await requireTask(userId, ref.parse(args.task), "tasks.edit");
-      const result = await updateTask(userId, current, taskUpdateSchema.parse(args));
+      const { task: current } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
+      // Die Sperre setzt nur der Mensch in VibeWorks
+      const result = await updateTask(userId, current, taskUpdateSchema.omit({ aiLocked: true }).parse(args));
       return {
         task: taskView(result.task, { full: true }),
         ...(result.spawned ? { nextRecurrence: taskView(result.spawned) } : {}),
@@ -525,6 +536,10 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {
       const res = await searchContent(userId, z.string().max(100).parse(args.query));
+      const allowed = new Set(
+        res.tasks.length ? (await db.task.findMany({ where: { AND: [{ id: { in: res.tasks.map((t) => t.id) } }, await aiTaskFilter(userId)] }, select: { id: true } })).map((t) => t.id) : [],
+      );
+      res.tasks = res.tasks.filter((t) => allowed.has(t.id));
       return {
         notes: res.notes.map((n) => ({ ...n, snippet: highlight(n.snippet) })),
         tasks: res.tasks.map((t) => ({ ...t, snippet: highlight(t.snippet) })),
@@ -864,7 +879,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { idempotentHint: true },
     run: async (args, { userId }) => {
-      const { task } = await requireTask(userId, ref.parse(args.task), "tasks.edit");
+      const { task } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
       const today = dayKey(new Date());
       await db.taskFocus.deleteMany({ where: { userId, day: { lt: today } } }); // gestern ist vorbei
       const count = await db.taskFocus.count({ where: { userId, day: today, taskId: { not: task.id } } });
@@ -900,7 +915,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
     run: async (args, { userId }) => {
       const input = z.object({ task: ref, focusMinutes: z.number().int().min(5).max(120).optional() }).parse(args);
-      const { task } = await requireTask(userId, input.task, "time.track");
+      const { task } = await requireAiTask(userId, input.task, "time.track");
       await stopRunning(userId);
       await db.timeEntry.create({ data: { userId, projectId: task.projectId, taskId: task.id, focusMinutes: input.focusMinutes ?? null } });
       return { running: await currentEntry(userId) };
@@ -966,7 +981,7 @@ async function loadProblems(userId: string, locale: Locale) {
     if (check && checkIsUrgent(check)) repoCheckAlerts.push({ project: p.name, id: p.id, secrets: check.counts.secrets, vulnerabilities: check.counts.vulnerabilities });
   }
   const tasks = await db.task.findMany({
-    where: { project: OPEN_PROJECT(userId), OR: [{ status: "BLOCKED" }, { status: { not: "DONE" }, dueDate: { lt: dayKeyToDate(today) } }] },
+    where: { AND: [{ project: OPEN_PROJECT(userId) }, await aiTaskFilter(userId)], OR: [{ status: "BLOCKED" }, { status: { not: "DONE" }, dueDate: { lt: dayKeyToDate(today) } }] },
     include: { project: { select: { id: true, name: true } } },
     orderBy: { dueDate: "asc" },
     take: 100,
@@ -993,8 +1008,9 @@ async function loadProblems(userId: string, locale: Locale) {
 
 async function loadToday(userId: string) {
   const today = dayKey(new Date());
+  const hide = await aiTaskFilter(userId);
   const focus = await db.taskFocus.findMany({
-    where: { userId, day: today, task: { project: OPEN_PROJECT(userId) } },
+    where: { userId, day: today, task: { AND: [{ project: OPEN_PROJECT(userId) }, hide] } },
     include: { task: { include: { project: { select: { id: true, name: true } } } } },
     orderBy: { position: "asc" },
   });
@@ -1003,6 +1019,7 @@ async function loadToday(userId: string) {
       id: { notIn: focus.map((f) => f.taskId) },
       status: { not: "DONE" },
       project: OPEN_PROJECT(userId),
+      AND: [hide],
       OR: [{ status: "DOING" }, { dueDate: { lte: dayKeyToDate(today) } }],
     },
     include: { project: { select: { id: true, name: true } } },

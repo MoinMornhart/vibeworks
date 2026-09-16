@@ -1,13 +1,14 @@
-import type { Task, TaskStatus } from "@/generated/prisma/client";
+import type { Prisma, Task, TaskStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { tk } from "@/lib/i18n/messages";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { priorityLabel } from "@/lib/status";
 import { issuesPaused } from "./repoAreasLogic";
-import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
-import { issueTokenFor } from "./token";
+import { guessProvider, parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
+import { issueTokenFor, userIssueToken } from "./token";
 import { runBotCommands } from "./botCommands";
+import { taskIsAiLocked } from "@/lib/aiLock";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
@@ -85,6 +86,11 @@ export interface IssueContext {
   projectId: string;
   /** So heißt der Bot beim Anbieter – null ohne Bot */
   botLogin: string | null;
+  /** Schreibt über einen Bot statt über das Konto des Besitzers */
+  viaBot: boolean;
+  ownerId: string;
+  repoUrl: string;
+  parsed: ParsedRepo;
 }
 
 const isIssuesDisabled = (err: unknown) => err instanceof GitError && err.status === 410;
@@ -113,12 +119,28 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
   if (!parsed || !provider || provider === "git") return null; // Anbieter erst nach dem ersten Abgleich bekannt; beliebige Git-Server kennen keine Issues
-  return { api: issueApi(provider, parsed, stored.token), provider, projectId, botLogin: stored.botLogin };
+  return { api: issueApi(provider, parsed, stored.token), provider, projectId, botLogin: stored.botLogin, viaBot: stored.source === "bot", ownerId: project.ownerId, repoUrl: project.repoUrl, parsed };
 }
 
-const issueInput = (task: Task, reason?: IssueInput["reason"]): IssueInput => ({
-  title: task.title,
-  body: issueBody(task),
+/** Gesperrte Aufgaben (#76): Das Issue verrät weder Titel noch Text – die KI liest auch GitHub. */
+const LOCKED_TITLE = "🔒 Für KI gesperrte Aufgabe";
+const lockedBody = (task: Task) => ["🔒 Diese Aufgabe ist in VibeWorks für KI gesperrt – Inhalt nur dort sichtbar.", "---", "_Aus VibeWorks gespiegelt – Änderungen bitte dort vornehmen._", taskMarker(task.id)].join("\n\n");
+
+/**
+ * Wer legt das Issue an? (#76) Aufgaben des Besitzers und automatische über den
+ * Projekt-Zugang; Aufgaben anderer über deren eigenen Git-Zugang oder den Bot –
+ * nie unter dem Namen des Besitzers. null: kein erlaubter Weg.
+ */
+async function creatorApi(task: Task, ctx: IssueContext): Promise<IssueApi | null> {
+  if (!task.createdById || task.createdById === ctx.ownerId || task.createdVia === "auto") return ctx.api;
+  const own = await userIssueToken(task.createdById, ctx.repoUrl);
+  if (own) return issueApi(ctx.provider, ctx.parsed, own);
+  return ctx.viaBot ? ctx.api : null;
+}
+
+const issueInput = (task: Task, reason?: IssueInput["reason"], locked = false): IssueInput => ({
+  title: locked ? LOCKED_TITLE : task.title,
+  body: locked ? lockedBody(task) : issueBody(task),
   closed: task.status === "DONE" || reason === "not_planned",
   reason: reason ?? (task.status === "DONE" ? "completed" : undefined),
 });
@@ -145,8 +167,16 @@ export function pushTaskIssue(taskId: string, ctx?: IssueContext | null): Promis
     if (!task) return;
     ctx ??= await issueContext(task.projectId);
     if (!ctx) return;
+    const locked = await taskIsAiLocked(task);
+    // Neue gesperrte Aufgaben bekommen gar kein Issue; bestehende werden unkenntlich
+    if (locked && !task.issueNumber) return;
+    const createWith = task.issueNumber ? null : await creatorApi(task, ctx);
+    if (!task.issueNumber && !createWith) {
+      if (task.issueError !== tk("git", "errors.issueNeedsAccount")) await db.$executeRaw`UPDATE "Task" SET "issueError" = ${tk("git", "errors.issueNeedsAccount")} WHERE "id" = ${task.id}`;
+      return;
+    }
     try {
-      const ref = task.issueNumber ? await ctx.api.update(task.issueNumber, issueInput(task)) : await ctx.api.create(issueInput(task));
+      const ref = task.issueNumber ? await ctx.api.update(task.issueNumber, issueInput(task, undefined, locked)) : await createWith!.create(issueInput(task));
       // Sofort merken – falls das Label danach scheitert, entsteht kein zweites Issue.
       await db.$executeRaw`UPDATE "Task" SET "issueNumber" = ${ref.number}, "issueUrl" = ${ref.url}, "issueError" = NULL WHERE "id" = ${task.id}`;
       await ctx.api.setStatusLabel(ref, task.status === "DONE" ? null : labelForStatus(task.status));
@@ -205,18 +235,17 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
   if (!ctx) return null;
   const result: IssueSyncResult = { created: 0, tasksChanged: 0, linked: 0, commands: 0, error: null };
 
-  const missing = await db.task.findMany({
-    where: { projectId, issueNumber: null, status: { not: "DONE" } },
-    orderBy: { createdAt: "asc" },
-    take: BACKFILL_LIMIT,
-    select: { id: true },
-  });
+  // Aufgaben ohne erlaubten Weg (#76) nicht vorne festhängen lassen – nur ein paar je Lauf erneut versuchen
+  const needsAccount = tk("git", "errors.issueNeedsAccount");
+  const pick = (where: Prisma.TaskWhereInput, take: number) =>
+    db.task.findMany({ where: { projectId, issueNumber: null, status: { not: "DONE" }, ...where }, orderBy: { createdAt: "asc" }, take, select: { id: true } });
+  const missing = [...(await pick({ OR: [{ issueError: null }, { issueError: { not: needsAccount } }] }, BACKFILL_LIMIT)), ...(await pick({ issueError: needsAccount }, 5))];
   for (const { id } of missing) {
     await pushTaskIssue(id, ctx);
     if (issuesPaused((await db.project.findUnique({ where: { id: projectId }, select: { issuesOffAt: true } }))?.issuesOffAt)) return null;
     const t = await db.task.findUnique({ where: { id }, select: { issueNumber: true, issueError: true } });
     if (t?.issueNumber) result.created++;
-    else if (t?.issueError) {
+    else if (t?.issueError && t.issueError !== needsAccount) {
       result.error = t.issueError;
       break; // Meist ein Rechteproblem – nicht 25-mal dasselbe versuchen
     }

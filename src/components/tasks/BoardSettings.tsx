@@ -45,6 +45,8 @@ export function BoardSettings({
       const hidden = c.hidden.includes(s) ? c.hidden.filter((x) => x !== s) : [...c.hidden, s];
       return hidden.length >= c.order.length ? c : { ...c, hidden };
     });
+  const toggleAiLock = (s: TaskStatus) =>
+    setCfg((c) => ({ ...c, aiLocked: c.aiLocked.includes(s) ? c.aiLocked.filter((x) => x !== s) : [...c.aiLocked, s] }));
   const setLabel = (s: TaskStatus, v: string) => setCfg((c) => ({ ...c, labels: { ...c.labels, [s]: v } }));
 
   async function save() {
@@ -83,6 +85,10 @@ export function BoardSettings({
               <label className="flex cursor-pointer items-center gap-1.5 text-xs">
                 <input type="checkbox" className="h-4 w-4 accent-[var(--vw-accent)]" checked={!hidden} onChange={() => toggleHidden(s)} />
                 {t("board.settings.visible")}
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs" title={t("aiLock.columnHint")}>
+                <input type="checkbox" className="h-4 w-4 accent-[var(--vw-accent)]" checked={cfg.aiLocked.includes(s)} onChange={() => toggleAiLock(s)} data-testid="board-column-ai-lock" />
+                🔒 {t("aiLock.column")}
               </label>
               <span className="flex">
                 <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label={t("board.settings.up", { status: labelOf(s) })}>

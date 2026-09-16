@@ -15,6 +15,7 @@ const schema = z.object({
     hidden: z.array(z.string().max(20)).max(8),
     labels: z.record(z.string().max(20), z.string().max(200)).optional(),
     collapseAfter: z.number().int().min(0).max(100),
+    aiLocked: z.array(z.string().max(20)).max(8).optional(),
   }),
 });
 

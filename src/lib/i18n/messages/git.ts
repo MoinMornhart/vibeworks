@@ -174,6 +174,8 @@ const de = {
       "Kein Zugriff – Rate-Limit erreicht oder dem Token fehlen Rechte (HTTP 403). Mit Token ist das Limit deutlich höher. Das Token braucht Schreibrechte für Issues.",
     issueNotFound: "Repository nicht gefunden (HTTP 404). Bei privaten Repositories ein Zugangstoken hinterlegen. Das Token braucht Schreibrechte für Issues.",
     issueFailed: "Das Issue ließ sich nicht spiegeln.",
+    issueNeedsAccount:
+      "Kein Issue: Die Aufgabe hat nicht der Projektbesitzer angelegt. Damit niemand unter fremdem Namen schreibt, braucht die Person einen eigenen Git-Zugang (Konto → Git-Zugänge) mit Schreibrecht – oder das Projekt einen Bot.",
     hostUnreachable: "{host} ist nicht erreichbar – stimmt die Adresse?",
     tokenUnknown: "{provider} kennt dieses Token nicht – beim Kopieren etwas vergessen?",
     noProvider: "Unter dieser Adresse läuft kein {provider}.",
@@ -362,6 +364,8 @@ const en: Shape<typeof de> = {
       "No access – rate limit reached or the token lacks permissions (HTTP 403). With a token the limit is much higher. The token needs write access to issues.",
     issueNotFound: "Repository not found (HTTP 404). For private repositories, add an access token. The token needs write access to issues.",
     issueFailed: "The issue couldn't be mirrored.",
+    issueNeedsAccount:
+      "No issue: this task wasn't created by the project owner. So nobody writes under someone else's name, that person needs their own Git access (Account → Git access) with write permission – or the project needs a bot.",
     hostUnreachable: "{host} is unreachable – is the address correct?",
     tokenUnknown: "{provider} doesn't recognize this token – did something get lost while copying?",
     noProvider: "There is no {provider} running at this address.",

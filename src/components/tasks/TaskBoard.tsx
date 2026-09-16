@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { AlignLeft, Bot, Check, CircleDot, Eye, EyeOff, Info, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
+import { AlignLeft, Bot, Check, Lock, CircleDot, Eye, EyeOff, Info, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
 import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
@@ -100,9 +100,14 @@ function TaskCard({
         )}
         {!done && !overlay && <TimerButtons taskId={t.id} hoverOnly />}
       </div>
-      {(t.aiNote || t.status === "DOING" || t.priority !== 2 || t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
+      {(t.aiLocked || t.aiNote || t.status === "DOING" || t.priority !== 2 || t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">
           {t.status === "DOING" && <WorkClock since={t.statusChangedAt} who={workers[0] ?? null} />}
+          {t.aiLocked && (
+            <span className="inline-flex items-center gap-0.5 rounded-md border border-amber-400/30 px-1.5 py-px text-[11px] text-amber-300" title={tr("aiLock.task")} data-testid="task-ai-lock-badge">
+              <Lock size={11} /> KI
+            </span>
+          )}
           {t.aiNote && (
             <span className="inline-flex items-center gap-0.5 rounded-md border border-sky-400/30 px-1.5 py-px text-[11px] text-sky-300" title={tr("info.noteOnCard", { text: t.aiNote })} data-testid="task-ai-note-badge">
               <Bot size={11} /> KI

@@ -45,6 +45,13 @@ const de = {
     issueErrorLabel: "Issue-Fehler: {error}",
     hasDescription: "Hat eine Beschreibung",
   },
+  aiLock: {
+    task: "Für KI gesperrt",
+    taskHint: "Über MCP unsichtbar – keine KI sieht oder ändert diese Aufgabe. Das Issue zeigt keinen Inhalt.",
+    column: "für KI sperren",
+    columnHint: "Aufgaben in dieser Spalte sind über MCP unsichtbar, ihre Issues zeigen keinen Inhalt.",
+    columnLocked: "This column is locked for AI agents – create the task in another column.",
+  },
   info: {
     title: "Info zur Aufgabe",
     button: "Info",
@@ -192,6 +199,13 @@ const en: Shape<typeof de> = {
     issueErrorTitle: "Issue: {error}",
     issueErrorLabel: "Issue error: {error}",
     hasDescription: "Has a description",
+  },
+  aiLock: {
+    task: "Locked for AI",
+    taskHint: "Invisible over MCP – no AI sees or changes this task. The issue shows no content.",
+    column: "lock for AI",
+    columnHint: "Tasks in this column are invisible over MCP; their issues show no content.",
+    columnLocked: "This column is locked for AI agents – create the task in another column.",
   },
   info: {
     title: "Task info",

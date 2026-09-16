@@ -24,6 +24,8 @@ export interface TaskForm {
   recurrence: Recurrence | "";
   assignee: string;
   priority: number;
+  /** Für KI gesperrt (#76) */
+  aiLocked: boolean;
 }
 
 function toForm(t: TaskItem | null, status: TaskStatus, initial?: Partial<TaskForm>): TaskForm {
@@ -35,7 +37,7 @@ function toForm(t: TaskItem | null, status: TaskStatus, initial?: Partial<TaskFo
   };
 }
 
-const EMPTY: TaskForm = { title: "", description: "", status: "TODO", dueDate: "", labels: "", recurrence: "", assignee: "", priority: 2 };
+const EMPTY: TaskForm = { title: "", description: "", status: "TODO", dueDate: "", labels: "", recurrence: "", assignee: "", priority: 2, aiLocked: false };
 
 function fromTask(t: TaskItem): TaskForm {
   return {
@@ -47,6 +49,7 @@ function fromTask(t: TaskItem): TaskForm {
     recurrence: t.recurrence ?? "",
     assignee: t.assignee ?? "",
     priority: t.priority,
+    aiLocked: t.aiLocked,
   };
 }
 
@@ -237,6 +240,13 @@ export function TaskDialog({
             {task && task.issueAssignees.length > 0 && <p className="mt-1 text-xs text-muted">{t("dialog.issueAssignees", { list: task.issueAssignees.join(", ") })}</p>}
           </div>
         </div>
+        <label className="flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm" data-testid="task-dialog-ai-lock">
+          <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--vw-accent)]" checked={form.aiLocked} onChange={(e) => setForm((f) => ({ ...f, aiLocked: e.target.checked }))} />
+          <span>
+            <span className="font-medium">🔒 {t("aiLock.task")}</span>
+            <span className="block text-xs text-muted">{t("aiLock.taskHint")}</span>
+          </span>
+        </label>
         {form.recurrence && (
           <p className="text-xs text-muted">
             {t("dialog.recurrenceHint")}
