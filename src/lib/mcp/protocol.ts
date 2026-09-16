@@ -63,6 +63,9 @@ export interface ToolCallInfo {
   ms: number;
   /** Fehlertext für das Protokoll (gekürzt) */
   error: string | null;
+  /** Argumente und Ergebnis – nur zum Zuordnen, nicht zum Speichern */
+  args?: Record<string, unknown>;
+  result?: unknown;
 }
 
 export interface ServerOptions<C> {
@@ -155,14 +158,14 @@ export async function handleMessage<C>(msg: unknown, ctx: C, opts: ServerOptions
       const started = Date.now();
       try {
         const out = await tool.run(args, ctx);
-        await logCall({ tool: tool.name, ok: true, ms: Date.now() - started, error: null });
+        await logCall({ tool: tool.name, ok: true, ms: Date.now() - started, error: null, args, result: out });
         const note = await quietly(() => opts.notice?.(tool.name, ctx) ?? null);
         const content = [{ type: "text", text: typeof out === "string" ? out : JSON.stringify(out, null, 2) }, ...(note ? [{ type: "text", text: note }] : [])];
         return ok(id, { content });
       } catch (err) {
         // Werkzeugfehler gehören ins Ergebnis, damit das Modell sie sieht und reagieren kann
         const text = await opts.describeError(err);
-        await logCall({ tool: tool.name, ok: false, ms: Date.now() - started, error: text.slice(0, ERROR_LOG_MAX) });
+        await logCall({ tool: tool.name, ok: false, ms: Date.now() - started, error: text.slice(0, ERROR_LOG_MAX), args });
         return ok(id, { content: [{ type: "text", text }], isError: true });
       }
     }

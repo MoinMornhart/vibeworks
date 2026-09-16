@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { Save, Trash2 } from "lucide-react";
+import { Info, Save, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { FormError } from "@/components/ui/FormError";
 import type { TaskItem } from "@/lib/tasks";
@@ -47,6 +47,7 @@ export function TaskDialog({
   onSave,
   onDelete,
   people = [],
+  onInfo,
 }: {
   open: boolean;
   task: TaskItem | null;
@@ -56,6 +57,8 @@ export function TaskDialog({
   onDelete?: (task: TaskItem) => Promise<void>;
   /** Vorschläge für „Bearbeiter“: die Leute im Projekt */
   people?: Array<{ username: string; name: string }>;
+  /** Info-Fenster öffnen (Verlauf, KI-Schritte, Commits) */
+  onInfo?: (task: TaskItem) => void;
 }) {
   const t = useT("tasks");
   const tc = useT("common");
@@ -123,6 +126,11 @@ export function TaskDialog({
           {task && onDelete && (
             <button type="button" className="btn btn-danger btn-sm mr-auto" onClick={remove} disabled={busy}>
               <Trash2 size={14} /> {tc("delete")}
+            </button>
+          )}
+          {task && onInfo && (
+            <button type="button" className="btn btn-sm" onClick={() => onInfo(task)} data-testid="task-dialog-info">
+              <Info size={14} /> {t("info.button")}
             </button>
           )}
           <button type="button" className="btn btn-sm" onClick={onClose}>{tc("cancel")}</button>

@@ -11,6 +11,7 @@ import { CHANGELOG } from "@/lib/changelog";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
+import { taskIdOfCall } from "@/lib/taskInfoLogic";
 
 // MCP-Endpunkt für Claude Code: „Streamable HTTP“, zustandslos, Anmeldung
 // per API-Schlüssel (Mein Konto → Claude Code & API-Schlüssel).
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
       `Note for the user: this MCP client asked for protocol version ${v}, which VibeWorks no longer supports natively. It still works, but please update the client.`,
     onToolCall: async (call) => {
       if (call.ok && call.tool === CONFIRM_TOOL) rulesAcked = true;
-      await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms } });
+      await db.mcpCall.create({ data: { tokenId: auth.tokenId, userId: auth.user.id, tool: call.tool, ok: call.ok, error: call.error, ms: call.ms, taskId: taskIdOfCall(call.args, call.result) } });
     },
     notice: (tool) => (rulesAcked || tool === RULES_TOOL || tool === CONFIRM_TOOL ? null : RULES_REMINDER),
     describeError: async (err) => {

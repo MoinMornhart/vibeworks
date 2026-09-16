@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.7",
+    date: "2026-09-17",
+    title: "Info-Fenster: sehen, was Claude macht",
+    titleEn: "Info panel: see what Claude does",
+    changes: [
+      {
+        type: "neu",
+        text: "Jede Aufgabe hat ein Info-Fenster (ⓘ auf der Karte oder „Info“ im Dialog): aktueller Stand, jeder Schritt der KI über MCP, Commits, die das Issue nennen, der Verlauf und erfasste Zeiten. Es bleibt offen, während man weiterarbeitet, und aktualisiert sich selbst",
+        en: "Every task has an info panel (ⓘ on the card or “Info” in the dialog): current state, every AI step via MCP, commits mentioning the issue, the history and tracked time. It stays open while you keep working and refreshes itself",
+      },
+      {
+        type: "neu",
+        text: "Ist eine Aufgabe in Arbeit, läuft auf der Karte eine Uhr mit – so sieht das ganze Team, wer gerade woran sitzt und wie lange schon",
+        en: "While a task is in progress, a clock runs on its card – so the whole team sees who is working on what and for how long",
+      },
+    ],
+  },
+  {
     version: "0.8.6",
     date: "2026-09-16",
     title: "Abhängigkeiten aktualisiert",

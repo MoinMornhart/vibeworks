@@ -818,10 +818,13 @@ model McpCall {
   ok        Boolean
   error     String?
   ms        Int
+  /// Aufgabe, um die es ging (aus den Argumenten oder dem Ergebnis) – fürs Info-Fenster
+  taskId    String?
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([createdAt])
+  @@index([taskId, createdAt])
 }
 
 /// Ideen-Eingang: schnell Eingeworfenes, später zu Projekt oder Aufgabe gemacht (dann gelöscht).

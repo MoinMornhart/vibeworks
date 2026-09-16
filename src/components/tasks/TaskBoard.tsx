@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
-import { AlignLeft, Check, CircleDot, Eye, EyeOff, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
+import { AlignLeft, Check, CircleDot, Eye, EyeOff, Info, ListChecks, Plus, Repeat, FilePlus2, Settings2, PenLine, TriangleAlert, UserRound } from "lucide-react";
 import { SortableColumns } from "@/components/ui/SortableColumns";
 import type { TaskItem } from "@/lib/tasks";
 import { dayKeyToDate, dueState, FADE_AFTER_DAYS, isFaded, recurrenceLabel, type DueState } from "@/lib/taskDates";
@@ -13,6 +13,7 @@ import { cn, dayKey } from "@/lib/utils";
 import { TimerButtons } from "@/components/time/TimerPill";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
 import { PriorityBadge } from "@/components/projects/ProjectCard";
+import { TaskInfoPanel, WorkClock } from "./TaskInfoPanel";
 import { BoardSettings } from "./BoardSettings";
 import { DEFAULT_BOARD, type BoardConfig } from "@/lib/boardConfig";
 
@@ -51,6 +52,7 @@ function TaskCard({
   overlay,
   today,
   onOpen,
+  onInfo,
   onToggle,
   readOnly = false,
 }: {
@@ -59,6 +61,7 @@ function TaskCard({
   overlay?: boolean;
   today: string;
   onOpen: (t: TaskItem) => void;
+  onInfo?: (t: TaskItem) => void;
   onToggle: (t: TaskItem) => void;
   readOnly?: boolean;
 }) {
@@ -90,10 +93,16 @@ function TaskCard({
         <button type="button" onClick={() => onOpen(t)} disabled={readOnly} className="min-w-0 flex-1 px-1.5 pt-0.5 text-left text-sm leading-snug disabled:cursor-default">
           <span className={cn("break-words", done && "text-muted line-through")}>{t.title}</span>
         </button>
+        {!overlay && onInfo && (
+          <button type="button" className="btn btn-ghost btn-icon h-6 w-6 shrink-0 opacity-60 hover:opacity-100" onClick={() => onInfo(t)} aria-label={tr("info.open", { title: t.title })} data-testid="task-info-open">
+            <Info size={13} />
+          </button>
+        )}
         {!done && !overlay && <TimerButtons taskId={t.id} hoverOnly />}
       </div>
-      {(t.priority !== 2 || t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
+      {(t.status === "DOING" || t.priority !== 2 || t.dueDate || t.recurrence || t.description || t.labels.length > 0 || t.issueNumber || t.issueError || workers.length > 0 || t.createdByName) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-[3.25rem] text-muted">
+          {t.status === "DOING" && <WorkClock since={t.statusChangedAt} who={workers[0] ?? null} />}
           {t.priority !== 2 && (
             <span className="text-[11px]" data-testid="task-priority-badge">
               <PriorityBadge priority={t.priority} compact={t.priority < 3} />
@@ -282,6 +291,7 @@ export function TaskBoard({
 
   const toggle = (t: TaskItem) => void patch(t, { status: t.status === "DONE" ? "TODO" : "DONE" }).catch((e) => setError(errorMessage(e)));
   const open = (t: TaskItem) => setDialog({ task: t, status: t.status });
+  const [infoFor, setInfoFor] = useState<TaskItem | null>(null);
 
   return (
     <section className="glass p-6 sm:p-8" aria-labelledby="tasks-heading">
@@ -366,7 +376,7 @@ export function TaskBoard({
         onReorder={reorder}
         limit={boardCfg.collapseAfter || limit}
         emptyText={t("board.empty")}
-        renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
+        renderCard={(t, handle) => <TaskCard task={t} handle={readOnly ? undefined : handle} today={today} onOpen={open} onInfo={(x) => setInfoFor(x)} onToggle={toggle} readOnly={readOnly} />}
         renderOverlay={(t) => <TaskCard task={t} overlay today={today} onOpen={open} onToggle={toggle} readOnly={readOnly} />}
         renderColumn={(status, count, body) => {
           const label = columnLabel(status as TaskStatus);
@@ -393,8 +403,13 @@ export function TaskBoard({
         onSave={save}
         onDelete={remove}
         people={people}
+        onInfo={(x) => {
+          setDialog(null);
+          setInfoFor(x);
+        }}
       />
       )}
+      {infoFor && <TaskInfoPanel taskId={infoFor.id} title={infoFor.title} onClose={() => setInfoFor(null)} />}
     </section>
   );
 }
