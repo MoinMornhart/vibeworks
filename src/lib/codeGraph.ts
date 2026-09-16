@@ -36,9 +36,9 @@ export async function projectMemos(projectId: string): Promise<CodeMemoView[]> {
   return rows.map((m) => ({ id: m.id, file: m.file, text: m.text, author: m.authorName, via: m.via, at: m.createdAt.toISOString() }));
 }
 
-export async function projectCodeGraph(projectId: string, wantedBranch?: string | null, opts: { branches?: boolean } = {}): Promise<ProjectCodeGraph> {
+export async function projectCodeGraph(projectId: string, wantedBranch?: string | null, opts: { branches?: boolean; refresh?: boolean } = {}): Promise<ProjectCodeGraph> {
   const repo = await db.repoCache.findUnique({ where: { projectId }, select: { defaultBranch: true, webUrl: true } });
-  const copy = await ensureCodeCopy(projectId, wantedBranch);
+  const copy = await ensureCodeCopy(projectId, wantedBranch, { force: opts.refresh });
   const key = `${projectId}:${copy.branch}`;
   let graph = copy.head && cache.get(key)?.head === copy.head ? cache.get(key)!.graph : null;
   if (!graph) {

@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.8",
+    date: "2026-09-17",
+    title: "Code-Netz: Vollbild und Mausrad",
+    titleEn: "Code network: full screen and mouse wheel",
+    changes: [
+      {
+        type: "fix",
+        text: "Code-Netz: Das Mausrad zoomt jetzt das Netz, statt die ganze Seite zu scrollen",
+        en: "Code network: the mouse wheel now zooms the network instead of scrolling the whole page",
+      },
+      {
+        type: "neu",
+        text: "Code-Netz im Vollbild – ein Klick, und das Netz füllt das ganze Fenster (Esc beendet). Klappt das Holen der Code-Kopie nicht, steht jetzt verständlich da, warum, und „Kopie jetzt holen“ versucht es sofort noch einmal",
+        en: "Code network in full screen – one click and the network fills the whole window (Esc exits). If fetching the code copy fails, it now says why in plain words, and “Fetch copy now” retries right away",
+      },
+    ],
+  },
+  {
     version: "0.9.7",
     date: "2026-09-17",
     title: "Eingeschränkt statt kaputt",

@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, GitBranch, Maximize2, Network, RefreshCw, Search, StickyNote, Trash2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Download, ExternalLink, Expand, GitBranch, Maximize2, Minimize2, Network, RefreshCw, Search, StickyNote, Trash2, X } from "lucide-react";
 import type { ProjectCodeGraph } from "@/lib/codeGraph";
 import { blobUrl } from "@/lib/git/repoCheckLogic";
 import { neighborsOf } from "@/lib/codeGraphLogic";
 import { api, errorMessage } from "@/lib/client/api";
-import { useFormat, useT } from "@/lib/i18n/client";
+import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 // Code-Netz (#57): Kräfte-Layout ohne Bibliothek. Knoten stoßen sich ab,
@@ -35,6 +36,8 @@ function colorOf(group: string): string {
 export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: string; canEdit?: boolean }) {
   const t = useT("graph");
   const f = useFormat();
+  const msg = useMsg();
+  const [full, setFull] = useState(false);
   const [branch, setBranch] = useState<string | null>(null);
   const [showMemos, setShowMemos] = useState(true);
   const [memoText, setMemoText] = useState("");
@@ -53,11 +56,12 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const drag = useRef<{ kind: "pan" | "node"; id?: string; sx: number; sy: number; vx: number; vy: number } | null>(null);
   const heat = useRef(0);
 
-  const load = useCallback(async (wanted: string | null = null) => {
+  const load = useCallback(async (wanted: string | null = null, refresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api<{ graph: ProjectCodeGraph }>(`/api/projects/${projectId}/graph${wanted ? `?branch=${encodeURIComponent(wanted)}` : ""}`);
+      const query = new URLSearchParams({ ...(wanted ? { branch: wanted } : {}), ...(refresh ? { refresh: "1" } : {}) }).toString();
+      const res = await api<{ graph: ProjectCodeGraph }>(`/api/projects/${projectId}/graph${query ? `?${query}` : ""}`);
       setBranch(res.graph.branch);
       pos.current = new Map();
       setSelected(null);
@@ -180,13 +184,37 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
     return { x: (sx - view.x) / view.k, y: (sy - view.y) / view.k };
   };
 
-  const onWheel = (e: React.WheelEvent) => {
-    const r = svgRef.current!.getBoundingClientRect();
-    const sx = ((e.clientX - r.left) / r.width) * W;
-    const sy = ((e.clientY - r.top) / r.height) * H;
-    const k = Math.min(6, Math.max(0.2, view.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
-    setView({ k, x: sx - ((sx - view.x) * k) / view.k, y: sy - ((sy - view.y) * k) / view.k });
-  };
+  // Mausrad zoomt das Netz – als eigener Listener, sonst scrollt der Browser die Seite (#67)
+  const hasGraph = Boolean(graph && !graph.empty);
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = svg.getBoundingClientRect();
+      const sx = ((e.clientX - r.left) / r.width) * W;
+      const sy = ((e.clientY - r.top) / r.height) * H;
+      setView((v) => {
+        const k = Math.min(6, Math.max(0.2, v.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+        return { k, x: sx - ((sx - v.x) * k) / v.k, y: sy - ((sy - v.y) * k) / v.k };
+      });
+    };
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
+  }, [hasGraph, full]);
+
+  // Vollbild: Esc schließt, danach neu einpassen
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFull(false);
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [full]);
 
   const fit = () => {
     const ps = nodes.map((n) => pos.current.get(n.id)).filter(Boolean) as Pos[];
@@ -233,6 +261,8 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
     }
   }
 
+  // Vollbild per Portal: im Glas-Panel (backdrop-filter) bliebe „fixed“ im Panel gefangen
+  const inStage = (el: React.ReactNode) => (full && typeof document !== "undefined" ? createPortal(el, document.body) : el);
   const hrefOf = (id: string) => (graph && !id.startsWith("pkg:") && graph.webUrl ? blobUrl(graph.webUrl, graph.branch ?? "main", id, null) : null);
   const labelOf = (id: string) => (id.startsWith("pkg:") ? id.slice(4) : id);
 
@@ -280,10 +310,17 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       </div>
       <p className="mb-4 text-xs text-muted">{t("hint")}</p>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      {graph?.empty && <p className="text-sm text-muted">{graph.error ? t("fetchFailed", { error: graph.error }) : t("empty")}</p>}
+      {graph?.empty && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-bg/25 px-3 py-2 text-sm" data-testid="code-graph-empty">
+          <p className="min-w-0 flex-1 text-muted">{graph.error ? t("fetchFailed", { error: msg(graph.error) }) : t("empty")}</p>
+          <button type="button" className="btn btn-sm" onClick={() => void load(branch, true)} disabled={loading} data-testid="code-graph-fetch">
+            <Download size={14} /> {t("fetchNow")}
+          </button>
+        </div>
+      )}
 
-      {graph && !graph.empty && (
-        <>
+      {graph && !graph.empty && inStage(
+        <div className={cn(full && "fixed inset-0 z-50 flex flex-col overflow-hidden bg-bg p-3 sm:p-4")} data-testid="code-graph-stage">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <label className="relative">
               <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -306,15 +343,26 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
             <button type="button" className="btn btn-sm ml-auto" onClick={fit}>
               <Maximize2 size={13} /> {t("fit")}
             </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              data-testid="code-graph-fullscreen"
+              onClick={() => {
+                setFull((v) => !v);
+                // Nach dem Umschalten auf die neue Größe einpassen
+                window.setTimeout(fit, 60);
+              }}
+            >
+              {full ? <Minimize2 size={13} /> : <Expand size={13} />} {full ? t("exitFullscreen") : t("fullscreen")}
+            </button>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[1fr_18rem]">
-            <div className="relative overflow-hidden rounded-2xl border bg-bg/40">
+          <div className={cn("grid gap-3 lg:grid-cols-[1fr_18rem]", full && "min-h-0 flex-1 lg:grid-cols-[1fr_22rem]")}>
+            <div className={cn("relative overflow-hidden rounded-2xl border bg-bg/40", full && "min-h-0")}>
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${W} ${H}`}
-                className="block h-[26rem] w-full touch-none select-none sm:h-[34rem]"
-                onWheel={onWheel}
+                className={cn("block w-full touch-none select-none", full ? "h-full" : "h-[26rem] sm:h-[34rem]")}
                 onPointerDown={(e) => {
                   (e.target as Element).setPointerCapture?.(e.pointerId);
                   const id = (e.target as Element).getAttribute("data-node");
@@ -405,7 +453,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
               <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-muted">{t("help")}</p>
             </div>
 
-            <aside className="rounded-2xl border bg-bg/25 p-3 text-sm" data-testid="code-graph-detail">
+            <aside className={cn("rounded-2xl border bg-bg/25 p-3 text-sm", full && "min-h-0 overflow-y-auto")} data-testid="code-graph-detail">
               {selectedMemo ? (
                 <div className="space-y-2" data-testid="code-graph-memo-detail">
                   <div className="flex items-start gap-2">
@@ -512,7 +560,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
               )}
             </aside>
           </div>
-        </>
+        </div>,
       )}
     </section>
   );

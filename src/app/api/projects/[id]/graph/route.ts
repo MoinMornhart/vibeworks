@@ -16,5 +16,7 @@ export const GET = route<Params>(async (req: NextRequest, { params }) => {
   const { project } = await requireProject(user.id, (await params).id);
   limitOrThrow(`code-graph:${user.id}`, 30, 10 * MINUTE);
   const branch = branchSchema.parse(req.nextUrl.searchParams.get("branch") ?? undefined);
-  return json({ graph: await projectCodeGraph(project.id, branch, { branches: true }) });
+  // refresh=1: Kopie jetzt holen, auch wenn der letzte Versuch gerade erst war (#67)
+  const refresh = req.nextUrl.searchParams.get("refresh") === "1";
+  return json({ graph: await projectCodeGraph(project.id, branch, { branches: true, refresh }) });
 });
