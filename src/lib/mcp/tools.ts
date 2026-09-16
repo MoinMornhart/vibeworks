@@ -6,13 +6,9 @@ import { projectCodeGraph } from "@/lib/codeGraph";
 import { ensureCodeCopy } from "@/lib/git/codeCopy";
 import { addCodeMemo, deleteCodeMemo } from "@/lib/codeMemo";
 import { memoCreateSchema } from "@/lib/codeMemoLogic";
-
-/** Zweig aus den Argumenten – nur harmlose Namen, sonst der Hauptzweig. */
-const branchArg = (v: unknown) => (typeof v === "string" && /^(?!.*\.\.)[\w][\w./-]{0,200}$/.test(v) ? v : null);
-const noCopyNote = (error: string | null) =>
-  error ? `The repository copy could not be fetched (${error}). Check the project's Git access in VibeWorks.` : "No copy of the repository yet. Sync the project's repository in VibeWorks first.";
 import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
+import { repoAreas } from "@/lib/git/repoAreasLogic";
 import { serializeAppError, setErrorStatus } from "@/lib/bugs";
 import { ERROR_STATUSES, type ErrorStatus } from "@/lib/bugsLogic";
 import { db } from "@/lib/db";
@@ -40,6 +36,11 @@ import { fillPrompt } from "@/lib/prompts";
 import { protectedChanges } from "@/lib/protect";
 import { currentEntry, stopRunning } from "@/lib/timeServer";
 import { MAX_FOCUS } from "@/lib/today";
+
+/** Zweig aus den Argumenten – nur harmlose Namen, sonst der Hauptzweig. */
+const branchArg = (v: unknown) => (typeof v === "string" && /^(?!.*\.\.)[\w][\w./-]{0,200}$/.test(v) ? v : null);
+const noCopyNote = (error: string | null) =>
+  error ? `The repository copy could not be fetched (${error}). Check the project's Git access in VibeWorks.` : "No copy of the repository yet. Sync the project's repository in VibeWorks first.";
 
 // Die Werkzeuge, die Claude Code über MCP sieht. Beschreibungen auf Englisch
 // (sie richten sich an das Modell), Inhalte so, wie sie gespeichert sind.
@@ -740,6 +741,17 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const { project } = await resolveProject(userId, ref.parse(args.project));
       const cache = await db.repoCache.findUnique({ where: { projectId: project.id } });
       const commits = (cache?.commits as unknown as Array<{ sha: string; title: string; author: string; date: string }> | null) ?? [];
+      // Bereiche (#66): eine Einschränkung heißt nicht, dass das Repository kaputt ist
+      const areas = repoAreas({
+        provider: cache?.provider || null,
+        cacheError: cache?.error ?? null,
+        hasCommits: commits.length > 0,
+        issueSync: project.issueSync,
+        issuesOffAt: project.issuesOffAt,
+        ci: (cache?.ci as { state?: string } | null) ?? null,
+        deps: (cache?.deps as { error?: string | null; manifest?: string | null } | null) ?? null,
+      });
+      const limitations = areas.filter((a) => a.state !== "ok").map((a) => ({ area: a.area, state: a.state, note: a.note ? translateMessage(locale, a.note) : null }));
       const ci = cache?.ci as { state?: string; runs?: unknown[] } | null;
       const deps = cache?.deps as {
         counts?: unknown;
@@ -748,6 +760,8 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       } | null;
       return {
         project: { id: project.id, name: project.name },
+        areas: areas.map((a) => ({ area: a.area, state: a.state })),
+        ...(limitations.length ? { limitations, limitationsNote: "Limited areas do not mean the repository is broken – everything else keeps working." } : {}),
         repository: project.repoUrl
           ? {
               url: project.repoUrl,

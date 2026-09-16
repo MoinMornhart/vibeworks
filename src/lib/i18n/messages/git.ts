@@ -6,6 +6,13 @@ import { plural } from "../translate";
 // sie werden dort wiedererkannt und deshalb auch im Englischen nicht übersetzt.
 
 const de = {
+  areas: {
+    issuesSyncOff: "Issue-Spiegelung ist für dieses Projekt ausgeschaltet.",
+    issuesDisabled: "Issues sind im Repository abgeschaltet – Aufgaben bleiben nur in VibeWorks. VibeWorks fragt einmal am Tag erneut nach.",
+    noCi: "Keine CI-Läufe gefunden.",
+    depsPending: "Abhängigkeiten noch nicht geprüft.",
+    noManifest: "Keine package.json im Repository.",
+  },
   panel: {
     title: "Git & Updates",
     noRepo: "Kein Repository verknüpft",
@@ -19,6 +26,8 @@ const de = {
     emptyPath: "Bearbeiten → Repository",
     lastGood: "Angezeigt wird der letzte erfolgreiche Stand.",
     issuesError: "Issues: {error}",
+    issuesLimited: "Issues sind in diesem Repository abgeschaltet. Das ist nur eine Einschränkung: Commits, CI, Abhängigkeiten und alles andere laufen normal weiter, deine Aufgaben bleiben in VibeWorks. VibeWorks fragt einmal am Tag erneut nach.",
+    issuesRetry: "Jetzt erneut prüfen",
     noCommits: "Das Repository hat noch keine Commits.",
     moreCommits: "Weitere Commits ({n})",
   },
@@ -28,6 +37,8 @@ const de = {
     contributors: "Mitwirkende",
     issues: "Issues",
     issuesOff: "aus",
+    issuesLimited: "eingeschränkt",
+    issuesLimitedHint: "Issues sind im Repository abgeschaltet – Aufgaben bleiben in VibeWorks.",
     issuesPaused: "pausiert",
     linked: plural("{n} Aufgabe mit Issue", "{n} Aufgaben mit Issue"),
     needToken: "Für Issues ein Zugangstoken hinterlegen – am besten einmal unter „Mein Konto“",
@@ -183,6 +194,13 @@ const de = {
 };
 
 const en: Shape<typeof de> = {
+  areas: {
+    issuesSyncOff: "Issue mirroring is switched off for this project.",
+    issuesDisabled: "Issues are disabled in the repository – tasks stay in VibeWorks only. VibeWorks checks again once a day.",
+    noCi: "No CI runs found.",
+    depsPending: "Dependencies not checked yet.",
+    noManifest: "No package.json in the repository.",
+  },
   panel: {
     title: "Git & updates",
     noRepo: "No repository linked",
@@ -196,6 +214,8 @@ const en: Shape<typeof de> = {
     emptyPath: "Edit → Repository",
     lastGood: "Showing the last successful state.",
     issuesError: "Issues: {error}",
+    issuesLimited: "Issues are disabled in this repository. That is only a limitation: commits, CI, dependencies and everything else keep working, your tasks stay in VibeWorks. VibeWorks checks again once a day.",
+    issuesRetry: "Check again now",
     noCommits: "The repository has no commits yet.",
     moreCommits: "More commits ({n})",
   },
@@ -205,6 +225,8 @@ const en: Shape<typeof de> = {
     contributors: "Contributors",
     issues: "Issues",
     issuesOff: "off",
+    issuesLimited: "limited",
+    issuesLimitedHint: "Issues are disabled in the repository – tasks stay in VibeWorks.",
     issuesPaused: "paused",
     linked: plural("{n} task with an issue", "{n} tasks with an issue"),
     needToken: "Add an access token for issues – ideally once under “My account”",

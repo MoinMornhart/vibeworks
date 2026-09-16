@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.7",
+    date: "2026-09-17",
+    title: "Eingeschränkt statt kaputt",
+    titleEn: "Limited, not broken",
+    changes: [
+      {
+        type: "fix",
+        text: "Sind in einem Repository die Issues abgeschaltet, versucht VibeWorks es nicht mehr bei jedem Abgleich neu – das sparte keine GitHub-Aufrufe und konnte andere Projekte ausbremsen. Stattdessen pausieren die Issues einen Tag, die Fehlermarken an den Aufgaben verschwinden, und das Projekt zeigt einen ruhigen Hinweis mit „Jetzt erneut prüfen“. Commits, CI und Abhängigkeiten laufen ganz normal weiter",
+        en: "If issues are disabled in a repository, VibeWorks no longer retries on every sync – that wasted GitHub calls and could slow down other projects. Instead, issues pause for a day, the error marks on tasks disappear and the project shows a calm note with “Check again now”. Commits, CI and dependencies keep working as usual",
+      },
+      {
+        type: "besser",
+        text: "Die KI sieht in get_repo_status jetzt, welche Bereiche eingeschränkt sind (Commits, Issues, CI, Abhängigkeiten) – und dass der Rest des Repositories trotzdem funktioniert",
+        en: "The AI now sees in get_repo_status which areas are limited (commits, issues, CI, dependencies) – and that the rest of the repository still works",
+      },
+    ],
+  },
+  {
     version: "0.9.6",
     date: "2026-09-17",
     title: "Wünsche pro Tag einstellbar",

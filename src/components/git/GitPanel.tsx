@@ -38,6 +38,8 @@ import { richText } from "./GitProviderFields";
 interface Access {
   tokenHint: string | null;
   issueSync: boolean;
+  /** Issues im Repository abgeschaltet – seit wann VibeWorks pausiert (#66) */
+  issuesOffAt?: string | null;
   /** Konto-Token des Besitzers, das greift, wenn das Projekt kein eigenes hat */
   accountToken?: { hint: string | null; login: string | null } | null;
   /** Eingehender Webhook – nur für den Besitzer */
@@ -520,8 +522,9 @@ export function GitPanel({
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ cache: RepoCacheView | null; issues: IssueSyncResult | null }>(`/api/projects/${projectId}/git`, { method: "POST", body: {} });
+      const res = await api<{ cache: RepoCacheView | null; issues: IssueSyncResult | null; issuesOffAt?: string | null }>(`/api/projects/${projectId}/git`, { method: "POST", body: {} });
       setCache(res.cache);
+      if (res.issuesOffAt !== undefined) setAccess((a) => ({ ...a, issuesOffAt: res.issuesOffAt }));
       setIssues(res.issues);
       if (res.issues) setLinked(res.issues.linked);
       // Neue Issue-Nummern oder umsortierte Aufgaben → Aufgabenboard neu laden
@@ -546,7 +549,7 @@ export function GitPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei neuem Repository neu starten
   }, [repoUrl]);
 
-  async function saveAccess(body: { token?: string | null; issueSync?: boolean }) {
+  async function saveAccess(body: { token?: string | null; issueSync?: boolean; issuesRetry?: boolean }) {
     setAccessBusy(true);
     setAccessError(null);
     try {
@@ -592,9 +595,12 @@ export function GitPanel({
   // Den Token-Zustand kennt nur der Besitzer – alle anderen sehen die Zahl verknüpfter Issues.
   const hasToken = Boolean(access.tokenHint || access.accountToken);
   const noIssues = provider === "git";
-  const issueStat = noIssues ? "–" : !canManage ? (linked ? String(linked) : "–") : !hasToken ? t("stats.issuesOff") : !access.issueSync ? t("stats.issuesPaused") : String(linked);
+  const issuesOff = Boolean(access.issuesOffAt) && access.issueSync;
+  const issueStat = noIssues ? "–" : issuesOff ? t("stats.issuesLimited") : !canManage ? (linked ? String(linked) : "–") : !hasToken ? t("stats.issuesOff") : !access.issueSync ? t("stats.issuesPaused") : String(linked);
   const issueHint = noIssues
     ? t("stats.noIssuesGit")
+    : issuesOff
+    ? t("stats.issuesLimitedHint")
     : !canManage
     ? t("stats.linked", { n: linked })
     : !hasToken
@@ -681,6 +687,17 @@ export function GitPanel({
                 {error ?? cacheError}
                 {commits.length > 0 && ` ${t("panel.lastGood")}`}
               </span>
+            </p>
+          )}
+          {issuesOff && !cache?.error && (
+            <p role="status" className="mb-4 flex flex-wrap items-start gap-2 rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-sm" data-testid="issues-limited">
+              <CircleDot size={16} className="mt-0.5 shrink-0 text-sky-300" />
+              <span className="min-w-0 flex-1">{t("panel.issuesLimited")}</span>
+              {canManage && (
+                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void saveAccess({ issuesRetry: true })} data-testid="issues-retry">
+                  {t("panel.issuesRetry")}
+                </button>
+              )}
             </p>
           )}
           {issues?.error && !cache?.error && (

@@ -43,6 +43,7 @@ const loadProject = cache(async (id: string) => {
       description: true,
       repoTokenHint: true,
       issueSync: true,
+      issuesOffAt: true,
       repoCheck: true,
       checkTasks: true,
       errorKey: true,
@@ -75,7 +76,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access, perms } = loaded;
   const can = (p: ProjectPermission) => perms.has(p);
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds, people] = await Promise.all([
     project.liveUrl ? liveStats(project.id) : null,
     sumSeconds({ projectId: project.id }),
@@ -147,6 +148,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         initialAccess={{
           tokenHint: isOwner ? repoTokenHint : null,
           issueSync,
+          issuesOffAt: issuesOffAt?.toISOString() ?? null,
           accountToken: account ? { hint: account.hint, login: account.login } : null,
         }}
         linkedIssues={tasks.filter((t) => t.issueNumber !== null).length}

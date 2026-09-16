@@ -316,6 +316,8 @@ model Project {
   repoTokenHint   String?
   /// Aufgaben automatisch als Issues im Repository spiegeln (braucht ein Token)
   issueSync       Boolean @default(true)
+  /// Issues im Repository abgeschaltet (HTTP 410) – bis einen Tag danach nicht erneut versuchen (#66)
+  issuesOffAt     DateTime?
   /// Repo-Check (GitHub-Workflow) automatisch einrichten und auswerten – aus = Datei wird entfernt
   repoCheck       Boolean @default(true)
   /// Aufgaben aus dem Repo-Check: off · urgent (Geheimnisse, Lücken) · all (dazu Semgrep-Befunde)

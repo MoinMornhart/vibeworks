@@ -5,6 +5,7 @@ import { tk } from "@/lib/i18n/messages";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { priorityLabel } from "@/lib/status";
+import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
 import { issueTokenCipherFor } from "./token";
 import { appLink, notifyUser } from "@/lib/notify";
@@ -74,15 +75,30 @@ function describe(err: unknown): string {
 interface IssueContext {
   api: IssueApi;
   provider: GitProvider;
+  projectId: string;
+}
+
+const isIssuesDisabled = (err: unknown) => err instanceof GitError && err.status === 410;
+
+/**
+ * Das Repository hat Issues abgeschaltet: merken, einen Tag Ruhe geben und
+ * die Fehlermarken an den Aufgaben entfernen – das ist eine Einschränkung,
+ * kein kaputtes Repository (#66).
+ */
+async function markIssuesOff(projectId: string): Promise<void> {
+  await db.project.updateMany({ where: { id: projectId }, data: { issuesOffAt: new Date() } });
+  await db.$executeRaw`UPDATE "Task" SET "issueError" = NULL WHERE "projectId" = ${projectId} AND "issueError" IS NOT NULL`;
 }
 
 /** Null, wenn das Projekt keine Issues spiegelt (kein Repository, kein Token, abgeschaltet). */
 export async function issueContext(projectId: string): Promise<IssueContext | null> {
   const project = await db.project.findUnique({
     where: { id: projectId },
-    select: { ownerId: true, repoUrl: true, repoTokenCipher: true, issueSync: true, repoCache: { select: { provider: true } } },
+    select: { ownerId: true, repoUrl: true, repoTokenCipher: true, issueSync: true, issuesOffAt: true, repoCache: { select: { provider: true } } },
   });
   if (!project?.repoUrl || !project.issueSync) return null;
+  // Issues im Repository abgeschaltet: einen Tag lang nicht nachfragen – spart API-Aufrufe (#66)
+  if (issuesPaused(project.issuesOffAt)) return null;
   const stored = await issueTokenCipherFor(project); // Bot-Konto, sonst Projekt- oder Konto-Token
   if (!stored) return null;
   const parsed = parseRepoUrl(project.repoUrl);
@@ -94,7 +110,7 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   } catch {
     return null;
   }
-  return { api: issueApi(provider, parsed, token), provider };
+  return { api: issueApi(provider, parsed, token), provider, projectId };
 }
 
 const issueInput = (task: Task, reason?: IssueInput["reason"]): IssueInput => ({
@@ -132,6 +148,10 @@ export function pushTaskIssue(taskId: string, ctx?: IssueContext | null): Promis
       await db.$executeRaw`UPDATE "Task" SET "issueNumber" = ${ref.number}, "issueUrl" = ${ref.url}, "issueError" = NULL WHERE "id" = ${task.id}`;
       await ctx.api.setStatusLabel(ref, task.status === "DONE" ? null : labelForStatus(task.status));
     } catch (err) {
+      if (isIssuesDisabled(err)) {
+        await markIssuesOff(task.projectId);
+        return;
+      }
       await db.$executeRaw`UPDATE "Task" SET "issueError" = ${describe(err)} WHERE "id" = ${task.id}`;
     }
   });
@@ -188,6 +208,7 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
   });
   for (const { id } of missing) {
     await pushTaskIssue(id, ctx);
+    if (issuesPaused((await db.project.findUnique({ where: { id: projectId }, select: { issuesOffAt: true } }))?.issuesOffAt)) return null;
     const t = await db.task.findUnique({ where: { id }, select: { issueNumber: true, issueError: true } });
     if (t?.issueNumber) result.created++;
     else if (t?.issueError) {
@@ -198,6 +219,8 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
 
   try {
     const recent = await ctx.api.recent();
+    // Wieder erreichbar: Pause aufheben
+    await db.project.updateMany({ where: { id: projectId, issuesOffAt: { not: null } }, data: { issuesOffAt: null } });
     const byNumber = new Map(recent.map((i) => [i.number, i]));
     const linked = await db.task.findMany({ where: { projectId, issueNumber: { in: [...byNumber.keys()] } } });
     const closedViaGit: string[] = [];
@@ -219,6 +242,10 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     if (result.tasksChanged) await syncProjectProgress(projectId);
     if (closedViaGit.length) void notifyClosed(projectId, closedViaGit);
   } catch (err) {
+    if (isIssuesDisabled(err)) {
+      await markIssuesOff(projectId);
+      return null;
+    }
     result.error ??= describe(err);
   }
   result.linked = await db.task.count({ where: { projectId, issueNumber: { not: null } } });

@@ -252,6 +252,7 @@ export const templateCreateSchema = z.object({
 });
 
 export const repoAccessSchema = z.object({
+  issuesRetry: z.boolean().optional(),
   // null entfernt das Token, undefined lässt es stehen
   token: z
     .string()

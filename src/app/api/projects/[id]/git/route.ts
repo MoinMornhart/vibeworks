@@ -16,7 +16,7 @@ import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { id: string };
 
-type AccessProject = Pick<Project, "id" | "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync" | "webhookSecretCipher" | "webhookAt">;
+type AccessProject = Pick<Project, "id" | "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync" | "issuesOffAt" | "webhookSecretCipher" | "webhookAt">;
 
 // Token- und Webhook-Angaben sieht nur der Besitzer; Mitglieder erfahren nur, ob gespiegelt wird.
 async function accessInfo(project: AccessProject, access: ProjectAccess) {
@@ -34,6 +34,7 @@ async function accessInfo(project: AccessProject, access: ProjectAccess) {
   return {
     tokenHint: owner ? project.repoTokenHint : null,
     issueSync: project.issueSync,
+    issuesOffAt: project.issuesOffAt?.toISOString() ?? null,
     accountToken: account ? { hint: account.hint, login: account.login } : null,
     webhook,
   };
@@ -55,7 +56,9 @@ export const POST = route<Params>(async (_req, { params }) => {
   if (!project.repoUrl) return json({ cache: null, issues: null });
   const cache = await syncProjectRepository(project);
   const issues = cache.error ? null : await syncIssues(project.id);
-  return json({ cache: serializeRepoCache(cache), issues });
+  // Eingeschränkte Bereiche (#66) gleich mitliefern – Issues abgeschaltet ist kein Fehler
+  const after = await db.project.findUnique({ where: { id: project.id }, select: { issuesOffAt: true } });
+  return json({ cache: serializeRepoCache(cache), issues, issuesOffAt: after?.issuesOffAt?.toISOString() ?? null });
 });
 
 // Projekteigenes Token, Issue-Spiegelung und Webhook – nur der Besitzer.
@@ -71,6 +74,8 @@ export const PUT = route<Params>(async (req, { params }) => {
     data.repoTokenHint = input.token ? tokenHint(input.token) : null;
   }
   if (input.issueSync !== undefined) data.issueSync = input.issueSync;
+  // Einschalten oder „erneut prüfen“ hebt die Pause wegen abgeschalteter Issues auf (#66)
+  if (input.issueSync === true || input.issuesRetry) data.issuesOffAt = null;
   const needsSecret = input.webhook === "renew" || ((input.webhook === "on" || input.webhook === "install") && !project.webhookSecretCipher);
   if (needsSecret) data.webhookSecretCipher = encrypt(randomToken(24));
   if (input.webhook === "off") {

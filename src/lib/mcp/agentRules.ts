@@ -47,7 +47,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 4. Finished: status DONE. With issue sync the Git issue follows automatically; "Fixes #n" in a commit message closes it too.
 
 ## Problems and errors
-- list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site.
+- list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site. Its "limitations" list areas that are off or limited (e.g. issues disabled in the repository) – the rest of the repository still works, so keep going and tell the user what is limited.
 - list_errors shows runtime errors of the user's apps with stack traces – fix the cause, then call resolve_error.
 - search_code and list_code_files look into the linked repository – use them instead of guessing file paths or function names.
 - get_code_graph shows which files import a file, what it imports and the memos pinned to it – check it before changing a shared file, and pin what you learned with add_code_memo.
