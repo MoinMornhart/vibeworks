@@ -42,7 +42,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 
 ## Working on a task
 1. Find it with list_tasks or get_task. Pick the highest priority first (4 urgent, 3 high, 2 normal, 1 low); tasks labelled "notfix" are urgent bug fixes.
-2. When you start: update_task with status DOING and assignee set to your name (e.g. "Claude"), so everyone sees who is on it.
+2. When you start: update_task with status DOING and assignee set to your name (e.g. "Claude"), so everyone sees who is on it. If the task has "instructions", the user wrote them for you – follow them.
 3. Stuck: status BLOCKED with a short reason in the description.
 4. Finished: status DONE. With issue sync the Git issue follows automatically; "Fixes #n" in a commit message closes it too.
 

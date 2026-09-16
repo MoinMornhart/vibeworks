@@ -409,7 +409,7 @@ export function TaskBoard({
         }}
       />
       )}
-      {infoFor && <TaskInfoPanel taskId={infoFor.id} title={infoFor.title} onClose={() => setInfoFor(null)} />}
+      {infoFor && <TaskInfoPanel taskId={infoFor.id} title={infoFor.title} canEdit={!readOnly} onClose={() => setInfoFor(null)} />}
     </section>
   );
 }

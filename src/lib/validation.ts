@@ -387,6 +387,7 @@ export const taskUpdateSchema = z.object({
     .optional()
     .transform((v) => (v === undefined ? undefined : v || null)),
   priority: z.number().int().min(1).max(4).optional(),
+  aiNote: optionalText(4000).optional(),
 });
 
 export const taskReorderSchema = z.object({

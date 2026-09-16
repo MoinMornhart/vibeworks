@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bot, Check, Clock, ExternalLink, GitCommit, History, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { Bot, Check, Clock, ExternalLink, GitCommit, History, MessageSquareText, RefreshCw, TriangleAlert, X } from "lucide-react";
 import type { TaskInfo } from "@/lib/taskInfo";
 import { shortDuration } from "@/lib/taskInfoLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -39,7 +39,7 @@ export function WorkClock({ since, who }: { since: string; who: string | null })
 }
 
 /** Schwebendes Info-Fenster einer Aufgabe (#48/#49): Verlauf, KI-Schritte, Commits, Zeit. */
-export function TaskInfoPanel({ taskId, title, onClose }: { taskId: string; title: string; onClose: () => void }) {
+export function TaskInfoPanel({ taskId, title, onClose, canEdit = false }: { taskId: string; title: string; onClose: () => void; canEdit?: boolean }) {
   const t = useT("tasks");
   const ts = useT("status");
   const f = useFormat();
@@ -120,6 +120,8 @@ export function TaskInfoPanel({ taskId, title, onClose }: { taskId: string; titl
               )}
             </section>
 
+            <AiNote taskId={taskId} initial={info.aiNote} canEdit={canEdit} />
+
             <Section icon={<Bot size={14} />} title={t("info.steps")} empty={t("info.noSteps")} count={info.steps.length}>
               {info.steps.map((s, i) => (
                 <li key={i} className="flex items-start gap-2 py-1" data-testid="task-info-step">
@@ -184,6 +186,70 @@ export function TaskInfoPanel({ taskId, title, onClose }: { taskId: string; titl
       </div>
     </aside>,
     document.body,
+  );
+}
+
+/** Hinweis an Claude (#59): eigener Prompt und Arbeitsweise – die KI bekommt ihn bei get_task/list_tasks mit. */
+function AiNote({ taskId, initial, canEdit }: { taskId: string; initial: string | null; canEdit: boolean }) {
+  const t = useT("tasks");
+  const [text, setText] = useState(initial ?? "");
+  const [saved, setSaved] = useState(initial ?? "");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    setText(initial ?? "");
+    setSaved(initial ?? "");
+  }, [initial]);
+
+  async function save() {
+    setBusy(true);
+    setNote(null);
+    try {
+      await api(`/api/tasks/${taskId}`, { method: "PATCH", body: { aiNote: text.trim() || null } });
+      setSaved(text);
+      setNote(t("info.noteSaved"));
+    } catch (e) {
+      setNote(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const presets = [t("info.presets.review"), t("info.presets.tests"), t("info.presets.small"), t("info.presets.ask")];
+  return (
+    <section data-testid="task-ai-note">
+      <h3 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+        <MessageSquareText size={14} /> {t("info.noteTitle")}
+      </h3>
+      {!canEdit ? (
+        <p className="whitespace-pre-wrap text-xs text-muted">{saved || t("info.noteEmpty")}</p>
+      ) : (
+        <>
+          <textarea
+            className="field min-h-20 text-sm"
+            maxLength={4000}
+            value={text}
+            placeholder={t("info.notePlaceholder")}
+            onChange={(e) => setText(e.target.value)}
+            data-testid="task-ai-note-input"
+          />
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {presets.map((p) => (
+              <button key={p} type="button" className="chip !py-0.5 text-[11px]" onClick={() => setText((v) => (v.includes(p) ? v : `${v.trim()}${v.trim() ? "\n" : ""}${p}`))}>
+                + {p}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <button type="button" className="btn btn-primary btn-sm" disabled={busy || text === saved} onClick={() => void save()} data-testid="task-ai-note-save">
+              {t("info.noteSave")}
+            </button>
+            {note && <span className="text-xs text-muted">{note}</span>}
+          </div>
+          <p className="mt-1 text-[11px] text-muted">{t("info.noteHint")}</p>
+        </>
+      )}
+    </section>
   );
 }
 

@@ -46,6 +46,7 @@ export async function taskInfo(task: Task) {
     since: task.statusChangedAt.toISOString(),
     assignee: task.assignee,
     priority: task.priority,
+    aiNote: task.aiNote,
     issueUrl: task.issueUrl,
     activity: activity.map((a) => ({ at: a.createdAt.toISOString(), who: a.user ? displayNameOf(a.user) : null, kind: a.kind, summary: a.summary })),
     steps: calls.map((c) => ({

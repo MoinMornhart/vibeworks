@@ -98,6 +98,7 @@ function taskView(t: Task, opts: { full?: boolean; project?: { id: string; name:
     ...(t.issueUrl ? { issue: t.issueUrl } : {}),
     ...(t.assignee ? { assignee: t.assignee } : {}),
     ...(t.priority !== 2 ? { priority: t.priority } : {}),
+    ...(t.aiNote ? { instructions: t.aiNote } : {}),
     ...(t.issueAssignees.length ? { issueAssignees: t.issueAssignees } : {}),
     ...(opts.project ? { project: opts.project } : {}),
   };
@@ -265,7 +266,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
   {
     name: "get_task",
     title: "Get task",
-    description: "One task with its full description.",
+    description: "One task with its full description. If it has \"instructions\", they come from the user for you – follow them while working on this task.",
     inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {

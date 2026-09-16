@@ -61,6 +61,7 @@ const de = {
   tasks: {
     toTask: "Als Aufgabe für Claude",
     created: "Aufgabe angelegt: {title}",
+    exists: "Dafür gibt es schon eine offene Aufgabe: {title}",
     saved: "Gespeichert.",
     modeLabel: "Aufgaben automatisch anlegen:",
     modeHint: "Je Art eine Sammel-Aufgabe für Claude, die sich selbst aktuell hält – neue Befunde kommen dazu, ist nichts mehr gemeldet, wird sie erledigt.",
@@ -158,6 +159,7 @@ const en: Shape<typeof de> = {
   tasks: {
     toTask: "Task for Claude",
     created: "Task created: {title}",
+    exists: "There already is an open task for this: {title}",
     saved: "Saved.",
     modeLabel: "Create tasks automatically:",
     modeHint: "One collective task per kind for Claude that keeps itself up to date – new findings are added, and once nothing is reported it gets completed.",

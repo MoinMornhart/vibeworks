@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.1",
+    date: "2026-09-17",
+    title: "Hinweis an Claude",
+    titleEn: "Note for Claude",
+    changes: [
+      {
+        type: "neu",
+        text: "Im Info-Fenster einer Aufgabe gibt es jetzt „Hinweis an Claude“: eigener Prompt und Arbeitsweise, mit Bausteinen wie „erst Tests schreiben“ oder „vor dem Push auf mein OK warten“. Die KI bekommt ihn über MCP bei der Aufgabe mit – privat, nie im Issue",
+        en: "The task info panel now has “Note for Claude”: your own prompt and way of working, with snippets like “write tests first” or “wait for my OK before pushing”. The AI receives it with the task via MCP – private, never in the issue",
+      },
+      {
+        type: "besser",
+        text: "Repo-Check: „Als Aufgabe für Claude“ öffnet jetzt erst das Aufgaben-Fenster mit dem Vorschlag – Titel, Text, Priorität und Bearbeiter lassen sich vor dem Anlegen anpassen. Gibt es schon eine offene Aufgabe dazu, sagt VibeWorks das",
+        en: "Repo check: “Task for Claude” now opens the task dialog with the suggestion first – title, text, priority and assignee can be adjusted before creating. If an open task already exists, VibeWorks says so",
+      },
+    ],
+  },
+  {
     version: "0.9.0",
     date: "2026-09-17",
     title: "Team sieht die KI arbeiten",

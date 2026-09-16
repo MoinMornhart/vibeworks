@@ -26,16 +26,27 @@ export interface TaskForm {
   priority: number;
 }
 
-function toForm(t: TaskItem | null, status: TaskStatus): TaskForm {
+function toForm(t: TaskItem | null, status: TaskStatus, initial?: Partial<TaskForm>): TaskForm {
   return {
-    title: t?.title ?? "",
-    description: t?.description ?? "",
-    status: t?.status ?? status,
-    dueDate: t?.dueDate ?? "",
-    labels: t?.labels.join(", ") ?? "",
-    recurrence: t?.recurrence ?? "",
-    assignee: t?.assignee ?? "",
-    priority: t?.priority ?? 2,
+    ...EMPTY,
+    ...(t ? {} : initial),
+    ...(t ? fromTask(t) : {}),
+    status: t?.status ?? initial?.status ?? status,
+  };
+}
+
+const EMPTY: TaskForm = { title: "", description: "", status: "TODO", dueDate: "", labels: "", recurrence: "", assignee: "", priority: 2 };
+
+function fromTask(t: TaskItem): TaskForm {
+  return {
+    title: t.title,
+    description: t.description ?? "",
+    status: t.status,
+    dueDate: t.dueDate ?? "",
+    labels: t.labels.join(", "),
+    recurrence: t.recurrence ?? "",
+    assignee: t.assignee ?? "",
+    priority: t.priority,
   };
 }
 
@@ -48,6 +59,7 @@ export function TaskDialog({
   onDelete,
   people = [],
   onInfo,
+  initial,
 }: {
   open: boolean;
   task: TaskItem | null;
@@ -59,21 +71,24 @@ export function TaskDialog({
   people?: Array<{ username: string; name: string }>;
   /** Info-Fenster öffnen (Verlauf, KI-Schritte, Commits) */
   onInfo?: (task: TaskItem) => void;
+  /** Vorausgefüllte neue Aufgabe (z. B. aus dem Repo-Check) */
+  initial?: Partial<TaskForm>;
 }) {
   const t = useT("tasks");
   const tc = useT("common");
   const ts = useT("status");
-  const [form, setForm] = useState<TaskForm>(() => toForm(task, defaultStatus));
+  const [form, setForm] = useState<TaskForm>(() => toForm(task, defaultStatus, initial));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) {
-      setForm(toForm(task, defaultStatus));
+      setForm(toForm(task, defaultStatus, initial));
       setError(null);
       setFieldErrors({});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial nur beim Öffnen
   }, [open, task, defaultStatus]);
 
   const set = <K extends keyof TaskForm>(key: K, value: TaskForm[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -81,7 +96,7 @@ export function TaskDialog({
   // Neue Aufgabe: Entwurf je Seite merken – die Spalte kommt weiter vom Klick
   const pathname = usePathname();
   const draft = useDraft(
-    open && !task ? `task-new:${pathname}` : null,
+    open && !task && !initial ? `task-new:${pathname}` : null,
     form,
     (d) => setForm((f) => ({ ...f, title: d.title, description: d.description, dueDate: d.dueDate, labels: d.labels, recurrence: d.recurrence, assignee: d.assignee, priority: d.priority ?? 2 })),
     (f) => !f.title.trim() && !f.description.trim(),

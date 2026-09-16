@@ -657,6 +657,8 @@ model Task {
   autoKey     String?
   /// Wer daran arbeitet – frei eingetragen (z. B. „anna“ oder „Claude“), steht auch im Issue
   assignee    String?
+  /// Hinweis an die KI (eigener Prompt, Arbeitsweise) – privat, nie im Issue
+  aiNote      String?
   /// Priorität wie bei Projekten: 1 niedrig · 2 normal · 3 hoch · 4 dringend
   priority    Int         @default(2)
   /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“

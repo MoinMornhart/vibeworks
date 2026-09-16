@@ -55,6 +55,7 @@ export async function updateTask(userId: string, current: Task, input: z.output<
   if (input.recurrence !== undefined) data.recurrence = input.recurrence;
   if (input.assignee !== undefined) data.assignee = input.assignee;
   if (input.priority !== undefined) data.priority = input.priority;
+  if (input.aiNote !== undefined) data.aiNote = input.aiNote;
   if (input.dueDate !== undefined) data.dueDate = input.dueDate ? dayKeyToDate(input.dueDate) : null;
 
   let result: { task: Task; spawned: Task | null };

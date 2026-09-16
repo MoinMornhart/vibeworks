@@ -19,7 +19,7 @@ type Params = { id: string };
 const bodySchema = z.union([
   z.object({ action: z.enum(["run", "refresh", "enable", "disable"]) }),
   // Ein Befund als Aufgabe (#47) – Text und Stelle kommen aus dem gespeicherten Bericht, nicht vom Browser
-  z.object({ action: z.literal("task"), kind: z.enum(CHECK_KINDS), index: z.number().int().min(0).max(5000) }),
+  z.object({ action: z.enum(["task", "draft"]), kind: z.enum(CHECK_KINDS), index: z.number().int().min(0).max(5000) }),
   // Automatische Aufgaben: aus · nur Dringendes · alles – nur der Besitzer
   z.object({ action: z.literal("autoTasks"), mode: z.enum(CHECK_TASK_MODES) }),
 ]);
@@ -47,28 +47,33 @@ export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const body = await readBody(req, bodySchema, { maxBytes: 1024 });
-  const need = body.action === "enable" || body.action === "disable" || body.action === "autoTasks" ? "OWNER" : body.action === "task" ? "tasks.edit" : "git.sync";
+  const need = body.action === "enable" || body.action === "disable" || body.action === "autoTasks" ? "OWNER" : body.action === "task" || body.action === "draft" ? "tasks.edit" : "git.sync";
   const { project } = await requireProject(user.id, id, need);
   if (!project.repoUrl) throw new ApiError(400, tk("check", "errors.noRepo"));
 
   let removed = false;
   let warning: string | null = null;
   let task: { id: string; title: string } | null = null;
-  if (body.action === "task") {
+  let draft: Record<string, unknown> | null = null;
+  if (body.action === "task" || body.action === "draft") {
     limitOrThrow(`repo-check-task:${user.id}`, 30, 10 * MINUTE);
     const cache = await db.repoCache.findUnique({ where: { projectId: id }, select: { checkReport: true } });
     const item = cache?.checkReport ? checkItems(parseCheckReport(cache.checkReport), body.kind)[body.index] : undefined;
     if (!item) throw new ApiError(404, tk("check", "errors.noFinding"));
     const t = await getT("check");
     const title = t(`tasks.single.${body.kind}`, item.vars).slice(0, 200);
+    const description = `${t(`explain.${body.kind}.prompt`, item.vars)}\n\n_${t("tasks.footer")}_`;
+    const labels = body.kind === "findings" ? [t("tasks.label")] : [t("tasks.labelSecurity"), t("tasks.label")];
+    const priority = body.kind === "findings" ? 3 : 4;
     // Schon offen? Dann nicht doppelt anlegen.
     const open = await db.task.findFirst({ where: { projectId: id, title, status: { not: "DONE" } }, select: { id: true, title: true } });
-    if (open) {
+    if (body.action === "draft") {
+      // Fürs Aufgaben-Fenster (#60): vorausgefüllt, angelegt wird erst beim Speichern
+      draft = { title, description, labels, priority, assignee: "Claude", existing: open };
+    } else if (open) {
       task = open;
     } else {
-      const description = `${t(`explain.${body.kind}.prompt`, item.vars)}\n\n_${t("tasks.footer")}_`;
-      const labels = body.kind === "findings" ? [t("tasks.label")] : [t("tasks.labelSecurity"), t("tasks.label")];
-      const input = taskCreateSchema.parse({ title, description, labels, assignee: "Claude", priority: body.kind === "findings" ? 3 : 4 });
+      const input = taskCreateSchema.parse({ title, description, labels, assignee: "Claude", priority });
       ({ task } = await createTask(user.id, id, input));
     }
   } else if (body.action === "autoTasks") {
@@ -90,5 +95,5 @@ export const POST = route<Params>(async (req, { params }) => {
     limitOrThrow(`repo-check-switch:${id}`, 10, 10 * MINUTE);
     ({ removed, error: warning } = await setRepoCheck(id, body.action === "enable"));
   }
-  return json({ check: await view(id), removed, warning, task: task ? { id: task.id, title: task.title } : null });
+  return json({ check: await view(id), removed, warning, task: task ? { id: task.id, title: task.title } : null, draft });
 });

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Bug, Check, Copy, ExternalLink, KeyRound, ListPlus, ListTodo, RefreshCw, ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react";
 import { CHECK_TASK_MODES, type CheckTaskMode } from "@/lib/git/checkTasksLogic";
+import { useRouter } from "next/navigation";
+import { TaskDialog, type TaskForm } from "@/components/tasks/TaskDialog";
 import type { RepoCheckView } from "@/lib/git/repoCheck";
 import { blobUrl, checkIsUrgent, type CheckReport } from "@/lib/git/repoCheckLogic";
 import { GITHUB_NEW_TOKEN_URL } from "@/lib/git/parse";
@@ -11,7 +13,7 @@ import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Kind = "secrets" | "vulnerabilities" | "findings" | "todos";
-type Action = "run" | "refresh" | "enable" | "disable" | "task" | "autoTasks";
+type Action = "run" | "refresh" | "enable" | "disable" | "task" | "draft" | "autoTasks";
 
 const KINDS: Kind[] = ["secrets", "vulnerabilities", "findings", "todos"];
 const TOOL: Record<Kind, keyof CheckReport["tools"]> = { secrets: "gitleaks", vulnerabilities: "osv", findings: "semgrep", todos: "todos" };
@@ -97,6 +99,23 @@ export function RepoCheckPanel({
   const [open, setOpen] = useState<Kind | null>(null);
   const [shown, setShown] = useState(PAGE);
   const [copied, setCopied] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<TaskForm> | null>(null);
+  const router = useRouter();
+
+  // „Als Aufgabe“ (#60): erst das Aufgaben-Fenster mit dem Vorschlag, angelegt wird beim Speichern
+  async function openDraft(kind: string, index: number) {
+    setBusy("draft");
+    setError(null);
+    try {
+      const res = await api<{ draft: { title: string; description: string; labels: string[]; priority: number; assignee: string; existing: { title: string } | null } | null }>(`/api/projects/${projectId}/check`, { body: { action: "draft", kind, index } });
+      if (res.draft?.existing) setNote(t("tasks.exists", { title: res.draft.existing.title }));
+      else if (res.draft) setDraft({ title: res.draft.title, description: res.draft.description, labels: res.draft.labels.join(", "), priority: res.draft.priority, assignee: res.draft.assignee });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   // Umsetzen macht Claude Code bei dir – VibeWorks erklärt und liefert den Auftrag (#29)
   async function copyPrompt(key: string, text: string) {
@@ -299,7 +318,7 @@ export function RepoCheckPanel({
                                   {copied === row.key ? <Check size={12} /> : <Copy size={12} />} {copied === row.key ? t("explain.copied") : t("explain.copy")}
                                 </button>
                                 {canTask && (
-                                  <button type="button" className="btn btn-sm" data-testid="check-to-task" disabled={busy !== null} onClick={() => void act("task", { kind: open, index: row.index })}>
+                                  <button type="button" className="btn btn-sm" data-testid="check-to-task" disabled={busy !== null} onClick={() => void openDraft(open, row.index)}>
                                     <ListPlus size={12} /> {t("tasks.toTask")}
                                   </button>
                                 )}
@@ -320,6 +339,19 @@ export function RepoCheckPanel({
             </>
           )}
         </>
+      )}
+      {draft && (
+        <TaskDialog
+          open
+          task={null}
+          initial={draft}
+          onClose={() => setDraft(null)}
+          onSave={async (form) => {
+            const res = await api<{ task: { title: string } }>(`/api/projects/${projectId}/tasks`, { body: { ...form, recurrence: form.recurrence || null } });
+            setNote(t("tasks.created", { title: res.task.title }));
+            router.refresh();
+          }}
+        />
       )}
       {note && (
         <p role="status" className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
