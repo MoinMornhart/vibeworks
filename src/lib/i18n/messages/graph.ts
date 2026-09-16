@@ -5,7 +5,7 @@ import { plural } from "../translate";
 
 const de = {
   title: "Code-Netz",
-  hint: "Wie die Dateien des Repositories zusammenhängen: jeder Punkt eine Datei oder ein Paket, jede Linie ein Import. Berechnet aus der Kopie, die VibeWorks ohnehin holt – ohne KI und ohne Kosten.",
+  hint: "Wie die Dateien des Repositories zusammenhängen: jeder Punkt eine Datei oder ein Paket, jede Linie ein Import. Berechnet aus einer lokalen Kopie des neuesten Commits (mit dem Git-Zugang des Projekts geholt, bei jedem neuen Commit frisch) – ohne KI und ohne Kosten. Gelbe Quadrate sind Memos.",
   load: "Netz anzeigen",
   loading: "Baue das Netz …",
   reload: "Neu laden",
@@ -24,11 +24,26 @@ const de = {
   close: "Auswahl aufheben",
   only: "Nur diesen Bereich zeigen",
   all: "Alle Bereiche",
+  branch: "Zweig",
+  commit: "Stand {sha}",
+  fetchFailed: "Die Kopie des Repositories ließ sich nicht holen: {error}",
+  memos: "Memos",
+  memoTitle: "Memos zu dieser Datei",
+  memoEmpty: "Noch keine Memos.",
+  memoPlaceholder: "Was sollte man über diese Datei wissen? Stolperfallen, Zusammenhänge …",
+  memoAdd: "Memo anheften",
+  memoDelete: "Memo löschen",
+  memoBy: "{name} · {ago}",
+  memoByAi: "{name} per KI · {ago}",
+  memoLimit: "Höchstens {n} Memos je Projekt.",
+  memoNotFound: "Memo nicht gefunden.",
+  memoNode: "Memo",
+  memoCount: plural("{n} Memo", "{n} Memos"),
 };
 
 const en: Shape<typeof de> = {
   title: "Code network",
-  hint: "How the repository's files connect: each dot is a file or package, each line an import. Computed from the copy VibeWorks fetches anyway – no AI, no cost.",
+  hint: "How the repository's files connect: each dot is a file or package, each line an import. Computed from a local copy of the latest commit (fetched with the project's Git access, refreshed on every new commit) – no AI, no cost. Yellow squares are memos.",
   load: "Show network",
   loading: "Building the network …",
   reload: "Reload",
@@ -47,6 +62,21 @@ const en: Shape<typeof de> = {
   close: "Clear selection",
   only: "Show only this area",
   all: "All areas",
+  branch: "Branch",
+  commit: "At {sha}",
+  fetchFailed: "The repository copy could not be fetched: {error}",
+  memos: "Memos",
+  memoTitle: "Memos on this file",
+  memoEmpty: "No memos yet.",
+  memoPlaceholder: "What should people know about this file? Pitfalls, connections …",
+  memoAdd: "Pin memo",
+  memoDelete: "Delete memo",
+  memoBy: "{name} · {ago}",
+  memoByAi: "{name} via AI · {ago}",
+  memoLimit: "At most {n} memos per project.",
+  memoNotFound: "Memo not found.",
+  memoNode: "Memo",
+  memoCount: plural("{n} memo", "{n} memos"),
 };
 
 export default { de, en };

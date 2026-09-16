@@ -368,6 +368,7 @@ model Project {
   timeEntries    TimeEntry[]
   suggestions    Suggestion[]
   appErrors      AppError[]
+  codeMemos      CodeMemo[]
   communityPosts    CommunityPost[]
   communityBans     CommunityBan[]
   communityMessages CommunityMessage[]
@@ -590,6 +591,23 @@ model CommunityBan {
   createdAt   DateTime @default(now())
 
   @@unique([projectId, userId])
+}
+
+/// Memo-Netz (#60): Notiz an einer Datei des Repositories – im Code-Netz sichtbar, auch über MCP
+model CodeMemo {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Pfad im Repository (oder pkg:<name>)
+  file       String
+  text       String
+  authorId   String?
+  authorName String?
+  /// web · mcp
+  via        String   @default("web")
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, file])
 }
 
 /// Fehler-Eingang: gleichartige Fehler einer App, per Fingerabdruck zusammengefasst

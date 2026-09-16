@@ -3,6 +3,14 @@ import { grepViaGit, listFilesViaGit } from "@/lib/git/gitCli";
 import { fileSummary, filterFiles, parseGrep } from "@/lib/codeIndexLogic";
 import { neighborsOf } from "@/lib/codeGraphLogic";
 import { projectCodeGraph } from "@/lib/codeGraph";
+import { ensureCodeCopy } from "@/lib/git/codeCopy";
+import { addCodeMemo, deleteCodeMemo } from "@/lib/codeMemo";
+import { memoCreateSchema } from "@/lib/codeMemoLogic";
+
+/** Zweig aus den Argumenten – nur harmlose Namen, sonst der Hauptzweig. */
+const branchArg = (v: unknown) => (typeof v === "string" && /^(?!.*\.\.)[\w][\w./-]{0,200}$/.test(v) ? v : null);
+const noCopyNote = (error: string | null) =>
+  error ? `The repository copy could not be fetched (${error}). Check the project's Git access in VibeWorks.` : "No copy of the repository yet. Sync the project's repository in VibeWorks first.";
 import type { Prisma, RepoCache, Task } from "@/generated/prisma/client";
 import { checkIsUrgent, parseCheckReport } from "@/lib/git/repoCheckLogic";
 import { serializeAppError, setErrorStatus } from "@/lib/bugs";
@@ -113,6 +121,7 @@ const S = {
   dueDate: { type: ["string", "null"], description: "Due date as YYYY-MM-DD, null to clear" },
   labels: { type: "array", items: { type: "string" }, description: "Short labels, e.g. [\"bug\", \"ui\"]" },
   recurrence: { type: ["string", "null"], enum: [...RECURRENCES, null] },
+  branch: { type: "string", maxLength: 200, description: "Branch name; default: the main branch" },
   priority: { type: "integer", minimum: 1, maximum: 4, description: "1 low, 2 normal (default), 3 high, 4 urgent – work on higher priorities first" },
   assignee: {
     type: ["string", "null"],
@@ -525,45 +534,50 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "list_code_files",
     title: "List code files",
     description:
-      "Files of the project's linked repository (from the copy VibeWorks already fetched, no network call). Without a pattern you get a summary plus the first files; with a pattern (substring or * wildcard, e.g. 'src/lib/*.ts') you get the matching paths. Use it before guessing a path.",
+      "Files of the project's linked repository. VibeWorks keeps a local copy of the latest commit (fetched on demand with the project's token). Without a pattern you get a summary plus the first files; with a pattern (substring or * wildcard, e.g. 'src/lib/*.ts') the matching paths. Use it before guessing a path.",
     inputSchema: {
       type: "object",
-      properties: { project: S.project, pattern: { type: "string", maxLength: 200, description: "Substring or * wildcard" } },
+      properties: { project: S.project, pattern: { type: "string", maxLength: 200, description: "Substring or * wildcard" }, branch: S.branch },
       required: ["project"],
       additionalProperties: false,
     },
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project));
-      const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { defaultBranch: true } });
-      const files = await listFilesViaGit(project.id, cache?.defaultBranch ?? null);
-      if (!files.length) return { project: { id: project.id, name: project.name }, files: [], note: "No fetched copy of the repository. Sync the project's repository in VibeWorks first." };
+      const copy = await ensureCodeCopy(project.id, branchArg(args.branch));
+      const files = copy.head ? await listFilesViaGit(project.id, copy.branch) : [];
+      if (!files.length) return { project: { id: project.id, name: project.name }, branch: copy.branch, files: [], note: noCopyNote(copy.error) };
       const pattern = typeof args.pattern === "string" ? args.pattern : null;
-      return { project: { id: project.id, name: project.name }, branch: cache?.defaultBranch ?? null, summary: fileSummary(files), matches: filterFiles(files, pattern) };
+      return { project: { id: project.id, name: project.name }, branch: copy.branch, commit: copy.head, summary: fileSummary(files), matches: filterFiles(files, pattern) };
     },
   },
   {
     name: "get_code_graph",
     title: "Get code network",
     description:
-      "How the linked repository's files connect through imports (the synapse map VibeWorks shows on the project page). With a file: what it imports and which files import it – use it before changing a file to see what might break. Without a file: the most connected files, the areas and the external packages.",
+      "How the linked repository's files connect through imports (the synapse map on the project page), plus memos people or AIs pinned to files. With a file: what it imports, which files import it and its memos – check it before changing a shared file. Without a file: the most connected files, the areas, the external packages and all memos.",
     inputSchema: {
       type: "object",
-      properties: { project: S.project, file: { type: "string", maxLength: 300, description: "Repository path, e.g. src/lib/db.ts; packages as pkg:<name>" } },
+      properties: {
+        project: S.project,
+        file: { type: "string", maxLength: 300, description: "Repository path, e.g. src/lib/db.ts; packages as pkg:<name>" },
+        branch: S.branch,
+      },
       required: ["project"],
       additionalProperties: false,
     },
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project));
-      const graph = await projectCodeGraph(project.id);
-      const head = { project: { id: project.id, name: project.name }, branch: graph.branch, files: graph.files, connections: graph.edges.length };
-      if (graph.empty) return { ...head, note: "No fetched copy of the repository. Sync the project's repository in VibeWorks first." };
+      const graph = await projectCodeGraph(project.id, branchArg(args.branch));
+      const head = { project: { id: project.id, name: project.name }, branch: graph.branch, commit: graph.commit, files: graph.files, connections: graph.edges.length };
+      const memosOf = (file: string) => graph.memos.filter((m) => m.file === file).map((m) => ({ id: m.id, text: m.text, by: m.author, via: m.via, at: m.at }));
+      if (graph.empty) return { ...head, note: noCopyNote(graph.error), memos: graph.memos };
       const file = typeof args.file === "string" ? args.file.trim() : "";
       if (file) {
         const node = graph.nodes.find((n) => n.id === file);
-        if (!node) return { ...head, note: `${file} is not in the network (unknown path, no imports, or hidden as one of the ${graph.hidden} least connected files). Use list_code_files to check the path.` };
-        return { ...head, file, area: node.group, ...neighborsOf(graph, file) };
+        if (!node) return { ...head, file, memos: memosOf(file), note: `${file} is not in the network (unknown path, no imports, or hidden as one of the ${graph.hidden} least connected files). Use list_code_files to check the path.` };
+        return { ...head, file, area: node.group, ...neighborsOf(graph, file), memos: memosOf(file) };
       }
       const areas = new Map<string, number>();
       for (const n of graph.nodes) if (n.kind === "file") areas.set(n.group, (areas.get(n.group) ?? 0) + 1);
@@ -572,27 +586,62 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         hubs: graph.nodes.filter((n) => n.kind === "file").slice(0, 20).map((n) => ({ file: n.id, connections: n.degree })),
         areas: [...areas.entries()].sort((a, b) => b[1] - a[1]).map(([area, files]) => ({ area, files })),
         packages: graph.nodes.filter((n) => n.kind === "package").map((n) => ({ name: n.label, usedBy: n.degree })),
+        memos: graph.memos.map((m) => ({ id: m.id, file: m.file, text: m.text, by: m.author })),
       };
+    },
+  },
+  {
+    name: "add_code_memo",
+    title: "Pin a memo to a file",
+    description:
+      "Pin a short memo to a file of the linked repository – it shows up in the code network for everyone in the project and in get_code_graph. Use it for knowledge that should not get lost: why something is built this way, pitfalls, what to check before changing it. Never put secrets into memos.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, file: { type: "string", maxLength: 300, description: "Repository path, e.g. src/lib/db.ts" }, text: { type: "string", maxLength: 2000 } },
+      required: ["project", "file", "text"],
+      additionalProperties: false,
+    },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project), "notes.edit");
+      const memo = await addCodeMemo(userId, project.id, memoCreateSchema.parse(args), "mcp");
+      return { memo: { id: memo.id, file: memo.file, text: memo.text }, url: link(`/projects/${project.id}#code-graph`) };
+    },
+  },
+  {
+    name: "delete_code_memo",
+    title: "Delete a code memo",
+    description: "Remove a memo from the code network (id from get_code_graph), e.g. when it is outdated.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, memo: { type: "string", description: "Memo id" } },
+      required: ["project", "memo"],
+      additionalProperties: false,
+    },
+    annotations: { destructiveHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project), "notes.edit");
+      await deleteCodeMemo(project.id, ref.parse(args.memo));
+      return { deleted: true };
     },
   },
   {
     name: "search_code",
     title: "Search code",
     description:
-      "Search the project's linked repository for a literal string (case-insensitive) and get file, line number and the matching line – the fast way to find a function, a component or a call site. Works on the copy VibeWorks already fetched.",
+      "Search the project's linked repository for a literal string (case-insensitive) and get file, line number and the matching line – the fast way to find a function, a component or a call site. Uses the local copy of the latest commit.",
     inputSchema: {
       type: "object",
-      properties: { project: S.project, query: { type: "string", minLength: 2, maxLength: 200 } },
+      properties: { project: S.project, query: { type: "string", minLength: 2, maxLength: 200 }, branch: S.branch },
       required: ["project", "query"],
       additionalProperties: false,
     },
     annotations: { readOnlyHint: true },
     run: async (args, { userId }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project));
-      const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { defaultBranch: true } });
-      const out = await grepViaGit(project.id, cache?.defaultBranch ?? null, z.string().min(2).max(200).parse(args.query));
+      const copy = await ensureCodeCopy(project.id, branchArg(args.branch));
+      const out = copy.head ? await grepViaGit(project.id, copy.branch, z.string().min(2).max(200).parse(args.query)) : "";
       const hits = parseGrep(out);
-      return { project: { id: project.id, name: project.name }, branch: cache?.defaultBranch ?? null, hits, note: hits.length ? undefined : "Nothing found – or the repository has not been fetched yet." };
+      return { project: { id: project.id, name: project.name }, branch: copy.branch, commit: copy.head, hits, note: hits.length ? undefined : copy.head ? "Nothing found." : noCopyNote(copy.error) };
     },
   },
   {

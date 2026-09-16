@@ -159,6 +159,56 @@ export function readFileViaGit(projectId: string, branch: string | null, file: s
   });
 }
 
+async function checkedUrl(repoUrl: string, parsed: ParsedRepo): Promise<string> {
+  const url = cloneUrl(repoUrl, parsed);
+  try {
+    await assertFetchable(new URL(url));
+  } catch (err) {
+    if (err instanceof FetchBlockedError) throw new GitError(err.message);
+    throw err;
+  }
+  return url;
+}
+
+/** Commit, auf dem ein Zweig in der lokalen Kopie steht – null ohne Kopie. */
+export function localHeadViaGit(projectId: string, branch: string): Promise<string | null> {
+  if (!SAFE_BRANCH.test(branch)) return Promise.resolve(null);
+  return locked(projectId, async () => {
+    const dir = repoDir(projectId);
+    if (!(await exists(path.join(dir, "HEAD")))) return null;
+    return (await git(["-C", dir, "rev-parse", "--verify", "--quiet", `refs/heads/${branch}^{commit}`], gitEnv(null), 10_000).catch(() => "")).trim() || null;
+  });
+}
+
+/**
+ * Code-Stand eines Zweigs flach holen (nur der letzte Commit) – für Code-Suche
+ * und Code-Netz bei Projekten, die sonst nur über die Anbieter-API abgeglichen
+ * werden. Gleicher Host, gleicher Token wie beim Abgleich.
+ */
+export function mirrorBranchViaGit(projectId: string, repoUrl: string, parsed: ParsedRepo, token: string | null, branch: string): Promise<void> {
+  if (!SAFE_BRANCH.test(branch)) return Promise.reject(new GitError(tk("git", "errors.gitFailed")));
+  return locked(projectId, async () => {
+    const url = await checkedUrl(repoUrl, parsed);
+    const env = gitEnv(token);
+    const dir = repoDir(projectId);
+    if (!(await exists(path.join(dir, "HEAD")))) {
+      await mkdir(dir, { recursive: true });
+      await git(["init", "--bare", "--quiet", dir], env, 30_000);
+    }
+    await git(["-C", dir, "fetch", "--quiet", "--no-tags", "--force", "--depth=1", url, `+refs/heads/${branch}:refs/heads/${branch}`], env, 120_000);
+  });
+}
+
+/** Zweige des entfernten Repositories (Namen), höchstens 100. */
+export async function listRemoteBranchesViaGit(repoUrl: string, parsed: ParsedRepo, token: string | null): Promise<string[]> {
+  const url = await checkedUrl(repoUrl, parsed);
+  const out = await git(["ls-remote", "--heads", url], gitEnv(token), 30_000);
+  return [...out.matchAll(/^[0-9a-f]{40,64}\s+refs\/heads\/(\S+)\s*$/gm)]
+    .map((m) => m[1])
+    .filter((b) => SAFE_BRANCH.test(b))
+    .slice(0, 100);
+}
+
 /** Alle Dateipfade des zuletzt geholten Stands – ohne Inhalte, ohne Netz. */
 export function listFilesViaGit(projectId: string, branch: string | null): Promise<string[]> {
   if (!branch || !SAFE_BRANCH.test(branch)) return Promise.resolve([]);

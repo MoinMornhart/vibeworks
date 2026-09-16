@@ -165,7 +165,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           hasToken={Boolean(repoTokenHint || account)}
         />
       )}
-      {project.repoUrl && repoCache?.provider && <CodeGraphPanel projectId={project.id} />}
+      {project.repoUrl && repoCache?.provider && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
       <AutoRefresh />
     </div>
   );

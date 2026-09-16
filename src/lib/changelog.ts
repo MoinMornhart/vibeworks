@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.2",
+    date: "2026-09-17",
+    title: "Memo-Netz und Zweige",
+    titleEn: "Memo network and branches",
+    changes: [
+      {
+        type: "fix",
+        text: "Code-Netz und Code-Suche funktionieren jetzt auch für GitHub-, GitLab- und Gitea-Projekte: VibeWorks holt dafür bei Bedarf den neuesten Commit als lokale Kopie – mit dem Git-Zugang des Projekts und bei jedem neuen Commit frisch. Bisher gab es die Kopie nur bei allgemeinen Git-Servern",
+        en: "Code network and code search now also work for GitHub, GitLab and Gitea projects: VibeWorks fetches the latest commit as a local copy when needed – with the project's Git access and fresh on every new commit. Before, the copy only existed for generic Git servers",
+      },
+      {
+        type: "neu",
+        text: "Memo-Netz: an jede Datei im Code-Netz lassen sich Memos heften – Stolperfallen, Zusammenhänge, Hinweise. Sie erscheinen als gelbe Punkte, und die KI kann sie über MCP lesen, anlegen und löschen",
+        en: "Memo network: pin memos to any file in the code network – pitfalls, connections, hints. They show up as yellow dots, and the AI can read, add and delete them via MCP",
+      },
+      {
+        type: "neu",
+        text: "Zweig wählen: hat ein Repository mehrere Zweige, zeigt das Code-Netz jeden davon – auch Code-Suche und Dateiliste über MCP nehmen einen Zweig an. Oben steht, auf welchem Commit das Netz beruht",
+        en: "Pick a branch: if a repository has several branches, the code network shows each of them – code search and the file list via MCP take a branch too. The header shows which commit the network is based on",
+      },
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-09-17",
     title: "Hinweis an Claude",
