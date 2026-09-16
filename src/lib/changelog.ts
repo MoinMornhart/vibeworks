@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.8",
+    date: "2026-09-16",
+    title: "MCP per Einzeiler, strengere Regeln für KI",
+    titleEn: "MCP in one line, stricter rules for AI",
+    changes: [
+      {
+        type: "neu",
+        text: "Neuer API-Schlüssel: ein Einzeiler für macOS/Linux (curl) und Windows (PowerShell) trägt VibeWorks in Claude Code ein und speichert die Agenten-Regeln – auch für Gemini CLI. Der Schlüssel steht dabei nie in einer Adresse",
+        en: "New API key: a one-liner for macOS/Linux (curl) and Windows (PowerShell) adds VibeWorks to Claude Code and saves the agent rules – also for Gemini CLI. The key never appears in a URL",
+        link: "/account#mcp",
+      },
+      {
+        type: "besser",
+        text: "Agenten-Regeln verschärft: jede Antwort beginnt und endet mit dem Blick auf die Aufgaben, keine Arbeit ohne Aufgabe, der Status stimmt immer",
+        en: "Agent rules tightened: every reply starts and ends with checking the tasks, no work without a task, the status is always true",
+      },
+      {
+        type: "fix",
+        text: "Wiederkehrende Aufgaben: Eine KI kann die gerade entstandene nächste Wiederholung nicht mehr sofort wieder erledigen – das hatte eine Kette neuer Issues ausgelöst",
+        en: "Recurring tasks: an AI can no longer immediately complete the next occurrence that was just created – this had triggered a chain of new issues",
+      },
+    ],
+  },
+  {
     version: "1.0.7",
     date: "2026-09-16",
     title: "Eigene Spalten im Aufgabenbrett",

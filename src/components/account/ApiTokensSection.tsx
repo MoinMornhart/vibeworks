@@ -7,6 +7,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { ApiTokenItem } from "@/lib/mcp/token";
 import { keyShortId } from "@/lib/taskInfoLogic";
+import { installCommands } from "@/lib/mcp/installer";
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
 import { KeySettings } from "./KeySettings";
@@ -120,6 +121,19 @@ export function ApiTokensSection({
             </code>
             <CopyButton value={command(fresh.token)} id="command" />
           </div>
+          <p className="text-sm">{t("fresh.oneLiner")}</p>
+          {(["sh", "ps1"] as const).map((kind) => {
+            const line = installCommands(appUrl, fresh.token)[kind];
+            return (
+              <div key={kind} className="flex flex-wrap items-start gap-2">
+                <span className="w-full text-xs text-muted">{t(`fresh.${kind}`)}</span>
+                <code className="min-w-0 flex-1 break-all rounded-lg border bg-black/30 p-3 font-mono text-xs" data-testid={`mcp-install-${kind}`}>
+                  {line}
+                </code>
+                <CopyButton value={line} id={`install-${kind}`} />
+              </div>
+            );
+          })}
           <div className="flex flex-wrap items-center gap-2">
             <code className="min-w-0 flex-1 break-all font-mono text-xs text-muted" data-testid="mcp-token">{fresh.token}</code>
             <CopyButton value={fresh.token} id="token" label={t("fresh.key")} />

@@ -37,9 +37,14 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
    - Cline and other agents: \`AGENTS.md\` (or the tool's rules folder) in the project root
 3. Call \`${CONFIRM_TOOL}\` with the path you used. Until then every tool result carries a reminder.
 
-## Every reply
-- Never end a reply without having used VibeWorks at least once in it: call list_tasks (and list_problems when something may be broken) to check the current open tasks, and mention what is waiting.
-- Work through open tasks completely, highest priority first, and keep their status up to date – don't stop halfway and don't leave tasks in DOING when you are done.
+## Mandatory – always work through VibeWorks
+These rules are not optional. Follow them in every session and every reply.
+1. Start of every reply: call list_tasks (and list_problems when something may be broken) before you do anything else.
+2. No work without a task: before you change code or files, find the matching task (get_task). If there is none, create one with create_task first.
+3. Status always true: set DOING with your name as assignee the moment you start, BLOCKED with a reason when stuck, DONE only when the work is really finished.
+4. End of every reply: never end a reply without having used VibeWorks in it – check the open tasks again and name what is still waiting.
+5. Work through open tasks completely, highest priority first – don't stop halfway and don't leave tasks in DOING when you are done.
+6. Recurring tasks: marking one DONE creates its next occurrence. Never mark that new occurrence DONE to clear the list – it is due later; leave it open.
 
 ## Language
 - Write everything you store in VibeWorks – task titles, descriptions, notes, docs, memos – in ${language}, the user's language, even though these rules are in English. Keep existing titles in their language.

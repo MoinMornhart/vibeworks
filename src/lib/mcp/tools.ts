@@ -34,6 +34,9 @@ import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
 import { aiLockedStatuses, aiProjectTaskFilter, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
 
+/** Gerade eben aus einer wiederkehrenden Aufgabe entstanden? (#89) */
+const justRecurred = (task: { recurredFrom: string | null; createdAt: Date }) => Boolean(task.recurredFrom) && Date.now() - task.createdAt.getTime() < 10 * 60_000;
+
 /** Wie requireTask – aber für KI gesperrte Aufgaben gibt es über MCP nicht (#76). */
 async function requireAiTask(userId: string, id: string, need?: Need) {
   const res = await requireTask(userId, id, need);
@@ -67,7 +70,8 @@ export const MCP_INSTRUCTIONS = [
   "Projects have a status (IDEA → PLANNING → OPEN → IN_PROGRESS → DONE, or ARCHIVED), a priority (1 low – 4 critical) and a progress in percent.",
   "Each project has a task board (TODO, DOING, BLOCKED, DONE) and notes; docs are the user's personal page tree.",
   "Refer to projects by id or by their exact name.",
-  "Write task titles, descriptions and notes in the user's language (see get_agent_rules), and never end a reply without checking the open tasks with list_tasks.",
+  "Mandatory: start and end every reply with list_tasks, never work without a VibeWorks task (create one if needed), keep its status true (DOING/BLOCKED/DONE), and write titles, descriptions and notes in the user's language (see get_agent_rules).",
+  "Recurring tasks: completing one creates the next occurrence – never mark that new occurrence DONE to clear the list.",
   "Working on tasks: find them with list_tasks or get_project, set status DOING when you start, DONE when finished (BLOCKED with a short reason in the description if you are stuck).",
   "If a project mirrors tasks as issues in its Git repository, the issues follow automatically.",
   "Everything you change shows up in the project's activity log under the user's name – keep titles short and clear.",
@@ -378,6 +382,10 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     annotations: { idempotentHint: true },
     run: async (args, { userId }) => {
       const { task: current } = await requireAiTask(userId, ref.parse(args.task), "tasks.edit");
+      // Kette verhindern (#89): eine gerade erst erzeugte Wiederholung nicht sofort wieder erledigen
+      if (args.status === "DONE" && current.status !== "DONE" && justRecurred(current)) {
+        throw new ApiError(409, "This is the next occurrence of a recurring task, created moments ago. It is due later – leave it open and only mark it DONE when its work is actually done.");
+      }
       // Die Sperre setzt nur der Mensch in VibeWorks
       const result = await updateTask(userId, current, taskUpdateSchema.omit({ aiLocked: true, column: true }).parse(args));
       return {
