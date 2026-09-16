@@ -43,6 +43,7 @@ const loadProject = cache(async (id: string) => {
       repoTokenHint: true,
       issueSync: true,
       repoCheck: true,
+      checkTasks: true,
       errorKey: true,
       boardConfig: true,
       repoCache: true,
@@ -73,7 +74,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access, perms } = loaded;
   const can = (p: ProjectPermission) => perms.has(p);
-  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const { notes, tasks, costs, repoTokenHint, issueSync, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds, people] = await Promise.all([
     project.liveUrl ? liveStats(project.id) : null,
     sumSeconds({ projectId: project.id }),
@@ -156,8 +157,9 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       {project.repoUrl && repoCache?.provider === "github" && (
         <RepoCheckPanel
           projectId={project.id}
-          initial={serializeRepoCheck(repoCheck, repoCache)}
+          initial={serializeRepoCheck(repoCheck, repoCache, checkTasks)}
           canRun={can("git.sync")}
+          canTask={can("tasks.edit")}
           canManage={isOwner}
           hasToken={Boolean(repoTokenHint || account)}
         />

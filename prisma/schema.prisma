@@ -316,6 +316,8 @@ model Project {
   issueSync       Boolean @default(true)
   /// Repo-Check (GitHub-Workflow) automatisch einrichten und auswerten – aus = Datei wird entfernt
   repoCheck       Boolean @default(true)
+  /// Aufgaben aus dem Repo-Check: off · urgent (Geheimnisse, Lücken) · all (dazu Semgrep-Befunde)
+  checkTasks      String  @default("off")
   /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
   shareToken      String? @unique
   /// Geheimnis für eingehende Webhooks (AES-256-GCM) – null heißt „kein Webhook“

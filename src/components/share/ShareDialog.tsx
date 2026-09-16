@@ -151,8 +151,8 @@ export function ShareDialog({
       <div className="space-y-6">
         {share && !share.isOwner && <p className="rounded-lg border border-accent/40 bg-accent/5 px-3 py-2 text-sm">{t("dialog.invitingLimited")}</p>}
 
-        {share?.isOwner && (
-          <section aria-labelledby="share-link">
+        {share && (share.isOwner || share.shareToken) && (
+          <section aria-labelledby="share-link" data-testid="share-link">
             <h3 id="share-link" className="mb-1 flex items-center gap-2 font-semibold"><Globe size={16} className="text-accent-ink" /> {t("dialog.linkTitle")}</h3>
             <p className="mb-3 text-sm text-muted">{t("dialog.linkText")}</p>
             {share.shareToken ? (
@@ -163,14 +163,15 @@ export function ShareDialog({
                     {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? tc("copied") : tc("copy")}
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                {!share.isOwner && <p className="text-xs text-muted">{t("dialog.linkOwnerOnly")}</p>}
+                {share.isOwner && <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void setLink("renew")} title={t("dialog.renewTitle")}>
                     <RefreshCw size={14} /> {t("dialog.renew")}
                   </button>
                   <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => void setLink("off")}>
                     <Link2Off size={14} /> {t("dialog.disable")}
                   </button>
-                </div>
+                </div>}
               </div>
             ) : (
               <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void setLink("on")}>

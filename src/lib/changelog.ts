@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.4",
+    date: "2026-09-16",
+    title: "Repo-Check als Aufgaben",
+    titleEn: "Repo check as tasks",
+    changes: [
+      {
+        type: "neu",
+        text: "Repo-Check: jeder Befund lässt sich mit einem Klick als Aufgabe für Claude anlegen – mit genau dem Prüfauftrag aus der Erklärung. Dazu eine Einstellung für den Besitzer, ob Aufgaben automatisch entstehen: aus, nur Dringendes (Geheimnisse, Lücken) oder alles. Die Sammel-Aufgaben halten sich selbst aktuell",
+        en: "Repo check: every finding can become a task for Claude with one click – with exactly the instructions from the explanation. Plus an owner setting for automatic tasks: off, only urgent (secrets, vulnerabilities) or everything. The collective tasks keep themselves up to date",
+      },
+      {
+        type: "fix",
+        text: "Teilen: Wer Mitglieder einladen darf, sieht jetzt auch einen schon eingeschalteten öffentlichen Link und kann ihn kopieren. Ein- und Ausschalten bleibt beim Besitzer",
+        en: "Sharing: anyone allowed to invite members now also sees an already enabled public link and can copy it. Switching it on or off stays with the owner",
+      },
+      {
+        type: "besser",
+        text: "GitHub-Workflows sind auf feste Versionen gepinnt – auch in der Vorlage für den Repo-Check, die bestehende Checks beim nächsten Lauf übernehmen. Dazu eine CLAUDE.md mit dem kompletten Arbeitsablauf für Issues",
+        en: "GitHub workflows are pinned to fixed versions – including the repo check template, which existing checks pick up on their next run. Plus a CLAUDE.md with the complete issue workflow",
+      },
+    ],
+  },
+  {
     version: "0.8.3",
     date: "2026-09-16",
     title: "Notfix und Code-Suche",

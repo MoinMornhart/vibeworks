@@ -32,7 +32,8 @@ export async function shareState(projectId: string, actor: Actor) {
   const sharedIds = new Set(teams.map((t) => t.teamId));
   return {
     isOwner: actor.owner,
-    shareToken: actor.owner ? project.shareToken : null,
+    // Wer einladen darf, sieht einen schon eingeschalteten Link (#46) – schalten kann ihn nur der Besitzer.
+    shareToken: project.shareToken,
     roles: roles.map((r) => ({ ...serializeRole(r, null), assignable: actor.owner || isSubset(r.permissions, actor.perms) })),
     members: members.map((m) => ({
       userId: m.userId,

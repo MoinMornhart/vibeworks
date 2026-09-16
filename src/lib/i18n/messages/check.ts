@@ -1,4 +1,5 @@
 import type { Shape } from "../types";
+import { plural } from "../translate";
 
 // Namensraum „check“: Repo-Check (GitHub-Workflow) auf der Projektseite.
 
@@ -57,7 +58,35 @@ const de = {
   empty: "Nichts gefunden.",
   more: "{n} weitere zeigen",
   inCommit: "Commit {commit}",
+  tasks: {
+    toTask: "Als Aufgabe für Claude",
+    created: "Aufgabe angelegt: {title}",
+    saved: "Gespeichert.",
+    modeLabel: "Aufgaben automatisch anlegen:",
+    modeHint: "Je Art eine Sammel-Aufgabe für Claude, die sich selbst aktuell hält – neue Befunde kommen dazu, ist nichts mehr gemeldet, wird sie erledigt.",
+    mode: { off: "Aus", urgent: "Nur Dringendes (Geheimnisse, Lücken)", all: "Alles (auch Befunde)" },
+    single: {
+      secrets: "Mögliches Geheimnis prüfen: {file}",
+      vulnerabilities: "Sicherheitslücke beheben: {pkg} {version}",
+      findings: "Befund prüfen: {file}",
+    },
+    auto: {
+      secrets: plural("Repo-Check: {n} mögliches Geheimnis ({list})", "Repo-Check: {n} mögliche Geheimnisse ({list})"),
+      vulnerabilities: plural("Repo-Check: {n} Sicherheitslücke ({list})", "Repo-Check: {n} Sicherheitslücken ({list})"),
+      findings: plural("Repo-Check: {n} Befund ({list})", "Repo-Check: {n} Befunde ({list})"),
+    },
+    intro: {
+      secrets: "Der Repo-Check hat mögliche Zugangsschlüssel gefunden. Für jede Stelle prüfen, ob es ein echter Schlüssel ist; wenn ja, entfernen, aus einer Umgebungsvariable lesen und sagen, welcher Schlüssel widerrufen werden muss.",
+      vulnerabilities: "Der Repo-Check meldet Pakete mit bekannten Sicherheitslücken. Jeweils auf die kleinste Version ohne Lücke aktualisieren und Tests sowie Build laufen lassen.",
+      findings: "Semgrep meldet auffällige Stellen. Jeweils prüfen, ob es wirklich ein Problem ist, und es beheben, ohne das Verhalten sonst zu ändern.",
+    },
+    autoNote: "Von VibeWorks aus dem Repo-Check angelegt – die Liste pflegt sich selbst.",
+    label: "repo-check",
+    labelSecurity: "sicherheit",
+    footer: "Aus dem Repo-Check von VibeWorks.",
+  },
   errors: {
+    noFinding: "Diesen Befund gibt es nicht mehr – bitte die Liste neu laden.",
     noRepo: "Das Projekt hat kein Repository.",
     needToken: "Ohne GitHub-Token kann VibeWorks den Check nicht einrichten.",
     off: "Der Repo-Check ist für dieses Projekt aus.",
@@ -126,7 +155,35 @@ const en: Shape<typeof de> = {
   empty: "Nothing found.",
   more: "Show {n} more",
   inCommit: "commit {commit}",
+  tasks: {
+    toTask: "Task for Claude",
+    created: "Task created: {title}",
+    saved: "Saved.",
+    modeLabel: "Create tasks automatically:",
+    modeHint: "One collective task per kind for Claude that keeps itself up to date – new findings are added, and once nothing is reported it gets completed.",
+    mode: { off: "Off", urgent: "Only urgent (secrets, vulnerabilities)", all: "Everything (including findings)" },
+    single: {
+      secrets: "Check possible secret: {file}",
+      vulnerabilities: "Fix vulnerability: {pkg} {version}",
+      findings: "Check finding: {file}",
+    },
+    auto: {
+      secrets: plural("Repo check: {n} possible secret ({list})", "Repo check: {n} possible secrets ({list})"),
+      vulnerabilities: plural("Repo check: {n} vulnerability ({list})", "Repo check: {n} vulnerabilities ({list})"),
+      findings: plural("Repo check: {n} finding ({list})", "Repo check: {n} findings ({list})"),
+    },
+    intro: {
+      secrets: "The repo check found possible access keys. For each spot, check whether it is a real key; if so, remove it, read it from an environment variable and say which key needs to be revoked.",
+      vulnerabilities: "The repo check reports packages with known vulnerabilities. Update each to the smallest version without the vulnerability and run tests and the build.",
+      findings: "Semgrep reports suspicious spots. Check each whether it is really a problem and fix it without otherwise changing behavior.",
+    },
+    autoNote: "Created by VibeWorks from the repo check – the list maintains itself.",
+    label: "repo-check",
+    labelSecurity: "security",
+    footer: "From the VibeWorks repo check.",
+  },
   errors: {
+    noFinding: "This finding no longer exists – please reload the list.",
     noRepo: "The project has no repository.",
     needToken: "Without a GitHub token, VibeWorks can't set up the check.",
     off: "The repo check is off for this project.",

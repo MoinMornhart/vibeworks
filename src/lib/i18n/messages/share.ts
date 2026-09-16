@@ -10,6 +10,7 @@ const de = {
   dialog: {
     title: "Projekt teilen",
     linkTitle: "Öffentlicher Link",
+    linkOwnerOnly: "Einschalten, erneuern oder abschalten kann nur der Besitzer des Projekts.",
     linkText:
       "Jeder mit dem Link sieht das Projekt – auch ohne Konto: Beschreibung, Aufgaben und Commits. Notizen bleiben privat. Angemeldete Besucher können Zugriff anfragen.",
     linkLabel: "Öffentlicher Link",
@@ -106,6 +107,7 @@ const en: Shape<typeof de> = {
   dialog: {
     title: "Share project",
     linkTitle: "Public link",
+    linkOwnerOnly: "Only the project owner can switch this link on, renew or disable it.",
     linkText:
       "Anyone with the link can see the project – even without an account: description, tasks and commits. Notes stay private. Signed-in visitors can request access.",
     linkLabel: "Public link",

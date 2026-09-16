@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bug, Check, Copy, ExternalLink, KeyRound, ListTodo, RefreshCw, ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Bug, Check, Copy, ExternalLink, KeyRound, ListPlus, ListTodo, RefreshCw, ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react";
+import { CHECK_TASK_MODES, type CheckTaskMode } from "@/lib/git/checkTasksLogic";
 import type { RepoCheckView } from "@/lib/git/repoCheck";
 import { blobUrl, checkIsUrgent, type CheckReport } from "@/lib/git/repoCheckLogic";
 import { GITHUB_NEW_TOKEN_URL } from "@/lib/git/parse";
@@ -10,7 +11,7 @@ import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Kind = "secrets" | "vulnerabilities" | "findings" | "todos";
-type Action = "run" | "refresh" | "enable" | "disable";
+type Action = "run" | "refresh" | "enable" | "disable" | "task" | "autoTasks";
 
 const KINDS: Kind[] = ["secrets", "vulnerabilities", "findings", "todos"];
 const TOOL: Record<Kind, keyof CheckReport["tools"]> = { secrets: "gitleaks", vulnerabilities: "osv", findings: "semgrep", todos: "todos" };
@@ -21,6 +22,7 @@ const POLL_MS = 60_000;
 
 interface Row {
   key: string;
+  index: number;
   title: string;
   sub: string;
   href: string | null;
@@ -34,6 +36,7 @@ function rowsOf(kind: Kind, r: CheckReport, webUrl: string, branch: string | nul
   if (kind === "secrets") {
     return r.secrets.map((s, i) => ({
       key: `s${i}`,
+      index: i,
       title: s.description || s.rule,
       sub: `${at(s.file, s.line)} · ${s.rule}${s.commit ? ` · ${s.commit.slice(0, 7)}` : ""}`,
       href: blobUrl(webUrl, s.commit || ref, s.file, s.line),
@@ -43,6 +46,7 @@ function rowsOf(kind: Kind, r: CheckReport, webUrl: string, branch: string | nul
   if (kind === "vulnerabilities") {
     return r.vulnerabilities.map((v, i) => ({
       key: `v${i}`,
+      index: i,
       title: `${v.package} ${v.version}`,
       sub: [v.id, v.severity && `CVSS ${v.severity}`, v.summary, v.source].filter(Boolean).join(" · "),
       href: /^[A-Za-z0-9._:-]+$/.test(v.id) ? `https://osv.dev/vulnerability/${encodeURIComponent(v.id)}` : null,
@@ -52,13 +56,14 @@ function rowsOf(kind: Kind, r: CheckReport, webUrl: string, branch: string | nul
   if (kind === "findings") {
     return r.findings.map((x, i) => ({
       key: `f${i}`,
+      index: i,
       title: x.message || x.rule,
       sub: `${at(x.file, x.line)} · ${x.rule}${x.severity ? ` · ${x.severity}` : ""}`,
       href: blobUrl(webUrl, ref, x.file, x.line),
       vars: { rule: x.rule || "?", file: at(x.file, x.line) },
     }));
   }
-  return r.todos.map((x, i) => ({ key: `t${i}`, title: x.text, sub: at(x.file, x.line), href: blobUrl(webUrl, ref, x.file, x.line), vars: {} }));
+  return r.todos.map((x, i) => ({ key: `t${i}`, index: i, title: x.text, sub: at(x.file, x.line), href: blobUrl(webUrl, ref, x.file, x.line), vars: {} }));
 }
 
 function countTone(kind: Kind, n: number) {
@@ -72,12 +77,14 @@ export function RepoCheckPanel({
   initial,
   canRun,
   canManage,
+  canTask = false,
   hasToken,
 }: {
   projectId: string;
   initial: RepoCheckView;
   canRun: boolean;
   canManage: boolean;
+  canTask?: boolean;
   hasToken: boolean;
 }) {
   const t = useT("check");
@@ -103,18 +110,20 @@ export function RepoCheckPanel({
   }
   useEffect(() => setCheck(initial), [initial]);
 
-  async function send(action: Action) {
-    const res = await api<{ check: RepoCheckView; removed: boolean; warning: string | null }>(`/api/projects/${projectId}/check`, { body: { action } });
+  async function send(action: Action, extra: Record<string, unknown> = {}) {
+    const res = await api<{ check: RepoCheckView; removed: boolean; warning: string | null; task?: { title: string } | null }>(`/api/projects/${projectId}/check`, { body: { action, ...extra } });
     setCheck(res.check);
     return res;
   }
 
-  async function act(action: Action) {
+  async function act(action: Action, extra: Record<string, unknown> = {}) {
     setBusy(action);
     setError(null);
     setNote(null);
     try {
-      const res = await send(action);
+      const res = await send(action, extra);
+      if (action === "task" && res.task) setNote(t("tasks.created", { title: res.task.title }));
+      if (action === "autoTasks") setNote(t("tasks.saved"));
       if (action === "disable") setNote(res.warning ? t("removeFailed", { error: msg(res.warning) }) : res.removed ? t("removed") : null);
     } catch (e) {
       setError(errorMessage(e));
@@ -180,6 +189,25 @@ export function RepoCheckPanel({
       <p className="mb-4 text-xs text-muted">
         {t("hint")} {t("private")}
       </p>
+      {canManage && check.enabled && (
+        <label className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted">{t("tasks.modeLabel")}</span>
+          <select
+            className="field w-auto py-1 text-sm"
+            data-testid="check-auto-tasks"
+            value={check.autoTasks}
+            disabled={busy !== null}
+            onChange={(e) => void act("autoTasks", { mode: e.target.value as CheckTaskMode })}
+          >
+            {CHECK_TASK_MODES.map((m) => (
+              <option key={m} value={m}>
+                {t(`tasks.mode.${m}`)}
+              </option>
+            ))}
+          </select>
+          <span className="w-full text-xs text-muted">{t("tasks.modeHint")}</span>
+        </label>
+      )}
 
       {!check.enabled ? (
         <p className="text-sm text-muted">{t("off")}</p>
@@ -266,9 +294,16 @@ export function RepoCheckPanel({
                               <summary className="cursor-pointer text-accent-ink">{t("explain.toggle")}</summary>
                               <p className="mt-1 text-muted">{t(`explain.${open}.why`, row.vars)}</p>
                               <p className="mt-1">{t(`explain.${open}.fix`, row.vars)}</p>
-                              <button type="button" className="btn btn-sm mt-1.5" onClick={() => void copyPrompt(row.key, t(`explain.${open}.prompt`, row.vars))}>
-                                {copied === row.key ? <Check size={12} /> : <Copy size={12} />} {copied === row.key ? t("explain.copied") : t("explain.copy")}
-                              </button>
+                              <div className="mt-1.5 flex flex-wrap gap-2">
+                                <button type="button" className="btn btn-sm" onClick={() => void copyPrompt(row.key, t(`explain.${open}.prompt`, row.vars))}>
+                                  {copied === row.key ? <Check size={12} /> : <Copy size={12} />} {copied === row.key ? t("explain.copied") : t("explain.copy")}
+                                </button>
+                                {canTask && (
+                                  <button type="button" className="btn btn-sm" data-testid="check-to-task" disabled={busy !== null} onClick={() => void act("task", { kind: open, index: row.index })}>
+                                    <ListPlus size={12} /> {t("tasks.toTask")}
+                                  </button>
+                                )}
+                              </div>
                             </details>
                           )}
                         </li>

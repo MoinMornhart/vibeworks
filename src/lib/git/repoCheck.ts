@@ -10,6 +10,7 @@ import { tokenCipherFor } from "./token";
 import { apiBase, authHeaders, GitError, request } from "./providers";
 import { REPO_CHECK_ARTIFACT, REPO_CHECK_FILE, REPO_CHECK_PATH, REPO_CHECK_WORKFLOW } from "./repoCheckWorkflow";
 import { checkGotWorse, parseCheckReport, type CheckReport } from "./repoCheckLogic";
+import { syncCheckTasks } from "./checkTasks";
 
 // Repo-Check über GitHub Actions: VibeWorks legt den Workflow selbst ins
 // Repository (danach aktualisiert es nur die eigene, unveränderte Datei),
@@ -54,6 +55,7 @@ async function context(projectId: string) {
       repoUrl: true,
       repoTokenCipher: true,
       repoCheck: true,
+      checkTasks: true,
       repoCache: { select: { provider: true, defaultBranch: true, checkStatus: true, checkReport: true, checkRunUrl: true, checkFetchedAt: true, checkInstalledAt: true } },
     },
   });
@@ -202,6 +204,7 @@ async function run(projectId: string, force: boolean): Promise<void> {
     await save({ checkFetchedAt: now, checkStatus: "done", checkRunUrl: latest.html_url, checkRunAt: runAt, checkReport: report as unknown as Prisma.InputJsonValue, checkError: null });
     const before = cache.checkReport ? parseCheckReport(cache.checkReport) : null;
     if (checkGotWorse(before, report)) void notifyCheckAlert(ctx.project, report).catch((err) => console.error("[repo-check]", projectId, err));
+    if (ctx.project.checkTasks !== "off") await syncCheckTasks(projectId, report).catch((err) => console.error("[check-tasks]", projectId, err));
   } catch (err) {
     await save({ checkFetchedAt: now, checkError: err instanceof GitError ? err.message : tk("git", "errors.unreachable") });
   }
@@ -278,9 +281,10 @@ async function notifyCheckAlert(project: { id: string; name: string; ownerId: st
 type CheckFields = Pick<RepoCache, "webUrl" | "defaultBranch" | "checkStatus" | "checkReport" | "checkRunUrl" | "checkRunAt" | "checkFetchedAt" | "checkError">;
 
 /** Nur für angemeldete Projektmitglieder – nie für öffentliche Seiten. */
-export function serializeRepoCheck(enabled: boolean, c: CheckFields | null) {
+export function serializeRepoCheck(enabled: boolean, c: CheckFields | null, autoTasks = "off") {
   return {
     enabled,
+    autoTasks,
     status: (c?.checkStatus ?? null) as CheckStatus | null,
     report: c?.checkReport ? parseCheckReport(c.checkReport) : null,
     runUrl: c?.checkRunUrl ?? null,
