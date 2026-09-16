@@ -29,7 +29,8 @@ import {
 const MAX_PRS = 20;
 const MAX_REMOVE = 200;
 
-async function githubContext(projectId: string) {
+/** GitHub-Projekt mit Zugang des Besitzers (bzw. Projekt-Token) – null, wenn es keins ist. */
+export async function githubContext(projectId: string) {
   const project = await db.project.findUnique({
     where: { id: projectId },
     select: { id: true, ownerId: true, repoUrl: true, repoTokenCipher: true, fileFilter: true, repoCache: { select: { provider: true, defaultBranch: true } } },
@@ -44,7 +45,7 @@ async function githubContext(projectId: string) {
   } catch {
     return null;
   }
-  return { project, parsed, api: apiBase("github", parsed), headers: authHeaders("github", token), filter: normalizeFilter(project.fileFilter) };
+  return { project, parsed, token, api: apiBase("github", parsed), headers: authHeaders("github", token), filter: normalizeFilter(project.fileFilter) };
 }
 
 export async function saveFilter(projectId: string, filter: FileFilter): Promise<void> {

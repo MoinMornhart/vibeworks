@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.1",
+    date: "2026-09-16",
+    title: "Merge-Konflikte im Browser lösen",
+    titleEn: "Resolve merge conflicts in the browser",
+    changes: [
+      {
+        type: "neu",
+        text: "Merge-Konflikte: VibeWorks zeigt Pull Requests mit Konflikten – auch die, die GitHub nicht im Web lösen kann –, jede Konfliktstelle mit Pull Request, gemeinsamem Stand und Zielzweig und übernimmt eine Seite per Klick",
+        en: "Merge conflicts: VibeWorks lists pull requests with conflicts – including those GitHub can't resolve on the web – shows each conflict with pull request, common ancestor and target branch, and takes a side in one click",
+      },
+      {
+        type: "neu",
+        text: "Editor mit Syntaxprüfung (JSON mit Zeile, HTML-Tags, Klammern) und „JSON formatieren“ – auch für große Dateien; die Lösung landet als Merge-Commit im Zweig des Pull Requests, nur wenn er sich inzwischen nicht verändert hat",
+        en: "Editor with syntax check (JSON with line, HTML tags, brackets) and “format JSON” – also for large files; the resolution lands as a merge commit on the pull request's branch, only if it hasn't changed in the meantime",
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-09-16",
     title: "Dateifilter und Sprachwerkzeuge im Repo-Check",
