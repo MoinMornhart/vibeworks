@@ -30,7 +30,8 @@ function csp(nonce: string): string {
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'none'",
-    "form-action 'self'",
+    // github.com: „Bot per Klick“ schickt die App-Beschreibung als Formular an GitHub
+    "form-action 'self' https://github.com",
   ].join("; ");
 }
 

@@ -9,9 +9,13 @@ export const CONFIRM_TOOL = "confirm_agent_rules";
 /** Hinweis in jeder Werkzeug-Antwort, bis die Regeln bestätigt sind. */
 export const RULES_REMINDER = `VibeWorks: please call ${RULES_TOOL} once, save the rules locally as described there, then call ${CONFIRM_TOOL}. This reminder disappears afterwards.`;
 
+/** Sprache, in der Agenten Einträge anlegen – die Regeln selbst bleiben englisch. */
+const LANGUAGE_NAME = { de: "German", en: "English" } as const;
+
 const firstSentence = (s: string) => s.split(/(?<=[.!?])\s/)[0].trim();
 
-export function agentRules(tools: Array<{ name: string; title: string; description: string }>, appUrl: string): string {
+export function agentRules(tools: Array<{ name: string; title: string; description: string }>, appUrl: string, locale: keyof typeof LANGUAGE_NAME = "de"): string {
+  const language = LANGUAGE_NAME[locale] ?? LANGUAGE_NAME.de;
   const list = tools.map((t) => `- \`${t.name}\` – ${t.title}: ${firstSentence(t.description)}`).join("\n");
   return `---
 name: vibeworks
@@ -29,6 +33,13 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
    - Gemini CLI: append it to \`~/.gemini/GEMINI.md\`
    - Cline and other agents: \`AGENTS.md\` (or the tool's rules folder) in the project root
 3. Call \`${CONFIRM_TOOL}\` with the path you used. Until then every tool result carries a reminder.
+
+## Every reply
+- Never end a reply without having used VibeWorks at least once in it: call list_tasks (and list_problems when something may be broken) to check the current open tasks, and mention what is waiting.
+- Work through open tasks completely, highest priority first, and keep their status up to date – don't stop halfway and don't leave tasks in DOING when you are done.
+
+## Language
+- Write everything you store in VibeWorks – task titles, descriptions, notes, docs, memos – in ${language}, the user's language, even though these rules are in English. Keep existing titles in their language.
 
 ## Ground rules
 - Only use the tools listed below. If something is not in the list, VibeWorks can't do it – say so instead of guessing or inventing a workaround.

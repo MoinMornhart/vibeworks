@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
 import { ApiError } from "@/lib/api";
-import { encrypt } from "@/lib/crypto";
+import { decrypt, encrypt } from "@/lib/crypto";
 import { tk } from "@/lib/i18n/messages";
 import { FetchBlockedError, safeFetch } from "@/lib/security/ssrf";
+import { appIssueToken } from "./botApp";
+import { botAppInstallUrl, botAppSettingsUrl } from "./botAppLogic";
 import { DEFAULT_SERVER, normalizeServer, parseRepoUrl, PROVIDER_LABEL, tokenHint, type GitProvider } from "./parse";
 
 // Welches Token gilt für ein Projekt? Zuerst ein projekteigenes, sonst die
@@ -33,17 +35,38 @@ export async function tokenCipherFor(project: ProjectTokenInput): Promise<{ ciph
 }
 
 /**
- * Token für Issues: das Bot-Konto der Verbindung zu genau diesem Server, falls
- * eingetragen – so legt VibeWorks Issues nicht unter dem Profil des Besitzers
- * an. Sonst wie gewohnt Projekt- oder Konto-Token.
+ * Token für Issues: der Bot der Verbindung zu genau diesem Server, falls
+ * eingerichtet – als GitHub App (per Klick) oder als eigenes Bot-Konto. So legt
+ * VibeWorks Issues nicht unter dem Profil des Besitzers an. Sonst wie gewohnt
+ * Projekt- oder Konto-Token. Liefert das Token im Klartext.
  */
-export async function issueTokenCipherFor(project: ProjectTokenInput): Promise<{ cipher: string; source: TokenSource | "bot" } | null> {
+export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token: string; source: TokenSource | "bot" } | null> {
   const parsed = parseRepoUrl(project.repoUrl);
   if (parsed) {
-    const bot = await db.gitCredential.findUnique({ where: { userId_host: { userId: project.ownerId, host: parsed.hostPort } }, select: { botCipher: true } });
-    if (bot?.botCipher) return { cipher: bot.botCipher, source: "bot" };
+    const bot = await db.gitCredential.findUnique({
+      where: { userId_host: { userId: project.ownerId, host: parsed.hostPort } },
+      select: { botCipher: true, botAppId: true, botAppKeyCipher: true },
+    });
+    if (bot?.botAppId && bot.botAppKeyCipher) {
+      // Nicht in diesem Repository installiert: wie früher über den eigenen Zugang
+      const token = await appIssueToken({ botAppId: bot.botAppId, botAppKeyCipher: bot.botAppKeyCipher }, parsed);
+      if (token) return { token, source: "bot" };
+    } else if (bot?.botCipher) {
+      const token = tryDecrypt(bot.botCipher);
+      if (token) return { token, source: "bot" };
+    }
   }
-  return tokenCipherFor(project);
+  const stored = await tokenCipherFor(project);
+  const token = stored && tryDecrypt(stored.cipher);
+  return stored && token ? { token, source: stored.source } : null;
+}
+
+function tryDecrypt(cipher: string): string | null {
+  try {
+    return decrypt(cipher);
+  } catch {
+    return null;
+  }
 }
 
 // ── Verbindungen prüfen und anlegen ─────────────────────────
@@ -124,6 +147,10 @@ export async function credentialList(userId: string) {
     login: c.login,
     botHint: c.botHint,
     botLogin: c.botLogin,
+    /** Bot als GitHub App: Kurzname und Links zum Installieren und Löschen */
+    botApp: c.botAppSlug ? { slug: c.botAppSlug, installUrl: botAppInstallUrl(c.botAppSlug), settingsUrl: botAppSettingsUrl(c.botAppSlug) } : null,
+    /** Bot per Klick geht nur mit github.com */
+    botAppPossible: c.provider === "github" && c.baseUrl === "https://github.com",
     autoImport: c.autoImport,
     importedAt: c.importedAt?.toISOString() ?? null,
     importError: c.importError,

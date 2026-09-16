@@ -80,26 +80,26 @@ enum DocShare {
 
 /// Genau eine Zeile (id = "instance").
 model Settings {
-  id                String       @id @default("instance")
-  mode              InstanceMode @default(SINGLE)
-  allowRegistration Boolean      @default(false)
+  id                 String       @id @default("instance")
+  mode               InstanceMode @default(SINGLE)
+  allowRegistration  Boolean      @default(false)
   /// „Passwort vergessen“ per E-Mail erlauben (braucht SMTP) – aus, bis ein Admin es einschaltet
-  allowPasswordReset Boolean     @default(false)
+  allowPasswordReset Boolean      @default(false)
   /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
-  taskColumnLimit   Int          @default(15)
+  taskColumnLimit    Int          @default(15)
   /// Wünsche ans Team (an die KI) je Mitglied in 24 Stunden – vom Admin einstellbar (#48)
-  wishLimit         Int          @default(3)
-  setupDoneAt       DateTime?
+  wishLimit          Int          @default(3)
+  setupDoneAt        DateTime?
   /// SMTP für Benachrichtigungen per E-Mail (Passwort AES-256-GCM)
-  smtpHost          String?
-  smtpPort          Int?
-  smtpSecure        Boolean      @default(false)
-  smtpUser          String?
-  smtpPassCipher    String?
-  smtpFrom          String?
+  smtpHost           String?
+  smtpPort           Int?
+  smtpSecure         Boolean      @default(false)
+  smtpUser           String?
+  smtpPassCipher     String?
+  smtpFrom           String?
   /// Zuletzt gestartete Version – für die Meldung „VibeWorks aktualisiert“
-  lastVersion       String?
-  updatedAt         DateTime     @updatedAt
+  lastVersion        String?
+  updatedAt          DateTime     @updatedAt
 }
 
 // ── Konten und Anmeldung ────────────────────────────────────
@@ -128,9 +128,9 @@ model User {
   resetRequestedAt     DateTime?
 
   /// TOTP-Schlüssel (verschlüsselt). Scharf erst mit totpEnabledAt.
-  totpSecret     String?
-  totpEnabledAt  DateTime?
-  totpLastStep   Int?
+  totpSecret    String?
+  totpEnabledAt DateTime?
+  totpLastStep  Int?
 
   /// Persönliches Design (Hintergrund, Farben, Modus, Glas) – siehe src/lib/theme.
   theme Json?
@@ -160,27 +160,27 @@ model User {
   teamWishes         TeamWish[]
   roles              Role[]
 
-  sessions      Session[]
-  passkeys      Passkey[]
-  recoveryCodes RecoveryCode[]
-  passwordResets PasswordReset[]
-  mfaPending    MfaPending[]
-  projects      Project[]
-  activities    Activity[]
-  uploads       Upload[]
-  docs          Doc[]
-  memberships    ProjectMember[]
-  accessRequests AccessRequest[]
-  gitCredentials GitCredential[]
-  apiTokens      ApiToken[]
-  notifications  Notification[]
-  createdTasks   Task[]         @relation("TaskCreator")
-  taskFocus      TaskFocus[]
-  prompts        Prompt[]
-  timeEntries    TimeEntry[]
-  inboxItems     InboxItem[]
-  templates      ProjectTemplate[]
-  suggestions    Suggestion[]
+  sessions             Session[]
+  passkeys             Passkey[]
+  recoveryCodes        RecoveryCode[]
+  passwordResets       PasswordReset[]
+  mfaPending           MfaPending[]
+  projects             Project[]
+  activities           Activity[]
+  uploads              Upload[]
+  docs                 Doc[]
+  memberships          ProjectMember[]
+  accessRequests       AccessRequest[]
+  gitCredentials       GitCredential[]
+  apiTokens            ApiToken[]
+  notifications        Notification[]
+  createdTasks         Task[]                @relation("TaskCreator")
+  taskFocus            TaskFocus[]
+  prompts              Prompt[]
+  timeEntries          TimeEntry[]
+  inboxItems           InboxItem[]
+  templates            ProjectTemplate[]
+  suggestions          Suggestion[]
   notificationSettings NotificationSettings?
 
   createdAt DateTime @default(now())
@@ -289,94 +289,94 @@ model WebAuthnChallenge {
 // ── Projekte ────────────────────────────────────────────────
 
 model Project {
-  id          String        @id @default(cuid())
-  ownerId     String
-  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  name        String
-  slug        String
-  summary     String?
-  description String?
-  status      ProjectStatus @default(IDEA)
+  id                  String         @id @default(cuid())
+  ownerId             String
+  owner               User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name                String
+  slug                String
+  summary             String?
+  description         String?
+  status              ProjectStatus  @default(IDEA)
   /// 1 niedrig · 2 normal · 3 hoch · 4 kritisch
-  priority    Int           @default(2)
-  progress    Int           @default(0)
+  priority            Int            @default(2)
+  progress            Int            @default(0)
   /// Name eines Akzentverlaufs (siehe src/lib/accents.ts)
-  accent      String        @default("violet")
-  tags        String[]      @default([])
-  favorite    Boolean       @default(false)
+  accent              String         @default("violet")
+  tags                String[]       @default([])
+  favorite            Boolean        @default(false)
   /// Rang innerhalb der Kanban-Spalte
-  position    Int           @default(0)
-  progressFromTasks Boolean @default(false)
+  position            Int            @default(0)
+  progressFromTasks   Boolean        @default(false)
   /// Aufgabenbrett: Spaltennamen, Reihenfolge, ausgeblendete Spalten, Einklappen (src/lib/boardConfig.ts)
-  boardConfig Json?
-  repoUrl     String?
+  boardConfig         Json?
+  repoUrl             String?
   /// Zugangstoken für private Repositories, AES-256-GCM-verschlüsselt
-  repoTokenCipher String?
+  repoTokenCipher     String?
   /// Gekürzte Anzeige des Tokens, z. B. "ghp_…9f3a"
-  repoTokenHint   String?
+  repoTokenHint       String?
   /// Aufgaben automatisch als Issues im Repository spiegeln (braucht ein Token)
-  issueSync       Boolean @default(true)
+  issueSync           Boolean        @default(true)
   /// Issues im Repository abgeschaltet (HTTP 410) – bis einen Tag danach nicht erneut versuchen (#66)
-  issuesOffAt     DateTime?
+  issuesOffAt         DateTime?
   /// Repo-Check (GitHub-Workflow) automatisch einrichten und auswerten – aus = Datei wird entfernt
-  repoCheck       Boolean @default(true)
+  repoCheck           Boolean        @default(true)
   /// Aufgaben aus dem Repo-Check: off · urgent (Geheimnisse, Lücken) · all (dazu Semgrep-Befunde)
-  checkTasks      String  @default("off")
+  checkTasks          String         @default("off")
   /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
-  shareToken      String? @unique
+  shareToken          String?        @unique
   /// Geheimnis für eingehende Webhooks (AES-256-GCM) – null heißt „kein Webhook“
   webhookSecretCipher String?
   /// Zuletzt ein gültiger Webhook angekommen
   webhookAt           DateTime?
   /// Fehler-Eingang: geheimer Teil der Adresse /api/errors/in/<key> – null heißt „aus“
-  errorKey            String? @unique
+  errorKey            String?        @unique
   /// Fehler-Agent (#39): off · notfix – neue Fehler automatisch als Notfix-Aufgabe für Claude
-  errorAutoTask       String  @default("off")
+  errorAutoTask       String         @default("off")
   /// Live-Überwachung: die fertige Seite, alle 5 Minuten geprüft
-  liveUrl        String?
+  liveUrl             String?
   /// "up" | "down" – null, solange noch nicht geprüft
-  liveState      String?
+  liveState           String?
   /// Fehlschläge in Folge – offline gilt eine Seite erst ab zwei
-  liveFails      Int       @default(0)
-  liveMs         Int?
-  liveError      String?
+  liveFails           Int            @default(0)
+  liveMs              Int?
+  liveError           String?
   /// Seit wann der aktuelle Zustand gilt
-  liveSince      DateTime?
-  liveCheckedAt  DateTime?
-  sslExpiresAt   DateTime?
-  sslCheckedAt   DateTime?
+  liveSince           DateTime?
+  liveCheckedAt       DateTime?
+  sslExpiresAt        DateTime?
+  sslCheckedAt        DateTime?
   /// Schon gemeldete Warnstufe ("14" | "3") – nach Verlängerung wieder null
-  sslNotified    String?
+  sslNotified         String?
   /// Vorschaubild der Seite (og:image, sonst Icon) als Upload
-  coverUploadId  String?
-  coverCheckedAt DateTime?
+  coverUploadId       String?
+  coverCheckedAt      DateTime?
   /// Projekt-Friedhof: begraben (Status dann ARCHIVED), Ursache, letzte Worte
-  buriedAt           DateTime?
-  epitaph            String?
-  causeOfDeath       String?
-  statusBeforeBurial ProjectStatus?
+  buriedAt            DateTime?
+  epitaph             String?
+  causeOfDeath        String?
+  statusBeforeBurial  ProjectStatus?
   /// Im öffentlichen Portfolio des Besitzers zeigen
-  inPortfolio        Boolean @default(false)
+  inPortfolio         Boolean        @default(false)
   /// In der Community der Instanz vorstellen (nur für angemeldete Konten sichtbar)
-  inCommunity        Boolean @default(false)
+  inCommunity         Boolean        @default(false)
   /// Von einem Admin als offizielles Projekt markiert – steht oben in der Community (#59)
-  communityOfficial  Boolean @default(false)
+  communityOfficial   Boolean        @default(false)
   /// „Später fragen“ – bis dahin kein Hinweis auf dem Dashboard
-  nudgeSnoozedUntil  DateTime?
+  nudgeSnoozedUntil   DateTime?
 
-  notes      Note[]
-  tasks      Task[]
-  activities Activity[]
-  repoCache  RepoCache?
-  members        ProjectMember[]
-  accessRequests AccessRequest[]
-  uptimeChecks   UptimeCheck[]
-  prompts        Prompt[]
-  costs          ProjectCost[]
-  timeEntries    TimeEntry[]
-  suggestions    Suggestion[]
-  appErrors      AppError[]
-  codeMemos      CodeMemo[]
+  notes             Note[]
+  tasks             Task[]
+  activities        Activity[]
+  repoCache         RepoCache?
+  members           ProjectMember[]
+  accessRequests    AccessRequest[]
+  uptimeChecks      UptimeCheck[]
+  prompts           Prompt[]
+  costs             ProjectCost[]
+  timeEntries       TimeEntry[]
+  suggestions       Suggestion[]
+  appErrors         AppError[]
+  codeMemos         CodeMemo[]
   communityPosts    CommunityPost[]
   communityBans     CommunityBan[]
   communityMessages CommunityMessage[]
@@ -659,46 +659,46 @@ model Note {
 }
 
 model Task {
-  id          String      @id @default(cuid())
-  projectId   String
-  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  status      TaskStatus  @default(TODO)
-  position    Int         @default(0)
-  dueDate     DateTime?
-  labels      String[]    @default([])
-  doneAt      DateTime?
+  id              String      @id @default(cuid())
+  projectId       String
+  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  status          TaskStatus  @default(TODO)
+  position        Int         @default(0)
+  dueDate         DateTime?
+  labels          String[]    @default([])
+  doneAt          DateTime?
   /// Letzter Statuswechsel – Erledigtes und Blockiertes blendet das Board nach 2 Tagen aus
-  statusChangedAt DateTime @default(now())
-  recurrence  Recurrence?
+  statusChangedAt DateTime    @default(now())
+  recurrence      Recurrence?
   /// Vorgängerin bei wiederkehrenden Aufgaben (bewusst ohne Fremdschlüssel)
-  recurredFrom String?
+  recurredFrom    String?
   /// Gespiegeltes Issue im verknüpften Repository
-  issueNumber Int?
-  issueUrl    String?
+  issueNumber     Int?
+  issueUrl        String?
   /// Letzter Fehler beim Spiegeln – wird beim nächsten Erfolg geleert
-  issueError  String?
+  issueError      String?
   /// Von VibeWorks selbst gepflegte Aufgabe (z. B. "deps:vuln") – je Projekt höchstens eine je Schlüssel
-  autoKey     String?
+  autoKey         String?
   /// Wer daran arbeitet – frei eingetragen (z. B. „anna“ oder „Claude“), steht auch im Issue
-  assignee    String?
+  assignee        String?
   /// Hinweis an die KI (eigener Prompt, Arbeitsweise) – privat, nie im Issue
-  aiNote      String?
+  aiNote          String?
   /// Priorität wie bei Projekten: 1 niedrig · 2 normal · 3 hoch · 4 dringend
-  priority    Int         @default(2)
+  priority        Int         @default(2)
   /// Bearbeiter laut Issue: Zuweisungen (@login) und Labels wie „🤖 Claude“
-  issueAssignees String[] @default([])
+  issueAssignees  String[]    @default([])
   /// Wer die Aufgabe in VibeWorks angelegt hat – Name als Schnappschuss, steht auch im Issue
-  createdById   String?
-  createdBy     User?   @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  createdByName String?
+  createdById     String?
+  createdBy       User?       @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName   String?
   /// Weg: web · mcp (per KI) · auto (von VibeWorks selbst)
-  createdVia    String?
-  focus       TaskFocus[]
-  timeEntries TimeEntry[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdVia      String?
+  focus           TaskFocus[]
+  timeEntries     TimeEntry[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@unique([projectId, autoKey])
   @@index([projectId, status, position])
@@ -724,36 +724,36 @@ model Activity {
 /// Ein fehlgeschlagener Abgleich setzt nur `error` – die zuletzt geholten
 /// Commits bleiben stehen.
 model RepoCache {
-  projectId     String   @id
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId        String    @id
+  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   /// github | gitlab | gitea
-  provider      String
-  fullName      String
-  webUrl        String
-  defaultBranch String?
-  description   String?
-  stars         Int?
+  provider         String
+  fullName         String
+  webUrl           String
+  defaultBranch    String?
+  description      String?
+  stars            Int?
   /// [{ sha, title, body, author, date, url }], neueste zuerst
-  commits       Json     @default("[]")
+  commits          Json      @default("[]")
   /// CI des Hauptzweigs: { state, runs: [{ name, state, url, updatedAt }], sha, checkedAt } – null ohne CI
-  ci            Json?
+  ci               Json?
   /// Abhängigkeiten aus package.json: { manifest, packages, counts, error, checkedAt } – einmal am Tag
-  deps          Json?
-  depsCheckedAt DateTime?
-  fetchedAt     DateTime @default(now())
-  error         String?
+  deps             Json?
+  depsCheckedAt    DateTime?
+  fetchedAt        DateTime  @default(now())
+  error            String?
   /// Fehlschläge in Folge, seit wann, und ob das schon gemeldet wurde
-  failCount     Int       @default(0)
-  errorSince    DateTime?
-  errorNotified Boolean   @default(false)
+  failCount        Int       @default(0)
+  errorSince       DateTime?
+  errorNotified    Boolean   @default(false)
   /// Repo-Check (GitHub-Workflow): null = nicht eingerichtet · waiting · running · done · failed
-  checkStatus    String?
+  checkStatus      String?
   /// Bericht aus dem Artefakt (siehe src/lib/git/repoCheckLogic.ts)
-  checkReport    Json?
-  checkRunUrl    String?
-  checkRunAt     DateTime?
-  checkFetchedAt DateTime?
-  checkError     String?
+  checkReport      Json?
+  checkRunUrl      String?
+  checkRunAt       DateTime?
+  checkFetchedAt   DateTime?
+  checkError       String?
   /// Zuletzt geprüft, ob die Workflow-Datei im Repository aktuell ist (einmal am Tag)
   checkInstalledAt DateTime?
 }
@@ -762,36 +762,40 @@ model RepoCache {
 /// gehostet). Gilt für alle eigenen Projekte auf diesem Server, sofern ein
 /// Projekt kein eigenes Token hat. Je Konto und Server höchstens eine.
 model GitCredential {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// github | gitlab | gitea
-  provider  String
+  provider        String
   /// host[:port], kleingeschrieben – Abgleich mit der Repository-Adresse
-  host      String
+  host            String
   /// https://host[:port] – Basis für API-Aufrufe
-  baseUrl   String
+  baseUrl         String
   /// Token, AES-256-GCM-verschlüsselt
-  cipher    String
+  cipher          String
   /// Gekürzte Anzeige, z. B. "ghp_…9f3a"
-  hint      String
+  hint            String
   /// Anmeldename beim Anbieter, beim Speichern ermittelt
-  login     String?
+  login           String?
   /// Bot-Konto nur für Issues – damit VibeWorks sie nicht unter dem eigenen Profil anlegt (verschlüsselt)
-  botCipher String?
-  botHint   String?
-  botLogin  String?
+  botCipher       String?
+  botHint         String?
+  botLogin        String?
+  /// Bot als GitHub App (per Klick erstellt): App-ID, Kurzname und privater Schlüssel (verschlüsselt)
+  botAppId        String?
+  botAppSlug      String?
+  botAppKeyCipher String?
   /// Automatischer Import: jedes eigene Repository wird zum Projekt (ohne Forks und archivierte)
-  autoImport  Boolean   @default(true)
-  importedAt  DateTime?
+  autoImport      Boolean   @default(true)
+  importedAt      DateTime?
   /// Letzter Import-Fehler (Übersetzungsschlüssel) und Fehlschläge in Folge
-  importError String?
-  importFails Int       @default(0)
+  importError     String?
+  importFails     Int       @default(0)
   /// Zuletzt gefundene Repositories (ohne Forks und archivierte)
-  importCount Int       @default(0)
+  importCount     Int       @default(0)
   /// host/pfad gelöschter oder umgehängter Projekte – werden nicht erneut importiert
-  skipRepos   String[]  @default([])
-  createdAt DateTime @default(now())
+  skipRepos       String[]  @default([])
+  createdAt       DateTime  @default(now())
 
   @@unique([userId, host])
 }
@@ -813,31 +817,31 @@ model ProjectTemplate {
 
 /// API-Schlüssel für Claude Code und andere MCP-Clients – gespeichert wird nur der SHA-256.
 model ApiToken {
-  id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String
-  tokenHash  String    @unique
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  tokenHash         String    @unique
   /// Gekürzte Anzeige, z. B. "vw_AbCd…9f3a"
-  hint       String
-  lastUsedAt DateTime?
+  hint              String
+  lastUsedAt        DateTime?
   /// Prüfspur: von wo und womit zuletzt benutzt
   lastUsedIp        String?
   lastUsedUserAgent String?
   /// Die KI hat die Agent-Regeln gespeichert und bestätigt (confirm_agent_rules)
-  rulesAckAt DateTime?
+  rulesAckAt        DateTime?
   /// Zuletzt gemeldeter Client (initialize): Name, Version, verlangte Protokollversion
-  clientName     String?
-  clientVersion  String?
-  clientProtocol String?
+  clientName        String?
+  clientVersion     String?
+  clientProtocol    String?
   /// Werkzeug-Umfang: read · tasks · all
-  scope          String  @default("all")
+  scope             String    @default("all")
   /// Erinnerungen an die KI: default · custom · off, Text und „jeder n-te Aufruf“
-  reminderMode   String  @default("default")
-  reminderText   String?
-  reminderEvery  Int     @default(10)
-  calls      McpCall[]
-  createdAt  DateTime  @default(now())
+  reminderMode      String    @default("default")
+  reminderText      String?
+  reminderEvery     Int       @default(10)
+  calls             McpCall[]
+  createdAt         DateTime  @default(now())
 
   @@index([userId])
 }
@@ -996,16 +1000,16 @@ model UptimeCheck {
 
 /// Posteingang der Benachrichtigungen – die Windows-App holt ihn ab; nach 30 Tagen gelöscht.
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   event     String
   title     String
   message   String
   url       String?
   /// Gelesen (Glocke in der Kopfleiste) – null heißt ungelesen
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
 }

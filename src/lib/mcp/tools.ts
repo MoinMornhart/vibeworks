@@ -59,6 +59,7 @@ export const MCP_INSTRUCTIONS = [
   "Projects have a status (IDEA → PLANNING → OPEN → IN_PROGRESS → DONE, or ARCHIVED), a priority (1 low – 4 critical) and a progress in percent.",
   "Each project has a task board (TODO, DOING, BLOCKED, DONE) and notes; docs are the user's personal page tree.",
   "Refer to projects by id or by their exact name.",
+  "Write task titles, descriptions and notes in the user's language (see get_agent_rules), and never end a reply without checking the open tasks with list_tasks.",
   "Working on tasks: find them with list_tasks or get_project, set status DOING when you start, DONE when finished (BLOCKED with a short reason in the description if you are stuck).",
   "If a project mirrors tasks as issues in its Git repository, the issues follow automatically.",
   "Everything you change shows up in the project's activity log under the user's name – keep titles short and clear.",

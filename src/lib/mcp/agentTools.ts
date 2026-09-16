@@ -16,7 +16,7 @@ const ruleTools: ToolDef<McpContext>[] = [
       "The rules for working with VibeWorks as a skill file (Markdown with frontmatter). Call it once, save the file locally where it says, then call confirm_agent_rules.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
-    run: async () => agentRules(allMcpTools(), config.appUrl),
+    run: async (_args, ctx) => agentRules(allMcpTools(), config.appUrl, ctx.locale),
   },
   {
     name: CONFIRM_TOOL,

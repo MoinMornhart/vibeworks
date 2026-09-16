@@ -1,13 +1,12 @@
 import type { Task, TaskStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { decrypt } from "@/lib/crypto";
 import { tk } from "@/lib/i18n/messages";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { recurrenceLabel } from "@/lib/taskDates";
 import { priorityLabel } from "@/lib/status";
 import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider } from "./parse";
-import { issueTokenCipherFor } from "./token";
+import { issueTokenFor } from "./token";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
@@ -99,18 +98,12 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   if (!project?.repoUrl || !project.issueSync) return null;
   // Issues im Repository abgeschaltet: einen Tag lang nicht nachfragen – spart API-Aufrufe (#66)
   if (issuesPaused(project.issuesOffAt)) return null;
-  const stored = await issueTokenCipherFor(project); // Bot-Konto, sonst Projekt- oder Konto-Token
+  const stored = await issueTokenFor(project); // Bot, sonst Projekt- oder Konto-Token
   if (!stored) return null;
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
   if (!parsed || !provider || provider === "git") return null; // Anbieter erst nach dem ersten Abgleich bekannt; beliebige Git-Server kennen keine Issues
-  let token: string;
-  try {
-    token = decrypt(stored.cipher);
-  } catch {
-    return null;
-  }
-  return { api: issueApi(provider, parsed, token), provider, projectId };
+  return { api: issueApi(provider, parsed, stored.token), provider, projectId };
 }
 
 const issueInput = (task: Task, reason?: IssueInput["reason"]): IssueInput => ({

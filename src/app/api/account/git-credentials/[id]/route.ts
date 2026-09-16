@@ -33,7 +33,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 
   const data: Prisma.GitCredentialUpdateInput = {};
   if (input.autoImport !== undefined) data.autoImport = input.autoImport;
-  if (input.botToken === null) Object.assign(data, { botCipher: null, botHint: null, botLogin: null });
+  if (input.botToken === null) Object.assign(data, { botCipher: null, botHint: null, botLogin: null, botAppId: null, botAppSlug: null, botAppKeyCipher: null });
   else if (input.botToken) {
     if (cred.provider === "git") throw new ApiError(400, tk("account", "git.botNoIssues"), { botToken: tk("account", "git.botNoIssues") });
     limitOrThrow(`git-bot:${user.id}`, 10, 10 * MINUTE);
@@ -48,7 +48,8 @@ export const PATCH = route<Params>(async (req, { params }) => {
     if (login && cred.login && login.toLowerCase() === cred.login.toLowerCase()) {
       throw new ApiError(400, tk("account", "git.botSameAccount"), { botToken: tk("account", "git.botSameAccount") });
     }
-    Object.assign(data, { botCipher: encrypt(input.botToken), botHint: tokenHint(input.botToken), botLogin: login });
+    // Ein Bot-Token ersetzt eine früher erstellte Bot-App
+    Object.assign(data, { botCipher: encrypt(input.botToken), botHint: tokenHint(input.botToken), botLogin: login, botAppId: null, botAppSlug: null, botAppKeyCipher: null });
   }
 
   await db.gitCredential.update({ where: { id }, data });

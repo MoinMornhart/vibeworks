@@ -21,6 +21,12 @@ describe("Regeln für KI-Agenten", () => {
     expect(md).not.toContain("Includes shared ones");
   });
 
+  it("verlangt Einträge in der Sprache des Kontos und den Blick auf offene Aufgaben (#74)", () => {
+    expect(md).toContain("in German, the user's language");
+    expect(agentRules(tools, "https://vw.example", "en")).toContain("in English, the user's language");
+    expect(md).toContain("Never end a reply without having used VibeWorks");
+  });
+
   it("verweist auf Bestätigung und Adresse", () => {
     expect(md).toContain(CONFIRM_TOOL);
     expect(md).toContain("https://vw.example");

@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.2",
+    date: "2026-09-16",
+    title: "Bot per Klick, KI-Agenten schreiben Deutsch",
+    titleEn: "One-click bot, AI agents write in your language",
+    changes: [
+      {
+        type: "neu",
+        text: "Bot per Klick: Unter Konto → Git-Zugänge legt ein Knopf bei GitHub eine eigene App an – nur Name und Repositories bestätigen, kein zweites Konto, kein Token. Sie darf nur Issues schreiben (kein Code, keine Webhooks); Issues erscheinen dann als Bot",
+        en: "One-click bot: under Account → Git access a button creates your own GitHub app – just confirm name and repositories, no second account, no token. It can only write issues (no code, no webhooks); issues then appear as the bot",
+        link: "/account#git-zugang",
+      },
+      {
+        type: "fix",
+        text: "KI-Agenten legen Aufgaben, Beschreibungen und Notizen jetzt in der Sprache deines Kontos an statt auf Englisch",
+        en: "AI agents now create tasks, descriptions and notes in your account's language instead of English",
+      },
+      {
+        type: "besser",
+        text: "Agenten-Regeln: keine Antwort mehr ohne Blick auf die offenen Aufgaben über MCP, und offene Aufgaben werden vollständig abgearbeitet",
+        en: "Agent rules: no reply without checking open tasks over MCP, and open tasks are worked through completely",
+      },
+    ],
+  },
+  {
     version: "1.0.1",
     date: "2026-09-16",
     title: "Eigene Spaltennamen überall, Hinweis an die KI",

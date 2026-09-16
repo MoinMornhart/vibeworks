@@ -48,6 +48,12 @@ nennt, wer die Aufgabe in VibeWorks angelegt hat – das zählt, nicht das GitHu
 gh issue list --repo MoinMornhart/vibeworks --state open --json number,title,author,labels,createdAt
 ```
 
+Keine Antwort beenden, ohne einmal nach offenen Aufgaben geschaut zu haben (#74) – über den
+VibeWorks-MCP (`list_tasks`, `list_problems`), wenn er verbunden ist, sonst über die Issue-Liste.
+Offene Aufgaben vollständig abarbeiten, nicht halb liegen lassen.
+
+Aufgaben, Beschreibungen und Notizen in VibeWorks immer **auf Deutsch** anlegen.
+
 Neue Issues sofort übernehmen, nicht sammeln. Für durchgehendes Arbeiten (z. B. nachts)
 einen echten Zeitplan anlegen, der die Runde regelmäßig startet – eine laufende Sitzung
 allein arbeitet nicht von selbst weiter.
