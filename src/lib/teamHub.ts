@@ -6,6 +6,7 @@ import { accessOf, canDo } from "./access";
 import { requireTeamMember } from "./teams";
 import { isClaude, sortByProgress, wishesLeft, WISH_WINDOW_MS, type WishStatus } from "./teamHubLogic";
 import { getSettings } from "./settings";
+import { statusLabelsOf } from "./boardConfig";
 
 // Team-Seite (#38): Übersicht für alle im Team – Mitglieder, Team-Projekte mit
 // offenen Aufgaben und Fehlern, woran Claude gerade arbeitet, letzte
@@ -28,6 +29,7 @@ export async function teamHub(teamId: string, userId: string) {
               id: true,
               name: true,
               status: true,
+              boardConfig: true,
               _count: { select: { tasks: { where: { status: { not: "DONE" } } }, appErrors: { where: { status: "open" } } } },
             },
           },
@@ -59,6 +61,7 @@ export async function teamHub(teamId: string, userId: string) {
     recentAiSteps(projectIds),
   ]);
   const projectName = new Map(team.projects.map((p) => [p.project.id, p.project.name]));
+  const projectLabels = new Map(team.projects.map((p) => [p.project.id, statusLabelsOf(p.project.boardConfig)]));
   const settings = await getSettings();
 
   return {
@@ -79,6 +82,7 @@ export async function teamHub(teamId: string, userId: string) {
       status: x.status,
       projectId: x.projectId,
       project: projectName.get(x.projectId) ?? "",
+      statusLabel: projectLabels.get(x.projectId)?.[x.status] ?? null,
       updatedAt: x.updatedAt.toISOString(),
       since: x.statusChangedAt.toISOString(),
     })),

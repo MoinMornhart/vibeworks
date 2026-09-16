@@ -267,7 +267,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const labelOf = (id: string) => (id.startsWith("pkg:") ? id.slice(4) : id);
 
   return (
-    <section className="glass p-6 sm:p-8" aria-labelledby="graph-heading" data-testid="code-graph">
+    <section id="code-graph" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="graph-heading" data-testid="code-graph">
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 id="graph-heading" className="flex items-center gap-2 text-lg font-semibold">
           <Network size={18} className="text-accent-ink" /> {t("title")}

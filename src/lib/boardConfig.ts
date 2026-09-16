@@ -17,6 +17,10 @@ export interface BoardConfig {
   collapseAfter: number;
 }
 
+/** Eigene Spaltennamen eines Projekts (#72) – für Liste, Dialog, Info-Fenster und Team-Seite. */
+export type StatusLabels = BoardConfig["labels"];
+export const statusLabelsOf = (stored: unknown): StatusLabels => normalizeBoard(stored).labels;
+
 export const DEFAULT_BOARD: BoardConfig = { order: [...BOARD_STATUSES], hidden: [], labels: {}, collapseAfter: 0 };
 
 const isStatus = (v: unknown): v is TaskStatus => typeof v === "string" && (BOARD_STATUSES as readonly string[]).includes(v);

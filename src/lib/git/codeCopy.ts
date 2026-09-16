@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
-import { tk } from "@/lib/i18n/messages";
+import { tk, translateMessage } from "@/lib/i18n/messages";
+import { appLink, notifyUser } from "@/lib/notify";
+import { hit, MINUTE } from "@/lib/security/rateLimit";
 import { decrypt } from "@/lib/crypto";
 import { parseRepoUrl } from "./parse";
 import { tokenCipherFor } from "./token";
@@ -59,9 +61,24 @@ export async function ensureCodeCopy(projectId: string, wanted?: string | null, 
     await mirrorBranchViaGit(projectId, repo.repoUrl, repo.parsed, repo.token, branch);
     return { branch, head: await localHeadViaGit(projectId, branch), error: null };
   } catch (err) {
-    console.error("[code-copy]", projectId, branch, err instanceof Error ? err.message : err);
-    return { branch, head, error: err instanceof Error ? err.message : tk("git", "errors.gitFailed") };
+    console.error("[code-copy] %s %s:", projectId, branch, err instanceof Error ? err.message : err);
+    const error = err instanceof Error ? err.message : tk("git", "errors.gitFailed");
+    void notifyCopyFailed(projectId, error);
+    return { branch, head, error };
   }
+}
+
+/** Besitzer benachrichtigen, dass die Code-Kopie nicht geholt werden konnte (#71) – höchstens einmal am Tag je Projekt. */
+async function notifyCopyFailed(projectId: string, error: string): Promise<void> {
+  if (!hit(`code-copy-failed:${projectId}`, 1, 24 * 60 * MINUTE).ok) return;
+  const project = await db.project.findUnique({ where: { id: projectId }, select: { ownerId: true, name: true } });
+  if (!project) return;
+  await notifyUser(project.ownerId, "gitFailed", (t, locale) => ({
+    event: "gitFailed",
+    title: t("events.codeCopyFailed.title", { project: project.name }),
+    message: translateMessage(locale, error),
+    url: appLink(`/projects/${projectId}#code-graph`),
+  })).catch((e) => console.error("[code-copy] Meldung:", e));
 }
 
 /** Zweige des Repositories – fünf Minuten gemerkt. Leer, wenn der Server nicht antwortet. */

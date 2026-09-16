@@ -60,6 +60,7 @@ export function TaskDialog({
   people = [],
   onInfo,
   initial,
+  statusLabels,
 }: {
   open: boolean;
   task: TaskItem | null;
@@ -73,6 +74,8 @@ export function TaskDialog({
   onInfo?: (task: TaskItem) => void;
   /** Vorausgefüllte neue Aufgabe (z. B. aus dem Repo-Check) */
   initial?: Partial<TaskForm>;
+  /** Eigene Spaltennamen des Projekts (#72) */
+  statusLabels?: Partial<Record<TaskStatus, string>>;
 }) {
   const t = useT("tasks");
   const tc = useT("common");
@@ -167,6 +170,12 @@ export function TaskDialog({
           )}
           {task?.createdVia === "auto" && <p className="mt-1 text-xs text-muted">{t("dialog.createdAuto")}</p>}
         </div>
+        {task?.aiNote && (
+          <div className="rounded-lg border border-sky-400/30 bg-sky-400/5 px-3 py-2 text-sm" data-testid="task-dialog-ai-note">
+            <p className="text-xs font-medium text-sky-300">{t("info.noteInDialog")}</p>
+            <p className="whitespace-pre-wrap break-words">{task.aiNote}</p>
+          </div>
+        )}
         <div>
           <label className="label" htmlFor="t-desc">{t("dialog.description")}</label>
           <textarea id="t-desc" className="field min-h-28" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder={t("dialog.descriptionPlaceholder")} maxLength={20000} />
@@ -185,7 +194,7 @@ export function TaskDialog({
             <label className="label" htmlFor="t-status">{t("dialog.column")}</label>
             <select id="t-status" className="field" value={form.status} onChange={(e) => set("status", e.target.value as TaskStatus)}>
               {TASK_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{ts(`task.${s.value}`)}</option>
+                <option key={s.value} value={s.value}>{statusLabels?.[s.value] || ts(`task.${s.value}`)}</option>
               ))}
             </select>
           </div>

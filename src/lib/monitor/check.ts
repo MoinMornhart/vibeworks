@@ -75,7 +75,9 @@ export async function sslExpiry(url: string): Promise<Date | null> {
   const host = u.hostname.replace(/^\[|\]$/g, "");
   return new Promise((resolve) => {
     const socket = tls.connect(
-      { host, port: Number(u.port) || 443, servername: net.isIP(host) ? undefined : host, rejectUnauthorized: false, timeout: 10_000 },
+      // Absicht: Hier wird nur das Ablaufdatum gelesen – auch von abgelaufenen oder
+      // fremd signierten Zertifikaten, um genau davor zu warnen. Es fließen keine Daten.
+      { host, port: Number(u.port) || 443, servername: net.isIP(host) ? undefined : host, rejectUnauthorized: false, timeout: 10_000 }, // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
       () => {
         const cert = socket.getPeerCertificate();
         socket.end();

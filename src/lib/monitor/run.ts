@@ -124,7 +124,7 @@ export function checkProjectNow(projectId: string): Promise<void> {
   const active = running.get(projectId);
   if (active) return active;
   const job = checkProject(projectId)
-    .catch((err) => console.error(`[monitor] Projekt ${projectId}:`, err))
+    .catch((err) => console.error("[monitor] Projekt %s:", projectId, err))
     .finally(() => running.delete(projectId));
   running.set(projectId, job);
   return job;

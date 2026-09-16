@@ -2,7 +2,8 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { isPublicUrl, verifyWebhook } from "./webhook";
 
-const SECRET = "geheimnis-123";
+// Nur ein Testwert für die Signaturprüfung – kein echtes Geheimnis
+const SECRET = "geheimnis-123"; // nosemgrep: javascript.lang.security.audit.hardcoded-hmac-key.hardcoded-hmac-key
 const BODY = JSON.stringify({ ref: "refs/heads/main" });
 const hmac = createHmac("sha256", SECRET).update(BODY).digest("hex");
 

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requirePageUser } from "@/lib/auth/guard";
 import { serializeTask } from "@/lib/tasks";
 import { dayKey } from "@/lib/utils";
+import { statusLabelsOf } from "@/lib/boardConfig";
 import { TaskOverview } from "@/components/tasks/TaskOverview";
 import { getT } from "@/lib/i18n/server";
 
@@ -20,7 +21,7 @@ export default async function TasksPage() {
   const [tasks, projects, focus] = await Promise.all([
     db.task.findMany({
       where: { project: { ownerId: user.id, status: { not: "ARCHIVED" } } },
-      include: { project: { select: { id: true, name: true, accent: true } } },
+      include: { project: { select: { id: true, name: true, accent: true, boardConfig: true } } },
       orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
     }),
     // Für „Aufgabe für mehrere Projekte“
@@ -36,7 +37,7 @@ export default async function TasksPage() {
     <TaskOverview
       today={today}
       focusIds={focus.map((f) => f.taskId)}
-      initial={tasks.map((t) => ({ ...serializeTask(t), project: t.project }))}
+      initial={tasks.map((t) => ({ ...serializeTask(t), project: { id: t.project.id, name: t.project.name, accent: t.project.accent, labels: statusLabelsOf(t.project.boardConfig) } }))}
       allProjects={projects}
     />
   );

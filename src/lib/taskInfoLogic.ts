@@ -16,8 +16,9 @@ export interface CommitLike {
  */
 export function commitsForIssue<T extends CommitLike>(commits: T[], issueNumber: number | null, limit = 20): T[] {
   if (!issueNumber) return [];
-  const re = new RegExp(`(^|[^\\w/#])#${issueNumber}(?!\\d)`);
-  return commits.filter((c) => re.test(c.title) || re.test(c.body ?? "")).slice(0, limit);
+  // Fester Ausdruck statt aus der Zahl gebaut (#73): alle „#123“ finden und vergleichen
+  const mentions = (text: string) => [...text.matchAll(/(?:^|[^\w/#])#(\d+)(?!\d)/g)].map((m) => Number(m[1]));
+  return commits.filter((c) => mentions(c.title).includes(issueNumber) || mentions(c.body ?? "").includes(issueNumber)).slice(0, limit);
 }
 
 /** Kurze Dauer: „45 s“, „12 min“, „1 h 05 min“, „3 T 4 h“ – Einheiten je Sprache. */

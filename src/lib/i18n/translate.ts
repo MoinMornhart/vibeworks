@@ -14,7 +14,9 @@ export function lookup(tree: MsgTree | undefined, path: string): Msg | undefined
   let current: Msg | MsgTree | undefined = tree;
   for (const part of path.split(".")) {
     if (!current || typeof current !== "object") return undefined;
-    current = (current as MsgTree)[part];
+    // Nur eigene Einträge – nie __proto__ & Co. (#73)
+    if (!Object.hasOwn(current, part)) return undefined;
+    current = (current as MsgTree)[part]; // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop
   }
   return typeof current === "string" || typeof current === "function" ? current : undefined;
 }

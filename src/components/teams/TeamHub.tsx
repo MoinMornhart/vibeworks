@@ -125,7 +125,7 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
               <ul className="space-y-2">
                 {hub.ai.map((x) => (
                   <li key={x.id} className="flex flex-wrap items-center gap-2 rounded-xl border bg-bg/25 px-3 py-2 text-sm" data-testid="hub-ai-task">
-                    <span className={cn("chip !py-0.5 text-[11px]", STATUS_TONE[x.status])}>{ts(`task.${x.status}`)}</span>
+                    <span className={cn("chip !py-0.5 text-[11px]", STATUS_TONE[x.status])}>{x.statusLabel || ts(`task.${x.status}`)}</span>
                     <Link href={`/projects/${x.projectId}`} className="min-w-0 flex-1 truncate font-medium hover:text-accent-ink">
                       {x.title}
                     </Link>

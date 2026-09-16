@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.1",
+    date: "2026-09-16",
+    title: "Eigene Spaltennamen überall, Hinweis an die KI",
+    titleEn: "Custom column names everywhere, note for the AI",
+    changes: [
+      {
+        type: "fix",
+        text: "Umbenannte Spalten (z. B. „Blockiert“) heißen jetzt überall so – in der Aufgabenliste, im Aufgaben-Dialog, im Info-Fenster und auf der Team-Seite, nicht nur im Board",
+        en: "Renamed columns (e.g. “Blocked”) now show their name everywhere – in the task list, the task dialog, the info panel and the team page, not just on the board",
+      },
+      {
+        type: "besser",
+        text: "„Hinweis an Claude“ heißt jetzt „Hinweis an die KI“ – er gilt für jedes Modell. Ein hinterlegter Hinweis ist auf der Karte (KI-Symbol) und im Aufgaben-Dialog zu sehen",
+        en: "“Note for Claude” is now “Note for the AI” – it applies to any model. A saved note shows on the card (AI badge) and in the task dialog",
+      },
+      {
+        type: "besser",
+        text: "Lässt sich die Code-Kopie für Code-Netz und Code-Suche nicht holen, bekommst du eine Benachrichtigung – höchstens einmal am Tag je Projekt, mit direktem Link",
+        en: "If the code copy for the code network and code search can't be fetched, you get a notification – at most once a day per project, with a direct link",
+      },
+      {
+        type: "fix",
+        text: "Sicherheit (Repo-Check): Verschlüsselung verlangt die volle Prüfsummenlänge, Übersetzungen lesen nur eigene Einträge, Protokolle nutzen feste Formatstrings, und ein weiterer regulärer Ausdruck kommt ohne Nutzereingabe aus",
+        en: "Security (repo check): encryption requires the full authentication tag length, translations only read own entries, logs use fixed format strings, and another regular expression no longer depends on input",
+      },
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-09-17",
     title: "Beta-Ansicht für Admins",

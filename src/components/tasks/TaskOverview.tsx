@@ -16,8 +16,10 @@ import { cn } from "@/lib/utils";
 import { accentGradient } from "@/components/projects/ProjectCard";
 import { DueBadge } from "./TaskBoard";
 import { TaskDialog, type TaskForm } from "./TaskDialog";
+import type { StatusLabels } from "@/lib/boardConfig";
 
-type ProjectRef = { id: string; name: string; accent: string };
+/** labels: eigene Spaltennamen des Projekts (#72) */
+type ProjectRef = { id: string; name: string; accent: string; labels?: StatusLabels };
 export type OverviewTask = TaskItem & { project: ProjectRef };
 
 const STATUS_TONE: Record<TaskStatus, string> = {
@@ -210,7 +212,7 @@ export function TaskOverview({ initial, today, allProjects = [], focusIds = [] }
                           </button>
                         )}
                         <span className={cn("hidden w-20 shrink-0 text-right text-xs sm:inline", STATUS_TONE[task.status])}>
-                          {ts(`task.${task.status}`)}
+                          {task.project.labels?.[task.status] || ts(`task.${task.status}`)}
                         </span>
                         <span className="w-24 shrink-0 text-right">{task.dueDate && <DueBadge dueDate={task.dueDate} done={done} today={today} />}</span>
                       </li>
@@ -236,6 +238,7 @@ export function TaskOverview({ initial, today, allProjects = [], focusIds = [] }
       <TaskDialog
         open={editing !== null}
         task={editing}
+        statusLabels={editing?.project.labels}
         onClose={() => setEditing(null)}
         onSave={async (form: TaskForm) => {
           if (editing) await patch(editing, { ...form, recurrence: form.recurrence || null });

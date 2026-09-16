@@ -41,7 +41,7 @@ export async function runGitSyncOnce(): Promise<{ synced: number; skipped: numbe
       if (!cache.error) await syncIssues(project.id);
       synced++;
     } catch (err) {
-      console.error(`[git-sync] Projekt ${project.id}:`, err);
+      console.error("[git-sync] Projekt %s:", project.id, err);
     }
   }
   return { synced, skipped };
@@ -67,7 +67,7 @@ export function syncProjectNow(projectId: string): Promise<void> {
       if (!cache.error) await syncIssues(project.id);
     } while (entry.rerun);
   })()
-    .catch((err) => console.error(`[git-sync] Webhook ${projectId}:`, err))
+    .catch((err) => console.error("[git-sync] Webhook %s:", projectId, err))
     .finally(() => inFlight.delete(projectId));
   inFlight.set(projectId, entry);
   return entry.job;

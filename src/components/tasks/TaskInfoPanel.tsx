@@ -103,7 +103,7 @@ export function TaskInfoPanel({ taskId, title, onClose, canEdit = false }: { tas
           <>
             <section className={cn("rounded-xl border px-3 py-2", doing && "border-violet-500/40 bg-violet-500/10")} data-testid="task-info-now">
               <p className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">{ts(`task.${info.status}`)}</span>
+                <span className="font-medium">{info.statusLabel || ts(`task.${info.status}`)}</span>
                 <PriorityBadge priority={info.priority} />
                 {info.assignee && <span className="text-muted">· {info.assignee}</span>}
               </p>

@@ -2,12 +2,13 @@ import type { Task } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { displayNameOf } from "@/lib/auth/guard";
 import { commitsForIssue, type CommitLike } from "./taskInfoLogic";
+import { statusLabelsOf } from "./boardConfig";
 
 // Was im Info-Fenster einer Aufgabe steht (#48/#49): Verlauf, Schritte der KI,
 // Commits zum Issue und erfasste Zeit. Nur für Leute mit Zugriff aufs Projekt.
 
 export async function taskInfo(task: Task) {
-  const [activity, calls, cache, entries] = await Promise.all([
+  const [activity, calls, cache, entries, project] = await Promise.all([
     db.activity.findMany({
       where: { projectId: task.projectId, meta: { path: ["taskId"], equals: task.id } },
       orderBy: { createdAt: "desc" },
@@ -27,6 +28,7 @@ export async function taskInfo(task: Task) {
       take: 30,
       include: { user: { select: { username: true, displayName: true } } },
     }),
+    db.project.findUnique({ where: { id: task.projectId }, select: { boardConfig: true } }),
   ]);
 
   const callers = new Map(
@@ -43,6 +45,8 @@ export async function taskInfo(task: Task) {
 
   return {
     status: task.status,
+    /** Eigener Spaltenname des Projekts (#72) – null heißt Standard */
+    statusLabel: statusLabelsOf(project?.boardConfig)[task.status] ?? null,
     since: task.statusChangedAt.toISOString(),
     assignee: task.assignee,
     priority: task.priority,
