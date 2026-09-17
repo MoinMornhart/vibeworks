@@ -8,7 +8,7 @@ import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
 import { issueTokenFor, userIssueToken } from "./token";
 import { runBotCommands } from "./botCommands";
-import { importNewIssues } from "./issueImport";
+import { importNewIssues, refreshImportedTasks } from "./issueImport";
 import { taskIsAiLocked } from "@/lib/aiLock";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
@@ -290,6 +290,8 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     result.commands = commanded.length;
     // Neue Issues aus dem Git-System als Aufgaben (#69)
     result.imported = await importNewIssues(projectId, ctx.api, recent, ctx.botLogin);
+    // Schon übernommene: Titel, Text und Labels aus dem Issue nachziehen (#109)
+    result.tasksChanged += await refreshImportedTasks(projectId, recent);
   } catch (err) {
     if (isIssuesDisabled(err)) {
       await markIssuesOff(projectId);

@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.1",
+    date: "2026-09-17",
+    title: "Issues aus dem Repository bleiben aktuell",
+    titleEn: "Issues from the repository stay up to date",
+    changes: [
+      {
+        type: "neu",
+        text: "Wird aus einem Issue eine Aufgabe, kommt eine Meldung mit Nummer, Titel und Absender – und der Hinweis, wenn sie für die KI gesperrt ist",
+        en: "When an issue becomes a task you get a notification with number, title and sender – plus a note when it is locked for the AI",
+      },
+      {
+        type: "besser",
+        text: "Übernommene Aufgaben ziehen nach: Ändert sich Titel, Text oder Label am Issue, folgt die Aufgabe. Eigene Aufgaben aus VibeWorks bleiben unberührt",
+        en: "Imported tasks follow along: if the issue's title, text or labels change, the task follows. Tasks created in VibeWorks stay untouched",
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-09-17",
     title: "Meldungen-Seite mit eigenen Regeln",
