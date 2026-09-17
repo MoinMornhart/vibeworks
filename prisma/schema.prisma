@@ -350,6 +350,8 @@ model Project {
   repoCheck           Boolean        @default(true)
   /// Aufgaben aus dem Repo-Check: off · urgent (Geheimnisse, Lücken) · all (dazu Semgrep-Befunde)
   checkTasks          String         @default("off")
+  /// Lighthouse-Check der Live-Seite (#82, GitHub-Workflow) – aus, bis der Besitzer ihn einschaltet
+  lighthouse          Boolean        @default(false)
   /// Geheimer Teil des öffentlichen Links /s/<token> – null heißt „nicht geteilt“
   shareToken          String?        @unique
   /// Geheimnis für eingehende Webhooks (AES-256-GCM) – null heißt „kein Webhook“
@@ -887,6 +889,16 @@ model RepoCache {
   checkError       String?
   /// Zuletzt geprüft, ob die Workflow-Datei im Repository aktuell ist (einmal am Tag)
   checkInstalledAt DateTime?
+  /// Lighthouse-Check (#82): Zustände wie beim Repo-Check, Bericht siehe src/lib/git/lighthouseLogic.ts
+  lhStatus         String?
+  lhReport         Json?
+  /// Bester bisheriger Wert je Bereich – Maßstab für „deutlich schlechter“
+  lhBaseline       Json?
+  lhRunUrl         String?
+  lhRunAt          DateTime?
+  lhFetchedAt      DateTime?
+  lhError          String?
+  lhInstalledAt    DateTime?
 }
 
 /// Git-Verbindung eines Kontos (GitHub, GitLab, Gitea/Forgejo, auch selbst

@@ -1,13 +1,9 @@
 import { Prisma, type RepoCache } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { decrypt } from "@/lib/crypto";
 import { tk } from "@/lib/i18n/messages";
 import { appLink, notifyUser } from "@/lib/notify";
-import { FetchBlockedError, safeFetch } from "@/lib/security/ssrf";
-import { readZip } from "@/lib/zip";
-import { parseRepoUrl } from "./parse";
-import { tokenCipherFor } from "./token";
-import { apiBase, authHeaders, GitError, request } from "./providers";
+import { GitError } from "./providers";
+import { artifactJson, deleteRepoFile, dispatchWorkflow, githubTarget, installError, latestWorkflowRun, readRepoFile, writeRepoFile, type GhTarget } from "./githubActions";
 import { REPO_CHECK_ARTIFACT, REPO_CHECK_FILE, REPO_CHECK_PATH, REPO_CHECK_WORKFLOW } from "./repoCheckWorkflow";
 import { checkGotWorse, parseCheckReport, type CheckReport } from "./repoCheckLogic";
 import { syncCheckTasks } from "./checkTasks";
@@ -41,10 +37,6 @@ const CLEARED = {
   checkInstalledAt: null,
 } satisfies Prisma.RepoCacheUpdateManyMutationInput;
 
-interface GhContent { sha: string; content?: string }
-interface GhRun { id: number; status: string; conclusion: string | null; html_url: string; updated_at: string }
-interface GhArtifact { name: string; expired: boolean; size_in_bytes: number; archive_download_url: string }
-
 async function context(projectId: string) {
   const project = await db.project.findUnique({
     where: { id: projectId },
@@ -60,39 +52,21 @@ async function context(projectId: string) {
     },
   });
   const cache = project?.repoCache;
-  if (!project?.repoUrl || cache?.provider !== "github") return null;
-  const parsed = parseRepoUrl(project.repoUrl);
-  if (!parsed) return null;
-  const stored = await tokenCipherFor(project);
-  let token: string | null = null;
-  try {
-    token = stored ? decrypt(stored.cipher) : null;
-  } catch {
-    token = null;
-  }
+  if (!project || !cache) return null;
   // Einrichten und Artefakte laden geht nur mit Token
-  if (!token) return null;
-  return { project, cache, api: apiBase("github", parsed), headers: authHeaders("github", token), branch: cache.defaultBranch };
+  const target = await githubTarget(project);
+  return target ? { project, cache, target } : null;
 }
 type Ctx = NonNullable<Awaited<ReturnType<typeof context>>>;
 
-async function readWorkflow(ctx: Ctx): Promise<{ sha: string; text: string } | null> {
-  try {
-    const ref = ctx.branch ? `?ref=${encodeURIComponent(ctx.branch)}` : "";
-    const file = await request<GhContent>("GET", `${ctx.api}/contents/${REPO_CHECK_PATH}${ref}`, ctx.headers);
-    return { sha: file.sha, text: Buffer.from(file.content ?? "", "base64").toString("utf8") };
-  } catch (err) {
-    if (err instanceof GitError && err.status === 404) return null;
-    throw err;
-  }
-}
+const readWorkflow = (t: GhTarget) => readRepoFile(t, REPO_CHECK_PATH);
 
 /**
  * Workflow-Datei anlegen oder auf den Stand der Vorlage bringen. Eine selbst
  * angepasste Datei (ohne VibeWorks-Kopfzeile) bleibt, wie sie ist.
  */
 async function ensureWorkflow(ctx: Ctx): Promise<"created" | "updated" | "current" | "custom" | "removed"> {
-  const current = await readWorkflow(ctx);
+  const current = await readWorkflow(ctx.target);
   if (!current) {
     if (ctx.cache.checkInstalledAt && INSTALLED.has(ctx.cache.checkStatus ?? "")) return "removed";
   } else if (current.text === REPO_CHECK_WORKFLOW) {
@@ -100,52 +74,14 @@ async function ensureWorkflow(ctx: Ctx): Promise<"created" | "updated" | "curren
   } else if (!current.text.startsWith(MARKER)) {
     return "custom";
   }
-  await request("PUT", `${ctx.api}/contents/${REPO_CHECK_PATH}`, ctx.headers, {
-    message: current ? "VibeWorks: Repo-Check aktualisieren" : "VibeWorks: Repo-Check einrichten",
-    content: Buffer.from(REPO_CHECK_WORKFLOW, "utf8").toString("base64"),
-    ...(current ? { sha: current.sha } : {}),
-    ...(ctx.branch ? { branch: ctx.branch } : {}),
-  });
+  await writeRepoFile(ctx.target, REPO_CHECK_PATH, REPO_CHECK_WORKFLOW, current ? "VibeWorks: Repo-Check aktualisieren" : "VibeWorks: Repo-Check einrichten", current?.sha);
   return current ? "updated" : "created";
 }
 
-function installError(err: unknown): { status: CheckStatus | null; error: string } {
-  if (err instanceof GitError && (err.status === 403 || err.status === 404)) return { status: "noPermission", error: tk("check", "errors.noPermission") };
-  if (err instanceof GitError && (err.status === 409 || err.status === 422)) return { status: "noPermission", error: tk("check", "errors.protected") };
-  return { status: null, error: err instanceof GitError ? err.message : tk("git", "errors.unreachable") };
-}
-
-async function latestRun(ctx: Ctx): Promise<GhRun | null> {
-  const branch = ctx.branch ? `&branch=${encodeURIComponent(ctx.branch)}` : "";
-  try {
-    const res = await request<{ workflow_runs?: GhRun[] }>("GET", `${ctx.api}/actions/workflows/${REPO_CHECK_FILE}/runs?per_page=1${branch}`, ctx.headers);
-    return res?.workflow_runs?.[0] ?? null;
-  } catch (err) {
-    if (err instanceof GitError && err.status === 404) return null; // gerade erst angelegt
-    throw err;
-  }
-}
-
 async function downloadReport(ctx: Ctx, runId: number): Promise<CheckReport> {
-  const list = await request<{ artifacts?: GhArtifact[] }>("GET", `${ctx.api}/actions/runs/${runId}/artifacts?per_page=20`, ctx.headers);
-  const artifact = (list?.artifacts ?? []).find((a) => a.name === REPO_CHECK_ARTIFACT && !a.expired);
-  if (!artifact) throw new GitError(tk("check", "errors.noArtifact"));
-  if (artifact.size_in_bytes > MAX_ARTIFACT) throw new GitError(tk("check", "errors.tooLarge"));
-  // Das Token geht nur an die API selbst; die Weiterleitung zum Speicher bekommt es nicht (safeFetch).
-  if (new URL(artifact.archive_download_url).origin !== new URL(ctx.api).origin) throw new GitError(tk("check", "errors.badReport"));
-  let res: Response;
+  const raw = await artifactJson(ctx.target, runId, REPO_CHECK_ARTIFACT, REPORT_FILE, MAX_ARTIFACT);
   try {
-    res = await safeFetch(artifact.archive_download_url, { headers: { "User-Agent": "VibeWorks", ...ctx.headers }, timeoutMs: 30_000 });
-  } catch (err) {
-    throw new GitError(err instanceof FetchBlockedError ? err.message : tk("git", "errors.unreachable"));
-  }
-  if (!res.ok) throw new GitError(tk("git", "errors.http", { status: res.status }), res.status);
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_ARTIFACT) throw new GitError(tk("check", "errors.tooLarge"));
-  try {
-    const entry = readZip(buf).find((e) => e.name === REPORT_FILE);
-    if (!entry) throw new Error("fehlt");
-    return parseCheckReport(JSON.parse(entry.data.toString("utf8")));
+    return parseCheckReport(raw);
   } catch {
     throw new GitError(tk("check", "errors.badReport"));
   }
@@ -182,7 +118,7 @@ async function run(projectId: string, force: boolean): Promise<void> {
   const settled = status === "done" || status === "failed";
   if (!force && settled && cache.checkFetchedAt && now.getTime() - cache.checkFetchedAt.getTime() < POLL_MS) return;
   try {
-    const latest = await latestRun(ctx);
+    const latest = await latestWorkflowRun(ctx.target, REPO_CHECK_FILE);
     if (!latest) {
       await save({ checkFetchedAt: now, checkStatus: "waiting" });
       return;
@@ -230,12 +166,7 @@ export async function startRepoCheck(projectId: string): Promise<void> {
   const fresh = await db.repoCache.findUnique({ where: { projectId }, select: { checkStatus: true, checkError: true } });
   if (fresh?.checkStatus === "noPermission") throw new GitError(fresh.checkError ?? tk("check", "errors.noPermission"));
   if (fresh?.checkStatus === "running") return;
-  try {
-    await request("POST", `${ctx.api}/actions/workflows/${REPO_CHECK_FILE}/dispatches`, ctx.headers, { ref: ctx.branch ?? "main" });
-  } catch (err) {
-    // Gerade erst angelegt: GitHub kennt den Workflow noch nicht – der Push startet ihn ohnehin
-    if (!(err instanceof GitError && err.status === 404)) throw err;
-  }
+  await dispatchWorkflow(ctx.target, REPO_CHECK_FILE);
   await db.repoCache.update({ where: { projectId }, data: { checkStatus: "waiting", checkFetchedAt: new Date(), checkError: null } });
 }
 
@@ -254,13 +185,9 @@ export async function setRepoCheck(projectId: string, enabled: boolean): Promise
   const ctx = await context(projectId);
   if (!ctx) return { removed: false, error: null };
   try {
-    const current = await readWorkflow(ctx);
+    const current = await readWorkflow(ctx.target);
     if (!current?.text.startsWith(MARKER)) return { removed: false, error: null };
-    await request("DELETE", `${ctx.api}/contents/${REPO_CHECK_PATH}`, ctx.headers, {
-      message: "VibeWorks: Repo-Check entfernen",
-      sha: current.sha,
-      ...(ctx.branch ? { branch: ctx.branch } : {}),
-    });
+    await deleteRepoFile(ctx.target, REPO_CHECK_PATH, current.sha, "VibeWorks: Repo-Check entfernen");
     return { removed: true, error: null };
   } catch (err) {
     return { removed: false, error: installError(err).error };

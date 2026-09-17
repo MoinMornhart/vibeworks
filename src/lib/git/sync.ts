@@ -11,6 +11,7 @@ import { appLink, notifyUser } from "@/lib/notify";
 import { syncProjectProgress } from "@/lib/tasks";
 import { refreshDeps } from "./deps";
 import { refreshRepoCheck } from "./repoCheck";
+import { refreshLighthouse } from "./lighthouse";
 import type { DepsReport } from "./depsLogic";
 
 /** Ab so vielen Fehlschlägen in Folge kommt eine Benachrichtigung (einmal, bis es wieder klappt). */
@@ -83,6 +84,8 @@ export async function syncProjectRepository(project: SyncProject): Promise<RepoC
     void refreshDeps(project.id).catch((err) => console.error("[deps]", project.id, err));
     // Repo-Check (nur GitHub): einrichten, Lauf abfragen, Bericht holen – ebenfalls im Hintergrund
     if (snap.provider === "github") void refreshRepoCheck(project.id).catch((err) => console.error("[repo-check]", project.id, err));
+    // Lighthouse-Check der Live-Seite (#82) – nur, wenn eingeschaltet
+    if (snap.provider === "github") void refreshLighthouse(project.id).catch((err) => console.error("[lighthouse]", project.id, err));
     // Nur beim Umschlagen auf Rot melden, nicht bei jedem Abgleich einer roten CI
     const before = (previous?.ci as { state?: string } | null)?.state;
     if (ci?.state === "failure" && before !== "failure") void notifyCiFailed(project.id, project.ownerId, ci);

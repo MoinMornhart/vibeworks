@@ -38,6 +38,7 @@ import { StructurePanel } from "@/components/projects/StructurePanel";
 import { WorkflowPanel } from "@/components/projects/WorkflowPanel";
 import { ProjectKeysPanel } from "@/components/projects/ProjectKeysPanel";
 import { CiPanel } from "@/components/git/CiPanel";
+import { LighthousePanel } from "@/components/git/LighthousePanel";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -184,6 +185,9 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       )}
       {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
       {project.repoUrl && repoCache?.provider === "github" && <CiPanel projectId={project.id} canEdit={can("ci.manage")} />}
+      {project.repoUrl && repoCache?.provider === "github" && (isOwner || project.liveUrl) && (
+        <LighthousePanel projectId={project.id} canRun={can("git.sync")} canManage={isOwner} hasToken={Boolean(repoTokenHint || account)} />
+      )}
       {project.repoUrl && repoCache?.provider === "github" && <ConflictPanel projectId={project.id} canEdit={isOwner} />}
       {project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
       {project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}

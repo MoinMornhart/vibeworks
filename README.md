@@ -86,8 +86,8 @@ Englisch, einstellbar für jedes Konto.
     <td valign="top">
       <h3>🧪 Prüfen &amp; CI</h3>
       CI-Designer mit Live-Anzeige je Schritt, Repo-Check ohne KI (Geheimnisse, Lücken,
-      toter Code), Abhängigkeiten für npm, PyPI, Cargo, Go, Composer und Maven, Code-Netz und
-      Merge-Konflikte im Browser.
+      toter Code), Lighthouse-Check der Live-Seite, Abhängigkeiten für npm, PyPI, Cargo, Go,
+      Composer und Maven, Code-Netz und Merge-Konflikte im Browser.
     </td>
   </tr>
   <tr>
@@ -98,8 +98,8 @@ Englisch, einstellbar für jedes Konto.
     </td>
     <td valign="top">
       <h3>🧭 Überblick</h3>
-      Heute-Liste, Wochenrückblick mit Heatmap und Erfolgen, Vorschläge für die Woche,
-      Live-Überwachung, Kosten, Fehler-Eingang und ein Friedhof für eingeschlafene Projekte.
+      Heute-Liste, Wochenrückblick mit Heatmap und Erfolgen, Wochenbericht, Vorschläge für die
+      Woche, Live-Überwachung, Kosten, Fehler-Eingang und ein Friedhof für eingeschlafene Projekte.
     </td>
   </tr>
   <tr>
@@ -406,7 +406,10 @@ Jede ausgelieferte Änderung bekommt einen Eintrag im Änderungsverlauf (`src/li
 **Etappe 5 – KI-Arbeit & Automatisierung**
 
 - ✅ Einzeiler-Installation, Geräte-Anmeldung und Projekt-Schlüssel für KI-Programme
-- ✅ KI-Workflows mit Prüfschritten und Projektaufbau-Tabelle
+- ✅ KI-Workflows mit Prüfschritten und Projektaufbau-Tabelle – auch fürs ganze Team
+- ✅ Aufbau-Wächter: meldet, wenn die Aufbau-Tabelle nicht mehr zum Repository passt
+- ✅ Wochenbericht montags über ntfy, Webhook, E-Mail oder Discord
+- ✅ Lighthouse-Check der Live-Seite (Leistung, Barrierefreiheit, SEO, kaputte Links) als Schalter
 - ✅ Anleitungen für Claude, Codex, Gemini, Copilot, Cursor, Windsurf und Cline
 - ✅ Issues aus GitHub werden Aufgaben, Bot per Klick, Befehle in Issue-Kommentaren
 - ✅ CI-Designer mit Live-Anzeige

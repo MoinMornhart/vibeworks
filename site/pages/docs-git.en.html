@@ -57,6 +57,9 @@
   <h2>CI designer</h2>
   <p>Project page → <b>CI pipeline</b> (GitHub): choose triggers (push, pull request, schedule, manual), insert and move blocks – Node, npm scripts, fallow, Python/pytest, Go, Rust or custom commands, each with a condition. VibeWorks suggests a pipeline from the repository's files, writes it as <code>.github/workflows/vibeworks-ci.yml</code>, starts it and shows every block live with a spinner, check or cross. VibeWorks never overwrites a file you changed yourself; the token needs the <code>workflow</code> scope.</p>
 
+  <h2>Lighthouse check</h2>
+  <p>Project page → <b>Lighthouse check</b> → <b>Turn on</b> (owner only, needs a live address): VibeWorks adds <code>.github/workflows/vibeworks-lighthouse.yml</code>. The workflow checks the live site on Mondays and on <b>Check now</b> with Lighthouse (performance, accessibility, best practices, SEO) and looks for broken links with lychee – read-only and without checking out the code. If a score drops 10 points or more below the best so far, or a link is broken, a task appears that completes itself once everything is fine again. Turning it off removes the file.</p>
+
   <h2>One task for many projects</h2>
   <p>Tasks → <b>For several projects</b> (or “All with Git” in quick capture): the same task, e.g. “Update dependencies”, lands in every selected project – including its issue.</p>
 </article>

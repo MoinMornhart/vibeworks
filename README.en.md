@@ -86,8 +86,8 @@ account.
     <td valign="top">
       <h3>🧪 Checks &amp; CI</h3>
       CI designer with a live view per step, repo check without AI (secrets, vulnerabilities,
-      dead code), dependencies for npm, PyPI, Cargo, Go, Composer and Maven, code graph and merge
-      conflicts in the browser.
+      dead code), Lighthouse check of the live site, dependencies for npm, PyPI, Cargo, Go,
+      Composer and Maven, code graph and merge conflicts in the browser.
     </td>
   </tr>
   <tr>
@@ -98,8 +98,8 @@ account.
     </td>
     <td valign="top">
       <h3>🧭 Overview</h3>
-      Today list, weekly review with heatmap and achievements, suggestions for the week, live
-      monitoring, costs, error inbox and a graveyard for projects that fell asleep.
+      Today list, weekly review with heatmap and achievements, weekly report, suggestions for the
+      week, live monitoring, costs, error inbox and a graveyard for projects that fell asleep.
     </td>
   </tr>
   <tr>
@@ -408,7 +408,10 @@ update number. Every shipped change gets an entry in the changelog (`src/lib/cha
 **Stage 5 – AI work & automation**
 
 - ✅ One-liner install, device sign-in and project keys for AI programs
-- ✅ AI workflows with verification steps and a project structure table
+- ✅ AI workflows with verification steps and a project structure table – for whole teams, too
+- ✅ Structure watcher: flags when the structure table no longer matches the repository
+- ✅ Weekly report on Mondays via ntfy, webhook, email or Discord
+- ✅ Lighthouse check of the live site (performance, accessibility, SEO, broken links) as a switch
 - ✅ Instructions for Claude, Codex, Gemini, Copilot, Cursor, Windsurf and Cline
 - ✅ GitHub issues become tasks, bot in one click, commands in issue comments
 - ✅ CI designer with live view

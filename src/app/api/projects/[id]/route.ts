@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { checkProjectNow, dropUpload, resetLive } from "@/lib/monitor/run";
@@ -68,6 +69,8 @@ export const PATCH = route<Params>(async (req, { params }) => {
   }
   if (liveChanged) {
     await resetLive(id, current.coverUploadId);
+    // Lighthouse-Check (#82): neue Adresse → Workflow-Datei beim nächsten Abgleich neu schreiben, alter Maßstab gilt nicht mehr
+    await db.repoCache.updateMany({ where: { projectId: id }, data: { lhInstalledAt: null, lhBaseline: Prisma.DbNull } });
     if (input.liveUrl) after(() => checkProjectNow(id));
   }
   // Mit abgeleitetem Fortschritt gilt der Anteil erledigter Aufgaben, nicht der Regler.

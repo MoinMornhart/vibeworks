@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.8",
+    date: "2026-09-17",
+    title: "Lighthouse-Check der Live-Seite",
+    titleEn: "Lighthouse check of the live site",
+    changes: [
+      {
+        type: "neu",
+        text: "Lighthouse-Check (GitHub, pro Projekt einschaltbar): einmal pro Woche prüft der kostenlose GitHub-Runner die Live-Seite auf Leistung, Barrierefreiheit, Best Practices und SEO und sucht kaputte Links. Fällt ein Wert deutlich unter den besten bisherigen oder ist ein Link kaputt, erscheint eine Aufgabe, die sich selbst erledigt",
+        en: "Lighthouse check (GitHub, can be turned on per project): once a week the free GitHub runner checks the live site for performance, accessibility, best practices and SEO and looks for broken links. If a score drops clearly below the best so far or a link is broken, a task appears that completes itself",
+      },
+      {
+        type: "besser",
+        text: "Repo-Check und Lighthouse-Check teilen sich die Bausteine für Workflow-Dateien, Läufe und Artefakte",
+        en: "Repo check and Lighthouse check share the building blocks for workflow files, runs and artifacts",
+      },
+    ],
+  },
+  {
     version: "1.2.7",
     date: "2026-09-17",
     title: "Team-Workflows",

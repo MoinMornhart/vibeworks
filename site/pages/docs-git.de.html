@@ -57,6 +57,9 @@
   <h2>CI-Designer</h2>
   <p>Projektseite → <b>CI-Pipeline</b> (GitHub): Auslöser wählen (Push, Pull Request, Zeitplan, von Hand), Blöcke einfügen und verschieben – Node, npm-Skripte, fallow, Python/pytest, Go, Rust oder eigene Befehle, jeweils mit Bedingung. VibeWorks schlägt eine Pipeline aus den Dateien des Repositorys vor, schreibt sie als <code>.github/workflows/vibeworks-ci.yml</code>, startet sie und zeigt jeden Block live mit Ladesymbol, Haken oder Kreuz. Eine selbst geänderte Datei überschreibt VibeWorks nicht; das Token braucht das Recht <code>workflow</code>.</p>
 
+  <h2>Lighthouse-Check</h2>
+  <p>Projektseite → <b>Lighthouse-Check</b> → <b>Einschalten</b> (nur der Besitzer, braucht eine Live-Adresse): VibeWorks legt <code>.github/workflows/vibeworks-lighthouse.yml</code> an. Der Workflow prüft montags und auf <b>Jetzt prüfen</b> die Live-Seite mit Lighthouse (Leistung, Barrierefreiheit, Best Practices, SEO) und sucht mit lychee nach kaputten Links – nur mit Leserechten und ohne den Code auszuchecken. Fällt ein Wert um 10 Punkte oder mehr unter den besten bisherigen oder ist ein Link kaputt, erscheint eine Aufgabe, die sich selbst erledigt, sobald alles wieder passt. Ausschalten nimmt die Datei wieder heraus.</p>
+
   <h2>Eine Aufgabe für viele Projekte</h2>
   <p>Aufgaben → <b>Für mehrere Projekte</b> (oder in der Schnellerfassung „Alle mit Git“): dieselbe Aufgabe, etwa „Abhängigkeiten aktualisieren“, landet in jedem gewählten Projekt – samt Issue.</p>
 </article>
