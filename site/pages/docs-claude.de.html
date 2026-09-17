@@ -7,10 +7,16 @@
   <h2>Einrichten</h2>
   <ol class="steps">
     <li>In VibeWorks unter <b>Mein Konto → Claude Code &amp; API-Schlüssel</b> einen Schlüssel erstellen.</li>
-    <li>Den angezeigten Befehl kopieren und im Terminal ausführen – er sieht so aus:</li>
+    <li>Den angezeigten Einzeiler (Linux/macOS oder Windows) im Terminal ausführen – er trägt VibeWorks in Claude Code ein und legt die Agenten-Regeln als Skill ab. Von Hand sieht der Befehl so aus:</li>
   </ol>
   <div class="code"><code id="c1">claude mcp add --scope user --transport http vibeworks https://vibeworks.example.de/api/mcp --header "Authorization: Bearer vw_…"</code><button class="copy" data-copy="#c1">Kopieren</button></div>
   <p>Mit <code>--scope user</code> gilt die Verbindung in allen deinen Repositories. Andere MCP-Clients verbinden sich per Streamable HTTP mit <code>/api/mcp</code> und demselben Header. Schlüssel lassen sich jederzeit widerrufen; gespeichert wird nur ein Hash.</p>
+
+  <h3>Mit Gerätecode</h3>
+  <p>KI-Programme mit Geräte-Anmeldung zeigen einen Code und die Adresse <code>/verbinden</code>. Dort anmelden, Code eingeben, prüfen, was das Programm nutzen darf, und erlauben – ein Schlüssel zum Kopieren entfällt. Codes gelten 10 Minuten.</p>
+
+  <h3>Projekt-Schlüssel</h3>
+  <p>Ein Schlüssel kann auf ausgewählte Projekte beschränkt werden, mit Ablaufdatum und Pause-Knopf. Auf der Projektseite unter <b>Projekt-Schlüssel</b> siehst du, wer Zugriff hat, und widerrufst ihn einzeln. Teammitglieder mit dem Recht <i>Projekt-Schlüssel freigeben</i> dürfen das auch.</p>
 
   <h2>Was Claude damit kann</h2>
   <table>
@@ -19,11 +25,16 @@
     <tr><td><code>list_tasks</code>, <code>get_task</code></td><td>Aufgaben über alle Projekte – z. B. alles, was diese Woche fällig ist</td></tr>
     <tr><td><code>create_task</code>, <code>update_task</code></td><td>Aufgaben anlegen und nach „In Arbeit“ oder „Erledigt“ schieben – Issues laufen mit</td></tr>
     <tr><td><code>create_task_in_projects</code></td><td>Dieselbe Aufgabe in mehreren Projekten, ohne Angabe in allen mit Git</td></tr>
-    <tr><td><code>update_project</code></td><td>Status, Priorität, Fortschritt, Kurzbeschreibung</td></tr>
+    <tr><td><code>list_task_comments</code>, <code>add_task_comment</code></td><td>Das Gespräch unter einem Issue lesen und antworten</td></tr>
+    <tr><td><code>update_project</code>, <code>review_projects</code></td><td>Status, Priorität, Fortschritt, Kurzbeschreibung – und ein Überblick, wo etwas fehlt</td></tr>
+    <tr><td><code>get_project_structure</code>, <code>update_project_structure</code></td><td>Tabelle, wie das Projekt aufgebaut ist</td></tr>
+    <tr><td><code>list_workflows</code>, <code>start_workflow</code>, <code>complete_workflow_step</code>, <code>save_workflow</code></td><td>KI-Workflows Schritt für Schritt mit Prüfung</td></tr>
+    <tr><td><code>get_ci</code>, <code>save_ci</code>, <code>run_ci</code></td><td>CI-Pipeline lesen, ändern und starten</td></tr>
+    <tr><td><code>list_code_files</code>, <code>search_code</code>, <code>get_code_graph</code>, <code>add_code_memo</code>, <code>delete_code_memo</code></td><td>Code durchsuchen, Zusammenhänge sehen, Notizen am Code</td></tr>
     <tr><td><code>create_note</code>, <code>get_note</code></td><td>Notizen am Projekt, z. B. ein Arbeitsprotokoll</td></tr>
     <tr><td><code>search</code></td><td>Volltextsuche über Notizen, Aufgaben und Docs</td></tr>
     <tr><td><code>list_docs</code>, <code>get_doc</code>, <code>create_doc</code>, <code>update_doc</code></td><td>Docs lesen und schreiben</td></tr>
-    <tr><td><code>get_claude_md</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>CLAUDE.md eines Projekts und deine Prompt-Bibliothek</td></tr>
+    <tr><td><code>get_claude_md</code>, <code>get_agent_file</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>Anleitung für die KI und deine Prompt-Bibliothek</td></tr>
     <tr><td><code>get_repo_status</code>, <code>list_problems</code></td><td>Stand eines Repositorys (Commits, CI, Abhängigkeiten, Repo-Check, Live-Seite) und alles, was gerade klemmt</td></tr>
     <tr><td><code>list_errors</code>, <code>resolve_error</code></td><td>Fehler aus dem Fehler-Eingang mit Stack lesen und nach dem Beheben abhaken</td></tr>
     <tr><td><code>get_today</code>, <code>add_to_today</code>, <code>remove_from_today</code></td><td>Den Tag planen – vorgemerkte Aufgaben und Vorschläge</td></tr>
@@ -31,8 +42,14 @@
   </table>
   <p>Probier zum Beispiel: <i>„Welche Aufgaben sind in VibeWorks offen?“</i> oder <i>„Arbeite die offenen Aufgaben von Projekt X ab und halte fest, was du gemacht hast, als Notiz.“</i> Jede Änderung steht im Verlauf des Projekts.</p>
 
-  <h2>CLAUDE.md erzeugen</h2>
-  <p>Projekt → <b>Weitere Aktionen → CLAUDE.md erzeugen</b>: Beschreibung, Stand, offene Aufgaben, angepinnte Notizen und die Arbeitsweise mit VibeWorks in einer Datei. Anpassen, kopieren oder herunterladen und ins Hauptverzeichnis des Repositorys legen – Claude Code liest sie bei jedem Start.</p>
+  <h2>KI-Workflows</h2>
+  <p>Projektseite → <b>KI-Workflows</b>: Checklisten, die die KI Schritt für Schritt abarbeitet – jeder Schritt mit Prüfung, bevor der nächste kommt. Mitgeliefert sind „Feature umsetzen“, „Fehler beheben“, „Release vorbereiten“, „Projekt durchsehen“ und „Projektaufbau pflegen“; eigene legst du dazu. Solange ein Workflow läuft, erinnert VibeWorks die KI bei jedem Aufruf an den nächsten Schritt. In Claude Code stehen die Workflows auch als Befehle bereit.</p>
+
+  <h2>Projektaufbau</h2>
+  <p>Projektseite → <b>Aufbau</b>: eine Tabelle mit Bereich, Pfad, Zweck und Funktionsweise. Die KI legt sie mit <code>update_project_structure</code> an und hält sie aktuell; VibeWorks meldet Pfade, die es im Repository nicht mehr gibt, und schreibt die Tabelle in die Anleitung.</p>
+
+  <h2>Anleitung für die KI</h2>
+  <p>Projekt → <b>Weitere Aktionen → KI-Anleitung erzeugen</b>: Beschreibung, Stand, offene Aufgaben, angepinnte Notizen, Projektaufbau und die Arbeitsweise mit VibeWorks in einer Datei – als <code>CLAUDE.md</code>, <code>AGENTS.md</code> (Codex und andere), <code>GEMINI.md</code>, Copilot-, Cursor-, Windsurf- oder Cline-Regel. Anpassen, kopieren oder herunterladen und ins Repository legen – die KI liest sie bei jedem Start.</p>
 
   <h2>Prompt-Bibliothek</h2>
   <p>Unter <b>Prompts</b> sammelst du bewährte Anweisungen. Platzhalter wie <code>{{projekt}}</code>, <code>{{repo}}</code>, <code>{{live}}</code> und <code>{{summary}}</code> füllt ein gewähltes Projekt beim Kopieren aus. „Beispiele hinzufügen“ legt fünf Vorlagen an – vom Code-Review bis „Offene Aufgaben abarbeiten“.</p>

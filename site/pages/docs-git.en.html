@@ -18,7 +18,7 @@
   <p>After connecting, VibeWorks creates a project for every repository you own – and every 30 minutes for new ones too. Forks and archived ones stay out, already linked ones are recognized, and a deleted project doesn't come back. Per connection you can turn this off or trigger it right away with <b>Import now</b>.</p>
 
   <h2>Any Git server</h2>
-  <p>Any Git server reachable via https (or http) works too – without an API. Choose <b>Any Git server</b> as the connection, enter the server address and store the access as <code>user:token</code>. VibeWorks then fetches commits and the <code>package.json</code> directly with git; there are no issues, CI or webhooks there. You add repositories on the project. Unknown servers without a GitHub, GitLab or Gitea API are handled this way automatically.</p>
+  <p>Any Git server reachable via https (or http) works too – without an API. Choose <b>Any Git server</b> as the connection, enter the server address and store the access as <code>user:token</code>. VibeWorks then fetches commits and the package files directly with git; there are no issues, CI or webhooks there. You add repositories on the project. Unknown servers without a GitHub, GitLab or Gitea API are handled this way automatically.</p>
 
   <h2>Errors</h2>
   <p>If a sync or import fails, the reason shows at the connection, as a red Git icon on the project card and at the top of the dashboard. From the third failure in a row (for imports from the second) you get one “Git sync failing” notification – until it works again.</p>
@@ -41,11 +41,11 @@
   <p>GitHub Actions, GitLab pipelines and Gitea Actions of the main branch show up as a dot on the project card and in the Git section. If CI fails, you can get a notification.</p>
 
   <h2>Dependency check</h2>
-  <p>If there is a <code>package.json</code> in the repository, VibeWorks compares every dependency once a day with the latest npm version (major, minor, patch) and asks the npm advisory database for known vulnerabilities – the same source as <code>npm audit</code>. “Check now” works any time.</p>
+  <p>VibeWorks reads the package files in the repository – <code>package.json</code> (npm), <code>requirements.txt</code> and <code>pyproject.toml</code> (PyPI), <code>Cargo.toml</code>, <code>go.mod</code>, <code>composer.json</code> and <code>pom.xml</code> –, compares every dependency once a day with the latest version (major, minor, patch) and asks OSV.dev for known vulnerabilities. The branch is selectable; “Check now” works any time.</p>
   <p>Whatever gets flagged shows up as a task on the board right away: one for vulnerabilities, one for updates, each with the list of packages. The list keeps itself up to date, and once nothing is flagged, the task is done. If you tick it off yourself, it stays closed – until a new package joins the list.</p>
 
   <h2>Repo check</h2>
-  <p>For GitHub repositories, VibeWorks adds the file <code>.github/workflows/vibeworks-check.yml</code> – a free workflow without AI that runs on Mondays and on <b>Check now</b>: secrets in the history (Gitleaks), known vulnerabilities in all dependencies (OSV-Scanner), bug patterns (Semgrep) and TODO/FIXME comments. VibeWorks fetches the report itself and links every finding.</p>
+  <p>For GitHub repositories, VibeWorks adds the file <code>.github/workflows/vibeworks-check.yml</code> – a free workflow without AI that runs on Mondays and on <b>Check now</b>: secrets in the history (Gitleaks), known vulnerabilities in all dependencies (OSV-Scanner), bug patterns (Semgrep), per language Bandit, ShellCheck, Hadolint, actionlint and fallow (dead code in JS/TS) plus TODO/FIXME comments. VibeWorks fetches the report itself and links every finding.</p>
   <ul>
     <li>The token needs the <code>workflow</code> scope for this (the link in VibeWorks is pre-filled).</li>
     <li>The workflow is read-only, doesn't hand its token to the scanners, and Gitleaks never transfers a secret's value – only file, line and rule.</li>
@@ -53,6 +53,9 @@
     <li>Turning it off (project page → Repo check) removes the file from the repository again. Deleting it there turns the check off too; VibeWorks never overwrites a file you customized.</li>
     <li>New secrets or vulnerabilities can notify you and show up in the weekly suggestions.</li>
   </ul>
+
+  <h2>CI designer</h2>
+  <p>Project page → <b>CI pipeline</b> (GitHub): choose triggers (push, pull request, schedule, manual), insert and move blocks – Node, npm scripts, fallow, Python/pytest, Go, Rust or custom commands, each with a condition. VibeWorks suggests a pipeline from the repository's files, writes it as <code>.github/workflows/vibeworks-ci.yml</code>, starts it and shows every block live with a spinner, check or cross. VibeWorks never overwrites a file you changed yourself; the token needs the <code>workflow</code> scope.</p>
 
   <h2>One task for many projects</h2>
   <p>Tasks → <b>For several projects</b> (or “All with Git” in quick capture): the same task, e.g. “Update dependencies”, lands in every selected project – including its issue.</p>

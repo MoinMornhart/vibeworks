@@ -7,10 +7,16 @@
   <h2>Setup</h2>
   <ol class="steps">
     <li>In VibeWorks, create a key under <b>My account → Claude Code &amp; API keys</b>.</li>
-    <li>Copy the command shown and run it in a terminal – it looks like this:</li>
+    <li>Run the one-liner shown (Linux/macOS or Windows) in a terminal – it adds VibeWorks to Claude Code and saves the agent rules as a skill. By hand, the command looks like this:</li>
   </ol>
   <div class="code"><code id="c1">claude mcp add --scope user --transport http vibeworks https://vibeworks.example.com/api/mcp --header "Authorization: Bearer vw_…"</code><button class="copy" data-copy="#c1">Copy</button></div>
   <p>With <code>--scope user</code> the connection applies in all your repositories. Other MCP clients connect to <code>/api/mcp</code> via Streamable HTTP with the same header. Keys can be revoked any time; only a hash is stored.</p>
+
+  <h3>With a device code</h3>
+  <p>AI programs with device sign-in show a code and the address <code>/verbinden</code>. Sign in there, enter the code, check what the program may use and allow it – no key to copy. Codes are valid for 10 minutes.</p>
+
+  <h3>Project keys</h3>
+  <p>A key can be limited to selected projects, with an expiry date and a pause button. On the project page under <b>Project keys</b> you see who has access and revoke it one by one. Team members with the <i>Grant project keys</i> permission can do that too.</p>
 
   <h2>What Claude can do with it</h2>
   <table>
@@ -19,11 +25,16 @@
     <tr><td><code>list_tasks</code>, <code>get_task</code></td><td>Tasks across all projects – e.g. everything due this week</td></tr>
     <tr><td><code>create_task</code>, <code>update_task</code></td><td>Create tasks and move them to “In progress” or “Done” – issues follow</td></tr>
     <tr><td><code>create_task_in_projects</code></td><td>The same task in several projects, by default in all linked to Git</td></tr>
-    <tr><td><code>update_project</code></td><td>Status, priority, progress, summary</td></tr>
+    <tr><td><code>list_task_comments</code>, <code>add_task_comment</code></td><td>Read the conversation under an issue and reply</td></tr>
+    <tr><td><code>update_project</code>, <code>review_projects</code></td><td>Status, priority, progress, summary – and an overview of what's missing</td></tr>
+    <tr><td><code>get_project_structure</code>, <code>update_project_structure</code></td><td>A table of how the project is built</td></tr>
+    <tr><td><code>list_workflows</code>, <code>start_workflow</code>, <code>complete_workflow_step</code>, <code>save_workflow</code></td><td>AI workflows step by step with verification</td></tr>
+    <tr><td><code>get_ci</code>, <code>save_ci</code>, <code>run_ci</code></td><td>Read, change and start the CI pipeline</td></tr>
+    <tr><td><code>list_code_files</code>, <code>search_code</code>, <code>get_code_graph</code>, <code>add_code_memo</code>, <code>delete_code_memo</code></td><td>Search code, see connections, leave notes on code</td></tr>
     <tr><td><code>create_note</code>, <code>get_note</code></td><td>Notes on a project, e.g. a work log</td></tr>
     <tr><td><code>search</code></td><td>Full-text search across notes, tasks and docs</td></tr>
     <tr><td><code>list_docs</code>, <code>get_doc</code>, <code>create_doc</code>, <code>update_doc</code></td><td>Read and write docs</td></tr>
-    <tr><td><code>get_claude_md</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>A project's CLAUDE.md and your prompt library</td></tr>
+    <tr><td><code>get_claude_md</code>, <code>get_agent_file</code>, <code>list_prompts</code>, <code>get_prompt</code></td><td>Instructions for the AI and your prompt library</td></tr>
     <tr><td><code>get_repo_status</code>, <code>list_problems</code></td><td>A repository's state (commits, CI, dependencies, repo check, live site) and everything that needs attention</td></tr>
     <tr><td><code>list_errors</code>, <code>resolve_error</code></td><td>Read errors from the error inbox with stack traces and tick them off after fixing</td></tr>
     <tr><td><code>get_today</code>, <code>add_to_today</code>, <code>remove_from_today</code></td><td>Plan the day – picked tasks and suggestions</td></tr>
@@ -31,8 +42,14 @@
   </table>
   <p>Try: <i>“Which tasks are open in VibeWorks?”</i> or <i>“Work through the open tasks of project X and write down what you did as a note.”</i> Every change shows up in the project's activity log.</p>
 
-  <h2>Generate a CLAUDE.md</h2>
-  <p>Project → <b>More actions → Generate CLAUDE.md</b>: description, status, open tasks, pinned notes and the VibeWorks workflow in one file. Adjust, copy or download it and put it into the repository's root – Claude Code reads it on every start.</p>
+  <h2>AI workflows</h2>
+  <p>Project page → <b>AI workflows</b>: checklists the AI works through step by step – each step verified before the next one. Built in are “Implement feature”, “Fix bug”, “Prepare release”, “Review project” and “Maintain project structure”; add your own. While a workflow runs, VibeWorks reminds the AI of the next step on every call. In Claude Code the workflows are available as commands, too.</p>
+
+  <h2>Project structure</h2>
+  <p>Project page → <b>Structure</b>: a table with area, path, purpose and how it works. The AI creates it with <code>update_project_structure</code> and keeps it current; VibeWorks flags paths that no longer exist in the repository and writes the table into the instructions.</p>
+
+  <h2>Instructions for the AI</h2>
+  <p>Project → <b>More actions → Generate AI instructions</b>: description, status, open tasks, pinned notes, project structure and how to work with VibeWorks in one file – as <code>CLAUDE.md</code>, <code>AGENTS.md</code> (Codex and others), <code>GEMINI.md</code>, or a Copilot, Cursor, Windsurf or Cline rule. Adjust, copy or download it and put it in the repository – the AI reads it on every start.</p>
 
   <h2>Prompt library</h2>
   <p>Under <b>Prompts</b> you collect proven instructions. Placeholders like <code>{{project}}</code>, <code>{{repo}}</code>, <code>{{live}}</code> and <code>{{summary}}</code> are filled in by a chosen project when copying. “Add examples” creates five templates – from code review to “Work through open tasks”.</p>

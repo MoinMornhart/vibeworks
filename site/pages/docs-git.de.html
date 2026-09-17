@@ -18,7 +18,7 @@
   <p>Nach dem Verbinden legt VibeWorks für jedes eigene Repository ein Projekt an – danach alle 30 Minuten auch für neue. Forks und archivierte bleiben draußen, schon verknüpfte werden wiedererkannt, und ein gelöschtes Projekt kommt nicht wieder. Pro Verbindung lässt sich das abschalten oder mit <b>Jetzt importieren</b> sofort anstoßen.</p>
 
   <h2>Beliebiger Git-Server</h2>
-  <p>Jeder Git-Server, der per https (oder http) erreichbar ist, geht auch – ohne API. Als Verbindung <b>Beliebiger Git-Server</b> wählen, Serveradresse eintragen und den Zugang als <code>benutzer:token</code> hinterlegen. VibeWorks holt Commits und die <code>package.json</code> dann direkt per git; Issues, CI und Webhooks gibt es dort nicht. Repositories trägst du hier am Projekt ein. Unbekannte Server ohne GitHub-, GitLab- oder Gitea-API behandelt VibeWorks automatisch so.</p>
+  <p>Jeder Git-Server, der per https (oder http) erreichbar ist, geht auch – ohne API. Als Verbindung <b>Beliebiger Git-Server</b> wählen, Serveradresse eintragen und den Zugang als <code>benutzer:token</code> hinterlegen. VibeWorks holt Commits und die Paketdateien dann direkt per git; Issues, CI und Webhooks gibt es dort nicht. Repositories trägst du hier am Projekt ein. Unbekannte Server ohne GitHub-, GitLab- oder Gitea-API behandelt VibeWorks automatisch so.</p>
 
   <h2>Fehler</h2>
   <p>Scheitert ein Abgleich oder Import, steht der Grund bei der Verbindung, als rotes Git-Symbol auf der Projektkarte und oben auf dem Dashboard. Ab dem dritten Fehlschlag in Folge (beim Import ab dem zweiten) kommt einmal eine Benachrichtigung „Git-Abgleich scheitert“ – bis es wieder klappt.</p>
@@ -41,11 +41,11 @@
   <p>GitHub Actions, GitLab-Pipelines und Gitea-Actions des Hauptzweigs erscheinen als Punkt auf der Projektkarte und im Git-Bereich. Schlägt die CI fehl, gibt es auf Wunsch eine Benachrichtigung.</p>
 
   <h2>Abhängigkeiten-Check</h2>
-  <p>Liegt eine <code>package.json</code> im Repository, vergleicht VibeWorks jede Abhängigkeit einmal am Tag mit der neuesten Version bei npm (Major, Minor, Patch) und fragt die npm-Sicherheitsdatenbank nach bekannten Lücken – dieselbe Quelle wie <code>npm audit</code>. „Jetzt prüfen“ geht jederzeit.</p>
+  <p>VibeWorks liest die Paketdateien im Repository – <code>package.json</code> (npm), <code>requirements.txt</code> und <code>pyproject.toml</code> (PyPI), <code>Cargo.toml</code>, <code>go.mod</code>, <code>composer.json</code> und <code>pom.xml</code> –, vergleicht jede Abhängigkeit einmal am Tag mit der neuesten Version (Major, Minor, Patch) und fragt OSV.dev nach bekannten Lücken. Der Zweig ist wählbar; „Jetzt prüfen“ geht jederzeit.</p>
   <p>Was dabei markiert ist, steht sofort als Aufgabe im Board: eine für Sicherheitslücken, eine für Updates, jeweils mit der Liste der Pakete. Die Liste hält sich selbst aktuell, und ist nichts mehr markiert, ist die Aufgabe erledigt. Hakst du sie selbst ab, bleibt sie zu – bis ein neues Paket dazukommt.</p>
 
   <h2>Repo-Check</h2>
-  <p>Für GitHub-Repositories legt VibeWorks die Datei <code>.github/workflows/vibeworks-check.yml</code> an – ein kostenloser Workflow ohne KI, der montags und auf <b>Jetzt prüfen</b> läuft: Geheimnisse im Verlauf (Gitleaks), bekannte Sicherheitslücken in allen Abhängigkeiten (OSV-Scanner), Fehlermuster (Semgrep) und TODO/FIXME-Kommentare. VibeWorks holt den Bericht selbst ab und verlinkt jede Fundstelle.</p>
+  <p>Für GitHub-Repositories legt VibeWorks die Datei <code>.github/workflows/vibeworks-check.yml</code> an – ein kostenloser Workflow ohne KI, der montags und auf <b>Jetzt prüfen</b> läuft: Geheimnisse im Verlauf (Gitleaks), bekannte Sicherheitslücken in allen Abhängigkeiten (OSV-Scanner), Fehlermuster (Semgrep), je Sprache Bandit, ShellCheck, Hadolint, actionlint und fallow (toter Code in JS/TS) sowie TODO/FIXME-Kommentare. VibeWorks holt den Bericht selbst ab und verlinkt jede Fundstelle.</p>
   <ul>
     <li>Das Token braucht dafür das Recht <code>workflow</code> (der Link in VibeWorks ist vorausgefüllt).</li>
     <li>Der Workflow darf nur lesen, gibt sein Token nicht an die Prüfwerkzeuge weiter, und Gitleaks überträgt nie den Wert eines Geheimnisses – nur Datei, Zeile und Regel.</li>
@@ -53,6 +53,9 @@
     <li>Ausschalten (Projektseite → Repo-Check) nimmt die Datei wieder aus dem Repository. Wer sie dort löscht, schaltet den Check ebenfalls ab; eine selbst angepasste Datei überschreibt VibeWorks nicht.</li>
     <li>Neue Geheimnisse oder Lücken melden sich auf Wunsch als Benachrichtigung und in den Wochen-Vorschlägen.</li>
   </ul>
+
+  <h2>CI-Designer</h2>
+  <p>Projektseite → <b>CI-Pipeline</b> (GitHub): Auslöser wählen (Push, Pull Request, Zeitplan, von Hand), Blöcke einfügen und verschieben – Node, npm-Skripte, fallow, Python/pytest, Go, Rust oder eigene Befehle, jeweils mit Bedingung. VibeWorks schlägt eine Pipeline aus den Dateien des Repositorys vor, schreibt sie als <code>.github/workflows/vibeworks-ci.yml</code>, startet sie und zeigt jeden Block live mit Ladesymbol, Haken oder Kreuz. Eine selbst geänderte Datei überschreibt VibeWorks nicht; das Token braucht das Recht <code>workflow</code>.</p>
 
   <h2>Eine Aufgabe für viele Projekte</h2>
   <p>Aufgaben → <b>Für mehrere Projekte</b> (oder in der Schnellerfassung „Alle mit Git“): dieselbe Aufgabe, etwa „Abhängigkeiten aktualisieren“, landet in jedem gewählten Projekt – samt Issue.</p>

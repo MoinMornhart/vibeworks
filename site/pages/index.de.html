@@ -22,7 +22,10 @@
   <div class="grid">
     <article class="feature"><span>🗂️</span><h3>Projekte</h3><p>Raster, Liste oder Kanban, Status von Idee bis Fertig. Der Fortschritt bestimmt sich auf Wunsch selbst – aus Aufgaben, Commits, CI und Planung.</p></article>
     <article class="feature"><span>🔀</span><h3>Aufgaben ↔ Issues</h3><p>Aufgaben werden zu Issues auf GitHub, GitLab oder Gitea und laufen zurück. Commits, CI-Status und ein Abhängigkeiten-Check gleich dazu.</p></article>
-    <article class="feature"><span>🤖</span><h3>Claude Code</h3><p>VibeWorks ist ein MCP-Server: Claude liest und erledigt deine Aufgaben, schreibt Notizen und Docs – plus CLAUDE.md-Generator und Prompt-Bibliothek.</p></article>
+    <article class="feature"><span>🤖</span><h3>KI-Zentrale</h3><p>VibeWorks ist ein MCP-Server: Claude und andere KIs lesen und erledigen deine Aufgaben – mit Workflows samt Prüfschritten, Projektaufbau und Regeln für Claude, Codex, Gemini, Copilot, Cursor und Co.</p></article>
+    <article class="feature"><span>🧪</span><h3>CI-Designer</h3><p>Pipeline aus Blöcken zusammenstellen, VibeWorks schreibt den GitHub-Actions-Workflow und zeigt jeden Schritt live – dazu Repo-Check und Abhängigkeiten für sechs Sprachen.</p></article>
+    <article class="feature"><span>👥</span><h3>Teams &amp; Rollen</h3><p>Projekte an Teams freigeben, Rechte einzeln vergeben, Projekt-Schlüssel für fremde Agenten – plus Community mit Chat.</p></article>
+    <article class="feature"><span>💬</span><h3>Discord</h3><p>Bot per Klick einladen: Benachrichtigungen im Kanal, Kurzbericht jeden Morgen oder montags und <code>/vibeworks</code>-Befehle.</p></article>
     <article class="feature"><span>🪟</span><h3>Windows-App</h3><p>Eigenes Fenster, Tray, Schnellerfassung mit Strg+Alt+V aus jedem Programm und Windows-Benachrichtigungen. Aktualisiert sich selbst.</p></article>
     <article class="feature"><span>☀️</span><h3>Heute &amp; Fokus</h3><p>Aufgaben aus allen Projekten für den Tag vormerken, Zeit erfassen, 25-Minuten-Fokus-Timer. Der Wochenrückblick zeigt, wohin die Zeit ging.</p></article>
     <article class="feature"><span>🔥</span><h3>Rückblick</h3><p>Aktivitätsgitter über das ganze Jahr, Serien, kleine Erfolge und eine Zeitleiste über alle Projekte.</p></article>
@@ -40,12 +43,16 @@
 
 <section>
   <h2 class="center">So sieht es aus</h2>
-  <figure class="big"><img src="{{base}}screenshots/dashboard.png" alt="Dashboard mit Projektkarten, Statistik und Filtern" loading="lazy" width="1440" height="1000"><figcaption>Dashboard</figcaption></figure>
+  <figure class="big"><img src="{{base}}screenshots/dashboard.png" alt="Dashboard mit Projektkarten, Statistik und Filtern" loading="lazy" width="1440" height="900"><figcaption>Dashboard</figcaption></figure>
   <div class="grid two">
     <figure><img src="{{base}}screenshots/projekt.png" alt="Projektseite" loading="lazy"><figcaption>Projektseite</figcaption></figure>
     <figure><img src="{{base}}screenshots/aufgaben.png" alt="Aufgabenbrett" loading="lazy"><figcaption>Aufgabenbrett</figcaption></figure>
     <figure><img src="{{base}}screenshots/git.png" alt="Git und Updates" loading="lazy"><figcaption>Git &amp; Updates</figcaption></figure>
     <figure><img src="{{base}}screenshots/design.png" alt="Design-Editor" loading="lazy"><figcaption>Eigenes Design</figcaption></figure>
+    <figure><img src="{{base}}screenshots/heute.png" alt="Heute-Ansicht" loading="lazy"><figcaption>Heute</figcaption></figure>
+    <figure><img src="{{base}}screenshots/rueckblick.png" alt="Wochenrückblick mit Heatmap" loading="lazy"><figcaption>Wochenrückblick</figcaption></figure>
+    <figure><img src="{{base}}screenshots/ci.png" alt="CI-Designer" loading="lazy"><figcaption>CI-Designer</figcaption></figure>
+    <figure><img src="{{base}}screenshots/workflows.png" alt="KI-Workflows" loading="lazy"><figcaption>KI-Workflows</figcaption></figure>
   </div>
 </section>
 
@@ -54,7 +61,7 @@
   <figure class="big"><img src="{{base}}assets/demo.gif" alt="Vorführung: Aufgabe per Schnellerfassung anlegen, sie wird Issue #4, Claude Code arbeitet sie über MCP ab, danach ist sie erledigt" width="1120" height="700" loading="lazy"><figcaption>Aufgabe → Issue → Claude → erledigt</figcaption></figure>
   <ol class="steps">
     <li><b>Aufgabe anlegen</b> – in VibeWorks, per Schnellerfassung oder aus dem Ideen-Eingang.</li>
-    <li><b>Claude verbinden</b> – ein API-Schlüssel, ein Befehl: <code>claude mcp add …</code></li>
+    <li><b>KI verbinden</b> – ein Einzeiler aus „Mein Konto“ oder der Gerätecode, den dein KI-Programm anzeigt.</li>
     <li><b>„Arbeite die offenen Aufgaben ab“</b> – Claude holt sich die Aufgaben, setzt sie auf „In Arbeit“, setzt sie um und hakt sie ab.</li>
     <li><b>Alles bleibt im Blick</b> – Verlauf, Issues, Commits und CI laufen mit.</li>
   </ol>
@@ -66,7 +73,7 @@
   <div class="grid docgrid">
     <a class="feature" href="{{base}}docs/installation.html"><span>🚀</span><h3>Installation</h3><p>Proxmox, Debian, Updates, Backups, HTTPS.</p></a>
     <a class="feature" href="{{base}}docs/git.html"><span>🔀</span><h3>Git &amp; Issues</h3><p>Verbindung, Issues, Webhooks, CI, Abhängigkeiten.</p></a>
-    <a class="feature" href="{{base}}docs/claude.html"><span>🤖</span><h3>Claude Code</h3><p>MCP-Server, CLAUDE.md, Prompts.</p></a>
+    <a class="feature" href="{{base}}docs/claude.html"><span>🤖</span><h3>Claude Code</h3><p>MCP, Gerätecode, Workflows, Regeln, Prompts.</p></a>
     <a class="feature" href="{{base}}docs/windows.html"><span>🪟</span><h3>Windows-App</h3><p>Download, Tray, Schnellerfassung, Updates.</p></a>
     <a class="feature" href="{{base}}docs/funktionen.html"><span>✨</span><h3>Alle Funktionen</h3><p>Heute, Zeit, Kosten, Eingang, Live, Friedhof …</p></a>
   </div>

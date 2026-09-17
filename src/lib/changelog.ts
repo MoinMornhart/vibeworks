@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.5",
+    date: "2026-09-17",
+    title: "Doku und Bilder auf dem neuesten Stand",
+    titleEn: "Docs and screenshots up to date",
+    changes: [
+      {
+        type: "besser",
+        text: "README und Webseite beschreiben die aktuellen Funktionen: KI-Anbindung per Einzeiler, Gerätecode und Projekt-Schlüssel, KI-Workflows, Projektaufbau, CI-Designer, Abhängigkeiten für sechs Sprachen, Teams und Rollen, Discord – Veraltetes ist raus",
+        en: "README and website describe the current features: AI connection via one-liner, device code and project keys, AI workflows, project structure, CI designer, dependencies for six languages, teams and roles, Discord – outdated parts removed",
+      },
+      {
+        type: "besser",
+        text: "Neue Screenshots auf Deutsch und Englisch (auch Heute, Rückblick, CI-Designer und KI-Workflows) und ein neu aufgenommenes Vorführ-GIF",
+        en: "New screenshots in German and English (including Today, review, CI designer and AI workflows) and a freshly recorded demo GIF",
+      },
+    ],
+  },
+  {
     version: "1.2.4",
     date: "2026-09-17",
     title: "Aufgeräumter Code nach dem Repo-Check",

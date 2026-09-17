@@ -13,11 +13,11 @@
 
 <p><a href="README.md">🇩🇪 Deutsch</a> · <b>🇬🇧 English</b></p>
 
-**Projects, tasks, notes and commits in one place – on your own server.**
+**Projects, tasks, notes, commits and your AI in one place – on your own server.**
 
 🌐 **[Website & docs](https://moinmornhart.github.io/vibeworks/en/)**
 
-[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Claude Code (MCP)](#-claude-code-mcp) · [Windows app](#-windows-app) · [Development](#%EF%B8%8F-development)
+[Features](#-features) · [Screenshots](#-screenshots) · [Installation](#-installation-on-proxmox) · [Tasks ↔ issues](#-tasks--issues--claude-code) · [Connect AI (MCP)](#-connect-ai-mcp) · [Discord](#-discord) · [Windows app](#-windows-app) · [Development](#%EF%B8%8F-development)
 
 <br>
 
@@ -29,7 +29,8 @@
 
 Vibe coding quickly leaves you with lots of half-finished projects: a repo here, an idea there,
 a note somewhere else. **VibeWorks** gathers everything in one place – ideas, status, tasks,
-notes, documentation and the commits from your repositories. It runs on your own Proxmox
+notes, documentation and the commits from your repositories. Claude Code and other AIs work
+along via MCP – with rules, workflows and verification steps. It runs on your own Proxmox
 server, updates itself and looks exactly the way **you** want – in English or German, set per
 account.
 
@@ -45,14 +46,16 @@ account.
     <td width="50%" valign="top">
       <h3>✅ Tasks</h3>
       A board per project and an overview across all projects – with due dates, recurrence and
-      labels. Done and blocked tasks tidy themselves away after two days.
+      labels. Done and blocked tasks fade out after two days; custom columns and one-click
+      clean-up included.
     </td>
   </tr>
   <tr>
     <td valign="top">
       <h3>🔀 Git &amp; updates</h3>
-      Commits from GitHub, GitLab or Gitea as a timeline with an activity chart, CI status at a
-      glance. Tasks can automatically become issues – and sync back; instantly via webhook.
+      Commits from GitHub, GitLab, Gitea or any Git server as a timeline, CI status at a glance.
+      Tasks automatically become issues – and sync back; instantly via webhook, optionally through
+      your own bot.
     </td>
     <td valign="top">
       <h3>📝 Notes &amp; docs</h3>
@@ -71,6 +74,32 @@ account.
       <h3>🔐 Secure</h3>
       Passkeys, two-factor sign-in with recovery codes, session management, lockout after failed
       attempts, CSP, CSRF and SSRF protection, encrypted tokens.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🤖 AI hub</h3>
+      MCP server with more than 40 tools, device-code sign-in, project keys with expiry, AI
+      workflows with verification steps, a project structure table and rules as CLAUDE.md,
+      AGENTS.md, GEMINI.md, Copilot, Cursor, Windsurf or Cline file.
+    </td>
+    <td valign="top">
+      <h3>🧪 Checks &amp; CI</h3>
+      CI designer with a live view per step, repo check without AI (secrets, vulnerabilities,
+      dead code), dependencies for npm, PyPI, Cargo, Go, Composer and Maven, code graph and merge
+      conflicts in the browser.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>👥 Together</h3>
+      Project sharing, teams, roles with individual permissions, community with chat, Discord
+      bot with short reports, invite links.
+    </td>
+    <td valign="top">
+      <h3>🧭 Overview</h3>
+      Today list, weekly review with heatmap and achievements, suggestions for the week, live
+      monitoring, costs, error inbox and a graveyard for projects that fell asleep.
     </td>
   </tr>
   <tr>
@@ -95,8 +124,16 @@ account.
     <td width="50%"><img src="docs/screenshots/en/git.png" alt="Git &amp; updates section with commit timeline"><p align="center"><sub>Git &amp; updates</sub></p></td>
   </tr>
   <tr>
+    <td><img src="docs/screenshots/en/today.png" alt="Today view with focus tasks from several projects"><p align="center"><sub>Today</sub></p></td>
+    <td><img src="docs/screenshots/en/review.png" alt="Weekly review with activity heatmap and achievements"><p align="center"><sub>Weekly review</sub></p></td>
+  </tr>
+  <tr>
     <td><img src="docs/screenshots/en/design.png" alt="Design editor with backgrounds and colors"><p align="center"><sub>Your own design</sub></p></td>
-    <td><img src="docs/screenshots/en/docs.png" alt="Mini docs with page tree"><p align="center"><sub>Mini docs</sub></p></td>
+    <td><img src="docs/screenshots/en/docs.png" alt="Mini docs with page tree and preview"><p align="center"><sub>Mini docs</sub></p></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/en/ci.png" alt="CI designer with triggers and blocks"><p align="center"><sub>CI designer</sub></p></td>
+    <td><img src="docs/screenshots/en/workflows.png" alt="AI workflows with built-in checklists"><p align="center"><sub>AI workflows</sub></p></td>
   </tr>
 </table>
 
@@ -211,25 +248,37 @@ verified when saved, stored encrypted with AES-256-GCM and never shown in full a
 
 </details>
 
-## 🤖 Claude Code (MCP)
+## 🤖 Connect AI (MCP)
 
-VibeWorks is also an MCP server. Create an API key under **My account → Claude Code & API keys** –
-the app shows the finished command right away:
+VibeWorks is also an MCP server. Three ways to connect:
 
-```bash
-claude mcp add --scope user --transport http vibeworks https://vibeworks.example.com/api/mcp --header "Authorization: Bearer vw_…"
-```
+- **One-liner:** Create a key under **My account → Claude Code & API keys** – the app shows a command
+  for Linux/macOS and Windows that adds VibeWorks to Claude Code and saves the agent rules as a
+  skill. By hand it looks like this:
+  ```bash
+  claude mcp add --scope user --transport http vibeworks https://vibeworks.example.com/api/mcp --header "Authorization: Bearer vw_…"
+  ```
+- **Device code:** AI programs that support device sign-in show a code – enter it at `/verbinden`,
+  confirm, done. No key to copy.
+- **Project keys:** Keys for selected projects only, with an expiry date and a pause button – handy
+  for third-party agents or collaborators. Team members with the right permission grant them
+  directly on the project.
 
-After that, Claude Code works directly with your projects – no GitHub detour needed:
+After that, the AI works directly with your projects – no GitHub detour needed:
 
 | Tool | What it does |
 | --- | --- |
 | `list_projects`, `get_project` | Projects with status, open tasks, notes and repository |
 | `list_tasks`, `get_task` | Tasks across all projects – e.g. everything due this week |
 | `create_task`, `update_task` | Create tasks and move them to *In progress* or *Done* – mirrored issues follow |
+| `list_task_comments`, `add_task_comment` | Read the conversation under an issue and reply |
 | `create_task_in_projects` | The same task in several projects – by default in all linked to Git |
-| `get_claude_md`, `list_prompts`, `get_prompt` | A ready-made CLAUDE.md for a project and your prompt library |
-| `update_project` | Status, priority, progress and summary |
+| `get_claude_md`, `get_agent_file`, `list_prompts`, `get_prompt` | Instructions for the AI (CLAUDE.md, AGENTS.md, Cursor …) and your prompt library |
+| `update_project`, `review_projects` | Status, priority, progress, summary – and an overview of what's missing |
+| `get_project_structure`, `update_project_structure` | A table of how the project is built |
+| `list_workflows`, `start_workflow`, `complete_workflow_step`, `save_workflow` | Work through AI workflows step by step with verification |
+| `get_ci`, `save_ci`, `run_ci` | Read, change and start the CI pipeline |
+| `list_code_files`, `search_code`, `get_code_graph`, `add_code_memo` | Search code, see connections, leave notes on code |
 | `create_note`, `get_note` | Notes on a project, e.g. a work log |
 | `search` | Full-text search across notes, tasks and docs |
 | `list_docs`, `get_doc`, `create_doc`, `update_doc` | Read and write your docs |
@@ -242,10 +291,19 @@ Your **prompt library** also shows up in Claude Code as commands (`/mcp__vibewor
 with a project), and **every project's CLAUDE.md**, "problems" and "today" can be attached as resources
 (`@vibeworks:…`).
 
+The built-in workflows (feature, bug fix, release …) are available as commands as well.
+
 Try for example: "Which tasks are open in VibeWorks?" or "Work through the open tasks of project X
 and write down what you did as a note." Claude acts with your permissions, and every change shows
 up in the project's activity log. Only a hash of each key is stored; you can revoke keys at any time.
 Other MCP clients connect to `/api/mcp` via Streamable HTTP with the same header.
+
+## 💬 Discord
+
+Under **My account → Discord**, invite the VibeWorks bot to your server with one click (an admin sets
+up Discord once under *Administration*). The bot forwards your notifications to a channel, sends a
+short report every morning or on Mondays if you like, and answers `/vibeworks status`, `tasks`,
+`problems` and `here`.
 
 ## 🪟 Windows app
 
@@ -276,10 +334,13 @@ npm run dev            # → http://localhost:3000
 | `npm run build` / `npm start` | Production build and start |
 | `npm run typecheck` | Type-check with TypeScript |
 | `npm test` | Unit tests (Vitest) |
+| `npm run check:code` | Dead code and cycles (fallow) |
 | `npm run version:bump` | Bump the version by one step |
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Prisma 7 ·
-PostgreSQL · SimpleWebAuthn · dnd-kit · Vitest
+PostgreSQL · SimpleWebAuthn · dnd-kit · Vitest · fallow
+
+Every push runs through the GitHub Actions CI (types, tests, fallow, build).
 
 Translations live in `src/lib/i18n/messages/` – one file per area with a German and an English
 version; TypeScript makes sure both have exactly the same keys.
@@ -288,8 +349,8 @@ version; TypeScript makes sure both have exactly the same keys.
 
 Versions count like an odometer with a carry at 9:
 `0.0.1 → 0.0.2 → … → 0.0.9 → 0.1.0 → … → 0.9.9 → 1.0.0`.
-The running app derives its version from the number of commits; every shipped change gets an
-entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
+The version shown in the app comes from `package.json`; the number of commits is only the
+update number. Every shipped change gets an entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 
 ## 🗺️ Roadmap
 
@@ -343,6 +404,18 @@ entry in the changelog (`src/lib/changelog.ts`), which is shown in the app.
 - ✅ Teams: share projects with whole teams, joining by invitation only
 - ✅ Roles with individual permissions for members and teams – built-in roles, admin templates and your own
 - ✅ Public portfolio with selected projects
+
+**Stage 5 – AI work & automation**
+
+- ✅ One-liner install, device sign-in and project keys for AI programs
+- ✅ AI workflows with verification steps and a project structure table
+- ✅ Instructions for Claude, Codex, Gemini, Copilot, Cursor, Windsurf and Cline
+- ✅ GitHub issues become tasks, bot in one click, commands in issue comments
+- ✅ CI designer with live view
+- ✅ Dependencies for npm, PyPI, Cargo, Go, Composer and Maven, branch selectable
+- ✅ Code graph, code search and merge conflicts in the browser
+- ✅ Discord bot with commands, notifications and reports
+- ✅ Getting started checklist on the dashboard
 
 **Website**
 

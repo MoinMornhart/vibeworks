@@ -22,7 +22,10 @@
   <div class="grid">
     <article class="feature"><span>🗂️</span><h3>Projects</h3><p>Grid, list or kanban, status from idea to done. Progress can determine itself – from tasks, commits, CI and planning.</p></article>
     <article class="feature"><span>🔀</span><h3>Tasks ↔ issues</h3><p>Tasks become issues on GitHub, GitLab or Gitea and sync back. Commits, CI status and a dependency check come with it.</p></article>
-    <article class="feature"><span>🤖</span><h3>Claude Code</h3><p>VibeWorks is an MCP server: Claude reads and completes your tasks, writes notes and docs – plus a CLAUDE.md generator and a prompt library.</p></article>
+    <article class="feature"><span>🤖</span><h3>AI hub</h3><p>VibeWorks is an MCP server: Claude and other AIs read and complete your tasks – with workflows and verification steps, project structure and rules for Claude, Codex, Gemini, Copilot, Cursor and more.</p></article>
+    <article class="feature"><span>🧪</span><h3>CI designer</h3><p>Build a pipeline from blocks, VibeWorks writes the GitHub Actions workflow and shows every step live – plus a repo check and dependencies for six languages.</p></article>
+    <article class="feature"><span>👥</span><h3>Teams &amp; roles</h3><p>Share projects with teams, grant permissions one by one, project keys for third-party agents – plus a community with chat.</p></article>
+    <article class="feature"><span>💬</span><h3>Discord</h3><p>Invite the bot in one click: notifications in a channel, a short report every morning or on Mondays and <code>/vibeworks</code> commands.</p></article>
     <article class="feature"><span>🪟</span><h3>Windows app</h3><p>Its own window, tray, quick capture with Ctrl+Alt+V from any program and Windows notifications. Updates itself.</p></article>
     <article class="feature"><span>☀️</span><h3>Today &amp; focus</h3><p>Plan tasks from all projects for the day, track time, 25-minute focus timer. The weekly review shows where the time went.</p></article>
     <article class="feature"><span>🔥</span><h3>Review</h3><p>An activity grid over the whole year, streaks, small achievements and a timeline across all projects.</p></article>
@@ -40,12 +43,16 @@
 
 <section>
   <h2 class="center">What it looks like</h2>
-  <figure class="big"><img src="{{base}}screenshots/en/dashboard.png" alt="Dashboard with project cards, statistics and filters" loading="lazy" width="1440" height="1000"><figcaption>Dashboard</figcaption></figure>
+  <figure class="big"><img src="{{base}}screenshots/en/dashboard.png" alt="Dashboard with project cards, statistics and filters" loading="lazy" width="1440" height="900"><figcaption>Dashboard</figcaption></figure>
   <div class="grid two">
     <figure><img src="{{base}}screenshots/en/project.png" alt="Project page" loading="lazy"><figcaption>Project page</figcaption></figure>
     <figure><img src="{{base}}screenshots/en/tasks.png" alt="Task board" loading="lazy"><figcaption>Task board</figcaption></figure>
     <figure><img src="{{base}}screenshots/en/git.png" alt="Git and updates" loading="lazy"><figcaption>Git &amp; updates</figcaption></figure>
     <figure><img src="{{base}}screenshots/en/design.png" alt="Design editor" loading="lazy"><figcaption>Your own design</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/today.png" alt="Today view" loading="lazy"><figcaption>Today</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/review.png" alt="Weekly review with heatmap" loading="lazy"><figcaption>Weekly review</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/ci.png" alt="CI designer" loading="lazy"><figcaption>CI designer</figcaption></figure>
+    <figure><img src="{{base}}screenshots/en/workflows.png" alt="AI workflows" loading="lazy"><figcaption>AI workflows</figcaption></figure>
   </div>
 </section>
 
@@ -54,7 +61,7 @@
   <figure class="big"><img src="{{base}}assets/demo.gif" alt="Demo: a task is created via quick capture, becomes issue #4, Claude Code works through it via MCP, then it is done" width="1120" height="700" loading="lazy"><figcaption>Task → issue → Claude → done (demo in German)</figcaption></figure>
   <ol class="steps">
     <li><b>Create a task</b> – in VibeWorks, via quick capture or from the idea inbox.</li>
-    <li><b>Connect Claude</b> – one API key, one command: <code>claude mcp add …</code></li>
+    <li><b>Connect your AI</b> – a one-liner from “My account” or the device code your AI program shows.</li>
     <li><b>“Work through the open tasks”</b> – Claude fetches the tasks, sets them to “In progress”, implements them and checks them off.</li>
     <li><b>Everything stays visible</b> – history, issues, commits and CI follow along.</li>
   </ol>
@@ -66,7 +73,7 @@
   <div class="grid docgrid">
     <a class="feature" href="{{base}}en/docs/installation.html"><span>🚀</span><h3>Installation</h3><p>Proxmox, Debian, updates, backups, HTTPS.</p></a>
     <a class="feature" href="{{base}}en/docs/git.html"><span>🔀</span><h3>Git &amp; issues</h3><p>Connection, issues, webhooks, CI, dependencies.</p></a>
-    <a class="feature" href="{{base}}en/docs/claude.html"><span>🤖</span><h3>Claude Code</h3><p>MCP server, CLAUDE.md, prompts.</p></a>
+    <a class="feature" href="{{base}}en/docs/claude.html"><span>🤖</span><h3>Claude Code</h3><p>MCP, device code, workflows, rules, prompts.</p></a>
     <a class="feature" href="{{base}}en/docs/windows.html"><span>🪟</span><h3>Windows app</h3><p>Download, tray, quick capture, updates.</p></a>
     <a class="feature" href="{{base}}en/docs/features.html"><span>✨</span><h3>All features</h3><p>Today, time, costs, inbox, live, graveyard …</p></a>
   </div>
