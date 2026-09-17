@@ -28,6 +28,26 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.9",
+    date: "2026-09-17",
+    title: "KI-Programme ohne Kopieren verbinden",
+    titleEn: "Connect AI programs without copying",
+    changes: [
+      {
+        type: "neu",
+        text: "Geräte-Anmeldung für KI-Programme: Das Programm holt sich selbst einen Code, du erlaubst ihn einmal unter /verbinden (mit Umfang „nur lesen“, „Aufgaben“ oder „alles“) – den Schlüssel holt sich das Programm danach selbst ab. Kein Kopieren mehr; jeder so erstellte Schlüssel steht in deinem Konto und landet als Meldung im Posteingang",
+        en: "Device sign-in for AI programs: the program requests a code itself, you allow it once at /verbinden (read only, tasks or everything) – the program then picks up its key on its own. No more copying; every key created this way appears in your account and as a message in your inbox",
+        link: "/verbinden",
+      },
+      {
+        type: "besser",
+        text: "Ohne gültigen Schlüssel nennt der MCP-Endpunkt den Weg zur Geräte-Anmeldung – so findet eine KI ihn selbst",
+        en: "Without a valid key the MCP endpoint points to device sign-in – so an AI can find it on its own",
+        link: "/account#mcp",
+      },
+    ],
+  },
+  {
     version: "1.1.8",
     date: "2026-09-16",
     title: "KI-Workflows, Projektaufbau und strengere KI-Regeln",

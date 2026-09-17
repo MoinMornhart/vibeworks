@@ -8,6 +8,7 @@ import { MCP_INSTRUCTIONS, MCP_PROMPTS, MCP_RESOURCES, type McpContext } from "@
 import { allMcpTools, rulesVersion } from "@/lib/mcp/agentTools";
 import { CONFIRM_TOOL, RULES_REMINDER, RULES_TOOL, RULES_UPDATED_REMINDER } from "@/lib/mcp/agentRules";
 import { CHANGELOG } from "@/lib/changelog";
+import { config } from "@/lib/config";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { tk, translateMessage } from "@/lib/i18n/messages";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
     // Klare Ursache statt eines Sammelfehlers (#25): fehlt, kaputt, unbekannt/widerrufen oder Konto gesperrt
     const code = checked.problem ?? "invalid_or_revoked";
     return NextResponse.json(
-      { error: translateMessage("en", tk("mcp", `errors.token.${code}`)), code },
+      // Programme ohne Schlüssel finden hier den Weg zur Geräte-Anmeldung (#104)
+      { error: translateMessage("en", tk("mcp", `errors.token.${code}`)), code, device_authorization: `${config.appUrl}/api/mcp/device` },
       { status: 401, headers: { "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}"` } },
     );
   }

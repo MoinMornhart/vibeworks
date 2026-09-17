@@ -635,6 +635,29 @@ model AiWorkflow {
   @@unique([projectId, key])
 }
 
+/// Geräte-Anmeldung eines KI-Programms (#104) – kurzlebig, der Schlüssel liegt nur bis zur Abholung verschlüsselt hier
+model DeviceAuth {
+  id             String    @id @default(cuid())
+  /// SHA-256 des Geräte-Codes, den nur das Programm kennt
+  deviceCodeHash String    @unique
+  /// Code zum Eintippen, z. B. BCDF-GHJK
+  userCode       String    @unique
+  clientName     String
+  /// read · tasks · all – gewünscht vom Programm, bei der Freigabe änderbar
+  scope          String    @default("tasks")
+  ip             String?
+  /// pending · approved · denied · claimed
+  status         String    @default("pending")
+  userId         String?
+  tokenId        String?
+  tokenCipher    String?
+  lastPollAt     DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
 /// Ein Durchlauf eines KI-Workflows (#101) – Schritte als Kopie, damit spätere Änderungen ihn nicht verbiegen
 model WorkflowRun {
   id          String    @id @default(cuid())

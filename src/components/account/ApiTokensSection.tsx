@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Bot, Check, CircleAlert, Copy, History, KeyRound, LifeBuoy, Plus, ScrollText, ShieldCheck } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";
@@ -229,6 +230,17 @@ export function ApiTokensSection({
           <li>{t("lifecycle.codes")}</li>
           <li>{t("lifecycle.update")}</li>
         </ul>
+      </div>
+
+      <div className="mt-3 rounded-2xl border px-4 py-3 text-sm" data-testid="device-how">
+        <p className="font-semibold">{t("device.howTitle")}</p>
+        <p className="mt-1 text-xs text-muted">{t("device.how")}</p>
+        <p className="mt-2 flex flex-wrap items-center gap-2">
+          <Link href="/verbinden" className="btn btn-sm">
+            {`${appUrl}/verbinden`}
+          </Link>
+          <code className="break-all text-xs text-muted">POST {endpoint}/device</code>
+        </p>
       </div>
 
       <details className="mt-3 rounded-2xl border px-4 py-3" data-testid="agent-rules">
