@@ -99,6 +99,12 @@ model Settings {
   smtpFrom           String?
   /// Zuletzt gestartete Version – für die Meldung „VibeWorks aktualisiert“
   lastVersion        String?
+  /// Discord-Anwendung der Instanz (#105) – Bot-Token und Client-Secret AES-256-GCM
+  discordAppId              String?
+  discordPublicKey          String?
+  discordBotTokenCipher     String?
+  discordClientSecretCipher String?
+  discordCommandsAt         DateTime?
   updatedAt          DateTime     @updatedAt
 }
 
@@ -185,6 +191,7 @@ model User {
   templates            ProjectTemplate[]
   suggestions          Suggestion[]
   notificationSettings NotificationSettings?
+  discordLinks         DiscordLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -633,6 +640,30 @@ model AiWorkflow {
   updatedAt   DateTime @updatedAt
 
   @@unique([projectId, key])
+}
+
+/// Discord-Server, in den ein Konto den VibeWorks-Bot eingeladen hat (#105)
+model DiscordLink {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guildId       String
+  guildName     String?
+  /// Discord-Konto, das eingeladen hat – nur ihm antwortet der Bot mit Daten
+  discordUserId String
+  discordName   String?
+  channelId     String?
+  channelName   String?
+  /// Benachrichtigungen in den Kanal weiterleiten
+  forward       Boolean  @default(true)
+  /// off · daily · weekly
+  report        String   @default("daily")
+  reportSentOn  String?
+  lastError     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, guildId])
+  @@index([discordUserId])
 }
 
 /// Geräte-Anmeldung eines KI-Programms (#104) – kurzlebig, der Schlüssel liegt nur bis zur Abholung verschlüsselt hier

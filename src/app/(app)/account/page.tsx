@@ -12,6 +12,7 @@ import { GitConnectionsSection } from "@/components/account/GitConnectionsSectio
 import { LanguageSection } from "@/components/account/LanguageSection";
 import { DataSection } from "@/components/account/DataSection";
 import { NotificationsSection } from "@/components/account/NotificationsSection";
+import { DiscordSection } from "@/components/account/DiscordSection";
 import { notificationView } from "@/lib/notify";
 import { smtpReady } from "@/lib/notify/mail";
 import { ApiTokensSection } from "@/components/account/ApiTokensSection";
@@ -72,6 +73,7 @@ export default async function AccountPage() {
       <InboxSection initial={inbox} />
       <PortfolioSection initial={portfolio} />
       <NotificationsSection initial={notificationView(notifications)} smtpReady={mailReady} isAdmin={user.role === "ADMIN"} />
+      <DiscordSection isAdmin={user.role === "ADMIN"} />
       <DataSection />
     </AccountManager>
   );

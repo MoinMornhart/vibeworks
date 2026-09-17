@@ -15,6 +15,7 @@ import { dayKey, TIME_ZONE } from "@/lib/utils";
 import { eventsOf } from "./format";
 import { passwordReminderDue } from "@/lib/auth/passwordAge";
 import { appLink, notifyUser } from "./index";
+import { runDiscordReports } from "@/lib/discord/discord";
 
 // Zeitgesteuerte Benachrichtigungen: morgens die fälligen Aufgaben, nach
 // einem Update einmal „VibeWorks aktualisiert“ an die Admins.
@@ -194,6 +195,7 @@ export function startNotifyScheduler() {
     void runRenewals().catch(log);
     void runWeeklySuggestions().catch(log);
     void runPasswordReminders().catch(log);
+    void runDiscordReports().catch(log);
   };
   // Ideen-Eingang: ntfy-Themen jede Minute abholen
   setInterval(() => void pollNtfyInboxes().catch(log), 60_000).unref?.();

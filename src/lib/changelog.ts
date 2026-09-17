@@ -28,6 +28,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.1",
+    date: "2026-09-17",
+    title: "Discord-Bot per Klick",
+    titleEn: "Discord bot in one click",
+    changes: [
+      {
+        type: "neu",
+        text: "Discord-Bot: unter Konto → Discord mit einem Klick in den eigenen Server einladen, Kanal wählen – er leitet deine Benachrichtigungen weiter und schickt einen Kurzbericht (täglich oder montags: offen, erledigt, in Arbeit, laufende KI-Workflows, Probleme)",
+        en: "Discord bot: invite it to your own server in one click under Account → Discord and pick a channel – it forwards your notifications and sends a short report (daily or on Mondays: open, done, in progress, running AI workflows, problems)",
+        link: "/account#discord",
+      },
+      {
+        type: "neu",
+        text: "Befehle in Discord: /vibeworks status, aufgaben, probleme und hier (Kanal wechseln) – Antworten sieht nur das Discord-Konto, das den Bot eingeladen hat",
+        en: "Commands in Discord: /vibeworks status, tasks, problems and here (switch channel) – only the Discord account that invited the bot sees the answers",
+      },
+      {
+        type: "neu",
+        text: "Administration: Discord-Anwendung der Instanz einmal einrichten – mit Schritt-für-Schritt-Anleitung und „Befehle anmelden“; Token und Secret liegen verschlüsselt",
+        en: "Administration: set up the instance's Discord application once – with step-by-step guide and “Register commands”; token and secret are stored encrypted",
+        link: "/admin#discord-admin",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-09-17",
     title: "Abhängigkeiten für alle Sprachen, Zweig wählbar",

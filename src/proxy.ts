@@ -11,7 +11,7 @@ const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
 // /u/<name>: öffentliches Portfolio (nur wenn eingeschaltet)
 // /go: Hinweisseite für Links (#65) – auch geteilte Seiten enthalten Links
 // /reset: „Passwort vergessen“ – wer sein Passwort vergessen hat, ist gerade nicht angemeldet
-const PUBLIC_PATHS = ["/login", "/setup", "/register", "/reset", "/go", "/s", "/u","/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in","/manifest.webmanifest"];
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/reset", "/go", "/s", "/u","/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in", "/api/discord/interactions","/manifest.webmanifest"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -31,6 +31,7 @@ import type { PublicBuildInfo } from "@/lib/buildInfo";
 import { CloudDownload } from "lucide-react";
 import { UpdatePanel } from "./UpdatePanel";
 import { SmtpSection } from "./SmtpSection";
+import { DiscordAdminSection } from "./DiscordAdminSection";
 import { InvitesSection } from "./InvitesSection";
 import { CommunityAdmin } from "./CommunityAdmin";
 import { RolesManager } from "@/components/roles/RolesManager";
@@ -415,6 +416,7 @@ export function AdminManager({
       </AccountSection>
 
       <SmtpSection />
+      <DiscordAdminSection />
 
       <AccountSection icon={<CloudDownload size={18} />} title={t("update.title")} description={t("update.description")}>
         <UpdatePanel initial={update} />

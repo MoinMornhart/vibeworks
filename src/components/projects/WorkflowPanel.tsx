@@ -9,7 +9,7 @@ import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
 
 /** Auftrag für die KI in die Zwischenablage. */
-export function CopyPrompt({ text }: { text: string }) {
+export function CopyPrompt({ text, label }: { text: string; label?: string }) {
   const t = useT("workflows");
   const [done, setDone] = useState(false);
   async function copy() {
@@ -31,7 +31,7 @@ export function CopyPrompt({ text }: { text: string }) {
     <div className="flex flex-wrap items-center gap-2">
       <code className="min-w-0 flex-1 break-words rounded-lg border bg-black/20 px-2 py-1 text-xs">{text}</code>
       <button type="button" className="btn btn-sm shrink-0" onClick={() => void copy()} data-testid="copy-prompt">
-        {done ? <Check size={14} /> : <Copy size={14} />} {done ? t("copied") : t("copyPrompt")}
+        {done ? <Check size={14} /> : <Copy size={14} />} {done ? t("copied") : (label ?? t("copyPrompt"))}
       </button>
     </div>
   );

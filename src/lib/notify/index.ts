@@ -7,6 +7,7 @@ import { isLocale, type Locale } from "@/lib/i18n/config";
 import { makeT, tk, type TFunction } from "@/lib/i18n/messages";
 import { eventsOf, ntfyRequest, webhookBody, withUrgency, type Channel, type Notice, type NotifyEvent } from "./format";
 import { sendMail } from "./mail";
+import { deliverDiscord } from "@/lib/discord/discord";
 
 // Versand an die Kanäle eines Kontos: ntfy, Webhook, E-Mail. Jede Nachricht
 // wird in der Sprache des Empfängers gebaut. Fehler landen am Konto
@@ -81,6 +82,8 @@ export async function notifyUser(userId: string, event: NotifyEvent, build: (t: 
     const notice = build(makeT(locale, "notify"), locale);
     await storeInbox(userId, notice);
     if (s && hasChannel(s)) await deliver(s, notice);
+    // Discord-Server des Kontos (#105) – eigene Fehlerablage am Link
+    await deliverDiscord(userId, withUrgency(notice, s?.urgentCritical ?? true));
   } catch (err) {
     console.error("[notify]", event, err);
   }
