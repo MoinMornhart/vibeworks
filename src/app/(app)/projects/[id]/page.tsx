@@ -167,7 +167,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         mode={isOwner ? "owner" : "member"}
       />
       {project.repoUrl && repoCache?.provider && (
-        <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={can("git.sync")} />
+        <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={can("git.sync")} defaultBranch={repoCache.defaultBranch} />
       )}
       {project.repoUrl && repoCache?.provider === "github" && (
         <RepoCheckPanel

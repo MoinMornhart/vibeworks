@@ -295,6 +295,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const inStage = (el: React.ReactNode) => (full && typeof document !== "undefined" ? createPortal(el, document.body) : el);
   const hrefOf = (id: string) => (graph && !id.startsWith("pkg:") && graph.webUrl ? blobUrl(graph.webUrl, graph.branch ?? "main", id, null) : null);
   const labelOf = (id: string) => (id.startsWith("pkg:") ? id.slice(4) : id);
+  const riskOf = (id: string) => (id.startsWith("pkg:") ? (graph?.packageRisk?.[id.slice(4)] ?? null) : null);
 
   return (
     <section id="code-graph" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="graph-heading" data-testid="code-graph">
@@ -511,17 +512,19 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                         <circle
                           data-node={n.id}
                           data-testid="code-graph-node"
+                          data-risk={riskOf(n.id) ?? undefined}
                           cx={p.x}
                           cy={p.y}
                           r={r}
                           fill={colorOf(n.group)}
-                          stroke={strong ? "white" : "none"}
-                          strokeWidth={1.5 / view.k}
+                          // Pakete mit Sicherheitslücke rot, mit großem Update gelb umrandet (#105)
+                          stroke={strong ? "white" : riskOf(n.id) === "vulnerable" ? "#f87171" : riskOf(n.id) === "major" ? "#fbbf24" : "none"}
+                          strokeWidth={(riskOf(n.id) && !strong ? 2 : 1.5) / view.k}
                           className="cursor-pointer"
                           onPointerEnter={() => setHover(n.id)}
                           onPointerLeave={() => setHover((h) => (h === n.id ? null : h))}
                         >
-                          <title>{labelOf(n.id)}</title>
+                          <title>{riskOf(n.id) ? `${labelOf(n.id)} – ${t(`risk.${riskOf(n.id)!}`)}` : labelOf(n.id)}</title>
                         </circle>
                         )}
                         {(strong || (near?.has(n.id) && near.size < 40) || (!near && !matches && n.degree > 60)) && (

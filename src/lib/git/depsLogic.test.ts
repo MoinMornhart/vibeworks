@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseVersion, countPackages, parseManifest, sortPackages, stableLatest, updateLevel, type DepPackage } from "./depsLogic";
+import { baseVersion, countPackages, openRange, packageRisks, parseManifest, sortPackages, stableLatest, updateLevel, type DepPackage } from "./depsLogic";
 
 describe("Abhängigkeiten", () => {
   it("liest dependencies und devDependencies, doppelte nur einmal", () => {
@@ -38,13 +38,24 @@ describe("Abhängigkeiten", () => {
     expect(stableLatest(null, [])).toBeNull();
   });
 
+  const p = (name: string, level: DepPackage["level"], sev?: "high" | "low"): DepPackage => ({
+    name, range: "", dev: false, current: null, latest: null, level,
+    advisories: sev ? [{ title: "x", severity: sev, url: null }] : [],
+  });
+
   it("Sicherheitswarnungen zuerst, dann nach Abstand", () => {
-    const p = (name: string, level: DepPackage["level"], sev?: "high" | "low"): DepPackage => ({
-      name, range: "", dev: false, current: null, latest: null, level,
-      advisories: sev ? [{ title: "x", severity: sev, url: null }] : [],
-    });
     const sorted = sortPackages([p("a", "current"), p("b", "patch"), p("c", "major"), p("d", "current", "low"), p("e", "minor", "high")]);
     expect(sorted.map((x) => x.name)).toEqual(["e", "d", "c", "b", "a"]);
     expect(countPackages(sorted)).toEqual({ total: 5, outdated: 3, major: 1, vulnerable: 2 });
+  });
+
+  it("Risiken fürs Code-Netz (#105)", () => {
+    const risks = packageRisks({ packages: [p("a", "major"), p("b", "minor"), p("c", "current", "high"), p("d", "major", "low")] });
+    expect(risks).toEqual({ a: "major", c: "vulnerable", d: "vulnerable" });
+    expect(packageRisks(null)).toEqual({});
+  });
+
+  it("offene Angaben erkennen (#105)", () => {
+    expect([">=2.0", " > 1", "^1.2", "==1.0", "~=6.0", "1.2"].map(openRange)).toEqual([true, true, false, false, false, false]);
   });
 });

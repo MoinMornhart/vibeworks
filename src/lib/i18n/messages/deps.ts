@@ -1,7 +1,7 @@
 import type { Shape } from "../types";
 import { plural } from "../translate";
 
-// Namensraum „deps“: Abhängigkeiten-Check (package.json).
+// Namensraum „deps“: Abhängigkeiten-Check (npm, Python, Rust, Go, PHP, Gradle/Maven).
 
 const de = {
   title: "Abhängigkeiten",
@@ -9,7 +9,12 @@ const de = {
   check: "Jetzt prüfen",
   checking: "Prüfe …",
   never: "Noch nicht geprüft – das passiert einmal am Tag beim Git-Abgleich oder mit „Jetzt prüfen“.",
-  noManifest: "Im Repository liegt keine package.json – geprüft werden bisher nur npm-Projekte.",
+  noManifest: "Keine Abhängigkeiten gefunden – geprüft werden package.json, requirements.txt, pyproject.toml, Cargo.toml, go.mod, composer.json, Gradle und pom.xml.",
+  branch: "Zweig",
+  otherBranch: "Anderer Zweig: nur zur Ansicht – Aufgaben entstehen nur aus dem Hauptzweig.",
+  foundIn: "Gefunden in:",
+  allEcosystems: "Alle",
+  loadBranches: "Zweige laden",
   failed: "Prüfung fehlgeschlagen: {error}",
   allGood: plural("Alles aktuell – {n} Paket, keine bekannten Sicherheitslücken. 🎉", "Alles aktuell – {n} Pakete, keine bekannten Sicherheitslücken. 🎉"),
   outdated: "{n} von {total} veraltet",
@@ -46,7 +51,12 @@ const en: Shape<typeof de> = {
   check: "Check now",
   checking: "Checking …",
   never: "Not checked yet – this happens once a day during the Git sync or with “Check now”.",
-  noManifest: "There is no package.json in the repository – only npm projects are checked so far.",
+  noManifest: "No dependencies found – checked are package.json, requirements.txt, pyproject.toml, Cargo.toml, go.mod, composer.json, Gradle and pom.xml.",
+  branch: "Branch",
+  otherBranch: "Other branch: view only – tasks are only created from the main branch.",
+  foundIn: "Found in:",
+  allEcosystems: "All",
+  loadBranches: "Load branches",
   failed: "Check failed: {error}",
   allGood: plural("All up to date – {n} package, no known vulnerabilities. 🎉", "All up to date – {n} packages, no known vulnerabilities. 🎉"),
   outdated: "{n} of {total} outdated",

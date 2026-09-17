@@ -1,3 +1,5 @@
+import type { Ecosystem } from "./depsManifestLogic";
+
 // Abhängigkeiten-Check ohne Netz: package.json lesen, Versionsbereiche
 // deuten, Abstand zur neuesten Version einstufen.
 
@@ -18,6 +20,10 @@ export interface DepPackage {
   latest: string | null;
   level: UpdateLevel;
   advisories: Advisory[];
+  /** Fehlt bei älteren Berichten – dann npm (#105) */
+  ecosystem?: Ecosystem;
+  /** Datei, aus der die Angabe stammt */
+  manifest?: string;
 }
 
 export interface DepsReport {
@@ -28,6 +34,9 @@ export interface DepsReport {
   counts: { total: number; outdated: number; major: number; vulnerable: number };
   /** Meldung oder Übersetzungsschlüssel, wenn die Prüfung scheiterte */
   error: string | null;
+  /** Geprüfter Zweig und gefundene Manifeste (#105) */
+  branch?: string | null;
+  manifests?: Array<{ path: string; ecosystem: Ecosystem; count: number }>;
 }
 
 export const MAX_PACKAGES = 200;
@@ -58,6 +67,9 @@ function parts(v: string): [number, number, number] | null {
   const m = v.match(/^(\d+)\.(\d+)\.(\d+)/);
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
+
+/** Nach oben offene Angabe (>=, >) – die Untergrenze ist nicht die installierte Version. */
+export const openRange = (range: string) => /^\s*>/.test(range);
 
 const isStable = (v: string) => /^\d+\.\d+\.\d+$/.test(v);
 
@@ -96,6 +108,18 @@ const LEVEL_RANK: Record<UpdateLevel, number> = { major: 3, minor: 2, patch: 1, 
 export function sortPackages(list: DepPackage[]): DepPackage[] {
   const worst = (p: DepPackage) => Math.max(-1, ...p.advisories.map((a) => severityRank(a.severity)));
   return [...list].sort((a, b) => worst(b) - worst(a) || LEVEL_RANK[b.level] - LEVEL_RANK[a.level] || a.name.localeCompare(b.name));
+}
+
+export type PackageRisk = "vulnerable" | "major";
+
+/** Pakete mit Handlungsbedarf – fürs Einfärben im Code-Netz (#105). Sicherheitslücke schlägt Update. */
+export function packageRisks(deps: Pick<DepsReport, "packages"> | null): Record<string, PackageRisk> {
+  const out: Record<string, PackageRisk> = {};
+  for (const p of deps?.packages ?? []) {
+    if (p.advisories.length) out[p.name] = "vulnerable";
+    else if (p.level === "major" && !out[p.name]) out[p.name] = "major";
+  }
+  return out;
 }
 
 export function countPackages(list: DepPackage[]): DepsReport["counts"] {

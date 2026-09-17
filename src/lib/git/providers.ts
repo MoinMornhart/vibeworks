@@ -45,6 +45,20 @@ function explain(status: number): string {
   return tk("git", "errors.http", { status });
 }
 
+/** Datei als Text (Manifeste, #105) – Fehler wie bei request(). */
+export async function requestText(url: string, headers: Record<string, string>): Promise<string> {
+  let res: Response;
+  try {
+    res = await safeFetch(url, { headers: { "User-Agent": "VibeWorks", ...headers } });
+  } catch (err) {
+    if (err instanceof FetchBlockedError) throw new GitError(err.message);
+    if (err instanceof Error && err.name === "TimeoutError") throw new GitError(tk("git", "errors.timeout"));
+    throw new GitError(tk("git", "errors.unreachable"));
+  }
+  if (!res.ok) throw new GitError(explain(res.status), res.status);
+  return res.text();
+}
+
 export async function request<T>(method: string, url: string, headers: Record<string, string>, body?: unknown): Promise<T> {
   let res: Response;
   try {

@@ -3,6 +3,7 @@ import { grepImportsViaGit, listFilesViaGit } from "@/lib/git/gitCli";
 import { ensureCodeCopy, projectBranches } from "@/lib/git/codeCopy";
 import { tk } from "@/lib/i18n/messages";
 import { buildCodeGraph, type CodeGraph } from "./codeGraphLogic";
+import { packageRisks, type DepsReport, type PackageRisk } from "./git/depsLogic";
 
 // Code-Netz eines Projekts (#57, #60) aus der lokalen Code-Kopie – kein
 // KI-Dienst, keine Kosten. Das Netz hängt nur am Commit, deshalb merkt sich
@@ -32,6 +33,8 @@ export interface ProjectCodeGraph extends CodeGraph {
   /** Netz aus einer älteren Kopie – der neueste Stand ließ sich nicht holen */
   staleError: string | null;
   memos: CodeMemoView[];
+  /** Paketname → Handlungsbedarf laut Abhängigkeiten-Check (Hauptzweig) */
+  packageRisk: Record<string, PackageRisk>;
 }
 
 export async function projectMemos(projectId: string): Promise<CodeMemoView[]> {
@@ -40,7 +43,7 @@ export async function projectMemos(projectId: string): Promise<CodeMemoView[]> {
 }
 
 export async function projectCodeGraph(projectId: string, wantedBranch?: string | null, opts: { branches?: boolean; refresh?: boolean } = {}): Promise<ProjectCodeGraph> {
-  const repo = await db.repoCache.findUnique({ where: { projectId }, select: { defaultBranch: true, webUrl: true } });
+  const repo = await db.repoCache.findUnique({ where: { projectId }, select: { defaultBranch: true, webUrl: true, deps: true } });
   const copy = await ensureCodeCopy(projectId, wantedBranch, { force: opts.refresh });
   const key = `${projectId}:${copy.branch}`;
   let graph = copy.head && cache.get(key)?.head === copy.head ? cache.get(key)!.graph : null;
@@ -63,5 +66,6 @@ export async function projectCodeGraph(projectId: string, wantedBranch?: string 
     error: graph.files === 0 ? (copy.error ?? (copy.head ? (listed > 0 ? tk("graph", "errors.unsupported", { n: listed }) : tk("graph", "errors.noFiles")) : tk("graph", "errors.notSynced"))) : null,
     staleError: graph.files > 0 ? copy.error : null,
     memos,
+    packageRisk: packageRisks((repo?.deps as unknown as DepsReport | null) ?? null),
   };
 }

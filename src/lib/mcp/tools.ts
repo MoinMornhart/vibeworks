@@ -846,7 +846,8 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const deps = cache?.deps as {
         counts?: unknown;
         error?: string | null;
-        packages?: Array<{ name: string; current: string | null; latest: string | null; level: string; advisories?: Array<{ severity: string; title: string }> }>;
+        packages?: Array<{ name: string; ecosystem?: string; manifest?: string; current: string | null; latest: string | null; level: string; advisories?: Array<{ severity: string; title: string }> }>;
+        manifests?: Array<{ path: string; ecosystem: string; count: number }>;
       } | null;
       return {
         project: { id: project.id, name: project.name },
@@ -866,10 +867,11 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
                 ? {
                     counts: deps.counts ?? null,
                     error: deps.error ? translateMessage("en", deps.error) : null,
+                    manifests: deps.manifests ?? null,
                     attention: (deps.packages ?? [])
                       .filter((p) => p.level === "major" || p.advisories?.length)
                       .slice(0, 15)
-                      .map((p) => ({ name: p.name, current: p.current, latest: p.latest, level: p.level, advisories: (p.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })),
+                      .map((p) => ({ name: p.name, ecosystem: p.ecosystem ?? "npm", ...(p.manifest ? { manifest: p.manifest } : {}), current: p.current, latest: p.latest, level: p.level, advisories: (p.advisories ?? []).map((a) => `${a.severity}: ${a.title}`) })),
                   }
                 : null,
               repoCheck: repoCheckSummary(cache, "en"),

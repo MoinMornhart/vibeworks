@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.0",
+    date: "2026-09-17",
+    title: "Abhängigkeiten für alle Sprachen, Zweig wählbar",
+    titleEn: "Dependencies for all languages, choose a branch",
+    changes: [
+      {
+        type: "neu",
+        text: "Der Abhängigkeiten-Check liest jetzt neben package.json auch requirements.txt, pyproject.toml, Cargo.toml, go.mod, composer.json, Gradle (inkl. Versionskatalog) und pom.xml – auch in Unterordnern (Monorepos). Neueste Versionen kommen aus PyPI, crates.io, dem Go-Proxy, Packagist und Maven Central, Sicherheitslücken kostenlos von OSV.dev",
+        en: "The dependency check now reads requirements.txt, pyproject.toml, Cargo.toml, go.mod, composer.json, Gradle (incl. version catalogs) and pom.xml besides package.json – in subfolders too (monorepos). Latest versions come from PyPI, crates.io, the Go proxy, Packagist and Maven Central, vulnerabilities for free from OSV.dev",
+      },
+      {
+        type: "neu",
+        text: "Abhängigkeiten für einen anderen Zweig prüfen (zur Ansicht – Aufgaben entstehen weiter nur aus dem Hauptzweig), Filter nach Sprache, gefundene Manifeste und Links zur jeweiligen Registry",
+        en: "Check dependencies of another branch (view only – tasks are still created from the main branch only), filter by language, found manifests and links to each registry",
+      },
+      {
+        type: "besser",
+        text: "Code-Netz: Pakete mit Sicherheitslücke sind rot, mit großem Update gelb umrandet",
+        en: "Code network: packages with a vulnerability have a red outline, with a major update a yellow one",
+      },
+      {
+        type: "fix",
+        text: "Nach oben offene Angaben wie „>=2.0“ lösen keine Sicherheitswarnungen für die Untergrenze mehr aus – installiert ist dort meist eine neuere Version",
+        en: "Open-ended ranges like “>=2.0” no longer raise vulnerability warnings for the lower bound – a newer version is usually installed",
+      },
+    ],
+  },
+  {
     version: "1.1.9",
     date: "2026-09-17",
     title: "KI-Programme ohne Kopieren verbinden",
