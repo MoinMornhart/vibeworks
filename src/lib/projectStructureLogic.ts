@@ -110,6 +110,41 @@ export function missingPaths(rows: StructureRow[], files: string[]): string[] {
     });
 }
 
+const clean = (p: string) => p.replace(/^\.\//, "").replace(/\/$/, "").toLowerCase();
+
+/**
+ * Ordner der obersten Ebene, die in der Tabelle nicht vorkommen – weder als
+ * eigener Pfad noch als Teil eines tieferen Pfads. Nur mit mindestens drei
+ * Dateien, damit einzelne Hilfsdateien nicht stören.
+ */
+export function undocumentedAreas(rows: StructureRow[], files: string[]): string[] {
+  const known = rows.map((r) => clean(r.path)).filter(Boolean);
+  return suggestAreas(files, 200)
+    .filter((a) => a.path.split("/").length === 2 && a.files >= 3)
+    .map((a) => a.path)
+    .filter((dir) => {
+      const d = clean(dir);
+      return !known.some((k) => k === d || k.startsWith(`${d}/`) || d.startsWith(`${k}/`));
+    });
+}
+
+export const STRUCTURE_TASK_KEY = "structure:watch";
+
+/**
+ * Aufbau-Wächter (#82): was an der Tabelle nicht mehr stimmt – als Liste
+ * „- `pfad` …“, damit die Aufgabe sich wie die Abhängigkeits-Aufgaben pflegt.
+ * Ohne Tabelle kein Plan: Wer keinen Aufbau pflegt, bekommt keine Aufgabe.
+ */
+export function planStructureTask(s: ProjectStructure, files: string[], label: { missing: string; undocumented: string }): { names: string[]; lines: string[] } | null {
+  if (!s.rows.length) return null;
+  const missing = missingPaths(s.rows, files);
+  const undocumented = undocumentedAreas(s.rows, files);
+  return {
+    names: [...missing, ...undocumented],
+    lines: [...missing.map((p) => `- \`${p}\` – ${label.missing}`), ...undocumented.map((p) => `- \`${p}\` – ${label.undocumented}`)],
+  };
+}
+
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
 
 /** Markdown-Tabelle – für CLAUDE.md und die KI. */

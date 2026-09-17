@@ -80,32 +80,32 @@ enum DocShare {
 
 /// Genau eine Zeile (id = "instance").
 model Settings {
-  id                 String       @id @default("instance")
-  mode               InstanceMode @default(SINGLE)
-  allowRegistration  Boolean      @default(false)
+  id                        String       @id @default("instance")
+  mode                      InstanceMode @default(SINGLE)
+  allowRegistration         Boolean      @default(false)
   /// „Passwort vergessen“ per E-Mail erlauben (braucht SMTP) – aus, bis ein Admin es einschaltet
-  allowPasswordReset Boolean      @default(false)
+  allowPasswordReset        Boolean      @default(false)
   /// Höchstzahl Karten je Spalte im Aufgabenbrett (0 = unbegrenzt).
-  taskColumnLimit    Int          @default(15)
+  taskColumnLimit           Int          @default(15)
   /// Wünsche ans Team (an die KI) je Mitglied in 24 Stunden – vom Admin einstellbar (#48)
-  wishLimit          Int          @default(3)
-  setupDoneAt        DateTime?
+  wishLimit                 Int          @default(3)
+  setupDoneAt               DateTime?
   /// SMTP für Benachrichtigungen per E-Mail (Passwort AES-256-GCM)
-  smtpHost           String?
-  smtpPort           Int?
-  smtpSecure         Boolean      @default(false)
-  smtpUser           String?
-  smtpPassCipher     String?
-  smtpFrom           String?
+  smtpHost                  String?
+  smtpPort                  Int?
+  smtpSecure                Boolean      @default(false)
+  smtpUser                  String?
+  smtpPassCipher            String?
+  smtpFrom                  String?
   /// Zuletzt gestartete Version – für die Meldung „VibeWorks aktualisiert“
-  lastVersion        String?
+  lastVersion               String?
   /// Discord-Anwendung der Instanz (#105) – Bot-Token und Client-Secret AES-256-GCM
   discordAppId              String?
   discordPublicKey          String?
   discordBotTokenCipher     String?
   discordClientSecretCipher String?
   discordCommandsAt         DateTime?
-  updatedAt          DateTime     @updatedAt
+  updatedAt                 DateTime     @updatedAt
 }
 
 // ── Konten und Anmeldung ────────────────────────────────────
@@ -300,21 +300,23 @@ model WebAuthnChallenge {
 
 model Project {
   /// Dateifilter: Müll- und Schutz-Muster, erlaubte Pull Requests (src/lib/git/fileFilterLogic.ts, #92)
-  fileFilter      Json?
+  fileFilter          Json?
   /// Neue Issues aus dem Git-System übernehmen: off | trusted | all (#69)
-  issueImport     String    @default("trusted")
+  issueImport         String         @default("trusted")
   /// GitHub-Konten mit Rolle im Projekt: [{ login, role: worker | bughunter }] (#69)
-  gitPeople       Json?
+  gitPeople           Json?
   /// Projektaufbau: { overview, rows: [{ area, path, purpose, how }], updatedAt, updatedBy } (#101)
-  structure       Json?
+  structure           Json?
+  /// Kalendertag der letzten Prüfung durch den Aufbau-Wächter (#82)
+  structureCheckedOn  String?
   /// CI-Designer (#107): Blöcke und Auslöser, zuletzt ins Repository geschrieben
-  ciPipeline      Json?
-  ciPublishedAt   DateTime?
-  ciPublishedBy   String?
+  ciPipeline          Json?
+  ciPublishedAt       DateTime?
+  ciPublishedBy       String?
   /// SHA-256 der zuletzt geschriebenen Datei – weicht die gespeicherte Pipeline ab, ist sie noch nicht im Repository
-  ciPublishedHash String?
+  ciPublishedHash     String?
   /// Bis hierhin wurden Issue-Kommentare auf Bot-Befehle geprüft (#79)
-  issueCommentsAt DateTime?
+  issueCommentsAt     DateTime?
   id                  String         @id @default(cuid())
   ownerId             String
   owner               User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -989,19 +991,19 @@ model ApiToken {
 
 /// MCP-Aufrufe fürs Protokoll im Konto – nur Werkzeug, Ergebnis, Dauer, keine Eingaben. Nach 30 Tagen weg.
 model McpCall {
-  id        String   @id @default(cuid())
-  tokenId   String
-  token     ApiToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
-  userId    String
-  tool      String
-  ok        Boolean
-  error     String?
-  ms        Int
+  id          String   @id @default(cuid())
+  tokenId     String
+  token       ApiToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  userId      String
+  tool        String
+  ok          Boolean
+  error       String?
+  ms          Int
   /// Aufgabe, um die es ging (aus den Argumenten oder dem Ergebnis) – fürs Info-Fenster
-  taskId    String?
+  taskId      String?
   /// Aufgaben, die die KI mit diesem Aufruf gesehen hat (z. B. list_tasks) – #76
   seenTaskIds String[] @default([])
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   @@index([seenTaskIds], type: Gin)
   @@index([userId, createdAt])
@@ -1176,6 +1178,8 @@ model NotificationSettings {
   events          Json      @default("{}")
   /// Kalendertag der letzten Zusammenfassung fälliger Aufgaben
   digestSentOn    String?
+  /// Montag (Kalendertag) des letzten Wochenberichts (#82)
+  weeklyReportOn  String?
   lastSentAt      DateTime?
   /// "kanal|meldung" des letzten Fehlschlags
   lastError       String?

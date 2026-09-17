@@ -16,6 +16,8 @@ import { eventsOf } from "./format";
 import { passwordReminderDue } from "@/lib/auth/passwordAge";
 import { appLink, notifyUser } from "./index";
 import { runDiscordReports } from "@/lib/discord/discord";
+import { runStructureWatch } from "@/lib/projectStructure";
+import { runWeeklyReports } from "./weeklyReport";
 
 // Zeitgesteuerte Benachrichtigungen: morgens die fälligen Aufgaben, nach
 // einem Update einmal „VibeWorks aktualisiert“ an die Admins.
@@ -160,6 +162,12 @@ async function runWeeklySuggestions(now = new Date()): Promise<number> {
   return sent;
 }
 
+/** Wochenbericht (#82): ab Montag 8 Uhr einmal je Konto. */
+async function runWeeklyReport(now = new Date()): Promise<number> {
+  if (zoneHour(now) < DIGEST_HOUR) return 0;
+  return runWeeklyReports(now);
+}
+
 /** Passwort-Erinnerung: ab 8 Uhr, wer sie eingeschaltet hat und dessen Passwort zu alt ist – höchstens alle 30 Tage. */
 async function runPasswordReminders(now = new Date()): Promise<number> {
   if (zoneHour(now) < DIGEST_HOUR) return 0;
@@ -196,6 +204,9 @@ export function startNotifyScheduler() {
     void runWeeklySuggestions().catch(log);
     void runPasswordReminders().catch(log);
     void runDiscordReports().catch(log);
+    void runWeeklyReport().catch(log);
+    // Aufbau-Wächter (#82): einmal am Tag je Projekt mit Aufbau-Tabelle
+    void runStructureWatch().catch(log);
   };
   // Ideen-Eingang: ntfy-Themen jede Minute abholen
   setInterval(() => void pollNtfyInboxes().catch(log), 60_000).unref?.();

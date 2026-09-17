@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.6",
+    date: "2026-09-17",
+    title: "Aufbau-Wächter und Wochenbericht",
+    titleEn: "Structure watcher and weekly report",
+    changes: [
+      {
+        type: "neu",
+        text: "Wochenbericht: montags ab 8 Uhr kommt über deine Kanäle, was in der Vorwoche passiert ist – erledigte Aufgaben, Workflow-Durchläufe mit belegten Schritten, neue Fehler und schlafende Projekte. Abschaltbar unter Benachrichtigungen",
+        en: "Weekly report: on Mondays from 8 am your channels get what happened last week – completed tasks, workflow runs with verified steps, new errors and sleeping projects. Can be turned off under notifications",
+        link: "/account#benachrichtigungen",
+      },
+      {
+        type: "neu",
+        text: "Aufbau-Wächter: Projekte mit Aufbau-Tabelle werden täglich mit dem Repository verglichen – fehlen Pfade oder sind neue Ordner nicht beschrieben, erscheint die Aufgabe „Projektaufbau aktualisieren“. Sie erledigt sich selbst, sobald die Tabelle wieder stimmt",
+        en: "Structure watcher: projects with a structure table are compared with the repository every day – if paths are missing or new folders aren't described, the task “Update project structure” appears. It completes itself once the table matches again",
+      },
+    ],
+  },
+  {
     version: "1.2.5",
     date: "2026-09-17",
     title: "Doku und Bilder auf dem neuesten Stand",

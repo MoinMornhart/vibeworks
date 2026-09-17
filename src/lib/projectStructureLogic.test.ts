@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyStructure, EMPTY_STRUCTURE, missingPaths, readStructure, structureMarkdown, suggestAreas } from "./projectStructureLogic";
+import { applyStructure, EMPTY_STRUCTURE, missingPaths, planStructureTask, readStructure, structureMarkdown, suggestAreas, undocumentedAreas } from "./projectStructureLogic";
 
 const now = new Date("2026-09-16T20:00:00Z");
 const api = { area: "API", path: "src/app/api/", purpose: "REST-Endpunkte", how: "route() prüft Herkunft" };
@@ -44,5 +44,21 @@ describe("Projektaufbau (#101)", () => {
     expect(md).toContain("| Bereich | Pfad | Zweck | So geht's |");
     expect(md).toContain("| API | `src/app/api/` | REST-Endpunkte | a \\| b c |");
     expect(structureMarkdown(EMPTY_STRUCTURE, { area: "", path: "", purpose: "", how: "" })).toBe("");
+  });
+
+  it("findet undokumentierte Ordner der obersten Ebene (#82)", () => {
+    const files = ["src/app/api/x.ts", "src/lib/a.ts", "scripts/a.sh", "scripts/b.sh", "scripts/c.sh", "docs/a.md", "tools/x.ts", "tools/y.ts", "tools/z.ts"];
+    const rows = [api, { area: "Doku", path: "./docs", purpose: "p", how: "" }, { area: "Werkzeuge", path: "tools/", purpose: "p", how: "" }];
+    // src/ ist über src/app/api/ abgedeckt, docs/ hat zu wenige Dateien, tools/ steht drin
+    expect(undocumentedAreas(rows, files)).toEqual(["scripts/"]);
+  });
+
+  it("plant die Wächter-Aufgabe nur mit Tabelle", () => {
+    const label = { missing: "fehlt", undocumented: "nicht beschrieben" };
+    const files = ["src/app/api/x.ts", "lib/a.ts", "lib/b.ts", "lib/c.ts"];
+    expect(planStructureTask(EMPTY_STRUCTURE, files, label)).toBeNull();
+    const plan = planStructureTask({ ...EMPTY_STRUCTURE, rows: [api, ui] }, files, label);
+    expect(plan).toEqual({ names: ["src/components/", "lib/"], lines: ["- `src/components/` – fehlt", "- `lib/` – nicht beschrieben"] });
+    expect(planStructureTask({ ...EMPTY_STRUCTURE, rows: [api, { ...ui, path: "lib/" }] }, files, label)?.names).toEqual([]);
   });
 });
