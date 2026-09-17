@@ -8,6 +8,7 @@ import { checkSyntax, conflictCount, formatJson, parseConflicts, resolveAll, res
 import type { ConflictDetails, ConflictPr } from "@/lib/git/conflicts";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 /** Merge-Konflikte (#92): Pull Requests mit Konflikten, Editor je Datei, Lösung als Merge-Commit in den PR. */
 export function ConflictPanel({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
@@ -63,8 +64,8 @@ export function ConflictPanel({ projectId, canEdit }: { projectId: string; canEd
 
   async function save() {
     if (!details || !canSave) return;
-    if (warnings && !window.confirm(t("conflicts.confirmWarnings", { n: warnings }))) return;
-    if (!window.confirm(t("conflicts.confirmSave", { n: details.pr.number, branch: details.pr.headRef }))) return;
+    if (warnings && !(await confirmDialog(t("conflicts.confirmWarnings", { n: warnings })))) return;
+    if (!(await confirmDialog(t("conflicts.confirmSave", { n: details.pr.number, branch: details.pr.headRef })))) return;
     const res = await guard(() =>
       api<{ result: { commit: string; url: string } }>(`/api/projects/${projectId}/conflicts`, {
         body: { action: "resolve", pr: details.pr.number, headSha: details.headSha, files: details.files.map((f) => ({ path: f.path, content: texts[f.path] ?? "" })) },

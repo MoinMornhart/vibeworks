@@ -12,6 +12,7 @@ import { GITHUB_NEW_TOKEN_URL } from "@/lib/git/parse";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type Kind = "secrets" | "vulnerabilities" | "findings" | "todos";
 type Action = "run" | "refresh" | "enable" | "disable" | "task" | "draft" | "autoTasks";
@@ -202,7 +203,7 @@ export function RepoCheckPanel({
           )}
           {canManage &&
             (check.enabled ? (
-              <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy !== null} onClick={() => window.confirm(t("confirmDisable")) && void act("disable")}>
+              <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy !== null} onClick={() => void confirmDialog(t("confirmDisable"), { danger: true }).then((ok) => void (ok && act("disable")))}>
                 {t("disable")}
               </button>
             ) : (

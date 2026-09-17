@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { choiceDialog } from "./dialogs";
 
 // Entwürfe: was man gerade schreibt, bleibt im Browser erhalten, wenn man die
 // Seite verlässt oder neu lädt – bis es abgeschickt oder verworfen wird. Nur
@@ -23,6 +25,53 @@ function read<T>(key: string): T | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Schließen mit Rückfrage (#109): Ist etwas ungespeichert, fragt ein eigener
+ * Dialog – bei Neuem „Als Entwurf behalten / Verwerfen / Weiter schreiben“,
+ * beim Bearbeiten „Änderungen verwerfen / Weiter bearbeiten“. Solange
+ * Ungespeichertes bearbeitet wird, warnt zusätzlich der Browser beim Verlassen
+ * der Seite (Entwürfe von Neuem bleiben ohnehin erhalten).
+ */
+export function useLeaveGuard(opts: { dirty: boolean; draftable: boolean; onDiscard?: () => void }) {
+  const t = useT("common");
+  const ref = useRef(opts);
+  ref.current = opts;
+
+  useEffect(() => {
+    if (!opts.dirty || opts.draftable) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [opts.dirty, opts.draftable]);
+
+  return useCallback(
+    async (close: () => void) => {
+      const { dirty, draftable, onDiscard } = ref.current;
+      if (!dirty) return close();
+      const choice = await choiceDialog(draftable ? t("leave.draftMessage") : t("leave.editMessage"), {
+        title: t("leave.title"),
+        choices: draftable
+          ? [
+              { key: "keep", label: t("leave.keep"), tone: "primary" },
+              { key: "discard", label: t("leave.discard"), tone: "danger" },
+              { key: "stay", label: t("leave.stay") },
+            ]
+          : [
+              { key: "stay", label: t("leave.stay"), tone: "primary" },
+              { key: "discard", label: t("leave.discardChanges"), tone: "danger" },
+            ],
+      });
+      if (choice === null || choice === "stay") return;
+      if (choice === "discard") onDiscard?.();
+      close();
+    },
+    [t],
+  );
 }
 
 /** Einen Entwurf vergessen – z. B. nachdem er gespeichert wurde. */

@@ -6,6 +6,7 @@ import type { PublicBuildInfo } from "@/lib/buildInfo";
 import type { UpdateStatus } from "@/lib/selfUpdate";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useLocale, useT } from "@/lib/i18n/client";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface UpdateResponse {
   available: boolean;
@@ -77,7 +78,7 @@ export function UpdatePanel({ initial }: { initial: UpdateResponse }) {
   }, [log]);
 
   async function send(action: "check" | "update") {
-    if (action === "update" && !window.confirm(t("update.confirm"))) return;
+    if (action === "update" && !(await confirmDialog(t("update.confirm")))) return;
     setError(null);
     try {
       const res = await api<{ requestedAt: string }>("/api/admin/update", { body: { action } });

@@ -10,6 +10,7 @@ import { REPORT_MODES, type ReportMode } from "@/lib/discord/modes";
 import type { DiscordLinkView } from "@/lib/discord/view";
 import { DiscordIcon } from "@/components/admin/DiscordAdminSection";
 import { AccountSection } from "./AccountManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 const RESULT_KEYS = ["denied", "state", "install"] as const;
 
@@ -96,8 +97,8 @@ function DiscordLinkCard({ link, onChange, onRemove }: { link: DiscordLinkView; 
       onChange((await api<{ link: DiscordLinkView }>(`/api/account/discord/${link.id}`, { body: {} })).link);
       toast(t("reportSent"));
     });
-  const remove = () => {
-    if (!window.confirm(t("confirmRemove", { guild: link.guildName ?? link.guildId }))) return;
+  const remove = async () => {
+    if (!(await confirmDialog(t("confirmRemove", { guild: link.guildName ?? link.guildId }), { danger: true }))) return;
     void run(async () => {
       await api(`/api/account/discord/${link.id}`, { method: "DELETE" });
       onRemove();

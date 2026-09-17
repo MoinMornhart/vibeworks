@@ -25,6 +25,7 @@ import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./AccountManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export interface GitConnectionItem {
   id: string;
@@ -209,7 +210,7 @@ export function GitConnectionsSection({
   }
 
   async function remove(c: GitConnectionItem) {
-    if (!window.confirm(t("git.confirmRemove", { host: c.host }))) return;
+    if (!(await confirmDialog(t("git.confirmRemove", { host: c.host }), { danger: true }))) return;
     setError(null);
     try {
       const res = await api<ListResponse>(
@@ -413,10 +414,10 @@ export function GitConnectionsSection({
                             type="button"
                             className="btn btn-sm"
                             disabled={busyId === c.id}
-                            onClick={() => {
+                            onClick={async () => {
                               if (
                                 c.botApp &&
-                                !window.confirm(t("git.botAppConfirmRemove"))
+                                !(await confirmDialog(t("git.botAppConfirmRemove"), { danger: true }))
                               )
                                 return;
                               void setBot(c, null);

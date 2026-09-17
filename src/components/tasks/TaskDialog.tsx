@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Recurrence, TaskStatus } from "@/generated/prisma/client";
 import { Info, Save, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
@@ -12,9 +12,10 @@ import { Segmented } from "@/components/theme/controls";
 import { ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { usePathname } from "next/navigation";
-import { useDraft } from "@/lib/client/draft";
+import { useDraft, useLeaveGuard } from "@/lib/client/draft";
 import { DraftNote } from "@/components/ui/DraftNote";
 import type { ExtraColumn } from "@/lib/boardConfig";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export interface TaskForm {
   title: string;
@@ -95,14 +96,17 @@ export function TaskDialog({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
+  // Beim Öffnen (oder anderer Aufgabe) sofort im selben Durchlauf zurücksetzen –
+  // sonst blitzt kurz der alte Stand auf und gilt als ungespeicherte Eingabe (#109)
+  const [shownFor, setShownFor] = useState<{ open: boolean; task: TaskItem | null; status: TaskStatus | undefined }>({ open, task, status: defaultStatus });
+  if (shownFor.open !== open || shownFor.task !== task || shownFor.status !== defaultStatus) {
+    setShownFor({ open, task, status: defaultStatus });
     if (open) {
       setForm(toForm(task, defaultStatus, initial));
       setError(null);
       setFieldErrors({});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial nur beim Öffnen
-  }, [open, task, defaultStatus]);
+  }
 
   const set = <K extends keyof TaskForm>(key: K, value: TaskForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -114,6 +118,12 @@ export function TaskDialog({
     (d) => setForm((f) => ({ ...f, title: d.title, description: d.description, dueDate: d.dueDate, labels: d.labels, recurrence: d.recurrence, assignee: d.assignee, priority: d.priority ?? 2 })),
     (f) => !f.title.trim() && !f.description.trim(),
   );
+
+  // Ungespeichertes: beim Schließen nachfragen (#109)
+  const draftKey = open && !task && !initial;
+  const dirty = open && (draftKey ? Boolean(form.title.trim() || form.description.trim()) : JSON.stringify(form) !== JSON.stringify(toForm(task, defaultStatus, initial)));
+  const guard = useLeaveGuard({ dirty: dirty && !busy, draftable: Boolean(draftKey), onDiscard: () => draft.discard() });
+  const requestClose = () => void guard(onClose);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -132,7 +142,7 @@ export function TaskDialog({
   }
 
   async function remove() {
-    if (!task || !onDelete || !window.confirm(t("dialog.confirmDelete", { title: task.title }))) return;
+    if (!task || !onDelete || !(await confirmDialog(t("dialog.confirmDelete", { title: task.title }), { danger: true }))) return;
     setBusy(true);
     try {
       await onDelete(task);
@@ -147,7 +157,7 @@ export function TaskDialog({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       title={task ? t("dialog.editTitle") : t("dialog.newTitle")}
       footer={
         <>
@@ -161,7 +171,7 @@ export function TaskDialog({
               <Info size={14} /> {t("info.button")}
             </button>
           )}
-          <button type="button" className="btn btn-sm" onClick={onClose}>{tc("cancel")}</button>
+          <button type="button" className="btn btn-sm" onClick={requestClose}>{tc("cancel")}</button>
           <button type="submit" form="task-form" className="btn btn-primary btn-sm" disabled={busy}>
             <Save size={14} /> {busy ? tc("saving") : task ? tc("save") : tc("create")}
           </button>

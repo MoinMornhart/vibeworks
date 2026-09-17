@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { richText } from "./GitProviderFields";
 import { IssueImportSection } from "./IssueImportSection";
 import type { GitPerson, IssueImportMode } from "@/lib/git/issueImportLogic";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface Access {
   tokenHint: string | null;
@@ -353,7 +354,7 @@ function WebhookSection({
             <button type="button" className="btn btn-sm" disabled={busy} onClick={() => onWebhook("renew")}>
               <RefreshCw size={14} /> {t("webhook.renew")}
             </button>
-            <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => window.confirm(t("webhook.confirmRemove")) && onWebhook("off")}>
+            <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => void confirmDialog(t("webhook.confirmRemove"), { danger: true }).then((ok) => void (ok && onWebhook("off")))}>
               {t("webhook.remove")}
             </button>
           </div>

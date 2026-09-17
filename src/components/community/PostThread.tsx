@@ -12,6 +12,7 @@ import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { Avatar, KindBadge, StatusBadge } from "./ui";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export type Target = { type: "post" | "reply" | "message"; id: string };
 
@@ -110,23 +111,23 @@ export function PostThread({
       setEditing(null);
     });
 
-  const removePost = () =>
-    window.confirm(t("confirmDelete")) &&
+  const removePost = async () =>
+    (await confirmDialog(t("confirmDelete"), { danger: true })) &&
     run(async () => {
       await api(`/api/community/posts/${post.id}`, { method: "DELETE" });
       router.push(`/community/${projectId}`);
     });
 
-  const removeReply = (id: string) =>
-    window.confirm(t("confirmDelete")) &&
+  const removeReply = async (id: string) =>
+    (await confirmDialog(t("confirmDelete"), { danger: true })) &&
     run(async () => {
       await api(`/api/community/replies/${id}`, { method: "DELETE" });
       setReplies((list) => list.filter((r) => r.id !== id));
       setPost((p) => ({ ...p, replyCount: Math.max(0, p.replyCount - 1) }));
     });
 
-  const ban = (userId: string, name: string) =>
-    window.confirm(t("confirmBan", { name })) &&
+  const ban = async (userId: string, name: string) =>
+    (await confirmDialog(t("confirmBan", { name }), { danger: true })) &&
     run(async () => {
       await api(`/api/community/${projectId}/bans`, { body: { userId } });
       setNotice(t("banned", { name }));

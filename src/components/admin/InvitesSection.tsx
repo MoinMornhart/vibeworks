@@ -8,6 +8,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 const STATUS_TONE: Record<InviteItem["status"], string> = {
   open: "bg-emerald-500/15 text-emerald-400",
@@ -54,7 +55,7 @@ export function InvitesSection({ multi }: { multi: boolean }) {
   }
 
   async function revoke(id: string) {
-    if (!window.confirm(t("invites.confirmRevoke"))) return;
+    if (!(await confirmDialog(t("invites.confirmRevoke"), { danger: true }))) return;
     setBusy(true);
     setError(null);
     try {

@@ -8,6 +8,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type Action = "run" | "refresh" | "enable" | "disable";
 /** Solange ein Lauf aussteht, so oft nachsehen (nur bei sichtbarem Tab). */
@@ -94,7 +95,7 @@ export function LighthousePanel({ projectId, canRun, canManage, hasToken }: { pr
             )}
             {canManage &&
               (lh.enabled ? (
-                <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy !== null} onClick={() => window.confirm(t("confirmDisable")) && void act("disable")} data-testid="lighthouse-disable">
+                <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy !== null} onClick={() => void confirmDialog(t("confirmDisable"), { danger: true }).then((ok) => void (ok && act("disable")))} data-testid="lighthouse-disable">
                   {t("disable")}
                 </button>
               ) : (

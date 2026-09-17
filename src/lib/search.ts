@@ -46,6 +46,33 @@ export function buildPrefixQuery(input: string): string | null {
   return words.map((w) => `${w}:*`).join(" & ");
 }
 
+/**
+ * Teilwort für die Titelsuche (#109): die längste Eingabe ab drei Zeichen,
+ * so wie getippt (Groß/klein egal). Prisma maskiert % und _ selbst.
+ */
+export function likePattern(input: string): string | null {
+  const words = (input.match(/[\p{L}\p{N}][\p{L}\p{N}._-]*/gu) ?? []).filter((w) => w.length >= 3);
+  if (!words.length) return null;
+  return words.sort((a, b) => b.length - a.length)[0].slice(0, 60);
+}
+
+/** Volltext-Treffer zuerst, dann Titel-Treffer, ohne Doppelte. */
+export function mergeHits<T extends { id: string }>(first: T[], more: T[], limit: number): T[] {
+  const seen = new Set(first.map((x) => x.id));
+  return [...first, ...more.filter((x) => !seen.has(x.id) && seen.add(x.id))].slice(0, limit);
+}
+
+/** Für den Vergleich im Browser: klein, ohne Akzente, ß → ss. */
+export const foldText = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/ß/g, "ss");
+
+/** Alle Wörter der Eingabe kommen in einem der Texte vor (Reihenfolge egal). */
+export function matchesAll(query: string, texts: string[]): boolean {
+  const words = foldText(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = texts.map(foldText).join(" ");
+  return words.every((w) => hay.includes(w));
+}
+
 /** Zerlegt einen Treffertext in normale und hervorgehobene Stücke. */
 export function splitHighlights(text: string): Array<{ text: string; hit: boolean }> {
   return text

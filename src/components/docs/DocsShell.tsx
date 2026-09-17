@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useFormat, useLocale, useT } from "@/lib/i18n/client";
 import { INTL_LOCALE } from "@/lib/i18n/config";
 import { DocEditor } from "./DocEditor";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 const EXPANDED_KEY = "vw.docs.expanded";
 
@@ -102,7 +103,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
 
   async function remove(item: DocTreeItem) {
     const sub = descendants(item.id).length;
-    if (!window.confirm(sub ? t("tree.confirmDeleteWithChildren", { title: item.title, n: sub }) : t("tree.confirmDelete", { title: item.title }))) return;
+    if (!(await confirmDialog(sub ? t("tree.confirmDeleteWithChildren", { title: item.title, n: sub }) : t("tree.confirmDelete", { title: item.title }), { danger: true }))) return;
     setError(null);
     try {
       const res = await api<{ tree: DocTreeItem[] }>(`/api/docs/${item.id}`, { method: "DELETE" });

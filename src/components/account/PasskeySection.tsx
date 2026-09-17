@@ -9,6 +9,7 @@ import { api, ApiClientError } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import type { TFunction } from "@/lib/i18n/messages";
 import { AccountSection } from "./AccountManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 function webauthnError(err: unknown, t: TFunction<"account">): string {
   if (err instanceof ApiClientError) return err.message;
@@ -68,7 +69,7 @@ export function PasskeySection({ initial, hasPassword, rpID }: { initial: Passke
   }
 
   async function remove(p: PasskeyItem) {
-    if (!window.confirm(t("passkeys.confirmRemove", { name: p.name ?? t("passkeys.fallbackName") }))) return;
+    if (!(await confirmDialog(t("passkeys.confirmRemove", { name: p.name ?? t("passkeys.fallbackName") }), { danger: true }))) return;
     setError(null);
     try {
       await api(`/api/account/passkeys/${p.id}`, { method: "DELETE" });

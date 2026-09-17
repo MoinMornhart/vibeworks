@@ -4,6 +4,7 @@ import { ChangelogButton } from "@/components/ChangelogButton";
 import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Toaster } from "@/components/ui/Toaster";
+import { DialogHost } from "@/components/ui/DialogHost";
 import { BetaBanner } from "@/components/BetaBanner";
 import { cookies } from "next/headers";
 import { BETA_COOKIE } from "@/lib/betaLogic";
@@ -35,6 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <CommandPalette isAdmin={isAdmin} />
       <QuickCapture />
       <Toaster />
+      <DialogHost />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import { roleName } from "@/components/roles/roleName";
 import { WorkClock } from "@/components/tasks/TaskInfoPanel";
 import { cn } from "@/lib/utils";
+import { promptDialog } from "@/lib/client/dialogs";
 
 const CHAT_POLL_MS = 15_000;
 
@@ -122,8 +123,8 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
     const projectId = target[id] ?? hub.acceptProjects[0]?.id;
     if (projectId) void run(() => api(`/api/teams/${hub.id}/wishes/${id}`, { method: "PATCH", body: { action: "accept", projectId } }));
   };
-  const decline = (id: string) => {
-    const reason = window.prompt(t("wishes.declinePrompt"));
+  const decline = async (id: string) => {
+    const reason = await promptDialog(t("wishes.declinePrompt"), { multiline: true, maxLength: 500 });
     if (reason !== null) void run(() => api(`/api/teams/${hub.id}/wishes/${id}`, { method: "PATCH", body: { action: "decline", reason: reason.trim() || null } }));
   };
   async function send(e: React.FormEvent) {
@@ -272,7 +273,7 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
                         ) : (
                           <span className="text-xs text-muted">{t("wishes.noProject")}</span>
                         )}
-                        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => decline(w.id)}>
+                        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void decline(w.id)}>
                           <X size={13} /> {t("wishes.decline")}
                         </button>
                       </div>

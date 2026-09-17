@@ -5,6 +5,7 @@ import { FolderLock, Trash2 } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface KeyRow {
   id: string;
@@ -31,7 +32,7 @@ export function ProjectKeysPanel({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   async function revoke(k: KeyRow) {
-    if (!window.confirm(t("projectKey.confirmRevoke", { key: k.name }))) return;
+    if (!(await confirmDialog(t("projectKey.confirmRevoke", { key: k.name }), { danger: true }))) return;
     setBusy(true);
     try {
       setKeys((await api<{ keys: KeyRow[] }>(`/api/projects/${projectId}/keys/${k.id}`, { method: "DELETE" })).keys);

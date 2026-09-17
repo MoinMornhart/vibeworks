@@ -6,6 +6,7 @@ import { Ban, Check, EyeOff, Flag } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface ReportGroup {
   targetType: "post" | "reply" | "message";
@@ -103,7 +104,7 @@ export function CommunityAdmin() {
                     type="button"
                     className="btn btn-sm hover:!text-red-400"
                     disabled={busy}
-                    onClick={() => window.confirm(t("admin.confirmBan", { name: r.author.name })) && void run(() => api("/api/admin/community/bans", { body: { userId: r.author.id } }))}
+                    onClick={() => void confirmDialog(t("admin.confirmBan", { name: r.author.name }), { danger: true }).then((ok) => void (ok && run(() => api("/api/admin/community/bans", { body: { userId: r.author.id } }))))}
                   >
                     <Ban size={13} /> {t("admin.banAuthor")}
                   </button>

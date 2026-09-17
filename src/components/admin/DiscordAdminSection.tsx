@@ -8,6 +8,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
 import { AccountSection } from "@/components/account/AccountManager";
 import { CopyPrompt } from "@/components/projects/WorkflowPanel";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface DiscordView {
   appId: string;
@@ -73,8 +74,8 @@ export function DiscordAdminSection() {
       apply(res.discord);
       toast(t("admin.registered", { n: res.registered }));
     });
-  const remove = () => {
-    if (!window.confirm(t("admin.confirmRemove"))) return;
+  const remove = async () => {
+    if (!(await confirmDialog(t("admin.confirmRemove"), { danger: true }))) return;
     void run(async () => apply((await api<{ discord: DiscordView }>("/api/admin/discord", { method: "DELETE" })).discord));
   };
   const set = (key: keyof typeof form, value: string) => setForm((x) => ({ ...x, [key]: value }));

@@ -12,6 +12,7 @@ import { INTL_LOCALE } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./ui";
 import { ReportForm } from "./PostThread";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 /** Solange der Tab sichtbar ist, so oft nachsehen. */
 const POLL_MS = 4000;
@@ -135,7 +136,7 @@ export function ChatPanel({ room, title, hint }: { room: string; title: string; 
                       className="btn btn-ghost btn-icon !min-h-6 !p-1 hover:!text-red-400"
                       title={t("actions.delete")}
                       aria-label={t("actions.delete")}
-                      onClick={() => window.confirm(t("confirmDelete")) && void act(() => api(`/api/community/messages/${m.id}`, { method: "DELETE" }))}
+                      onClick={() => void confirmDialog(t("confirmDelete"), { danger: true }).then((ok) => void (ok && act(() => api(`/api/community/messages/${m.id}`, { method: "DELETE" }))))}
                     >
                       <Trash2 size={12} />
                     </button>

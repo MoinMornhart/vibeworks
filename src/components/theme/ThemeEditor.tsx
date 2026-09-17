@@ -40,6 +40,7 @@ import { PROJECT_STATUSES } from "@/lib/status";
 import { api, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export interface UploadInfo {
   id: string;
@@ -152,7 +153,7 @@ export function ThemeEditor({ initialUploads }: { initialUploads: UploadInfo[] }
   }
 
   async function deleteUpload(id: string) {
-    if (!window.confirm(t("page.confirmDeleteImage"))) return;
+    if (!(await confirmDialog(t("page.confirmDeleteImage"), { danger: true }))) return;
     try {
       const res = await api<{ theme: Theme | null }>(`/api/uploads/${id}`, { method: "DELETE" });
       setUploads((u) => u.filter((x) => x.id !== id));

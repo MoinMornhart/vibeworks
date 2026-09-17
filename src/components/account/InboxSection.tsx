@@ -8,6 +8,7 @@ import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import type { InboxInfo } from "@/lib/inboxServer";
 import { AccountSection } from "./AccountManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 /** Ideen-Eingang: Einwurf-Adresse, ntfy-Thema, „Teilen“ vom Handy. */
 export function InboxSection({ initial }: { initial: InboxInfo }) {
@@ -33,7 +34,7 @@ export function InboxSection({ initial }: { initial: InboxInfo }) {
   }
 
   async function save(regenerate = false) {
-    if (regenerate && !window.confirm(t("settings.regenerateConfirm"))) return;
+    if (regenerate && !(await confirmDialog(t("settings.regenerateConfirm")))) return;
     setBusy(true);
     setNotice(null);
     setError(null);

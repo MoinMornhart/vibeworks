@@ -21,6 +21,8 @@ import { ShareDialog } from "@/components/share/ShareDialog";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import type { ProgressAnalysis } from "@/lib/progress";
 import { ProgressAnalysisView } from "./ProgressAnalysisView";
+import { confirmDialog } from "@/lib/client/dialogs";
+import { promptDialog } from "@/lib/client/dialogs";
 
 export function ProjectHeader({
   initial,
@@ -85,7 +87,7 @@ export function ProjectHeader({
   }
 
   async function saveTemplate() {
-    const name = window.prompt(td("templates.namePrompt"), p.name)?.trim();
+    const name = (await promptDialog(td("templates.namePrompt"), { defaultValue: p.name, maxLength: 80 }))?.trim();
     if (!name) return;
     setError(null);
     setNotice(null);
@@ -119,7 +121,7 @@ export function ProjectHeader({
   }
 
   async function leave() {
-    if (!window.confirm(t("header.confirmLeave", { name: p.name }))) return;
+    if (!(await confirmDialog(t("header.confirmLeave", { name: p.name }), { danger: true }))) return;
     try {
       await api(`/api/projects/${p.id}/members/me`, { method: "DELETE" });
       router.push("/");

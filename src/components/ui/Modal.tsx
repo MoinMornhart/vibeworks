@@ -47,8 +47,13 @@ export function Modal({
     }
 
     const onKey = (e: KeyboardEvent) => {
+      // Nur das oberste Fenster reagiert (z. B. eine Rückfrage über einem Dialog)
+      const stack = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (stack[stack.length - 1] !== node) return;
       if (e.key === "Escape") {
-        e.stopPropagation();
+        // Esc gehört diesem Fenster – Menüs und Paneele darunter bleiben offen (#109)
+        e.preventDefault();
+        e.stopImmediatePropagation();
         onCloseRef.current();
       } else if (e.key === "Tab") {
         const list = focusables();
@@ -63,11 +68,11 @@ export function Modal({
         }
       }
     };
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
@@ -84,7 +89,7 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 pb-3 pt-[max(1rem,6dvh)] sm:items-center sm:p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onCloseRef.current()}
     >
-      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" aria-hidden />
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" aria-hidden onMouseDown={() => onCloseRef.current()} />
       <div
         ref={ref}
         role="dialog"

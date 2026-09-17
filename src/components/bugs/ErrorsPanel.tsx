@@ -9,6 +9,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/Toaster";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type Filter = ErrorStatus | "all";
 type Snippet = "browser" | "node" | "electron" | "curl";
@@ -121,7 +122,7 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
   }
 
   async function remove(item: AppErrorItem) {
-    if (!window.confirm(t("confirmDelete"))) return;
+    if (!(await confirmDialog(t("confirmDelete"), { danger: true }))) return;
     const res = await run(() => api<{ ok: boolean }>(`/api/projects/${projectId}/errors/${item.id}`, { method: "DELETE" }));
     if (res) setData((d) => (d ? { ...d, errors: d.errors.filter((x) => x.id !== item.id) } : d));
   }
@@ -145,10 +146,10 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
                 <button type="button" className={cn("btn btn-sm", showSetup && "chip-active")} aria-expanded={showSetup} onClick={() => setShowSetup((s) => !s)}>
                   <KeyRound size={14} /> {t("setup")}
                 </button>
-                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => window.confirm(t("confirmRotate")) && void manage("rotate")}>
+                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void confirmDialog(t("confirmRotate"), { danger: true }).then((ok) => void (ok && manage("rotate")))}>
                   <RotateCcw size={14} /> {t("rotate")}
                 </button>
-                <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => window.confirm(t("confirmDisable")) && void manage("disable")}>
+                <button type="button" className="btn btn-sm hover:!text-red-400" disabled={busy} onClick={() => void confirmDialog(t("confirmDisable"), { danger: true }).then((ok) => void (ok && manage("disable")))}>
                   {t("disable")}
                 </button>
               </>

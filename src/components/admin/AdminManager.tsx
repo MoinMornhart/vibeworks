@@ -35,6 +35,7 @@ import { DiscordAdminSection } from "./DiscordAdminSection";
 import { InvitesSection } from "./InvitesSection";
 import { CommunityAdmin } from "./CommunityAdmin";
 import { RolesManager } from "@/components/roles/RolesManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 interface Settings {
   mode: "SINGLE" | "MULTI";
@@ -224,7 +225,7 @@ function UserRow({ user: u, isMe, onChange }: { user: AdminUser; isMe: boolean; 
   }
 
   async function remove() {
-    if (!window.confirm(t("users.confirmDelete", { name: u.username, n: u.projects }))) return;
+    if (!(await confirmDialog(t("users.confirmDelete", { name: u.username, n: u.projects }), { danger: true }))) return;
     setBusy(true);
     setError(null);
     try {

@@ -7,6 +7,7 @@ import { FormError } from "@/components/ui/FormError";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { fillPrompt, PLACEHOLDERS, type PromptItem } from "@/lib/prompts";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export type PromptProject = { id: string; name: string; repoUrl: string | null; liveUrl: string | null; summary: string | null };
 
@@ -66,7 +67,7 @@ export function PromptLibrary({ initial, projects }: { initial: PromptItem[]; pr
   }
 
   async function remove(p: PromptItem) {
-    if (!window.confirm(t("page.confirmDelete", { title: p.title }))) return;
+    if (!(await confirmDialog(t("page.confirmDelete", { title: p.title }), { danger: true }))) return;
     try {
       await api(`/api/prompts/${p.id}`, { method: "DELETE" });
       setPrompts((list) => list.filter((x) => x.id !== p.id));

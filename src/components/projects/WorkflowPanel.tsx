@@ -7,6 +7,7 @@ import { useFormat, useT } from "@/lib/i18n/client";
 import type { RunView, WorkflowPayload, WorkflowView } from "@/lib/aiWorkflows";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 /** Auftrag für die KI in die Zwischenablage. */
 export function CopyPrompt({ text, label }: { text: string; label?: string }) {
@@ -102,7 +103,7 @@ export function WorkflowItems<T extends WorkflowList>({
   }
 
   async function remove(w: WorkflowView) {
-    if (!window.confirm(t("confirmDelete", { title: w.title }))) return;
+    if (!(await confirmDialog(t("confirmDelete", { title: w.title }), { danger: true }))) return;
     try {
       onChange(await api<T>(`${base}/${w.key}`, { method: "DELETE" }));
       toast(t("form.deleted"));
@@ -212,7 +213,7 @@ export function WorkflowPanel({ projectId, projectName, canEdit, canRun }: { pro
   }, [projectId]);
 
   async function cancelRun(r: RunView) {
-    if (!window.confirm(t("runs.confirmCancel", { title: r.title }))) return;
+    if (!(await confirmDialog(t("runs.confirmCancel", { title: r.title })))) return;
     try {
       const res = await api<{ run: RunView }>(`/api/workflow-runs/${r.id}`, { method: "PATCH", body: { cancel: true } });
       setData((d) => (d ? { ...d, runs: d.runs.map((x) => (x.id === r.id ? res.run : x)) } : d));

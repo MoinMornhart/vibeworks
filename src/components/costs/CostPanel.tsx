@@ -9,6 +9,7 @@ import { useFormat, useLocale, useT } from "@/lib/i18n/client";
 import { costTotals, CURRENCIES, formatMoney, INTERVALS, nextRenewal, RENEWAL_WARN_DAYS, type CostInterval, type CostItem } from "@/lib/costs";
 import { diffDays } from "@/lib/taskDates";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type Form = { name: string; amount: string; currency: string; interval: CostInterval; renewsOn: string; note: string };
 const EMPTY: Form = { name: "", amount: "", currency: "EUR", interval: "MONTHLY", renewsOn: "", note: "" };
@@ -107,7 +108,7 @@ export function CostPanel({ projectId, initial, today, canEdit }: { projectId: s
   }
 
   async function remove(c: CostItem) {
-    if (!window.confirm(t("confirmDelete", { name: c.name }))) return;
+    if (!(await confirmDialog(t("confirmDelete", { name: c.name }), { danger: true }))) return;
     try {
       await api(`/api/costs/${c.id}`, { method: "DELETE" });
       setCosts((list) => list.filter((x) => x.id !== c.id));

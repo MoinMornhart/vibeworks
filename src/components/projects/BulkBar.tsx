@@ -5,6 +5,7 @@ import type { ProjectStatus } from "@/generated/prisma/client";
 import { CheckCheck, Minus, Plus, Star, StarOff, Tags, Trash2, X } from "lucide-react";
 import { PROJECT_STATUSES } from "@/lib/status";
 import { useT } from "@/lib/i18n/client";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 export type BulkAction =
   | { action: "status"; status: ProjectStatus }
@@ -82,7 +83,7 @@ export function BulkBar({
           className="btn btn-danger btn-sm"
           disabled={busy}
           onClick={() => {
-            if (window.confirm(t("bulk.confirmDelete", { n: count }))) void run({ action: "delete" });
+            void confirmDialog(t("bulk.confirmDelete", { n: count }), { danger: true }).then((ok) => void (ok && run({ action: "delete" })));
           }}
         >
           <Trash2 size={14} /> <span className="hidden sm:inline">{tc("delete")}</span>

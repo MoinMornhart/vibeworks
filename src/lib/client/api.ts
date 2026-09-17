@@ -1,5 +1,6 @@
 import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/config";
 import { makeT } from "@/lib/i18n/messages";
+import { confirmDialog } from "./dialogs";
 
 // Kleiner Fetch-Helfer für Client-Komponenten: JSON rein, JSON raus,
 // verständliche Fehler mit Feldfehlern.
@@ -45,7 +46,7 @@ export async function withProtectConfirm<T>(send: (confirmed: boolean) => Promis
     return await send(false);
   } catch (err) {
     if (!(err instanceof ApiClientError && err.status === 409 && err.fieldErrors.confirm)) throw err;
-    if (!window.confirm(err.message)) return null;
+    if (!(await confirmDialog(err.message))) return null;
     return send(true);
   }
 }

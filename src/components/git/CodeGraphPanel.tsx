@@ -560,7 +560,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                     <button
                       type="button"
                       className="btn btn-sm hover:!text-red-400"
-                      onClick={() => void memoAction(`/api/projects/${projectId}/memos/${selectedMemo.id}`, { method: "DELETE" }).then((ok) => ok && setSelected(selectedMemo.file))}
+                      onClick={() => void memoAction(`/api/projects/${projectId}/memos/${selectedMemo.id}`, { method: "DELETE" }).then((ok) => void (ok && setSelected(selectedMemo.file)))}
                     >
                       <Trash2 size={13} /> {t("memoDelete")}
                     </button>
@@ -614,7 +614,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                           className="mt-2 space-y-1"
                           onSubmit={(e) => {
                             e.preventDefault();
-                            void memoAction(`/api/projects/${projectId}/memos`, { body: { file: detail.node.id, text: memoText } }).then((ok) => ok && setMemoText(""));
+                            void memoAction(`/api/projects/${projectId}/memos`, { body: { file: detail.node.id, text: memoText } }).then((ok) => void (ok && setMemoText("")));
                           }}
                         >
                           <textarea className="field min-h-16 text-xs" maxLength={2000} placeholder={t("memoPlaceholder")} value={memoText} onChange={(e) => setMemoText(e.target.value)} data-testid="code-graph-memo-input" />

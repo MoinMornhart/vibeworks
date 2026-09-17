@@ -10,6 +10,7 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { roleName } from "@/components/roles/roleName";
 import { RolesManager } from "@/components/roles/RolesManager";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type RoleOption = ShareState["roles"][number];
 
@@ -110,13 +111,13 @@ export function ShareDialog({
   const setLink = (link: "on" | "off" | "renew") => run(() => api(`/api/projects/${projectId}/share`, { method: "PUT", body: { link } }));
   const setMemberRole = (userId: string, roleId: string) => run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "PATCH", body: { roleId } }));
   const removeMember = (userId: string, name: string) => {
-    if (window.confirm(t("dialog.confirmRemove", { name }))) void run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "DELETE" }));
+    void confirmDialog(t("dialog.confirmRemove", { name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/projects/${projectId}/members/${userId}`, { method: "DELETE" }))));
   };
   const decide = (id: string, decision: "approve" | "deny", roleId?: string) =>
     run(() => api(`/api/projects/${projectId}/requests/${id}`, { method: "PATCH", body: { decision, ...(roleId ? { roleId } : {}) } }));
   const setTeamShareRole = (teamId: string, roleId: string) => run(() => api(`/api/projects/${projectId}/teams/${teamId}`, { method: "PATCH", body: { roleId } }));
   const removeTeam = (teamId: string, name: string) => {
-    if (window.confirm(t("dialog.confirmRemoveTeam", { name }))) void run(() => api(`/api/projects/${projectId}/teams/${teamId}`, { method: "DELETE" }));
+    void confirmDialog(t("dialog.confirmRemoveTeam", { name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/projects/${projectId}/teams/${teamId}`, { method: "DELETE" }))));
   };
 
   async function addTeam(e: React.FormEvent) {

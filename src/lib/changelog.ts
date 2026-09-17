@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.9",
+    date: "2026-09-17",
+    title: "Bessere Suche, eigene Rückfragen, aufräumbare Glocke",
+    titleEn: "Better search, own dialogs, tidier bell",
+    changes: [
+      {
+        type: "fix",
+        text: "Suche: Esc schließt die Schnellsuche immer – auch wenn der Fokus auf einem Treffer liegt; ein Klick daneben ebenso. Gefunden wird jetzt auch in geteilten und Team-Projekten, mitten im Wort („hook“ findet „Webhook“) und unabhängig von Reihenfolge, Groß- und Kleinschreibung. Ein Aufgaben-Treffer springt direkt zur Aufgabe",
+        en: "Search: Esc always closes the quick search – even when a result has the focus; so does a click next to it. It now also finds things in shared and team projects, inside words (“hook” finds “Webhook”) and regardless of order and letter case. A task result jumps straight to the task",
+      },
+      {
+        type: "besser",
+        text: "Keine Browser-Popups mehr: Rückfragen und Eingaben laufen in VibeWorks-Fenstern – mit rotem Knopf, wo etwas gelöscht wird",
+        en: "No more browser pop-ups: confirmations and inputs use VibeWorks dialogs – with a red button where something gets deleted",
+      },
+      {
+        type: "neu",
+        text: "Ungespeicherte Eingaben: Beim Schließen fragt VibeWorks, ob der Text als Entwurf bleiben oder verworfen werden soll – beim Bearbeiten warnt es vor dem Verwerfen",
+        en: "Unsaved input: when closing, VibeWorks asks whether to keep the text as a draft or discard it – when editing it warns before discarding",
+      },
+      {
+        type: "neu",
+        text: "Glocke: mehrere Meldungen auswählen (auch alle), zusammen als gelesen markieren oder löschen, dazu ein Mülleimer für alle",
+        en: "Bell: select several notifications (or all), mark them read or delete them together, plus a bin for all of them",
+      },
+    ],
+  },
+  {
     version: "1.2.8",
     date: "2026-09-17",
     title: "Lighthouse-Check der Live-Seite",

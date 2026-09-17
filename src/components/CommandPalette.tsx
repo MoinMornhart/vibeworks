@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter } from "next/navigation";
 import { BookOpen, FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shield, StickyNote, UserRound } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
-import type { SearchResult } from "@/lib/search";
+import { matchesAll, type SearchResult } from "@/lib/search";
 import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
@@ -34,6 +34,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -57,6 +58,37 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
       window.removeEventListener(OPEN_PALETTE_EVENT, onOpen);
     };
   }, []);
+
+  // Esc schließt immer – auch wenn der Fokus auf einem Treffer oder außerhalb liegt (#109).
+  // Tab bleibt in der Palette, der Fokus kehrt danach zurück.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      } else if (e.key === "Tab") {
+        const list = Array.from(boxRef.current?.querySelectorAll<HTMLElement>("input,button") ?? []);
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || !boxRef.current?.contains(document.activeElement))) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      previous?.focus?.();
+    };
+  }, [open, close]);
 
   useEffect(() => {
     if (!open) return;
@@ -88,10 +120,11 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
   }, [query, open]);
 
   const items = useMemo<Item[]>(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const list: Item[] = [];
+    // Alle Wörter müssen vorkommen – Reihenfolge, Groß/klein und Akzente egal (#109)
     const matching = (projects ?? [])
-      .filter((p) => !q || [p.name, p.summary ?? "", ...p.tags].some((s) => s.toLowerCase().includes(q)))
+      .filter((p) => !q || matchesAll(q, [p.name, p.summary ?? "", ...p.tags]))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, q ? 8 : 5);
     for (const p of matching) {
@@ -121,7 +154,8 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
         label: <>{t.title} · <span className="text-muted">{t.projectName}</span></>,
         hint: <Highlight text={t.snippet} />,
         icon: <ListChecks size={16} />,
-        href: `/projects/${t.projectId}`,
+        // Direkt zur Aufgabe: das Brett öffnet ihre Infos (#109)
+        href: `/projects/${t.projectId}?aufgabe=${encodeURIComponent(t.id)}#tasks`,
       });
     }
     for (const d of result?.docs ?? []) {
@@ -143,7 +177,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
       { label: tr("nav.design"), href: "/design", icon: <Palette size={16} /> },
       { label: tr("nav.account"), href: "/account", icon: <UserRound size={16} /> },
       ...(isAdmin ? [{ label: tr("nav.administration"), href: "/admin", icon: <Shield size={16} /> }] : []),
-    ].filter((a) => !q || a.label.toLowerCase().includes(q));
+    ].filter((a) => !q || matchesAll(q, [a.label]));
     for (const a of areas) list.push({ key: `a-${a.href}`, group: tr("palette.groups.areas"), ...a });
     return list;
   }, [projects, result, query, isAdmin, tr]);
@@ -169,9 +203,6 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
     } else if (e.key === "Enter") {
       e.preventDefault();
       go(items[active]);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      close();
     }
   }
 
@@ -180,8 +211,9 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
   let lastGroup = "";
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center px-3 pt-[10vh]" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden />
-      <div role="dialog" aria-modal="true" aria-label={tr("palette.label")} className="glass-strong fade-in relative flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden">
+      {/* Klick auf den Hintergrund schließt – er liegt über dem äußeren Rahmen (#109) */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden onMouseDown={close} />
+      <div ref={boxRef} role="dialog" aria-modal="true" aria-label={tr("palette.label")} className="glass-strong fade-in relative flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden">
         <div className="flex items-center gap-3 border-b px-4">
           <Search size={18} className="shrink-0 text-muted" />
           <input

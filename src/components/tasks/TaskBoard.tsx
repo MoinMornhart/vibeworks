@@ -17,6 +17,7 @@ import { TaskInfoPanel, WorkClock } from "./TaskInfoPanel";
 import { BoardSettings } from "./BoardSettings";
 import { toast } from "@/components/ui/Toaster";
 import { baseOf, columnKeyOf, DEFAULT_BOARD, isExtraKey, type BoardConfig } from "@/lib/boardConfig";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 const COLUMN_COLOR: Record<TaskStatus, string> = {
   TODO: "var(--vw-muted)",
@@ -310,7 +311,7 @@ export function TaskBoard({
 
   const [clearing, setClearing] = useState(false);
   async function clearDone() {
-    if (!window.confirm(t("board.clearDoneConfirm", { n: done }))) return;
+    if (!(await confirmDialog(t("board.clearDoneConfirm", { n: done }), { danger: true }))) return;
     setClearing(true);
     try {
       const res = await api<{ deleted: number; ids: string[] }>(`/api/projects/${projectId}/tasks?status=DONE`, { method: "DELETE" });
@@ -328,9 +329,21 @@ export function TaskBoard({
   const toggle = (t: TaskItem) => void patch(t, { status: t.status === "DONE" ? "TODO" : "DONE" }).catch((e) => setError(errorMessage(e)));
   const open = (t: TaskItem) => setDialog({ task: t, status: t.status });
   const [infoFor, setInfoFor] = useState<TaskItem | null>(null);
+  // Sprung aus der Suche (#109): ?aufgabe=<id> öffnet die Infos der Aufgabe
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("aufgabe");
+    const hit = id ? tasks.find((x) => x.id === id) : undefined;
+    if (!hit) return;
+    setInfoFor(hit);
+    document.getElementById("tasks")?.scrollIntoView({ block: "start" });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("aufgabe");
+    window.history.replaceState(window.history.state, "", url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen der Seite
+  }, []);
 
   return (
-    <section className="glass p-6 sm:p-8" aria-labelledby="tasks-heading">
+    <section id="tasks" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="tasks-heading">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 id="tasks-heading" className="flex items-center gap-2 text-lg font-semibold">

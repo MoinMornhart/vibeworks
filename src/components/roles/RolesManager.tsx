@@ -9,6 +9,7 @@ import { FormError } from "@/components/ui/FormError";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { permKey, roleDescription, roleName } from "./roleName";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type Mode = "own" | "admin";
 interface Draft {
@@ -198,7 +199,7 @@ export function RolesManager({
                       type="button"
                       className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
                       disabled={busy}
-                      onClick={() => window.confirm(t("confirmDelete", { name: r.name })) && void run(() => api(`/api/roles/${r.id}`, { method: "DELETE" }))}
+                      onClick={() => void confirmDialog(t("confirmDelete", { name: r.name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/roles/${r.id}`, { method: "DELETE" }))))}
                       aria-label={t("delete")}
                       title={t("delete")}
                     >

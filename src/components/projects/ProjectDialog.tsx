@@ -10,10 +10,11 @@ import type { ProjectListItem } from "@/lib/projects";
 import { PRIORITIES, PROJECT_ACCENTS, PROJECT_STATUSES } from "@/lib/status";
 import { api, ApiClientError, errorMessage, withProtectConfirm } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
-import { useDraft } from "@/lib/client/draft";
+import { useDraft, useLeaveGuard } from "@/lib/client/draft";
 import { DraftNote } from "@/components/ui/DraftNote";
 import { cn } from "@/lib/utils";
 import type { TemplateView } from "@/lib/templateData";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 type TemplateList = { builtin: TemplateView[]; own: TemplateView[] };
 
@@ -103,7 +104,13 @@ export function ProjectDialog({
     }
   }, [open, project]);
 
-  const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
+  // Beim Bearbeiten: wurde etwas geändert? (für die Rückfrage beim Schließen, #109)
+  const [touched, setTouched] = useState(false);
+  useEffect(() => setTouched(false), [open, project]);
+  const set = <K extends keyof Form>(key: K, value: Form[K]) => {
+    setTouched(true);
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   // Neues Projekt: Texte als Entwurf merken
   const draft = useDraft(
@@ -116,6 +123,10 @@ export function ProjectDialog({
     draft.discard();
     setForm(toForm(null));
   };
+  // Ungespeichertes: beim Schließen nachfragen (#109)
+  const dirty = open && (project ? touched : Boolean(form.name.trim() || form.summary.trim() || form.description.trim()));
+  const guard = useLeaveGuard({ dirty: dirty && !busy, draftable: !project, onDiscard: () => draft.discard() });
+  const requestClose = () => void guard(onClose);
 
   /** Vorlage wählen: füllt Texte nur, wo nichts Eigenes steht; Farbe, Priorität und Fortschrittsart kommen immer mit. */
   function chooseTemplate(tp: TemplateView | null) {
@@ -136,7 +147,7 @@ export function ProjectDialog({
   }
 
   async function deleteTemplate(tp: TemplateView) {
-    if (!window.confirm(td("templates.confirmDelete", { name: tp.name }))) return;
+    if (!(await confirmDialog(td("templates.confirmDelete", { name: tp.name }), { danger: true }))) return;
     try {
       setTemplates(await api<TemplateList>(`/api/templates/${tp.id}`, { method: "DELETE" }));
       if (templateId === tp.id) chooseTemplate(null);
@@ -172,7 +183,7 @@ export function ProjectDialog({
   }
 
   async function remove() {
-    if (!project || !window.confirm(t("dialog.confirmDelete", { name: project.name }))) return;
+    if (!project || !(await confirmDialog(t("dialog.confirmDelete", { name: project.name }), { danger: true }))) return;
     setBusy(true);
     try {
       await api(`/api/projects/${project.id}`, { method: "DELETE" });
@@ -188,7 +199,7 @@ export function ProjectDialog({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       title={editing ? t("dialog.titleEdit") : t("dialog.titleNew")}
       size="lg"
       footer={
@@ -209,7 +220,7 @@ export function ProjectDialog({
               <Trash2 size={14} /> {tc("delete")}
             </button>
           )}
-          <button type="button" className="btn btn-sm" onClick={onClose}>{tc("cancel")}</button>
+          <button type="button" className="btn btn-sm" onClick={requestClose}>{tc("cancel")}</button>
           <button type="submit" form="project-form" className="btn btn-primary btn-sm" disabled={busy}>
             <Save size={14} /> {busy ? tc("saving") : editing ? tc("save") : tc("create")}
           </button>

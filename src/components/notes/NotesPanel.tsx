@@ -8,8 +8,9 @@ import type { NoteItem } from "@/lib/notes";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
-import { discardDraft, useDraft } from "@/lib/client/draft";
+import { discardDraft, useDraft, useLeaveGuard } from "@/lib/client/draft";
 import { DraftNote } from "@/components/ui/DraftNote";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 function sortNotes(list: NoteItem[]): NoteItem[] {
   return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
@@ -45,6 +46,9 @@ function NoteEditor({
   );
 
   const save = () => content.trim() && onSave(title, content);
+  // Abbrechen mit Ungespeichertem: nachfragen (#109)
+  const dirty = draftKey ? Boolean(title.trim() || content.trim()) : title !== (initial?.title ?? "") || content !== (initial?.content ?? "");
+  const guard = useLeaveGuard({ dirty: dirty && !busy, draftable: Boolean(draftKey), onDiscard: () => draft.discard() });
 
   return (
     <div className="space-y-3">
@@ -94,7 +98,7 @@ function NoteEditor({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted">{t("editor.hint")}</span>
         <div className="flex gap-2">
-          <button type="button" className="btn btn-sm" onClick={onCancel}><X size={14} /> {tc("cancel")}</button>
+          <button type="button" className="btn btn-sm" onClick={() => void guard(onCancel)}><X size={14} /> {tc("cancel")}</button>
           <button type="button" className="btn btn-primary btn-sm" onClick={save} disabled={busy || !content.trim()}>
             <Save size={14} /> {busy ? tc("saving") : tc("save")}
           </button>
@@ -146,7 +150,7 @@ export function NotesPanel({ projectId, initial, readOnly = false }: { projectId
   }
 
   async function remove(n: NoteItem) {
-    if (!window.confirm(t("panel.confirmDelete"))) return;
+    if (!(await confirmDialog(t("panel.confirmDelete"), { danger: true }))) return;
     setError(null);
     try {
       await api(`/api/notes/${n.id}`, { method: "DELETE" });

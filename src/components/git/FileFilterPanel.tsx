@@ -8,6 +8,7 @@ import { PROTECTED_PRESETS, TRASH_PRESETS, type FilterKind, type FilterRule } fr
 import type { FilterView } from "@/lib/git/fileFilter";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/lib/client/dialogs";
 
 /** Dateifilter (#92): Müll erkennen und per Pull Request entfernen, wichtige Dateien schützen, Pull Requests prüfen. */
 export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: string; canEdit: boolean; webUrl: string }) {
@@ -58,7 +59,7 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
     });
 
   async function cleanup() {
-    if (!view?.scan || !picked.size || !window.confirm(t("filter.confirmCleanup", { n: picked.size }))) return;
+    if (!view?.scan || !picked.size || !(await confirmDialog(t("filter.confirmCleanup", { n: picked.size }), { danger: true }))) return;
     const patterns = view.scan.suggestions.filter((s) => picked.has(s.file)).map((s) => s.pattern);
     const res = await run(api<{ view: FilterView; pr: { url: string; number: number } }>(`/api/projects/${projectId}/file-filter`, { body: { action: "cleanup", files: [...picked], patterns } }));
     if (res) toast(t("filter.prCreated", { n: res.pr.number }));
@@ -217,7 +218,7 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
                             type="button"
                             className="btn btn-sm ml-auto"
                             disabled={busy}
-                            onClick={() => window.confirm(t("filter.confirmAllow", { n: pr.number })) && void run(api<{ view: FilterView }>(`/api/projects/${projectId}/file-filter`, { body: { action: "allow", pr: pr.number, sha: pr.sha } }))}
+                            onClick={() => void confirmDialog(t("filter.confirmAllow", { n: pr.number })).then((ok) => void (ok && run(api<{ view: FilterView }>(`/api/projects/${projectId}/file-filter`, { body: { action: "allow", pr: pr.number, sha: pr.sha } }))))}
                           >
                             {t("filter.allow")}
                           </button>

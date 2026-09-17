@@ -10,6 +10,8 @@ import { FormError } from "@/components/ui/FormError";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { roleName } from "@/components/roles/roleName";
 import { RolesManager } from "@/components/roles/RolesManager";
+import { confirmDialog } from "@/lib/client/dialogs";
+import { promptDialog } from "@/lib/client/dialogs";
 
 type Team = TeamsOverview["teams"][number];
 
@@ -54,8 +56,8 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
 
   const respond = (id: string, action: "accept" | "decline") => run(() => api(`/api/teams/invites/${id}`, { body: { action } }));
 
-  function rename(team: Team) {
-    const next = window.prompt(t("renamePrompt"), team.name)?.trim();
+  async function rename(team: Team) {
+    const next = (await promptDialog(t("renamePrompt"), { defaultValue: team.name, maxLength: 60 }))?.trim();
     if (next && next !== team.name) void run(() => api(`/api/teams/${team.id}`, { method: "PATCH", body: { name: next } }));
   }
 
@@ -132,7 +134,7 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
                 </h2>
                 <span className="chip !py-0.5 text-[11px]">{roleLabel(team, team.myRole, "")}</span>
                 {team.can.manage && (
-                  <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={busy} onClick={() => rename(team)} aria-label={t("rename")} title={t("rename")}>
+                  <button type="button" className="btn btn-ghost btn-icon btn-sm" disabled={busy} onClick={() => void rename(team)} aria-label={t("rename")} title={t("rename")}>
                     <Pencil size={14} />
                   </button>
                 )}
@@ -140,7 +142,7 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
                   type="button"
                   className="btn btn-ghost btn-icon btn-sm"
                   disabled={busy}
-                  onClick={() => window.confirm(t("confirmLeave", { team: team.name })) && void run(() => api(`/api/teams/${team.id}/members/me`, { method: "DELETE" }))}
+                  onClick={() => void confirmDialog(t("confirmLeave", { team: team.name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/teams/${team.id}/members/me`, { method: "DELETE" }))))}
                   aria-label={t("leave")}
                   title={t("leave")}
                 >
@@ -151,7 +153,7 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
                     type="button"
                     className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
                     disabled={busy}
-                    onClick={() => window.confirm(t("confirmDelete", { team: team.name })) && void run(() => api(`/api/teams/${team.id}`, { method: "DELETE" }))}
+                    onClick={() => void confirmDialog(t("confirmDelete", { team: team.name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/teams/${team.id}`, { method: "DELETE" }))))}
                     aria-label={t("delete")}
                     title={t("delete")}
                   >
@@ -194,7 +196,7 @@ export function TeamsManager({ initial, meId }: { initial: TeamsOverview; meId: 
                           type="button"
                           className="btn btn-ghost btn-icon btn-sm hover:!text-red-400"
                           disabled={busy}
-                          onClick={() => window.confirm(t("confirmRemove", { name: m.name })) && void run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "DELETE" }))}
+                          onClick={() => void confirmDialog(t("confirmRemove", { name: m.name }), { danger: true }).then((ok) => void (ok && run(() => api(`/api/teams/${team.id}/members/${m.userId}`, { method: "DELETE" }))))}
                           aria-label={t("removeName", { name: m.name })}
                           title={t("remove")}
                         >

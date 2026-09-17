@@ -25,6 +25,22 @@ export const GET = route(async (req) => {
   });
 });
 
+// Mehrere auf einmal (#109): ausgewählte gelesen/ungelesen/löschen oder alle löschen
+const bulkSchema = z.union([
+  z.object({ action: z.enum(["read", "unread", "delete"]), ids: z.array(z.string().min(1).max(40)).min(1).max(500) }),
+  z.object({ action: z.literal("deleteAll") }),
+]);
+
+export const POST = route(async (req) => {
+  const user = await requireApiUser();
+  const body = await readBody(req, bulkSchema, { maxBytes: 32_000 });
+  const mine = body.action === "deleteAll" ? { userId: user.id } : { userId: user.id, id: { in: body.ids } };
+  let count = 0;
+  if (body.action === "delete" || body.action === "deleteAll") ({ count } = await db.notification.deleteMany({ where: mine }));
+  else ({ count } = await db.notification.updateMany({ where: mine, data: { readAt: body.action === "read" ? new Date() : null } }));
+  return json({ ...(await bellState(user.id)), count });
+});
+
 // Alle als gelesen markieren
 export const PATCH = route(async (req) => {
   const user = await requireApiUser();
