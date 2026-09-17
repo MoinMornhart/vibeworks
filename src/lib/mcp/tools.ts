@@ -33,6 +33,9 @@ import { config } from "@/lib/config";
 import type { PromptProvider, ResourceProvider, ToolDef } from "./protocol";
 import type { Locale } from "@/lib/i18n/config";
 import { claudeMdFor } from "@/lib/claudeMdServer";
+import { AGENT_FILES, AGENT_TARGETS, agentFile } from "@/lib/agentFileLogic";
+import { ciStatus, ciView, publishCi, runCi, saveCi } from "@/lib/git/ciPipeline";
+import { STEP_KINDS } from "@/lib/git/ciPipelineLogic";
 import { boardColumns, columnNameOf, DEFAULT_BOARD, normalizeBoard, resolveColumnInput, type BoardConfig } from "@/lib/boardConfig";
 import { aiProjectTaskFilter, aiTaskFilter, taskIsAiLocked } from "@/lib/aiLock";
 
@@ -577,12 +580,31 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     name: "get_claude_md",
     title: "Get CLAUDE.md",
     description:
-      "A ready-made CLAUDE.md for a project: description, status, open tasks, pinned notes and the VibeWorks workflow. Useful as project context or to write it into the repository.",
+      "A ready-made CLAUDE.md for a project: description, status, open tasks, pinned notes and the VibeWorks workflow. Useful as project context or to write it into the repository. For other AI tools (AGENTS.md, GEMINI.md, Copilot, Cursor …) use get_agent_file.",
     inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
     annotations: { readOnlyHint: true },
     run: async (args, { userId, locale }) => {
       const { project } = await resolveProject(userId, ref.parse(args.project));
       return claudeMdFor(project, locale);
+    },
+  },
+  {
+    name: "get_agent_file",
+    title: "Get AI instruction file",
+    description:
+      "The project's AI instruction file for the tool you work with – not every AI reads CLAUDE.md. target: claude (CLAUDE.md), agents (AGENTS.md – Codex, Cline, Jules, OpenCode, Zed, Aider), gemini (GEMINI.md), copilot (.github/copilot-instructions.md), cursor (.cursor/rules/vibeworks.mdc), windsurf (.windsurf/rules/vibeworks.md), cline (.clinerules/vibeworks.md). Returns the path and the content with the header that tool expects.",
+    inputSchema: {
+      type: "object",
+      properties: { project: S.project, target: { type: "string", enum: AGENT_TARGETS, description: "Which AI tool – default agents (AGENTS.md)" } },
+      required: ["project"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId, locale }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const target = args.target === undefined ? "agents" : z.enum(AGENT_TARGETS).parse(args.target);
+      const file = agentFile(target, await claudeMdFor(project, locale), project.summary || project.name);
+      return { ...file, readBy: AGENT_FILES[target].tools, otherTargets: AGENT_TARGETS.filter((t) => t !== target) };
     },
   },
   {
@@ -925,6 +947,56 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
     },
   },
   {
+    name: "get_ci",
+    title: "Get CI pipeline",
+    description:
+      "The project's CI pipeline from the VibeWorks CI designer (GitHub only): triggers, blocks in order, whether it is saved and written to the repository, the generated workflow YAML and the state of every block in the latest run (idle, queued, running, success, failure, skipped).",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project));
+      const [view, status] = await Promise.all([ciView(project.id), ciStatus(project.id)]);
+      return {
+        ...view,
+        latestRun: status.run,
+        blocks: view.pipeline.steps.map((s) => ({ id: s.id, name: s.name, kind: s.kind, when: s.when, state: status.nodes[s.id] ?? "idle" })),
+        ...(status.error ? { statusError: status.error } : {}),
+      };
+    },
+  },
+  {
+    name: "save_ci",
+    title: "Save CI pipeline",
+    description: `Save the project's CI pipeline and optionally write it to the repository (publish: true). pipeline = { triggers: { push: [branch globs], pullRequest, schedule: cron or null, manual }, steps: [{ id (4–16 lowercase letters/digits), kind: ${STEP_KINDS.join(" | ")}, name (unique), when: success | always | failure | main, script (npm-script), version, run (custom bash – \${{ }} expressions are not allowed), continueOnError }], timeoutMinutes }. Read get_ci first and change only what the user asked for.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        project: S.project,
+        pipeline: { type: "object", description: "The full pipeline as returned by get_ci → pipeline" },
+        publish: { type: "boolean", description: "Also write .github/workflows/vibeworks-ci.yml to the repository" },
+      },
+      required: ["project", "pipeline"],
+      additionalProperties: false,
+    },
+    run: async (args, ctx) => {
+      const { project } = await resolveProject(ctx.userId, ref.parse(args.project), "ci.manage");
+      await saveCi(project.id, args.pipeline);
+      const published = args.publish === true ? await publishCi(project.id, await aiName(ctx)) : null;
+      return { saved: true, published, url: link(`/projects/${project.id}#ci`) };
+    },
+  },
+  {
+    name: "run_ci",
+    title: "Start CI",
+    description: "Start the project's CI pipeline now (it must be written to the repository and allow manual starts). Check the result afterwards with get_ci – the run appears after a few seconds.",
+    inputSchema: { type: "object", properties: { project: S.project }, required: ["project"], additionalProperties: false },
+    run: async (args, { userId }) => {
+      const { project } = await resolveProject(userId, ref.parse(args.project), "ci.manage");
+      await runCi(project.id);
+      return { started: true, url: link(`/projects/${project.id}#ci`) };
+    },
+  },
+  {
     name: "list_errors",
     title: "List app errors",
     description:
@@ -1257,7 +1329,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       additionalProperties: false,
     },
     run: async (args, ctx) => {
-      const { project } = await resolveProject(ctx.userId, ref.parse(args.project), "project.edit");
+      const { project } = await resolveProject(ctx.userId, ref.parse(args.project), "workflows.manage");
       const key = args.workflow === undefined ? undefined : z.string().trim().min(1).max(80).parse(args.workflow);
       if (args.delete === true) {
         if (!key) throw new ApiError(400, "workflow is required to delete.");

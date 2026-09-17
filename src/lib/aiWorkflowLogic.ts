@@ -36,8 +36,8 @@ const VERIFY = step(
   { title: "Prüfen: Typprüfung, Tests und Build ausführen und die Änderung wirklich ausprobieren", check: "Alle Befehle grün, Ergebnis selbst gesehen – die wichtigste Ausgabe als Beleg angeben" },
 );
 const DOCS = step(
-  { title: "Update the docs: project structure table (update_project_structure), README/CLAUDE.md if behaviour changed, memos for pitfalls", check: "get_project_structure matches the code; nothing you changed is undocumented" },
-  { title: "Doku nachziehen: Projektaufbau (update_project_structure), README/CLAUDE.md bei geändertem Verhalten, Memos zu Stolperstellen", check: "get_project_structure passt zum Code; nichts Geändertes ist undokumentiert" },
+  { title: "Update the docs: project structure table (update_project_structure), README and the AI instruction file your tools read (CLAUDE.md, AGENTS.md, GEMINI.md …) if behaviour changed, memos for pitfalls", check: "get_project_structure matches the code; nothing you changed is undocumented" },
+  { title: "Doku nachziehen: Projektaufbau (update_project_structure), README und die KI-Anleitung, die eure Werkzeuge lesen (CLAUDE.md, AGENTS.md, GEMINI.md …), bei geändertem Verhalten, Memos zu Stolperstellen", check: "get_project_structure passt zum Code; nichts Geändertes ist undokumentiert" },
 );
 const FINAL = step(
   { title: "Final review: re-read the original request and compare it with what you did, then set the task DONE with a short summary", check: "Every point of the request is covered, nothing is invented or left half-done, open questions are written down" },

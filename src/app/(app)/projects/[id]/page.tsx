@@ -37,6 +37,7 @@ import { projectPeople } from "@/lib/projectPeople";
 import { StructurePanel } from "@/components/projects/StructurePanel";
 import { WorkflowPanel } from "@/components/projects/WorkflowPanel";
 import { ProjectKeysPanel } from "@/components/projects/ProjectKeysPanel";
+import { CiPanel } from "@/components/git/CiPanel";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -150,7 +151,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />
       <StructurePanel projectId={project.id} projectName={project.name} canEdit={can("notes.edit")} />
-      <WorkflowPanel projectId={project.id} projectName={project.name} canEdit={can("project.edit")} canRun={can("tasks.edit")} />
+      <WorkflowPanel projectId={project.id} projectName={project.name} canEdit={can("workflows.manage")} canRun={can("tasks.edit")} />
       {isOwner && <ProjectKeysPanel projectId={project.id} />}
       <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />
       <GitPanel
@@ -182,6 +183,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         />
       )}
       {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
+      {project.repoUrl && repoCache?.provider === "github" && <CiPanel projectId={project.id} canEdit={can("ci.manage")} />}
       {project.repoUrl && repoCache?.provider === "github" && <ConflictPanel projectId={project.id} canEdit={isOwner} />}
       {project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
       {project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}

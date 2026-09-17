@@ -8,7 +8,7 @@ import { appLink, notifyUser } from "@/lib/notify";
 // Projekt-Schlüssel (#106) mit Datenbank: wer welche Projekte freigeben darf,
 // Besitzer benachrichtigen, Zugriff widerrufen.
 
-/** Freigeben darf der Besitzer und wer Mitglieder einladen darf (z. B. Team-Admins). */
+/** Freigeben darf der Besitzer und wer das Recht „Projekt-Schlüssel freigeben“ hat (#107). */
 export async function grantableProjects(userId: string) {
   const rows = await db.project.findMany({
     where: { ...visibleTo(userId), buriedAt: null, status: { not: "ARCHIVED" } },
@@ -17,7 +17,7 @@ export async function grantableProjects(userId: string) {
     take: 500,
   });
   return rows
-    .filter((p) => p.ownerId === userId || permsFromGrants(p.ownerId, userId, p).has("members.invite"))
+    .filter((p) => p.ownerId === userId || permsFromGrants(p.ownerId, userId, p).has("keys.grant"))
     .map((p) => ({ id: p.id, name: p.name, own: p.ownerId === userId, owner: displayNameOf(p.owner) }));
 }
 
@@ -26,7 +26,7 @@ export async function checkGrantable(userId: string, ids: string[]) {
   for (const id of new Set(ids)) {
     const res = await accessOf(userId, id);
     if (!res) throw new ApiError(404, tk("projects", "errors.notFound"));
-    if (res.access !== "OWNER" && !res.perms.has("members.invite")) throw new ApiError(403, tk("mcp", "projectKey.notAllowed", { name: res.project.name }));
+    if (res.access !== "OWNER" && !res.perms.has("keys.grant")) throw new ApiError(403, tk("mcp", "projectKey.notAllowed", { name: res.project.name }));
     projects.push(res.project);
   }
   return projects;

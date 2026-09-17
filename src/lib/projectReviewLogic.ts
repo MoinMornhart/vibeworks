@@ -1,3 +1,5 @@
+import { agentFilesIn } from "./agentFileLogic";
+
 // Projekte prüfen (#100): Ist die Dokumentation vollständig, und was ist noch
 // offen? Reine Bewertung – die Daten sammelt das MCP-Werkzeug review_projects.
 
@@ -42,7 +44,6 @@ export interface ProjectReview {
 }
 
 const STALE_MS = 14 * 24 * 60 * 60_000;
-const hasFile = (files: string[], name: string) => files.some((f) => f.toLowerCase() === name.toLowerCase() || f.toLowerCase().endsWith(`/${name.toLowerCase()}`));
 
 export function reviewProject(p: ProjectFacts, now = Date.now()): ProjectReview {
   const findings: ReviewFinding[] = [];
@@ -52,7 +53,7 @@ export function reviewProject(p: ProjectFacts, now = Date.now()): ProjectReview 
   if (p.notes === 0) findings.push("noNotes");
   if (p.repoFiles) {
     if (!p.repoFiles.some((f) => /^readme(\.\w+)?$/i.test(f))) findings.push("noReadme");
-    if (!hasFile(p.repoFiles, "CLAUDE.md") && !hasFile(p.repoFiles, "AGENTS.md")) findings.push("noClaudeMd");
+    if (!agentFilesIn(p.repoFiles).length) findings.push("noClaudeMd");
   }
   if (p.hasRepo && p.structureRows === 0) findings.push("noStructure");
   if (p.structureMissing) findings.push("structureOutdated");
@@ -95,7 +96,7 @@ export const FINDING_HINTS: Record<ReviewFinding, string> = {
   shortDescription: "The description is very short – explain goal, stack and status (update_project).",
   noNotes: "No notes yet – document decisions, setup or links as a note (create_note).",
   noReadme: "The repository has no README.",
-  noClaudeMd: "The repository has no CLAUDE.md/AGENTS.md – get_claude_md returns a template.",
+  noClaudeMd: "The repository has no AI instruction file (CLAUDE.md, AGENTS.md, GEMINI.md, .github/copilot-instructions.md, Cursor/Windsurf/Cline rules) – get_agent_file returns one for the AI you use.",
   noStructure: "The project structure table is empty – run the \"structure\" workflow or save it with update_project_structure.",
   structureOutdated: "The project structure names paths that no longer exist – update it (get_project_structure shows them).",
   overdueTasks: "Some open tasks are overdue – finish them or move the due date (update_task).",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_ROLES, cleanPermissions, EDITOR_PERMISSIONS, isSubset, legacyLevel, LEGACY_ROLE_ID, permissionsOf, PROJECT_PERMISSIONS, teamPermissionsOf } from "./rolesLogic";
+import { BUILTIN_ROLES, cleanPermissions, EDITOR_PERMISSIONS, isSubset, legacyLevel, LEGACY_ROLE_ID, PERMISSION_GROUPS, permissionsOf, PROJECT_PERMISSIONS, teamPermissionsOf } from "./rolesLogic";
 
 describe("Rechte", () => {
   it("Standardrollen: steigend, Manager hat alles, Bearbeiter alles außer Mitglieder", () => {
@@ -10,6 +10,12 @@ describe("Rechte", () => {
     expect(perms["project.manager"].size).toBe(PROJECT_PERMISSIONS.length);
     expect(perms["project.editor"].has("members.invite")).toBe(false);
     expect(LEGACY_ROLE_ID.EDITOR).toBe("role-project-editor");
+  });
+  it("Gruppen enthalten jedes Recht genau einmal (#107)", () => {
+    const listed = PERMISSION_GROUPS.flatMap((g) => g.permissions);
+    expect([...listed].sort()).toEqual([...PROJECT_PERMISSIONS].sort());
+    expect(new Set(listed).size).toBe(listed.length);
+    expect(EDITOR_PERMISSIONS).not.toContain("keys.grant");
   });
   it("Rechte aus mehreren Wegen werden vereinigt, fremde Einträge ignoriert", () => {
     const p = permissionsOf([

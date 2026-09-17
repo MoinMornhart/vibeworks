@@ -94,6 +94,7 @@ ${VERIFY_BEFORE_DONE.map((v, i) => `${i + 1}. ${v}`).join("\n")}
 ## Problems and errors
 - list_problems shows everything broken across projects; get_repo_status covers one project's repository, CI, dependencies and live site. Its "limitations" list areas that are off or limited (e.g. issues disabled in the repository) – the rest of the repository still works, so keep going and tell the user what is limited.
 - list_errors shows runtime errors of the user's apps with stack traces – fix the cause, then call resolve_error.
+- get_ci shows the project's CI pipeline and the state of every block in the latest run. Change the pipeline only when the user asks (save_ci, publish only with their OK) and start it with run_ci; afterwards check get_ci until the run is finished.
 - search_code and list_code_files look into the linked repository – use them instead of guessing file paths or function names.
 - get_code_graph shows which files import a file, what it imports and the memos pinned to it – check it before changing a shared file, and pin what you learned with add_code_memo.
 

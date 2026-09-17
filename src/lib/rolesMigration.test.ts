@@ -11,7 +11,8 @@ const ALL_SQL = readdirSync("prisma/migrations", { withFileTypes: true })
 
 describe("Standardrollen in den Migrationen", () => {
   it.each(BUILTIN_ROLES)("$key", (role) => {
-    const row = ALL_SQL.split("\n").find((l) => l.includes(`'${role.id}'`) && l.includes("ARRAY"));
+    // Die jüngste Fassung zählt – spätere Migrationen setzen neue Rechte (#107)
+    const row = ALL_SQL.split("\n").findLast((l) => l.includes(`'${role.id}'`) && l.includes("ARRAY"));
     expect(row).toBeTruthy();
     const array = role.permissions.length ? `ARRAY[${role.permissions.map((p) => `'${p}'`).join(",")}]` : "ARRAY[]::TEXT[]";
     expect(row).toContain(array);

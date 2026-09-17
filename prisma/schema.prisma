@@ -307,6 +307,12 @@ model Project {
   gitPeople       Json?
   /// Projektaufbau: { overview, rows: [{ area, path, purpose, how }], updatedAt, updatedBy } (#101)
   structure       Json?
+  /// CI-Designer (#107): Blöcke und Auslöser, zuletzt ins Repository geschrieben
+  ciPipeline      Json?
+  ciPublishedAt   DateTime?
+  ciPublishedBy   String?
+  /// SHA-256 der zuletzt geschriebenen Datei – weicht die gespeicherte Pipeline ab, ist sie noch nicht im Repository
+  ciPublishedHash String?
   /// Bis hierhin wurden Issue-Kommentare auf Bot-Befehle geprüft (#79)
   issueCommentsAt DateTime?
   id                  String         @id @default(cuid())

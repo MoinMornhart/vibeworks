@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.3",
+    date: "2026-09-17",
+    title: "CI-Designer mit Live-Anzeige, KI-Anleitungen für alle KIs, übersichtliche Rechte",
+    titleEn: "CI designer with live view, AI instructions for every AI, clearer permissions",
+    changes: [
+      {
+        type: "neu",
+        text: "CI-Designer (GitHub): Auslöser wählen (Push, Pull Request, Zeitplan, von Hand), Blöcke einfügen, verschieben und bedingt ausführen (Node, npm-Skripte, fallow, Python/pytest, Go, Rust, eigene Befehle) – VibeWorks schreibt daraus den Workflow ins Repository, startet ihn und zeigt jeden Block live mit Ladesymbol, grünem Haken oder rotem Kreuz",
+        en: "CI designer (GitHub): choose triggers (push, pull request, schedule, manual), insert, move and conditionally run blocks (Node, npm scripts, fallow, Python/pytest, Go, Rust, custom commands) – VibeWorks writes the workflow to the repository, starts it and shows every block live with spinner, green check or red cross",
+      },
+      {
+        type: "neu",
+        text: "MCP: get_ci, save_ci und run_ci – die KI sieht die Pipeline samt Zustand jedes Blocks und kann sie mit Erlaubnis ändern und starten. Eigene Skripte dürfen keine GitHub-Ausdrücke enthalten, damit niemand Repository-Geheimnisse ausliest",
+        en: "MCP: get_ci, save_ci and run_ci – the AI sees the pipeline with the state of every block and can change and start it with permission. Custom scripts may not contain GitHub expressions, so nobody can read repository secrets",
+      },
+      {
+        type: "neu",
+        text: "KI-Anleitung nicht nur als CLAUDE.md: auch AGENTS.md (Codex, Cline, Jules …), GEMINI.md, Copilot-, Cursor-, Windsurf- und Cline-Regeln – im Projektmenü und über das MCP-Werkzeug get_agent_file. Die Projekt-Durchsicht erkennt jede davon",
+        en: "AI instructions beyond CLAUDE.md: also AGENTS.md (Codex, Cline, Jules …), GEMINI.md, Copilot, Cursor, Windsurf and Cline rules – in the project menu and via the MCP tool get_agent_file. The project review recognises all of them",
+      },
+      {
+        type: "besser",
+        text: "Rollen: Rechte nach Bereichen mit Erklärung, heikle Rechte markiert, „Alle/Keine“ und eine Liste, was nur Besitzer dürfen. Neu vergebbar: „KI-Workflows verwalten“, „CI verwalten und starten“ und „Projekt-Schlüssel freigeben“ – bestehende Rollen behalten, was sie bisher durften",
+        en: "Roles: permissions grouped by area with explanations, sensitive ones marked, “All/None” and a list of what only owners may do. New to grant: “Manage AI workflows”, “Manage and start CI” and “Grant project keys” – existing roles keep what they could do before",
+        link: "/roles",
+      },
+    ],
+  },
+  {
     version: "1.2.2",
     date: "2026-09-17",
     title: "Projekt-Schlüssel für andere KIs, Issue-Gespräche über MCP, fallow in der CI",

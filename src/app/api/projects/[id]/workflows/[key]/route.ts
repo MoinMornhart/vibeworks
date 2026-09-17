@@ -12,7 +12,7 @@ type Params = { id: string; key: string };
 export const PATCH = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id, key } = await params;
-  const { project } = await requireProject(user.id, id, "project.edit");
+  const { project } = await requireProject(user.id, id, "workflows.manage");
   const input = await readBody(req, workflowSaveSchema, { maxBytes: 32_000 });
   await saveWorkflow(project.id, input, { key, authorName: displayNameOf(user), via: "web" });
   return json(await workflowPayload(project.id));
@@ -21,7 +21,7 @@ export const PATCH = route<Params>(async (req, { params }) => {
 export const DELETE = route<Params>(async (_req, { params }) => {
   const user = await requireApiUser();
   const { id, key } = await params;
-  const { project } = await requireProject(user.id, id, "project.edit");
+  const { project } = await requireProject(user.id, id, "workflows.manage");
   const { count } = await db.aiWorkflow.deleteMany({ where: { projectId: project.id, key } });
   if (!count) throw notFound("Workflow not found");
   return json(await workflowPayload(project.id));

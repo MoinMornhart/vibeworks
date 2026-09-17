@@ -13,9 +13,23 @@ export const PROJECT_PERMISSIONS = [
   "git.sync",
   "live.check",
   "errors.manage",
+  "workflows.manage",
+  "ci.manage",
   "members.invite",
+  "keys.grant",
 ] as const;
 export type ProjectPermission = (typeof PROJECT_PERMISSIONS)[number];
+
+/** Rechte nach Bereichen – für die Rollen-Oberfläche (#107). Jedes Recht genau einmal (Test). */
+export const PERMISSION_GROUPS: ReadonlyArray<{ key: "work" | "project" | "code" | "access"; permissions: readonly ProjectPermission[] }> = [
+  { key: "work", permissions: ["tasks.edit", "tasks.delete", "notes.edit", "time.track"] },
+  { key: "project", permissions: ["project.edit", "costs.edit", "workflows.manage"] },
+  { key: "code", permissions: ["git.sync", "ci.manage", "live.check", "errors.manage"] },
+  { key: "access", permissions: ["members.invite", "keys.grant"] },
+];
+
+/** Rechte, die Zugriff weitergeben oder Code im Repository ausführen – in der Oberfläche hervorgehoben. */
+export const SENSITIVE_PERMISSIONS: readonly ProjectPermission[] = ["members.invite", "keys.grant", "ci.manage"];
 
 export const TEAM_PERMISSIONS = ["team.invite", "team.remove", "team.roles", "team.manage"] as const;
 export type TeamPermission = (typeof TEAM_PERMISSIONS)[number];
@@ -28,8 +42,8 @@ export const MAX_ROLE_DESCRIPTION = 200;
 /** So viele eigene Rollen je Konto und Bereich. */
 export const MAX_OWN_ROLES = 30;
 
-/** Was die alte Rolle „Bearbeiten“ durfte: alles außer Mitglieder verwalten. */
-export const EDITOR_PERMISSIONS: ProjectPermission[] = PROJECT_PERMISSIONS.filter((p) => p !== "members.invite");
+/** Was die alte Rolle „Bearbeiten“ durfte: alles außer Zugriff weitergeben (Mitglieder, Projekt-Schlüssel). */
+export const EDITOR_PERMISSIONS: ProjectPermission[] = PROJECT_PERMISSIONS.filter((p) => p !== "members.invite" && p !== "keys.grant");
 
 export interface BuiltinRole {
   id: string;
@@ -52,7 +66,7 @@ export const BUILTIN_ROLES: BuiltinRole[] = [
     scope: "project",
     name: "Bughunter",
     description: "Findet und behebt Fehler: Aufgaben, Notizen, Zeit, Git- und Live-Prüfung, Fehler-Eingang – ohne Mitglieder, Kosten und Projektangaben.",
-    permissions: ["tasks.edit", "notes.edit", "time.track", "git.sync", "live.check", "errors.manage"],
+    permissions: ["tasks.edit", "notes.edit", "time.track", "git.sync", "ci.manage", "live.check", "errors.manage"],
   },
   { id: "role-team-admin", key: "team.admin", scope: "team", name: "Admin", description: "Verwaltet Mitglieder, Einladungen, Rollen und das Team selbst.", permissions: [...TEAM_PERMISSIONS] },
   { id: "role-team-inviter", key: "team.inviter", scope: "team", name: "Einlader", description: "Darf Leute einladen, aber niemanden entfernen.", permissions: ["team.invite"] },

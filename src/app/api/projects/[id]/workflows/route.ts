@@ -16,7 +16,7 @@ export const GET = route<Params>(async (_req, { params }) => {
 
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
-  const { project } = await requireProject(user.id, (await params).id, "project.edit");
+  const { project } = await requireProject(user.id, (await params).id, "workflows.manage");
   const input = await readBody(req, workflowSaveSchema, { maxBytes: 32_000 });
   const saved = await saveWorkflow(project.id, input, { authorName: displayNameOf(user), via: "web" });
   return json({ key: saved.key, ...(await workflowPayload(project.id)) }, { status: 201 });
