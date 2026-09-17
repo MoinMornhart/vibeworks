@@ -23,7 +23,7 @@ const MAX = 300;
 type Row = Record<string, unknown>;
 const rows = (v: unknown, max = MAX): Row[] => (Array.isArray(v) ? v.filter((x): x is Row => Boolean(x) && typeof x === "object").slice(0, max) : []);
 /** Sprachwerkzeuge im Bericht (#92) */
-export const EXTRA_TOOLS = ["bandit", "shellcheck", "hadolint", "actionlint", "fallow"] as const;
+const EXTRA_TOOLS = ["bandit", "shellcheck", "hadolint", "actionlint", "fallow"] as const;
 const str = (v: unknown, max = 300) => (typeof v === "string" ? v.slice(0, max) : typeof v === "number" ? String(v) : "");
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.floor(v) : null);
 const bool = (v: unknown) => v === true;

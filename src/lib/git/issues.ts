@@ -24,7 +24,7 @@ import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type
 const BACKFILL_LIMIT = 25;
 
 /** Unsichtbare Markierung im Issue-Text – so ist jedes Issue seiner Aufgabe zuzuordnen. */
-export const taskMarker = (taskId: string) => `<!-- vibeworks:task:${taskId} -->`;
+const taskMarker = (taskId: string) => `<!-- vibeworks:task:${taskId} -->`;
 
 export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "dueDate" | "recurrence" | "assignee" | "createdByName" | "createdVia"> & { priority?: number }): string {
   const meta: string[] = [];
@@ -59,11 +59,11 @@ export function workersFromIssue(issue: Pick<IssueRef, "labels" | "assignees">):
 
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
-export function labelForStatus(status: TaskStatus): StatusLabel | null {
+function labelForStatus(status: TaskStatus): StatusLabel | null {
   return status === "DOING" ? STATUS_LABELS.DOING : status === "BLOCKED" ? STATUS_LABELS.BLOCKED : null;
 }
 
-export function statusFromIssue(issue: Pick<IssueRef, "closed" | "labels">): TaskStatus {
+function statusFromIssue(issue: Pick<IssueRef, "closed" | "labels">): TaskStatus {
   if (issue.closed) return "DONE";
   const labels = issue.labels.map((l) => l.toLowerCase());
   if (labels.includes(STATUS_LABELS.BLOCKED.toLowerCase())) return "BLOCKED";

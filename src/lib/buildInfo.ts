@@ -43,7 +43,7 @@ export function buildInfo(): BuildInfo {
   return cached!;
 }
 
-export function commitUrl(info: BuildInfo): string | null {
+function commitUrl(info: BuildInfo): string | null {
   return info.repoUrl && info.commit ? `${info.repoUrl}/commit/${info.commit}` : null;
 }
 

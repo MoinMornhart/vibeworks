@@ -127,7 +127,7 @@ export async function startRun(opts: { userId: string; tokenId: string | null; p
 }
 
 /** Durchlauf laden – nur mit Recht „Aufgaben bearbeiten“ im Projekt. */
-export async function requireRun(userId: string, runId: string) {
+async function requireRun(userId: string, runId: string) {
   const run = await db.workflowRun.findUnique({ where: { id: runId } });
   if (!run) throw new ApiError(404, "Workflow run not found.");
   await requireProject(userId, run.projectId, "tasks.edit");

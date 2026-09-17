@@ -10,9 +10,9 @@ export const BOARD_STATUSES = ["TODO", "DOING", "BLOCKED", "DONE"] as const sati
 /** 0 = wie für die Instanz eingestellt */
 export const COLLAPSE_OPTIONS = [0, 5, 10, 20, 50] as const;
 export const MAX_COLUMN_LABEL = 30;
-export const MAX_EXTRA_COLUMNS = 6;
+const MAX_EXTRA_COLUMNS = 6;
 /** Schlüssel einer Zusatz-Spalte: x1 … x9 */
-export const EXTRA_KEY = /^x[1-9]$/;
+const EXTRA_KEY = /^x[1-9]$/;
 
 /** Eine Spalte: ein Status oder eine Zusatz-Spalte (x1 …) */
 export type ColumnKey = string;

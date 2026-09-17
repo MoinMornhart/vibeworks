@@ -2,7 +2,7 @@ import type { Msg, MsgTree, Vars } from "./types";
 
 // Grundfunktionen ohne Abhängigkeiten – dürfen von Übersetzungsdateien importiert werden.
 
-export function interpolate(text: string, vars?: Vars): string {
+function interpolate(text: string, vars?: Vars): string {
   return vars ? text.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match)) : text;
 }
 

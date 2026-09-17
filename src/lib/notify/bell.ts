@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 // Glocke in der Kopfleiste: die neuesten Benachrichtigungen eines Kontos und
 // wie viele davon ungelesen sind. Ältere als 30 Tage räumt der Planer ab.
 
-export const BELL_LIMIT = 20;
+const BELL_LIMIT = 20;
 
 export async function bellState(userId: string) {
   const [items, unread] = await Promise.all([

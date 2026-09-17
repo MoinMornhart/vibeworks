@@ -40,7 +40,7 @@ export const TASK_ORDER = [{ position: "asc" as const }, { createdAt: "asc" as c
 
 const statusLabel = (s: TaskStatus) => TASK_STATUSES.find((x) => x.value === s)?.label ?? s;
 
-export async function findOwnTask(ownerId: string, id: string) {
+async function findOwnTask(ownerId: string, id: string) {
   return db.task.findFirst({ where: { id, project: { ownerId } } });
 }
 

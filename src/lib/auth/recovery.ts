@@ -7,7 +7,7 @@ import { sha256 } from "@/lib/crypto";
 // Verfahren wie bei Passwörtern hieße zehn teure Vergleiche je Anmeldung.
 
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"; // ohne l/1, o/0, i
-export const RECOVERY_COUNT = 10;
+const RECOVERY_COUNT = 10;
 
 export function generateRecoveryCode(): string {
   const chars = Array.from({ length: 10 }, () => ALPHABET[randomInt(ALPHABET.length)]);

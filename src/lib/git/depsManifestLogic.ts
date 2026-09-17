@@ -3,7 +3,7 @@ import { parseManifest } from "./depsLogic";
 // Abhängigkeiten aus allen gängigen Manifesten (#105): npm, Python, Rust, Go,
 // PHP und Gradle/Maven. Nur lesen und deuten – ohne Netz, ohne Datenbank.
 
-export const ECOSYSTEMS = ["npm", "PyPI", "crates.io", "Go", "Packagist", "Maven"] as const;
+const ECOSYSTEMS = ["npm", "PyPI", "crates.io", "Go", "Packagist", "Maven"] as const;
 export type Ecosystem = (typeof ECOSYSTEMS)[number];
 
 export interface ManifestDep {
@@ -18,8 +18,8 @@ export interface ManifestDep {
 type Parser = (text: string) => Array<{ name: string; range: string; dev: boolean }>;
 
 /** Bis zu dieser Tiefe werden Manifeste gesucht (Monorepos: apps/web/package.json). */
-export const MAX_MANIFEST_DEPTH = 3;
-export const MAX_MANIFESTS = 12;
+const MAX_MANIFEST_DEPTH = 3;
+const MAX_MANIFESTS = 12;
 const SKIP_DIRS = /(^|\/)(node_modules|vendor|\.git|dist|build|target|\.venv|venv|__pycache__|\.next|out|examples?|fixtures?|test-data|testdata)\//;
 
 const FILES: Array<{ test: (base: string) => boolean; ecosystem: Ecosystem; parse: Parser }> = [
@@ -133,9 +133,11 @@ function readArray(text: string, from: number): string[] {
   return out;
 }
 
-/** „key = [ "a", "b" ]“ */
-function tomlArray(section: string, key: string): string[] {
-  const m = new RegExp(`^\\s*${key}\\s*=\\s*\\[`, "m").exec(section);
+/** „dependencies = [ "a", "b" ]“ – fester Ausdruck, kein RegExp aus Variablen (#73) */
+const DEPENDENCIES_ARRAY = /^\s*dependencies\s*=\s*\[/m;
+
+function tomlArray(section: string, start: RegExp): string[] {
+  const m = start.exec(section);
   return m ? readArray(section, m.index + m[0].length) : [];
 }
 
@@ -158,7 +160,7 @@ function tomlTable(section: string): Array<{ name: string; range: string }> {
 export function parsePyproject(text: string): Array<{ name: string; range: string; dev: boolean }> {
   const out: Array<{ name: string; range: string; dev: boolean }> = [];
   const project = tomlSection(text, "project");
-  if (project) for (const s of tomlArray(project, "dependencies")) {
+  if (project) for (const s of tomlArray(project, DEPENDENCIES_ARRAY)) {
     const spec = pySpec(s);
     if (spec) out.push({ ...spec, dev: false });
   }
@@ -242,11 +244,19 @@ export function parseVersionCatalog(text: string): Array<{ name: string; range: 
   return out;
 }
 
+/** Feste Ausdrücke je Tag – kein RegExp aus Variablen (#73) */
+const POM_TAGS = {
+  groupId: /<groupId>([^<]*)<\/groupId>/,
+  artifactId: /<artifactId>([^<]*)<\/artifactId>/,
+  version: /<version>([^<]*)<\/version>/,
+  scope: /<scope>([^<]*)<\/scope>/,
+};
+
 export function parsePom(text: string): Array<{ name: string; range: string; dev: boolean }> {
   const props = new Map([...text.matchAll(/<properties>([\s\S]*?)<\/properties>/g)].flatMap((p) => [...p[1].matchAll(/<([\w.-]+)>([^<]*)<\/\1>/g)].map((m) => [m[1], m[2].trim()] as const)));
   const out: Array<{ name: string; range: string; dev: boolean }> = [];
   for (const m of text.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
-    const tag = (t: string) => m[1].match(new RegExp(`<${t}>([^<]*)</${t}>`))?.[1].trim();
+    const tag = (t: keyof typeof POM_TAGS) => m[1].match(POM_TAGS[t])?.[1].trim();
     const group = tag("groupId");
     const artifact = tag("artifactId");
     let version = tag("version");

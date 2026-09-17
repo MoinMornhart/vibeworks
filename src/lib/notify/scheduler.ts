@@ -27,7 +27,7 @@ function zoneHour(at: Date): number {
 }
 
 /** Zusammenfassung fälliger und überfälliger Aufgaben – einmal am Tag ab 8 Uhr. */
-export async function runDigest(now = new Date()): Promise<number> {
+async function runDigest(now = new Date()): Promise<number> {
   // Posteingang aufräumen: nach 30 Tagen hat die Windows-App ihn längst abgeholt
   await db.notification.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } } });
   // MCP-Protokoll ebenso nur 30 Tage
@@ -62,7 +62,7 @@ export async function runDigest(now = new Date()): Promise<number> {
 }
 
 /** Nach einem Update einmal die Admins benachrichtigen. Beim allerersten Start nicht. */
-export async function runVersionCheck(): Promise<void> {
+async function runVersionCheck(): Promise<void> {
   const entry = CHANGELOG[0];
   if (!entry) return;
   const settings = await getSettings();
@@ -98,7 +98,7 @@ export async function runVersionCheck(): Promise<void> {
  * Kosten: vergangene Verlängerungen auf den nächsten Termin schieben und zwei
  * Wochen vorher einmal warnen (je Termin höchstens eine Meldung).
  */
-export async function runRenewals(now = new Date()): Promise<number> {
+async function runRenewals(now = new Date()): Promise<number> {
   const today = dayKey(now);
   const costs = await db.projectCost.findMany({
     where: { renewsOn: { not: null }, project: { buriedAt: null } },
@@ -135,7 +135,7 @@ export async function runRenewals(now = new Date()): Promise<number> {
 }
 
 /** Wochen-Vorschläge: ab Montag 8 Uhr (oder beim ersten Lauf danach) je Konto einmal anlegen und melden. */
-export async function runWeeklySuggestions(now = new Date()): Promise<number> {
+async function runWeeklySuggestions(now = new Date()): Promise<number> {
   if (zoneHour(now) < DIGEST_HOUR) return 0;
   const users = await db.user.findMany({ where: { active: true, projects: { some: {} } }, select: { id: true, locale: true } });
   let sent = 0;
@@ -161,7 +161,7 @@ export async function runWeeklySuggestions(now = new Date()): Promise<number> {
 }
 
 /** Passwort-Erinnerung: ab 8 Uhr, wer sie eingeschaltet hat und dessen Passwort zu alt ist – höchstens alle 30 Tage. */
-export async function runPasswordReminders(now = new Date()): Promise<number> {
+async function runPasswordReminders(now = new Date()): Promise<number> {
   if (zoneHour(now) < DIGEST_HOUR) return 0;
   const users = await db.user.findMany({
     where: { active: true, passwordHash: { not: null }, passwordReminderDays: { gt: 0 } },

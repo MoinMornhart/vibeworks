@@ -1,0 +1,6 @@
+{
+  "$schema": "https://docs.fallow.tools/schema/fallowrc.json",
+  // Dateien, die nicht per import geladen werden: Electron lädt sie über Pfade,
+  // die Seite bindet sie im HTML ein (#73).
+  "entry": ["desktop/src/preload.js", "desktop/src/setup.js", "site/static/**"]
+}

@@ -71,7 +71,7 @@ const pick = (s: Extract<Segment, { kind: "conflict" }>, choice: Choice) =>
   choice === "ours" ? s.ours : choice === "theirs" ? s.theirs : choice === "base" ? (s.base ?? "") : [s.ours, s.theirs].filter((x) => x !== "").join("\n");
 
 /** Segmente wieder zu Text – leere Auswahl entfernt die Zeilen ganz. */
-export function joinSegments(segments: Segment[], choices: Record<number, Choice> = {}): string {
+function joinSegments(segments: Segment[], choices: Record<number, Choice> = {}): string {
   let n = 0;
   const parts: string[] = [];
   for (const s of segments) {

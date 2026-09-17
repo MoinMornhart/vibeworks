@@ -2,7 +2,7 @@ import { parseNtfyUrl } from "./notify/format";
 
 // Ideen-Eingang ohne Datenbank: Eingeworfenes zerlegen, ntfy-Antworten lesen.
 
-export const INBOX_SOURCES = ["share", "webhook", "ntfy", "manual"] as const;
+const INBOX_SOURCES = ["share", "webhook", "ntfy", "manual"] as const;
 export type InboxSource = (typeof INBOX_SOURCES)[number];
 export const MAX_INBOX_TEXT = 4000;
 export const MAX_INBOX_ITEMS = 500;

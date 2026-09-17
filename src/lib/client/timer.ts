@@ -23,7 +23,7 @@ const publish = (t: RunningTimer | null) => {
   for (const l of listeners) l(t);
 };
 
-export async function refreshTimer() {
+async function refreshTimer() {
   const res = await api<{ current: RunningTimer | null }>("/api/time").catch(() => null);
   if (res) publish(res.current);
 }

@@ -20,7 +20,7 @@ export function noteLabel(n: { title: string | null; content: string }): string 
   return truncate(n.title?.trim() || n.content.trim().split("\n")[0].replace(/^[#>\-*\s[\]x]+/i, "") || "Notiz", 60);
 }
 
-export async function findOwnNote(ownerId: string, id: string) {
+async function findOwnNote(ownerId: string, id: string) {
   return db.note.findFirst({ where: { id, project: { ownerId } } });
 }
 

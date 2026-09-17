@@ -9,7 +9,7 @@ import { columnKeyOf, isExtraKey, normalizeBoard } from "@/lib/boardConfig";
 // Auch das Issue verrät nichts.
 
 /** Gesperrte Spalten eines Projekts (Status oder Zusatz-Spalten). */
-export const aiLockedStatuses = (boardConfig: unknown) => normalizeBoard(boardConfig).aiLocked;
+const aiLockedStatuses = (boardConfig: unknown) => normalizeBoard(boardConfig).aiLocked;
 
 /** Ist diese Aufgabe für KI gesperrt – selbst oder über ihre Spalte? */
 export function isAiLocked(task: Pick<Task, "aiLocked" | "status"> & { column?: string | null }, boardConfig: unknown): boolean {
@@ -19,7 +19,7 @@ export function isAiLocked(task: Pick<Task, "aiLocked" | "status"> & { column?: 
 }
 
 /** Bedingungen, die gesperrte Spalten eines Projekts beschreiben – für NOT in Abfragen. */
-export function lockedColumnsWhere(projectId: string, boardConfig: unknown): Prisma.TaskWhereInput[] {
+function lockedColumnsWhere(projectId: string, boardConfig: unknown): Prisma.TaskWhereInput[] {
   const cfg = normalizeBoard(boardConfig);
   return cfg.aiLocked.map((key): Prisma.TaskWhereInput => {
     if (isExtraKey(key)) {

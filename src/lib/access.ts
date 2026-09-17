@@ -17,7 +17,7 @@ export type ProjectAccess = "OWNER" | ProjectRole;
 /** Was eine Prüfung verlangt: Besitzer, bloßes Lesen oder ein bestimmtes Recht. */
 export type Need = "OWNER" | "VIEWER" | ProjectPermission;
 
-export const ACCESS_LABEL: Record<ProjectAccess, string> = { OWNER: "Besitzer", EDITOR: "Bearbeiter", VIEWER: "Betrachter" };
+const ACCESS_LABEL: Record<ProjectAccess, string> = { OWNER: "Besitzer", EDITOR: "Bearbeiter", VIEWER: "Betrachter" };
 
 /** Teams, in denen das Konto Mitglied ist. */
 const inTeam = (userId: string) => ({ team: { members: { some: { userId } } } });

@@ -3,18 +3,18 @@ import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 import { randomToken, sha256 } from "@/lib/crypto";
-import { clientIp } from "@/lib/api";
+import { clientIp } from "@/lib/clientIp";
 
 // Serverseitige Sitzungen. Der Browser bekommt ein Zufallstoken (256 Bit),
 // in der Datenbank liegt nur dessen SHA-256 – ein Datenbankleck ergibt so
 // keine übernehmbaren Sitzungen. Zwei Fristen: absolut (SESSION_TTL_DAYS)
 // und im Leerlauf (SESSION_IDLE_HOURS).
 
-export function sessionCookieName(): string {
+function sessionCookieName(): string {
   return config.secureCookies ? "__Host-vw_session" : "vw_session";
 }
 
-export const publicUserSelect = {
+const publicUserSelect = {
   id: true,
   username: true,
   displayName: true,

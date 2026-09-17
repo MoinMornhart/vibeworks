@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/apiError";
 import { readSessionToken, validateSession } from "./session";
 
 // Die eigentliche Sicherheitsgrenze: jede Seite und jeder Endpunkt prüft

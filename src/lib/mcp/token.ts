@@ -7,7 +7,7 @@ import { keyState } from "./projectKeyLogic";
 // wird nur einmal beim Erstellen gezeigt; gespeichert ist allein sein
 // SHA-256 (256 Bit Zufall – ein langsamer Hash brächte nichts).
 
-export const TOKEN_PREFIX = "vw_";
+const TOKEN_PREFIX = "vw_";
 export const MAX_TOKENS = 20;
 
 export function newApiToken() {
@@ -15,7 +15,7 @@ export function newApiToken() {
   return { token, hash: sha256(token), hint: `${token.slice(0, 7)}…${token.slice(-4)}` };
 }
 
-export function bearerOf(header: string | null): string | null {
+function bearerOf(header: string | null): string | null {
   const m = header?.match(/^Bearer\s+(\S+)\s*$/i);
   if (!m || !m[1].startsWith(TOKEN_PREFIX) || m[1].length > 200) return null;
   return m[1];
@@ -58,7 +58,7 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
 }
 
 /** Konto zum Bearer-Schlüssel – null bei fehlendem, kaputtem, unbekanntem, widerrufenem Schlüssel oder gesperrtem Konto. */
-export async function authenticateApiToken(header: string | null) {
+async function authenticateApiToken(header: string | null) {
   const r = await checkApiToken(header);
   return r.auth ?? null;
 }

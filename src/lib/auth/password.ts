@@ -63,7 +63,6 @@ function isSequence(s: string): boolean {
   return true;
 }
 
-export { PASSWORD_MIN };
 
 /** null = in Ordnung, sonst eine verständliche Begründung als Übersetzungsschlüssel (auth.policy.*). */
 export function checkPasswordPolicy(password: string, username?: string): string | null {

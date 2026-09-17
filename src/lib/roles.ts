@@ -24,7 +24,7 @@ export async function availableRoles(scope: RoleScope, ownerId: string) {
 }
 
 /** Standard + Vorlagen + die eigenen Rollen dieses Teams. */
-export async function teamRoles(teamId: string) {
+async function teamRoles(teamId: string) {
   return sortRoles(await db.role.findMany({ where: { scope: "team", OR: [{ ownerId: null, teamId: null }, { teamId }] } }));
 }
 

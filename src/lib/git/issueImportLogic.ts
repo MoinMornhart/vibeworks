@@ -3,7 +3,7 @@
 // Rolle hat (Arbeiter, Bughunter) – sonst könnten Fremde der KI über ein
 // Issue Anweisungen unterschieben.
 
-export const ISSUE_IMPORT_MODES = ["off", "trusted", "all"] as const;
+const ISSUE_IMPORT_MODES = ["off", "trusted", "all"] as const;
 export type IssueImportMode = (typeof ISSUE_IMPORT_MODES)[number];
 export const GIT_ROLES = ["worker", "bughunter"] as const;
 export type GitRole = (typeof GIT_ROLES)[number];
@@ -12,7 +12,7 @@ export interface GitPerson {
   role: GitRole;
 }
 
-export const MAX_GIT_PEOPLE = 50;
+const MAX_GIT_PEOPLE = 50;
 /** Höchstens so viele neue Issues je Abgleich */
 export const MAX_IMPORT = 10;
 const LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98})$/;

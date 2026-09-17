@@ -12,8 +12,8 @@ import type { KeyScope } from "./keySettings";
 // Geräte-Anmeldung (#104) mit Datenbank. Öffentlich sind nur Start und
 // Abholung – freigeben kann ausschließlich ein angemeldetes Konto.
 
-export const verificationUrl = () => `${config.appUrl}/verbinden`;
-export const mcpUrl = () => `${config.appUrl}/api/mcp`;
+const verificationUrl = () => `${config.appUrl}/verbinden`;
+const mcpUrl = () => `${config.appUrl}/api/mcp`;
 
 /** Offene Anfragen je Adresse – mehr braucht kein Programm. */
 const MAX_PENDING_PER_IP = 5;

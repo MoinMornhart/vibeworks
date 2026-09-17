@@ -26,7 +26,7 @@ function paletteVars(p: Palette, accent: string, dark: boolean): string {
   ].join(";");
 }
 
-export function themeVars(theme: Theme): { common: string; dark: string; light: string } {
+function themeVars(theme: Theme): { common: string; dark: string; light: string } {
   const [c1, c2, c3] = presetColors(theme);
   const common = [
     `--vw-accent:${theme.accent}`,

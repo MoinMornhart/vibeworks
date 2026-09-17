@@ -166,7 +166,7 @@ export async function removeLink(userId: string, id: string): Promise<boolean> {
 
 const OPEN = (userId: string) => ({ ...visibleTo(userId), buriedAt: null, status: { not: "ARCHIVED" as const } });
 
-export async function buildReport(userId: string, period: "day" | "week", locale: Locale, now = new Date()): Promise<ReportData> {
+async function buildReport(userId: string, period: "day" | "week", locale: Locale, now = new Date()): Promise<ReportData> {
   const t = makeT(locale, "discord");
   const since = new Date(now.getTime() - (period === "week" ? 7 : 1) * 86_400_000);
   const today = dayKeyToDate(dayKey(now));

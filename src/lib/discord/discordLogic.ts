@@ -7,12 +7,12 @@ import { z } from "zod";
 export const DISCORD_API = "https://discord.com/api/v10";
 
 /** Rechte des Bots: Kanäle sehen, Nachrichten senden, Links einbetten – mehr nicht. */
-export const BOT_PERMISSIONS = String(1024 + 2048 + 16384);
+const BOT_PERMISSIONS = String(1024 + 2048 + 16384);
 
 export { REPORT_MODES, type ReportMode } from "./modes";
 
 /** Stunde (Europe/Berlin), ab der der Bericht verschickt wird; wöchentlich montags. */
-export const REPORT_HOUR = 8;
+const REPORT_HOUR = 8;
 
 // Ed25519-Schlüssel im SPKI-Format: fester Vorspann + 32 Byte
 const SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");

@@ -5,7 +5,7 @@ import { apiBase, authHeaders, request } from "./providers";
 // Commit-Status (Gitea/Forgejo, bei GitHub auch externe CI). Alles wird auf
 // fünf Zustände gebracht; je Workflow zählt nur sein jüngster Lauf.
 
-export const CI_STATES = ["success", "failure", "running", "pending", "canceled"] as const;
+const CI_STATES = ["success", "failure", "running", "pending", "canceled"] as const;
 export type CiState = (typeof CI_STATES)[number];
 
 export interface CiRun {

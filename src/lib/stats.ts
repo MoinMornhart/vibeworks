@@ -73,7 +73,7 @@ export function streaks(counts: Map<string, number>, today: string): { current: 
   return { current, longest: Math.max(longest, current) };
 }
 
-export const ACHIEVEMENTS = [
+const ACHIEVEMENTS = [
   { key: "firstProject", icon: "🌱", target: 1, metric: "projects" },
   { key: "ideas", icon: "💡", target: 10, metric: "projects" },
   { key: "shipped", icon: "🚀", target: 1, metric: "shipped" },

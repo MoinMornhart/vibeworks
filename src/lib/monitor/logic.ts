@@ -4,7 +4,7 @@
 export type LiveState = "up" | "down";
 
 /** Erst ab so vielen Fehlschlägen in Folge gilt eine Seite als offline – kurze Aussetzer lösen keinen Alarm aus. */
-export const FAILS_FOR_DOWN = 2;
+const FAILS_FOR_DOWN = 2;
 
 export function nextLiveState(prev: { state: LiveState | null; fails: number }, ok: boolean): { state: LiveState | null; fails: number; event: "down" | "up" | null } {
   if (ok) return { state: "up", fails: 0, event: prev.state === "down" ? "up" : null };

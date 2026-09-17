@@ -16,4 +16,4 @@ export function betaAllows(method: string, pathname: string): boolean {
  * Funktionen, die es vorerst nur in der Beta-Ansicht gibt. Leer heißt: die
  * Beta-Ansicht zeigt den aktuellen Stand, nur schreibgeschützt.
  */
-export const BETA_FEATURES: readonly string[] = [];
+const BETA_FEATURES: readonly string[] = [];

@@ -4,7 +4,7 @@ import { matchesWildcard } from "@/lib/codeIndexLogic";
 // Muster wie in .gitignore – „*.exe“ gilt überall, „node_modules/“ für jeden
 // Ordner dieses Namens, „src/**/*.log“ ab der Wurzel. Ohne reguläre Ausdrücke.
 
-export const FILTER_KINDS = ["trash", "protected"] as const;
+const FILTER_KINDS = ["trash", "protected"] as const;
 export type FilterKind = (typeof FILTER_KINDS)[number];
 export interface FilterRule {
   pattern: string;
@@ -22,8 +22,8 @@ export interface FileFilter {
   checked: Record<string, string>;
 }
 
-export const MAX_RULES = 100;
-export const MAX_PATTERN = 120;
+const MAX_RULES = 100;
+const MAX_PATTERN = 120;
 export const STATUS_CONTEXT = "vibeworks/dateifilter";
 
 /** Typischer Müll – als Vorschlag, entfernt wird nur, was man auswählt. */
@@ -95,7 +95,7 @@ function matchSegments(path: string[], pat: string[]): boolean {
   return go(0, 0);
 }
 
-export const matchesAny = (path: string, patterns: string[]) => patterns.some((p) => matchGlob(path, p));
+const matchesAny = (path: string, patterns: string[]) => patterns.some((p) => matchGlob(path, p));
 
 export interface FilterScan {
   /** Dateien, auf die ein Müll-Muster passt */
@@ -163,7 +163,7 @@ export function prViolations(files: PrFile[], filter: Pick<FileFilter, "rules">)
   return out;
 }
 
-export const VIOLATION_TEXT: Record<ViolationKind, string> = {
+const VIOLATION_TEXT: Record<ViolationKind, string> = {
   protectedRemoved: "löscht geschützte Datei",
   protectedRenamed: "benennt geschützte Datei um",
   extensionChanged: "ändert die Endung einer geschützten Datei",

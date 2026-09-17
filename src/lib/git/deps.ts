@@ -68,7 +68,7 @@ async function collectDeps(provider: GitProvider, repo: ParsedRepo, token: strin
   };
 }
 
-export async function buildReport(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null, projectId?: string, allowClone = false): Promise<DepsReport> {
+async function buildReport(provider: GitProvider, repo: ParsedRepo, token: string | null, branch: string | null, projectId?: string, allowClone = false): Promise<DepsReport> {
   const checkedAt = new Date().toISOString();
   let collected: Awaited<ReturnType<typeof collectDeps>>;
   try {

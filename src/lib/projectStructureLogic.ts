@@ -4,9 +4,9 @@ import { z } from "zod";
 // Pfad, Zweck, Funktionsweise. Die KI legt sie per MCP an und hält sie aktuell,
 // VibeWorks zeigt sie an und schreibt sie in die CLAUDE.md. Ohne Datenbank.
 
-export const MAX_STRUCTURE_ROWS = 80;
+const MAX_STRUCTURE_ROWS = 80;
 
-export const structureRowSchema = z.object({
+const structureRowSchema = z.object({
   area: z.string().trim().min(1).max(80),
   path: z.string().trim().max(200).default(""),
   purpose: z.string().trim().min(1).max(300),

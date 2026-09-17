@@ -59,7 +59,7 @@ const WORK_WEIGHT = { tasks: 0.7, development: 0.3 };
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-export function descriptionLevel(length: number): "none" | "short" | "good" {
+function descriptionLevel(length: number): "none" | "short" | "good" {
   return length >= 400 ? "good" : length > 0 ? "short" : "none";
 }
 

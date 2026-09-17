@@ -11,7 +11,7 @@ import { PriorityBadge } from "@/components/projects/ProjectCard";
 import { cn } from "@/lib/utils";
 
 /** Läuft sekündlich mit – für „seit 12 min in Arbeit“ auf Karte und im Fenster. */
-export function useNow(intervalMs = 30_000) {
+function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), intervalMs);
@@ -20,7 +20,7 @@ export function useNow(intervalMs = 30_000) {
   return now;
 }
 
-export function useDuration() {
+function useDuration() {
   const t = useT("tasks");
   return useCallback((seconds: number) => shortDuration(seconds, { s: t("info.unit.s"), min: t("info.unit.min"), h: t("info.unit.h"), d: t("info.unit.d") }), [t]);
 }

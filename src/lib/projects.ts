@@ -91,6 +91,6 @@ export async function nextPosition(ownerId: string, status: ProjectStatus): Prom
   return (last?.position ?? -1) + 1;
 }
 
-export async function findOwnProject(ownerId: string, id: string) {
+async function findOwnProject(ownerId: string, id: string) {
   return db.project.findFirst({ where: { id, ownerId } });
 }

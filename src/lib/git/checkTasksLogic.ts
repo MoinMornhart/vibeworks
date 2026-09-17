@@ -9,7 +9,7 @@ export const isCheckTaskMode = (v: unknown): v is CheckTaskMode => (CHECK_TASK_M
 
 export const CHECK_KINDS = ["secrets", "vulnerabilities", "findings"] as const;
 export type CheckKind = (typeof CHECK_KINDS)[number];
-export const CHECK_TASK_KEYS: Record<CheckKind, string> = { secrets: "check:secrets", vulnerabilities: "check:vulns", findings: "check:findings" };
+const CHECK_TASK_KEYS: Record<CheckKind, string> = { secrets: "check:secrets", vulnerabilities: "check:vulns", findings: "check:findings" };
 const TOOL: Record<CheckKind, keyof CheckReport["tools"]> = { secrets: "gitleaks", vulnerabilities: "osv", findings: "semgrep" };
 const MAX_LINES = 50;
 

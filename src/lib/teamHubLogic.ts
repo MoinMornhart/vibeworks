@@ -8,7 +8,7 @@ export const MAX_WISH_TITLE = 120;
 export const MAX_WISH_BODY = 2000;
 export const MAX_TEAM_MESSAGE = 2000;
 
-export const WISH_STATUSES = ["open", "accepted", "declined"] as const;
+const WISH_STATUSES = ["open", "accepted", "declined"] as const;
 export type WishStatus = (typeof WISH_STATUSES)[number];
 
 /** Ist die Aufgabe Claude zugeordnet – eingetragen („Claude“) oder laut Issue („🤖 Claude“ → „Claude“, „@claude“)? */
@@ -24,5 +24,5 @@ export function sortByProgress<T extends { status: keyof typeof ORDER; updatedAt
 }
 
 /** Grenze kommt aus den Admin-Einstellungen; WISH_LIMIT ist der Standard. */
-export const MAX_WISH_LIMIT = 20;
+const MAX_WISH_LIMIT = 20;
 export const wishesLeft = (usedToday: number, limit: number = WISH_LIMIT) => Math.max(0, limit - usedToday);

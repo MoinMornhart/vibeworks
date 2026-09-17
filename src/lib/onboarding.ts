@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 // Onboarding (#100): Was ist noch offen, damit VibeWorks rund läuft? Jeder
 // Schritt prüft den echten Stand – nichts wird abgehakt, was nicht stimmt.
 
-export const ONBOARDING_STEPS = ["git", "repoProject", "apiKey", "rules", "bot", "secondFactor", "notify", "errorInbox", "team"] as const;
+const ONBOARDING_STEPS = ["git", "repoProject", "apiKey", "rules", "bot", "secondFactor", "notify", "errorInbox", "team"] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
-export const STEP_LINKS: Record<OnboardingStep, string> = {
+const STEP_LINKS: Record<OnboardingStep, string> = {
   git: "/account#git-zugang",
   repoProject: "/",
   apiKey: "/account#mcp",

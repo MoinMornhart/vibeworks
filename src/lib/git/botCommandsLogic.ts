@@ -9,7 +9,7 @@ export const BOT_MARKER = "<!-- vibeworks:bot -->";
 /** Marke an Antworten, die aus VibeWorks geschrieben wurden (#76). */
 export const REPLY_MARKER = "<!-- vibeworks:reply -->";
 /** Höchstens so viele Befehle je Kommentar. */
-export const MAX_COMMANDS = 5;
+const MAX_COMMANDS = 5;
 
 export type BotCommand =
   | { kind: "status"; status: TaskStatus }
@@ -137,7 +137,7 @@ export function mentionsBot(body: string, botLogin: string | null): boolean {
 /** Nur wer im Repository schreiben darf, darf Befehle geben. */
 export const mayCommand = (permission: string | null) => permission === "admin" || permission === "maintain" || permission === "write";
 
-export const STATUS_TEXT: Record<TaskStatus, string> = { TODO: "Offen", DOING: "In Arbeit", BLOCKED: "Blockiert", DONE: "Erledigt" };
+const STATUS_TEXT: Record<TaskStatus, string> = { TODO: "Offen", DOING: "In Arbeit", BLOCKED: "Blockiert", DONE: "Erledigt" };
 const PRIO_TEXT: Record<number, string> = { 1: "Niedrig", 2: "Normal", 3: "Hoch", 4: "Kritisch" };
 
 export const HELP_TEXT = [

@@ -13,7 +13,7 @@ export const NOTIFY_GROUPS: ReadonlyArray<{ key: "tasks" | "dev" | "people" | "a
 ];
 export type EventSwitches = Record<NotifyEvent, boolean>;
 
-export const CHANNELS = ["ntfy", "webhook", "email"] as const;
+const CHANNELS = ["ntfy", "webhook", "email"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 export interface Notice {

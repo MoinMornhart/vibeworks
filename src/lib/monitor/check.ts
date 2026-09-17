@@ -94,7 +94,7 @@ export async function sslExpiry(url: string): Promise<Date | null> {
 }
 
 /** Vorschaubild laden und als Upload des Besitzers speichern – nur echte Rasterbilder (kein SVG). */
-export async function fetchCover(ownerId: string, imageUrl: string) {
+async function fetchCover(ownerId: string, imageUrl: string) {
   const res = await safeFetch(imageUrl, { headers: { "User-Agent": UA, Accept: "image/*" }, timeoutMs: 15_000 });
   if (!res.ok) {
     await res.body?.cancel().catch(() => undefined);

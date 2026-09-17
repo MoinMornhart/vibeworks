@@ -43,7 +43,7 @@ export function mix(a: string, b: string, t: number): string {
   return rgbToHex(ca.map((v, i) => v + (cb[i] - v) * t) as RGB);
 }
 
-export function rgbToHsl([r, g, b]: RGB): [number, number, number] {
+function rgbToHsl([r, g, b]: RGB): [number, number, number] {
   const rn = r / 255, gn = g / 255, bn = b / 255;
   const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
   const l = (max + min) / 2;

@@ -29,7 +29,7 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 // ── Sternenhimmel ───────────────────────────────────────────
 
-export function starfield(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
+function starfield(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
   let w = 0, h = 0;
   let stars: Array<{ x: number; y: number; z: number; r: number; tw: number; c: string }> = [];
   let shooting: { x: number; y: number; vx: number; vy: number; life: number } | null = null;
@@ -97,7 +97,7 @@ export function starfield(ctx: CanvasRenderingContext2D, o: EngineOptions): Engi
 
 // ── Partikelnetz ────────────────────────────────────────────
 
-export function particles(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
+function particles(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
   let w = 0, h = 0;
   let pts: Array<{ x: number; y: number; vx: number; vy: number; c: string }> = [];
   let mx = -9999, my = -9999;
@@ -157,7 +157,7 @@ export function particles(ctx: CanvasRenderingContext2D, o: EngineOptions): Engi
 
 // ── Wellen ──────────────────────────────────────────────────
 
-export function waves(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
+function waves(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
   let w = 0, h = 0;
   const layers = [
     { amp: 34, len: 0.0042, spd: 0.35, y: 0.58, c: 0, a: 0.28 },
@@ -193,7 +193,7 @@ export function waves(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
 
 // ── Bokeh ───────────────────────────────────────────────────
 
-export function bokeh(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
+function bokeh(ctx: CanvasRenderingContext2D, o: EngineOptions): Engine {
   let w = 0, h = 0;
   let orbs: Array<{ x: number; y: number; r: number; vy: number; vx: number; c: string; a: number; ph: number }> = [];
   return {

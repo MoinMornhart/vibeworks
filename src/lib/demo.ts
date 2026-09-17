@@ -364,7 +364,7 @@ async function seedDemo(): Promise<void> {
 }
 
 /** Beispieldaten anlegen, wenn nötig: noch keine da oder der letzte Reset (3 Uhr) ist fällig. */
-export async function ensureDemo(now = new Date()): Promise<"seeded" | "fresh" | "skipped"> {
+async function ensureDemo(now = new Date()): Promise<"seeded" | "fresh" | "skipped"> {
   const users = await db.user.findMany({ select: { username: true, createdAt: true } });
   if (!demoMayReset(users.map((u) => u.username))) return "skipped";
   const demo = users.find((u) => u.username === DEMO_USERNAME);

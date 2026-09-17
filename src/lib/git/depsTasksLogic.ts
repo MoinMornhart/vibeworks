@@ -3,7 +3,7 @@ import type { DepsReport, Severity, UpdateLevel } from "./depsLogic";
 // Aufgaben aus dem Abhängigkeiten-Check – ohne Datenbank: was ist markiert,
 // wie sieht die Liste aus, und was passiert mit der vorhandenen Aufgabe.
 
-export const DEPS_TASK_KEYS = ["deps:vuln", "deps:update"] as const;
+const DEPS_TASK_KEYS = ["deps:vuln", "deps:update"] as const;
 export type DepsTaskKey = (typeof DEPS_TASK_KEYS)[number];
 
 export interface DepsTaskPlan {

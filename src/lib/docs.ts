@@ -4,7 +4,7 @@ import { db } from "./db";
 // Mini-Docs: Seiten eines Kontos als Baum. Jede Abfrage filtert auf den
 // Besitzer; fremde IDs verhalten sich wie nicht vorhandene.
 
-export const docTreeSelect = {
+const docTreeSelect = {
   id: true,
   parentId: true,
   title: true,

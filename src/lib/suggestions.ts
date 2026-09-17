@@ -16,7 +16,7 @@ import { pickSuggestions, QUIET_WEEKS, WEIGHT, type Candidate, type SuggestionKi
 
 const DAY = 86_400_000;
 
-export const weekOf = (now = new Date()) => mondayOf(dayKey(now));
+const weekOf = (now = new Date()) => mondayOf(dayKey(now));
 
 type Pkg = { name: string; level?: string; current?: string | null; latest?: string | null; advisories?: unknown[] };
 

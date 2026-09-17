@@ -12,7 +12,7 @@ export interface ZipEntry {
 const EOCD = 0x06054b50;
 const CENTRAL = 0x02014b50;
 const LOCAL = 0x04034b50;
-export const MAX_UNZIPPED = 20 * 1024 * 1024;
+const MAX_UNZIPPED = 20 * 1024 * 1024;
 
 export function readZip(buf: Buffer): ZipEntry[] {
   let eocd = -1;

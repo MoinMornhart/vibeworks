@@ -54,7 +54,7 @@ export const PROVIDER_LABEL: Record<GitProvider, string> = { github: "GitHub", g
  * private Repositories), „admin:repo_hook“ (Webhook automatisch eintragen) und
  * „workflow“ (Repo-Check-Workflow anlegen und starten). Überall dieselbe URL.
  */
-export const GITHUB_TOKEN_SCOPES = ["repo", "admin:repo_hook", "workflow"] as const;
+const GITHUB_TOKEN_SCOPES = ["repo", "admin:repo_hook", "workflow"] as const;
 const githubTokenPage = (baseUrl: string) => `${baseUrl}/settings/tokens/new?scopes=${GITHUB_TOKEN_SCOPES.join(",")}&description=VibeWorks`;
 export const GITHUB_NEW_TOKEN_URL = githubTokenPage("https://github.com");
 

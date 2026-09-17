@@ -4,8 +4,8 @@
 export type ScopeKind = "classic" | "fine-grained" | "gitlab" | "unknown";
 
 /** Was VibeWorks braucht – und wofür die optionalen Rechte gut sind. */
-export const REQUIRED_SCOPES: Record<"github" | "gitlab", string[]> = { github: ["repo"], gitlab: ["api"] };
-export const OPTIONAL_SCOPES: Record<"github" | "gitlab", Array<{ scope: string; feature: "workflow" | "webhook" }>> = {
+const REQUIRED_SCOPES: Record<"github" | "gitlab", string[]> = { github: ["repo"], gitlab: ["api"] };
+const OPTIONAL_SCOPES: Record<"github" | "gitlab", Array<{ scope: string; feature: "workflow" | "webhook" }>> = {
   github: [
     { scope: "workflow", feature: "workflow" },
     { scope: "admin:repo_hook", feature: "webhook" },

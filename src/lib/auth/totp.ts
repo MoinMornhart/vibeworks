@@ -5,8 +5,8 @@ import { safeEqual } from "@/lib/crypto";
 // das Verfahren, das jede gängige Authenticator-App versteht.
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-export const TOTP_PERIOD = 30;
-export const TOTP_DIGITS = 6;
+const TOTP_PERIOD = 30;
+const TOTP_DIGITS = 6;
 
 export function base32Encode(buf: Buffer): string {
   let bits = 0;

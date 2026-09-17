@@ -25,7 +25,7 @@ interface SchedulerState {
 }
 const g = globalThis as typeof globalThis & { __vwGitScheduler?: SchedulerState };
 
-export async function runGitSyncOnce(): Promise<{ synced: number; skipped: number }> {
+async function runGitSyncOnce(): Promise<{ synced: number; skipped: number }> {
   const projects = await db.project.findMany({
     where: { repoUrl: { not: null }, status: { not: "ARCHIVED" } },
     select: { id: true, ownerId: true, repoUrl: true, repoTokenCipher: true, repoCache: { select: { fetchedAt: true } } },

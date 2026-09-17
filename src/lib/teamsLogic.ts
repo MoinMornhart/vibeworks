@@ -1,7 +1,7 @@
 // Teams ohne Datenbank: Rollen zusammenführen und prüfen, ob ein Team nach dem
 // Gehen, Entfernen oder Umstufen noch jemanden hat, der es verwalten darf.
 
-export const TEAM_ROLES = ["ADMIN", "MEMBER"] as const;
+const TEAM_ROLES = ["ADMIN", "MEMBER"] as const;
 export type TeamRole = (typeof TEAM_ROLES)[number];
 export type ShareRole = "VIEWER" | "EDITOR";
 

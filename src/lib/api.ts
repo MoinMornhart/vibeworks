@@ -4,24 +4,14 @@ import { msgKey } from "./i18n/translate";
 import { config } from "./config";
 import { demoAllows } from "./demoGuard";
 import { BETA_COOKIE, betaAllows } from "./betaLogic";
+import { ApiError } from "./apiError";
 
 // Gemeinsamer Rahmen für alle API-Routen: CSRF-Prüfung bei schreibenden
 // Methoden, JSON-Body mit Größenlimit und Zod-Validierung, einheitliche
 // Fehlerantworten. Fremde IDs beantworten die Routen mit 404, nicht 403.
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public fieldErrors?: Record<string, string>,
-  ) {
-    super(message);
-  }
-}
-
-// Meldungen dürfen Übersetzungsschlüssel sein ("projects.errors.notFound",
-// siehe tk()); route() übersetzt sie in die Sprache der Anfrage.
-export const notFound = (what = "errors.notFound") => new ApiError(404, what);
+export { ApiError, notFound } from "./apiError";
+export { clientIp } from "./clientIp";
 
 export function json(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, init);
@@ -83,13 +73,6 @@ export async function readBody<S extends ZodTypeAny>(req: NextRequest, schema: S
     throw new ApiError(400, first ?? "errors.invalidInput", fieldErrors);
   }
   return parsed.data;
-}
-
-export function clientIp(req: NextRequest): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  const ip = fwd ? fwd.split(",")[0].trim() : (req.headers.get("x-real-ip") ?? "unbekannt");
-  // IPv4 im IPv6-Gewand (::ffff:192.168.1.5) lesbar machen
-  return ip.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/, "$1");
 }
 
 type Handler<P> = (req: NextRequest, ctx: { params: Promise<P> }) => Promise<Response>;

@@ -4,11 +4,11 @@ import { INTL_LOCALE, type Locale } from "./i18n/config";
 // auswählen – dringend vor nützlich, höchstens zwei derselben Art, und was
 // gerade angenommen oder abgelehnt wurde, kommt ein paar Wochen nicht wieder.
 
-export const SUGGESTION_KINDS = ["vuln", "check", "ci", "git", "renewal", "overdue", "sleeping", "major", "plan", "describe"] as const;
+const SUGGESTION_KINDS = ["vuln", "check", "ci", "git", "renewal", "overdue", "sleeping", "major", "plan", "describe"] as const;
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
-export const PER_WEEK = 5;
-export const MAX_PER_KIND = 2;
+const PER_WEEK = 5;
+const MAX_PER_KIND = 2;
 /** So viele Wochen kommt ein angenommener oder abgelehnter Vorschlag nicht wieder. */
 export const QUIET_WEEKS = 3;
 

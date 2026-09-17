@@ -164,7 +164,7 @@ export const builtinWorkflow = (key: string) => BUILTIN_WORKFLOWS.find((w) => w.
 export const WORKFLOW_GUIDE =
   "Write a workflow as 3–12 steps. Each step: one imperative action in the title (\"Run the tests\", not \"Tests\"), plus a check that says how to prove it is done (a command result, a tool result, something visible). Put task handling first (DOING with your name) and a final review last. Write titles and checks in the user's language.";
 
-export const workflowStepSchema = z.object({
+const workflowStepSchema = z.object({
   title: z.string().trim().min(3).max(200),
   check: z.string().trim().max(300).default(""),
 });
@@ -233,7 +233,7 @@ export function applyStep(steps: WorkflowStep[], results: StepResult[], step: nu
 /** Ohne Aktivität so lange her – dann erinnert VibeWorks nicht mehr daran. */
 export const RUN_STALE_MS = 12 * 60 * 60_000;
 
-export const stepText = (steps: WorkflowStep[], n: number) => {
+const stepText = (steps: WorkflowStep[], n: number) => {
   const s = steps[n - 1];
   return `Step ${n}/${steps.length}: ${s.title}${s.check ? ` – Check: ${s.check}` : ""}`;
 };

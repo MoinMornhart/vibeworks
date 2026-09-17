@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.4",
+    date: "2026-09-17",
+    title: "Aufgeräumter Code nach dem Repo-Check",
+    titleEn: "Tidier code after the repo check",
+    changes: [
+      {
+        type: "besser",
+        text: "Repo-Check-Funde abgearbeitet: Import-Zyklus zwischen Anmeldung und API-Hilfen aufgelöst, 104 ungenutzte Exporte entfernt, Desktop- und Webseiten-Dateien als Einstiegspunkte eingetragen",
+        en: "Repo check findings fixed: import cycle between sign-in and API helpers removed, 104 unused exports dropped, desktop and website files registered as entry points",
+      },
+      {
+        type: "fix",
+        text: "Abhängigkeiten-Check: reguläre Ausdrücke für pyproject.toml und pom.xml fest statt zur Laufzeit gebaut (Semgrep-Hinweis)",
+        en: "Dependency check: regular expressions for pyproject.toml and pom.xml are now fixed instead of built at runtime (Semgrep finding)",
+      },
+    ],
+  },
+  {
     version: "1.2.3",
     date: "2026-09-17",
     title: "CI-Designer mit Live-Anzeige, KI-Anleitungen für alle KIs, übersichtliche Rechte",
@@ -2923,4 +2941,4 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
 ];
 
-export const CURRENT_VERSION = CHANGELOG[0].version;
+const CURRENT_VERSION = CHANGELOG[0].version;

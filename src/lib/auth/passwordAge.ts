@@ -2,7 +2,7 @@
 // höchstens alle 30 Tage eine Meldung, bis ein neues gesetzt ist.
 
 export const REMINDER_OPTIONS = [0, 90, 180, 365] as const;
-export const REMINDER_REPEAT_DAYS = 30;
+const REMINDER_REPEAT_DAYS = 30;
 const DAY = 86_400_000;
 
 /** Alter des Passworts in Tagen, wenn jetzt erinnert werden soll – sonst null. */

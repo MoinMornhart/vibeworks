@@ -200,7 +200,7 @@ export async function chatRoom(room: string): Promise<{ projectId: string | null
   return { projectId: project.id, ownerId: project.ownerId };
 }
 
-export function serializeMessage(m: CommunityMessage & { author: Author }, v: Viewer, ownerId: string) {
+function serializeMessage(m: CommunityMessage & { author: Author }, v: Viewer, ownerId: string) {
   return {
     id: m.id,
     body: m.body,

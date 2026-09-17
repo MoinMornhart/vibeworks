@@ -17,7 +17,7 @@ import { hit, MINUTE } from "@/lib/security/rateLimit";
 export const AUTO_TASK_MODES = ["off", "notfix"] as const;
 export type AutoTaskMode = (typeof AUTO_TASK_MODES)[number];
 /** Höchstens so viele automatische Aufgaben je Projekt und Stunde – ein kaputtes Release soll das Board nicht fluten. */
-export const AUTO_TASKS_PER_HOUR = 5;
+const AUTO_TASKS_PER_HOUR = 5;
 
 export async function taskFromError(userId: string, e: AppError, opts: { notfix: boolean; locale: Locale; via?: TaskVia }) {
   const t = makeT(opts.locale, "bugs");

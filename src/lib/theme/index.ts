@@ -37,7 +37,7 @@ export const BACKGROUND_PRESETS = [
 ] as const;
 export type BackgroundPresetId = (typeof BACKGROUND_PRESETS)[number];
 
-export const GRADIENT_KINDS = ["linear", "radial", "conic"] as const;
+const GRADIENT_KINDS = ["linear", "radial", "conic"] as const;
 export type GradientKind = (typeof GRADIENT_KINDS)[number];
 
 const paletteSchema = z.object({
@@ -253,6 +253,6 @@ export function presetColors(theme: Theme): [string, string, string] {
   return [a, shiftHue(a, 48), shiftHue(a, -70)];
 }
 
-export function schemeById(id: string): ColorScheme | undefined {
+function schemeById(id: string): ColorScheme | undefined {
   return COLOR_SCHEMES.find((s) => s.id === id);
 }

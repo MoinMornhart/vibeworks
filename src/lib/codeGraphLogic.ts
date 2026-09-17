@@ -4,7 +4,7 @@ import { isCodeFile, parseGrep } from "./codeIndexLogic";
 // Pfade auflösen und daraus Knoten (Dateien, Pakete) und Kanten bauen.
 // Inhalte bleiben außen vor – nur Pfade und wer wen einbindet.
 
-export const GRAPH_EXTS = ["ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "kt", "kts", "java", "go", "c", "h", "cc", "cpp", "hpp", "rs", "sh"] as const;
+const GRAPH_EXTS = ["ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "kt", "kts", "java", "go", "c", "h", "cc", "cpp", "hpp", "rs", "sh"] as const;
 const EXT_RE = /\.(tsx?|jsx?|mjs|cjs|py|kts?|java|go|c|h|cc|cpp|hpp|rs|sh)$/;
 /** Endungen für git grep – dieselben wie GRAPH_EXTS */
 export const GRAPH_PATHSPECS = GRAPH_EXTS.map((e) => `*.${e}`);
@@ -21,8 +21,8 @@ const langOf = (file: string): Lang => {
   return "js";
 };
 const RESOLVE_EXTS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", "/index.ts", "/index.tsx", "/index.js", "/index.jsx", "/__init__.py"];
-export const MAX_FILES = 400;
-export const MAX_PACKAGES = 40;
+const MAX_FILES = 400;
+const MAX_PACKAGES = 40;
 /** npm- und Python-Paketnamen – alles andere war kein echter Import (z. B. Text in JSX) */
 const VALID_PKG = /^(@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/i;
 

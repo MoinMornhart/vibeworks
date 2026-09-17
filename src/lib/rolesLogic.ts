@@ -35,7 +35,7 @@ export const TEAM_PERMISSIONS = ["team.invite", "team.remove", "team.roles", "te
 export type TeamPermission = (typeof TEAM_PERMISSIONS)[number];
 
 export type RoleScope = "project" | "team";
-export const ROLE_SCOPES: RoleScope[] = ["project", "team"];
+const ROLE_SCOPES: RoleScope[] = ["project", "team"];
 
 export const MAX_ROLE_NAME = 40;
 export const MAX_ROLE_DESCRIPTION = 200;
