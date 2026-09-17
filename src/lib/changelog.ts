@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.4",
+    date: "2026-09-17",
+    title: "Abhängigkeiten aufgefrischt",
+    titleEn: "Dependencies refreshed",
+    changes: [
+      {
+        type: "besser",
+        text: "Neuere Versionen von lucide-react (Symbole) und Electron (Windows-App)",
+        en: "Newer versions of lucide-react (icons) and Electron (Windows app)",
+      },
+    ],
+  },
+  {
     version: "1.3.3",
     date: "2026-09-17",
     title: "Notfallwege beim Anmelden – mit Nachfrage",
