@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.3",
+    date: "2026-09-17",
+    title: "Notfallwege beim Anmelden – mit Nachfrage",
+    titleEn: "Emergency sign-in routes – with a check",
+    changes: [
+      {
+        type: "neu",
+        text: "Beim zweiten Faktor gibt es jetzt drei Wege: Code aus der App, Wiederherstellungscode oder – wenn du es erlaubst – ein 6-stelliger Code an deine hinterlegte E-Mail-Adresse (10 Minuten gültig)",
+        en: "The second factor now offers three routes: a code from the app, a recovery code or – if you allow it – a 6-digit code sent to the e-mail address on file (valid for 10 minutes)",
+      },
+      {
+        type: "neu",
+        text: "Nach jeder Anmeldung über einen Notfallweg fragt VibeWorks nach: „Warst du das?“ – per E-Mail und in der Glocke, mit Zeitpunkt, Adresse und Gerät. Ein Klick beendet alle Sitzungen des Kontos",
+        en: "After every sign-in using an emergency route VibeWorks asks “was that you?” – by e-mail and in the bell, with time, address and device. One click ends all sessions of the account",
+      },
+      {
+        type: "neu",
+        text: "Der E-Mail-Weg ist abgeschaltet, bis du ihn unter Konto → Zwei-Faktor einschaltest; das Umschalten verlangt Passwort oder Code",
+        en: "The e-mail route stays off until you switch it on under Account → Two-factor; switching it asks for your password or a code",
+        link: "/account",
+      },
+    ],
+  },
+  {
     version: "1.3.2",
     date: "2026-09-17",
     title: "Dateifilter: Zweig wählbar, Funde gebündelt",

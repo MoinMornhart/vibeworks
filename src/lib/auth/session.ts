@@ -24,6 +24,7 @@ const publicUserSelect = {
   theme: true,
   locale: true,
   totpEnabledAt: true,
+  mfaEmail: true,
   passwordHash: true,
   createdAt: true,
 } as const;

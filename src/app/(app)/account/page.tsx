@@ -67,7 +67,7 @@ export default async function AccountPage() {
       {readPrefs(pw?.onboarding).dismissed && <OnboardingRestore />}
       <LanguageSection />
       <PasskeySection initial={passkeys.map(serializePasskey)} hasPassword={hasPassword} rpID={relyingParty().rpID} />
-      <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft }} hasPassword={hasPassword} />
+      <TotpSection initial={{ enabled: Boolean(user.totpEnabledAt), recoveryLeft, mfaEmail: user.mfaEmail }} hasPassword={hasPassword} canMail={mailReady && Boolean(user.email)} />
       <GitConnectionsSection initial={connections} />
       <ApiTokensSection initial={apiTokens.map(serializeApiToken)} appUrl={config.appUrl} rules={agentRules(allMcpTools(), config.appUrl, user.locale === "en" ? "en" : "de")} rulesVersion={rulesVersion(user.locale === "en" ? "en" : "de")} sessionIdleHours={config.sessionIdleHours} sessionTtlDays={config.sessionTtlDays} />
       <InboxSection initial={inbox} />

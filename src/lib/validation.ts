@@ -449,12 +449,21 @@ export const confirmIdentitySchema = z.object({
   code: z.string().trim().max(20).optional(),
 });
 
+/** E-Mail als Notfallweg umschalten (#109) – mit Bestätigung der Identität */
+export const mfaEmailSchema = z.object({
+  mfaEmail: z.boolean(),
+  password: z.string().max(200).optional(),
+  code: z.string().trim().max(20).optional(),
+});
+
 export const mfaLoginSchema = z
   .object({
     code: z.string().trim().max(20).optional(),
     recoveryCode: z.string().trim().max(40).optional(),
+    /** Notfall-Code aus der E-Mail (#109) */
+    emailCode: z.string().trim().max(20).optional(),
   })
-  .refine((v) => v.code || v.recoveryCode, tk("validation", "codeMissing"));
+  .refine((v) => v.code || v.recoveryCode || v.emailCode, tk("validation", "codeMissing"));
 
 // ── Passkeys ────────────────────────────────────────────────
 

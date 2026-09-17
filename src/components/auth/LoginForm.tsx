@@ -11,10 +11,12 @@ import { useT } from "@/lib/i18n/client";
 export function LoginForm({ next, allowRegistration, allowReset }: { next: string; allowRegistration: boolean; allowReset?: boolean }) {
   const t = useT("auth");
   const [step, setStep] = useState<"password" | "mfa">("password");
+  // Zweiter Faktor: App, Wiederherstellungscode oder Code per E-Mail (#109)
+  const [way, setWay] = useState<"app" | "recovery" | "email">("app");
+  const [emailSent, setEmailSent] = useState<string | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [useRecovery, setUseRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [passkeys, setPasskeys] = useState(false);
@@ -69,7 +71,7 @@ export function LoginForm({ next, allowRegistration, allowReset }: { next: strin
     setBusy(true);
     setError(null);
     try {
-      await api("/api/auth/mfa", { body: useRecovery ? { recoveryCode: code } : { code } });
+      await api("/api/auth/mfa", { body: way === "recovery" ? { recoveryCode: code } : way === "email" ? { emailCode: code } : { code } });
       window.location.assign(next);
     } catch (err) {
       setError(errorMessage(err));
@@ -82,14 +84,36 @@ export function LoginForm({ next, allowRegistration, allowReset }: { next: strin
     }
   }
 
+  /** Notfall-Code an die hinterlegte Adresse schicken */
+  async function requestEmailCode() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api<{ minutes: number }>("/api/auth/mfa/email", { body: {} });
+      setWay("email");
+      setCode("");
+      setEmailSent(t("mfa.emailSent"));
+      void res;
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (step === "mfa") {
     return (
       <form onSubmit={submitCode} className="space-y-4">
         <p className="flex items-start gap-2 text-sm text-muted">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-accent-ink" />
-          {useRecovery ? t("mfa.hintRecovery") : t("mfa.hintApp")}
+          {way === "recovery" ? t("mfa.hintRecovery") : way === "email" ? t("mfa.hintEmail", { n: 10 }) : t("mfa.hintApp")}
         </p>
-        {useRecovery ? (
+        {emailSent && way === "email" && (
+          <p role="status" className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" data-testid="mfa-email-sent">
+            {emailSent}
+          </p>
+        )}
+        {way === "recovery" ? (
           <input className="field text-center font-mono tracking-widest" placeholder="xxxxx-xxxxx" value={code} onChange={(e) => setCode(e.target.value)} autoFocus aria-label={t("mfa.recoveryLabel")} autoComplete="off" />
         ) : (
           <input
@@ -100,20 +124,35 @@ export function LoginForm({ next, allowRegistration, allowReset }: { next: strin
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             autoFocus
-            aria-label={t("mfa.appCodeLabel")}
+            aria-label={way === "email" ? t("mfa.emailLabel") : t("mfa.appCodeLabel")}
+            data-testid={way === "email" ? "mfa-email-code" : "mfa-app-code"}
           />
         )}
         <FormError message={error} />
-        <button className="btn btn-primary w-full" disabled={busy || (!useRecovery && code.length !== 6) || (useRecovery && !code.trim())}>
+        <button className="btn btn-primary w-full" disabled={busy || (way === "recovery" ? !code.trim() : code.length !== 6)}>
           <ShieldCheck size={16} /> {busy ? t("mfa.checking") : t("mfa.confirm")}
         </button>
         <div className="flex flex-wrap justify-between gap-2 text-sm">
           <button type="button" className="inline-flex items-center gap-1 text-muted hover:text-fg" onClick={() => { setStep("password"); setCode(""); setError(null); }}>
             <ArrowLeft size={14} /> {t("mfa.back")}
           </button>
-          <button type="button" className="text-accent-ink hover:underline" onClick={() => { setUseRecovery((v) => !v); setCode(""); setError(null); }}>
-            {useRecovery ? t("mfa.useApp") : t("mfa.useRecovery")}
-          </button>
+          <span className="flex flex-wrap gap-3">
+            {way !== "app" && (
+              <button type="button" className="text-accent-ink hover:underline" onClick={() => { setWay("app"); setCode(""); setError(null); }}>
+                {t("mfa.useApp")}
+              </button>
+            )}
+            {way !== "recovery" && (
+              <button type="button" className="text-accent-ink hover:underline" onClick={() => { setWay("recovery"); setCode(""); setError(null); }} data-testid="mfa-use-recovery">
+                {t("mfa.useRecovery")}
+              </button>
+            )}
+            {way !== "email" && (
+              <button type="button" className="text-accent-ink hover:underline" disabled={busy} onClick={() => void requestEmailCode()} data-testid="mfa-use-email">
+                {t("mfa.useEmail")}
+              </button>
+            )}
+          </span>
         </div>
       </form>
     );

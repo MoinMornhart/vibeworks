@@ -53,6 +53,7 @@ const de = {
     renewal: "Eine Verlängerung steht an (z. B. Domain) – zwei Wochen vorher",
     suggestions: "Neue Wochen-Vorschläge – montags ab 8 Uhr",
     weeklyReport: "Wochenbericht – montags ab 8 Uhr: Erledigtes, Workflow-Durchläufe, neue Fehler, schlafende Projekte",
+    loginAlert: "Anmeldung über einen Notfallweg (Wiederherstellungscode oder Code per E-Mail)",
     passwordAge: "Erinnerung, das Passwort zu wechseln (Abstand unter Konto → Passwort)",
     passwordAsk: "Jemand bittet dich als Admin um ein neues Passwort",
     news: "Neue Funktionen nach einem Update – ein Klick führt direkt dorthin",
@@ -124,6 +125,10 @@ const de = {
       sleeping: plural("😴 {n} Projekt schläft", "😴 {n} Projekte schlafen"),
       days: plural("seit {n} Tag ruhig", "seit {n} Tagen ruhig"),
       more: "… und {n} weitere",
+    },
+    loginAlert: {
+      title: { recovery: "Anmeldung mit Wiederherstellungscode", email: "Anmeldung mit Code per E-Mail" },
+      message: "Warst du das nicht? Öffne die Nachfrage und beende alle Sitzungen.",
     },
     passwordAge: {
       title: "Zeit für ein neues Passwort",
@@ -213,6 +218,7 @@ const en: Shape<typeof de> = {
     renewal: "A renewal is coming up (e.g. a domain) – two weeks ahead",
     suggestions: "New weekly suggestions – Mondays from 8 am",
     weeklyReport: "Weekly report – Mondays from 8 am: completed tasks, workflow runs, new errors, sleeping projects",
+    loginAlert: "Sign-in using an emergency method (recovery code or code by e-mail)",
     passwordAge: "Reminder to change your password (interval under Account → Password)",
     passwordAsk: "Someone asks you as an admin for a new password",
     news: "New features after an update – a click takes you straight there",
@@ -284,6 +290,10 @@ const en: Shape<typeof de> = {
       sleeping: plural("😴 {n} project is sleeping", "😴 {n} projects are sleeping"),
       days: plural("quiet for {n} day", "quiet for {n} days"),
       more: "… and {n} more",
+    },
+    loginAlert: {
+      title: { recovery: "Sign-in with a recovery code", email: "Sign-in with a code by e-mail" },
+      message: "Wasn't that you? Open the check and end all sessions.",
     },
     passwordAge: {
       title: "Time for a new password",

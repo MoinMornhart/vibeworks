@@ -133,6 +133,9 @@ model User {
   /// Bittet darum, dass ein Admin ein neues Passwort vergibt (#43)
   resetRequestedAt     DateTime?
 
+  /// E-Mail als Notfallweg beim zweiten Faktor (#109) – aus, bis man es einschaltet
+  mfaEmail Boolean @default(false)
+
   /// TOTP-Schlüssel (verschlüsselt). Scharf erst mit totpEnabledAt.
   totpSecret    String?
   totpEnabledAt DateTime?
@@ -174,6 +177,7 @@ model User {
   recoveryCodes        RecoveryCode[]
   passwordResets       PasswordReset[]
   mfaPending           MfaPending[]
+  loginChecks          LoginCheck[]
   projects             Project[]
   activities           Activity[]
   uploads              Upload[]
@@ -215,13 +219,35 @@ model Session {
 
 /// Passwort war richtig, der zweite Faktor steht noch aus.
 model MfaPending {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
-  attempts  Int      @default(0)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash     String    @unique
+  attempts      Int       @default(0)
+  /// Notfall-Code per E-Mail (#109): SHA-256 und wann er verschickt wurde
+  emailCodeHash String?
+  emailCodeAt   DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Nachfrage nach einer Anmeldung über einen Notfallweg (#109): „Warst du das?“
+model LoginCheck {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  /// recovery · email
+  method     String
+  ip         String?
+  userAgent  String?
+  /// ok · revoked
+  answer     String?
+  answeredAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
 }

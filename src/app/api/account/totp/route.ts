@@ -7,13 +7,25 @@ import { decrypt, encrypt } from "@/lib/crypto";
 import { generateTotpSecret, otpauthUri, verifyTotp } from "@/lib/auth/totp";
 import { recoveryCodesLeft, replaceRecoveryCodes } from "@/lib/auth/recovery";
 import { confirmIdentity } from "@/lib/auth/mfa";
-import { confirmIdentitySchema, totpCodeSchema } from "@/lib/validation";
+import { confirmIdentitySchema, mfaEmailSchema, totpCodeSchema } from "@/lib/validation";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { tk } from "@/lib/i18n/messages";
 
 export const GET = route(async () => {
   const user = await requireApiUser();
-  return json({ enabled: Boolean(user.totpEnabledAt), recoveryLeft: await recoveryCodesLeft(user.id) });
+  return json({ enabled: Boolean(user.totpEnabledAt), recoveryLeft: await recoveryCodesLeft(user.id), mfaEmail: user.mfaEmail });
+});
+
+// E-Mail als Notfallweg ein- oder ausschalten (#109) – nur mit Bestätigung der
+// eigenen Identität, damit eine offene Sitzung allein nicht genügt.
+export const PATCH = route(async (req) => {
+  const user = await requireApiUser();
+  limitOrThrow(`mfa-email-switch:${user.id}`, 10, 10 * MINUTE);
+  const input = await readBody(req, mfaEmailSchema);
+  await confirmIdentity(user.id, input);
+  if (input.mfaEmail && !user.email) throw new ApiError(400, tk("account", "totp.mfaEmailNoMail"));
+  await db.user.update({ where: { id: user.id }, data: { mfaEmail: input.mfaEmail } });
+  return json({ enabled: Boolean(user.totpEnabledAt), recoveryLeft: await recoveryCodesLeft(user.id), mfaEmail: input.mfaEmail });
 });
 
 // Einrichtung beginnen: Schlüssel erzeugen und hinterlegen – scharf wird er

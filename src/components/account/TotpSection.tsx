@@ -6,6 +6,7 @@ import { FormError } from "@/components/ui/FormError";
 import { api, ApiClientError, errorMessage } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import { AccountSection } from "./AccountManager";
+import { Toggle } from "@/components/theme/controls";
 
 type Mode = "idle" | "setup" | "codes" | "confirm-disable" | "confirm-regenerate";
 
@@ -47,11 +48,15 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   );
 }
 
-export function TotpSection({ initial, hasPassword }: { initial: { enabled: boolean; recoveryLeft: number }; hasPassword: boolean }) {
+export function TotpSection({ initial, hasPassword, canMail }: { initial: { enabled: boolean; recoveryLeft: number; mfaEmail: boolean }; hasPassword: boolean; canMail: boolean }) {
   const t = useT("account");
   const tc = useT("common");
   const [enabled, setEnabled] = useState(initial.enabled);
   const [recoveryLeft, setRecoveryLeft] = useState(initial.recoveryLeft);
+  // E-Mail als Notfallweg (#109): Umschalten braucht Passwort bzw. einen Code
+  const [mfaEmail, setMfaEmail] = useState(initial.mfaEmail);
+  const [wantMfaEmail, setWantMfaEmail] = useState<boolean | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("idle");
   const [setup, setSetup] = useState<{ secret: string; qr: string } | null>(null);
   const [codes, setCodes] = useState<string[]>([]);
@@ -94,6 +99,18 @@ export function TotpSection({ initial, hasPassword }: { initial: { enabled: bool
       setCodes(res.codes);
       setSetup(null);
       reset("codes");
+    });
+  };
+
+  const saveMfaEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = hasPassword ? { password } : { code };
+    return run(async () => {
+      const res = await api<{ mfaEmail: boolean }>("/api/account/totp", { method: "PATCH", body: { ...body, mfaEmail: wantMfaEmail } });
+      setMfaEmail(res.mfaEmail);
+      setWantMfaEmail(null);
+      setNotice(t("totp.mfaEmailSaved"));
+      reset();
     });
   };
 
@@ -174,6 +191,42 @@ export function TotpSection({ initial, hasPassword }: { initial: { enabled: bool
           <div className="flex flex-wrap gap-2">
             <button className="btn btn-sm" onClick={() => reset("confirm-regenerate")}><KeyRound size={14} /> {t("totp.newCodes")}</button>
             <button className="btn btn-danger btn-sm" onClick={() => reset("confirm-disable")}><ShieldOff size={14} /> {t("totp.disable")}</button>
+          </div>
+
+          {/* Notfallweg per E-Mail – aus, bis man ihn einschaltet (#109) */}
+          <div className="rounded-xl border px-3 py-2" data-testid="mfa-email-switch">
+            {wantMfaEmail === null ? (
+              <Toggle
+                label={t("totp.mfaEmail")}
+                hint={canMail ? t("totp.mfaEmailHint") : t("totp.mfaEmailNoMail")}
+                checked={mfaEmail}
+                onChange={(v) => {
+                  if (!canMail && v) return;
+                  setWantMfaEmail(v);
+                  setError(null);
+                  setNotice(null);
+                }}
+              />
+            ) : (
+              <form onSubmit={saveMfaEmail} className="space-y-2">
+                <p className="text-sm">{t("totp.mfaEmailConfirm")}</p>
+                {hasPassword ? (
+                  <input type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" aria-label={t("totp.passwordPlaceholder")} autoFocus />
+                ) : (
+                  <input className="field text-center font-mono tracking-widest" inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} aria-label={t("totp.codeLabel")} autoFocus />
+                )}
+                <FormError message={error} />
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={busy} data-testid="mfa-email-save">
+                    {tc("save")}
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={() => { setWantMfaEmail(null); reset(); }}>
+                    {tc("cancel")}
+                  </button>
+                </div>
+              </form>
+            )}
+            {notice && <p role="status" className="mt-1 text-xs text-emerald-400">{notice}</p>}
           </div>
         </div>
       ) : (
