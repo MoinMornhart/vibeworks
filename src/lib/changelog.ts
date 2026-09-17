@@ -28,6 +28,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.5",
+    date: "2026-09-17",
+    title: "Ansicht aufräumen",
+    titleEn: "Tidy up your view",
+    changes: [
+      {
+        type: "neu",
+        text: "Neue Seite „Ansicht“ im Profilmenü: Was du nicht brauchst, blendest du aus – Menüpunkte, Karten auf der Startseite und Bereiche der Projektseite",
+        en: "New “View” page in the profile menu: hide what you don't need – menu entries, cards on the start page and sections of the project page",
+        link: "/ansicht",
+      },
+      {
+        type: "neu",
+        text: "„Nur das Nötigste“ blendet mit einem Klick alles Zusätzliche aus, „Alles anzeigen“ holt es zurück",
+        en: "“Only the essentials” hides all extras in one click, “Show everything” brings them back",
+        link: "/ansicht",
+      },
+      {
+        type: "besser",
+        text: "Die Auswahl gilt nur für dich, wird nichts gelöscht und lässt sich jederzeit zurücknehmen; Projekte, Aufgaben und Notizen bleiben immer sichtbar",
+        en: "The choice applies only to you, deletes nothing and can be undone at any time; projects, tasks and notes always stay visible",
+      },
+    ],
+  },
+  {
     version: "1.3.4",
     date: "2026-09-17",
     title: "Abhängigkeiten aufgefrischt",

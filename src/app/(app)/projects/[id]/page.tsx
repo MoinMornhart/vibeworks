@@ -39,6 +39,7 @@ import { WorkflowPanel } from "@/components/projects/WorkflowPanel";
 import { ProjectKeysPanel } from "@/components/projects/ProjectKeysPanel";
 import { CiPanel } from "@/components/git/CiPanel";
 import { LighthousePanel } from "@/components/git/LighthousePanel";
+import { viewOf } from "@/lib/uiPrefs";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ teilen?: string }> };
 
@@ -86,6 +87,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   if (!loaded) notFound();
   const { project, access, perms } = loaded;
   const can = (p: ProjectPermission) => perms.has(p);
+  // Ausgeblendete Bereiche berücksichtigen (#109)
+  const show = await viewOf((await requirePageUser()).id);
   const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, issueImport, gitPeople, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
   const [live, timeSeconds, people] = await Promise.all([
     project.liveUrl ? liveStats(project.id) : null,
@@ -121,7 +124,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         analysis={analysis}
         timeSeconds={timeSeconds}
       />
-      {project.liveUrl && live && (
+      {show("project.live") && project.liveUrl && live && (
         <LivePanel
           projectId={project.id}
           canCheck={can("live.check")}
@@ -138,7 +141,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           }}
         />
       )}
-      {(isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={can("errors.manage")} />}
+      {show("project.errors") && (isOwner || errorKey) && <ErrorsPanel projectId={project.id} canEdit={can("errors.manage")} />}
       <TaskBoard
         projectId={project.id}
         initial={tasks.map(serializeTask)}
@@ -151,10 +154,11 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         people={people.map(({ username, name }) => ({ username, name }))}
       />
       <NotesPanel projectId={project.id} initial={notes.map(serializeNote)} readOnly={!can("notes.edit")} />
-      <StructurePanel projectId={project.id} projectName={project.name} canEdit={can("notes.edit")} />
-      <WorkflowPanel projectId={project.id} projectName={project.name} canEdit={can("workflows.manage")} canRun={can("tasks.edit")} />
-      {isOwner && <ProjectKeysPanel projectId={project.id} />}
-      <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />
+      {show("project.structure") && <StructurePanel projectId={project.id} projectName={project.name} canEdit={can("notes.edit")} />}
+      {show("project.workflows") && <WorkflowPanel projectId={project.id} projectName={project.name} canEdit={can("workflows.manage")} canRun={can("tasks.edit")} />}
+      {show("project.keys") && isOwner && <ProjectKeysPanel projectId={project.id} />}
+      {show("project.costs") && <CostPanel projectId={project.id} initial={costs.map(serializeCost)} today={dayKey(new Date())} canEdit={can("costs.edit")} />}
+      {show("project.git") && (
       <GitPanel
         projectId={project.id}
         repoUrl={project.repoUrl}
@@ -170,10 +174,11 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         linkedIssues={tasks.filter((t) => t.issueNumber !== null).length}
         mode={isOwner ? "owner" : "member"}
       />
-      {project.repoUrl && repoCache?.provider && (
+      )}
+      {show("project.deps") && project.repoUrl && repoCache?.provider && (
         <DepsPanel projectId={project.id} initial={(repoCache.deps as unknown as DepsReport | null) ?? null} canCheck={can("git.sync")} defaultBranch={repoCache.defaultBranch} />
       )}
-      {project.repoUrl && repoCache?.provider === "github" && (
+      {show("project.repoCheck") && project.repoUrl && repoCache?.provider === "github" && (
         <RepoCheckPanel
           projectId={project.id}
           initial={serializeRepoCheck(repoCheck, repoCache, checkTasks)}
@@ -184,13 +189,13 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         />
       )}
       {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
-      {project.repoUrl && repoCache?.provider === "github" && <CiPanel projectId={project.id} canEdit={can("ci.manage")} />}
-      {project.repoUrl && repoCache?.provider === "github" && (isOwner || project.liveUrl) && (
+      {show("project.ci") && project.repoUrl && repoCache?.provider === "github" && <CiPanel projectId={project.id} canEdit={can("ci.manage")} />}
+      {show("project.lighthouse") && project.repoUrl && repoCache?.provider === "github" && (isOwner || project.liveUrl) && (
         <LighthousePanel projectId={project.id} canRun={can("git.sync")} canManage={isOwner} hasToken={Boolean(repoTokenHint || account)} />
       )}
-      {project.repoUrl && repoCache?.provider === "github" && <ConflictPanel projectId={project.id} canEdit={isOwner} />}
-      {project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
-      {project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
+      {show("project.conflicts") && project.repoUrl && repoCache?.provider === "github" && <ConflictPanel projectId={project.id} canEdit={isOwner} />}
+      {show("project.fileFilter") && project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
+      {show("project.codeGraph") && project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
       <AutoRefresh />
     </div>
   );

@@ -13,6 +13,7 @@ import { displayNameOf, requirePageUser } from "@/lib/auth/guard";
 import { getSettings, isSetupDone } from "@/lib/settings";
 import { config } from "@/lib/config";
 import { publicBuildInfo } from "@/lib/buildInfo";
+import { uiPrefsOf } from "@/lib/uiPrefs";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isAdmin = user.role === "ADMIN";
   const community = (await getSettings()).mode === "MULTI";
   const beta = (await cookies()).get(BETA_COOKIE)?.value === "1";
+  // Ausgeblendete Bereiche dieses Kontos (#109)
+  const prefs = await uiPrefsOf(user.id);
 
   return (
     <div className="flex min-h-dvh flex-col">
       {config.demoMode && <DemoBanner />}
       {beta && <BetaBanner />}
-      <TopNav appName={config.appName} user={{ name: displayNameOf(user), username: user.username, isAdmin, community }} />
+      <TopNav appName={config.appName} user={{ name: displayNameOf(user), username: user.username, isAdmin, community, hidden: prefs.hidden }} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 sm:px-5 sm:py-8">{children}</main>
       <footer className="mx-auto w-full max-w-7xl px-5 pb-6 text-center text-xs text-muted">
         {config.appName} · <ChangelogButton build={publicBuildInfo()} />

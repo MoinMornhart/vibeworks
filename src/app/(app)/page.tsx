@@ -14,9 +14,12 @@ import { WeeklySuggestions } from "@/components/WeeklySuggestions";
 import { ensureWeeklySuggestions, loadWeekSuggestions } from "@/lib/suggestions";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { onboardingFor } from "@/lib/onboarding";
+import { viewOf } from "@/lib/uiPrefs";
 
 export default async function Dashboard() {
   const user = await requirePageUser();
+  // Ausgeblendete Bereiche berücksichtigen (#109)
+  const show = await viewOf(user.id);
   const now = new Date();
   const cutoff = new Date(now.getTime() - SLEEP_DAYS * 86_400_000);
   const [projects, done, shared, requests, drowsy, buried, tg] = await Promise.all([
@@ -124,9 +127,10 @@ export default async function Dashboard() {
         </section>
       )}
       {!onboarding.dismissed && <OnboardingCard initial={onboarding} />}
-      <WeeklySuggestions initial={suggestions} />
-      <SleepingProjects items={sleeping} />
+      {show("dash.suggestions") && <WeeklySuggestions initial={suggestions} />}
+      {show("dash.sleeping") && <SleepingProjects items={sleeping} />}
       <ProjectBoard initial={projects.map((p) => serializeProject(p, done.get(p.id)))} greeting={displayNameOf(user)} />
+      {show("dash.shared") && (
       <SharedProjects
         projects={shared.map((p) => ({
           id: p.id,
@@ -140,7 +144,8 @@ export default async function Dashboard() {
           via: p.members.length ? null : (p.teams[0]?.team.name ?? null),
         }))}
       />
-      {buried > 0 && (
+      )}
+      {show("dash.graveyard") && buried > 0 && (
         <p className="mt-8 text-center text-sm">
           <Link href="/graveyard" className="text-muted hover:text-fg">{tg("page.link", { n: buried })}</Link>
         </p>

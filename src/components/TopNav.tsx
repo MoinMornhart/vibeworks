@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Bot, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, ShieldCheck, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Bot, Eye, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, ShieldCheck, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -16,6 +16,7 @@ import { api } from "@/lib/client/api";
 import { useT } from "@/lib/i18n/client";
 import type { Key } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
+import { hider, readUiPrefs, type UiKey } from "@/lib/uiPrefsLogic";
 
 export interface NavUser {
   name: string;
@@ -23,6 +24,8 @@ export interface NavUser {
   isAdmin: boolean;
   /** Community gibt es nur im Mehrbenutzerbetrieb */
   community?: boolean;
+  /** Ausgeblendete Bereiche dieses Kontos (#109) */
+  hidden?: string[];
 }
 
 interface NavItem {
@@ -31,16 +34,18 @@ interface NavItem {
   icon: LucideIcon;
   admin?: boolean;
   community?: boolean;
+  /** Lässt sich unter „Ansicht“ ausblenden (#109) */
+  hideKey?: UiKey;
 }
 
 const NAV: NavItem[] = [
   { href: "/", label: "nav.dashboard", icon: LayoutDashboard },
-  { href: "/today", label: "nav.today", icon: Sun },
-  { href: "/tasks", label: "nav.tasks", icon: ListChecks },
-  { href: "/prompts", label: "nav.prompts", icon: MessageSquare },
-  { href: "/review", label: "nav.review", icon: CalendarRange },
-  { href: "/community", label: "nav.community", icon: Users, community: true },
-  { href: "/docs", label: "nav.docs", icon: BookOpen },
+  { href: "/today", label: "nav.today", icon: Sun, hideKey: "nav.today" },
+  { href: "/tasks", label: "nav.tasks", icon: ListChecks, hideKey: "nav.tasks" },
+  { href: "/prompts", label: "nav.prompts", icon: MessageSquare, hideKey: "nav.prompts" },
+  { href: "/review", label: "nav.review", icon: CalendarRange, hideKey: "nav.review" },
+  { href: "/community", label: "nav.community", icon: Users, community: true, hideKey: "nav.community" },
+  { href: "/docs", label: "nav.docs", icon: BookOpen, hideKey: "nav.docs" },
   // Design und Admin stehen im Profilmenü – die Leiste bleibt so auch mit laufendem Timer vollständig
 ];
 
@@ -53,6 +58,8 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
   const tc = useT("common");
   const pathname = usePathname();
   const [menu, setMenu] = useState(false);
+  // Ausgeblendetes gar nicht erst anzeigen (#109)
+  const show = hider(readUiPrefs({ hidden: user.hidden ?? [] }));
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,7 +89,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
           <span className="hidden text-lg sm:inline">{appName}</span>
         </Link>
         <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-          {NAV.filter((n) => (!n.admin || user.isAdmin) && (!n.community || user.community)).map((item) => (
+          {NAV.filter((n) => (!n.admin || user.isAdmin) && (!n.community || user.community) && (!n.hideKey || show(n.hideKey))).map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
@@ -133,7 +140,7 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
               <Link role="menuitem" href="/account" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <UserRound size={15} /> {t("nav.account")}
               </Link>
-              {user.community && (
+              {user.community && show("menu.teams") && (
                 <Link role="menuitem" href="/teams" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                   <UsersRound size={15} /> {t("nav.teams")}
                 </Link>
@@ -146,14 +153,22 @@ export function TopNav({ appName, user }: { appName: string; user: NavUser }) {
               <Link role="menuitem" href="/account#mcp" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <Bot size={15} /> {t("nav.mcp")}
               </Link>
-              <Link role="menuitem" href="/inbox" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
-                <Inbox size={15} /> {t("nav.inbox")}
-              </Link>
-              <Link role="menuitem" href="/costs" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
-                <Wallet size={15} /> {t("nav.costs")}
-              </Link>
+              {show("menu.inbox") && (
+                <Link role="menuitem" href="/inbox" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                  <Inbox size={15} /> {t("nav.inbox")}
+                </Link>
+              )}
+              {show("menu.costs") && (
+                <Link role="menuitem" href="/costs" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
+                  <Wallet size={15} /> {t("nav.costs")}
+                </Link>
+              )}
               <Link role="menuitem" href="/design" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>
                 <Palette size={15} /> {t("nav.design")}
+              </Link>
+              {/* Ansicht aufräumen (#109) */}
+              <Link role="menuitem" href="/ansicht" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)} data-testid="nav-view">
+                <Eye size={15} /> {t("nav.view")}
               </Link>
               {user.isAdmin && (
                 <Link role="menuitem" href="/admin" className="btn btn-ghost btn-sm w-full justify-start" onClick={() => setMenu(false)}>

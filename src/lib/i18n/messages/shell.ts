@@ -27,6 +27,7 @@ const de = {
     admin: "Admin",
     administration: "Administration",
     account: "Mein Konto",
+    view: "Ansicht",
   },
   topNav: {
     openSearch: "Schnellsuche öffnen",
@@ -146,6 +147,7 @@ const en: Shape<typeof de> = {
     admin: "Admin",
     administration: "Administration",
     account: "My account",
+    view: "View",
   },
   topNav: {
     openSearch: "Open quick search",

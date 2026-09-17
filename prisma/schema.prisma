@@ -147,6 +147,9 @@ model User {
   /// Sprache der Oberfläche ("de" | "en") – null heißt: Browsersprache
   locale String?
 
+  /// Ausgeblendete Bereiche (#109): { hidden: [...] } – siehe src/lib/uiPrefsLogic.ts
+  ui Json?
+
   /// Erste Schritte (#100): { hideDone, dismissed }
   onboarding Json?
 

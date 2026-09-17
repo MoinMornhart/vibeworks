@@ -47,11 +47,12 @@ import discord from "./discord";
 import ci from "./ci";
 import lighthouse from "./lighthouse";
 import notices from "./notices";
+import view from "./view";
 
 // Alle Übersetzungen, nach Namensräumen. Übersetzungsdateien importieren nur
 // ../types und ../translate – nie App-Code, sonst entstehen Zirkelbezüge.
 
-const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides, teams, roles, teamHub, graph, links, onboarding, workflows, discord, ci, lighthouse, notices };
+const MESSAGES = { common, status, errors, validation, auth, projects, share, tasks, notes, git, account, admin, theme, shell, docs, data, review, notify, mcp, live, grave, today, stats, prompts, costs, time, deps, inbox, portfolio, demo, suggestions, check, bugs, community, slides, teams, roles, teamHub, graph, links, onboarding, workflows, discord, ci, lighthouse, notices, view };
 
 export type Namespace = keyof typeof MESSAGES;
 export type Key<N extends Namespace> = Leaves<(typeof MESSAGES)[N]["de"]>;
