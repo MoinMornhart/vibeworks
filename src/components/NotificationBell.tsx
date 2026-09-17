@@ -171,7 +171,7 @@ export function NotificationBell() {
                 <CheckCheck size={14} /> {t("topNav.bell.readAll")}
               </button>
             )}
-            <Link href="/account" className="btn btn-ghost btn-icon btn-sm" onClick={() => setOpen(false)} aria-label={t("topNav.bell.settings")} title={t("topNav.bell.settings")}>
+            <Link href="/meldungen" className="btn btn-ghost btn-icon btn-sm" onClick={() => setOpen(false)} aria-label={t("topNav.bell.all")} title={t("topNav.bell.all")} data-testid="bell-all">
               <Settings size={14} />
             </Link>
           </div>

@@ -1195,6 +1195,8 @@ model NotificationSettings {
   events          Json      @default("{}")
   /// Kalendertag der letzten Zusammenfassung fälliger Aufgaben
   digestSentOn    String?
+  /// Regeln (#109): { words, people, projects } – wichtige Wörter kommen immer durch
+  rules           Json?
   /// Montag (Kalendertag) des letzten Wochenberichts (#82)
   weeklyReportOn  String?
   lastSentAt      DateTime?

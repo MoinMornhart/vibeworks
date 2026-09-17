@@ -28,6 +28,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.0",
+    date: "2026-09-17",
+    title: "Meldungen-Seite mit eigenen Regeln",
+    titleEn: "Notification page with your own rules",
+    changes: [
+      {
+        type: "neu",
+        text: "Antworten im Issue einer Aufgabe melden sich jetzt – mit Text, Absender und Sprung zur Aufgabe",
+        en: "Replies in the issue of a task are now reported – with text, sender and a jump to the task",
+      },
+      {
+        type: "neu",
+        text: "Neue Seite „Meldungen“ (Zahnrad in der Glocke): alle Benachrichtigungen durchsuchen, nach Anlass und Ungelesenem filtern, mehrere auswählen, als gelesen markieren oder löschen",
+        en: "New “Notifications” page (gear in the bell): search all notifications, filter by event and unread, select several, mark them read or delete them",
+        link: "/meldungen",
+      },
+      {
+        type: "neu",
+        text: "Eigene Regeln: wichtige Wörter (kommen immer durch und werden hervorgehoben), nur von bestimmten Leuten, nur aus bestimmten Projekten – dazu eine Liste offener Aufgaben, in denen deine Wörter vorkommen",
+        en: "Your own rules: important words (always get through and are highlighted), only from certain people, only from certain projects – plus a list of open tasks containing your words",
+        link: "/meldungen",
+      },
+    ],
+  },
+  {
     version: "1.2.9",
     date: "2026-09-17",
     title: "Bessere Suche, eigene Rückfragen, aufräumbare Glocke",

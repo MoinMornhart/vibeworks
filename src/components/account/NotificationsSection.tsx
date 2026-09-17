@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { Bell, CheckCircle2, Mail, Save, Send, Smartphone, Webhook, XCircle } from "lucide-react";
 import { FormError } from "@/components/ui/FormError";
 import { Toggle } from "@/components/theme/controls";
@@ -106,8 +107,11 @@ export function NotificationsSection({ initial, smtpReady, isAdmin }: { initial:
           void save();
         }}
       >
-        <p className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2 text-sm">
-          <Bell size={15} className="mt-0.5 shrink-0 text-accent-ink" /> {t("bellNote")}
+        <p className="flex flex-wrap items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2 text-sm">
+          <Bell size={15} className="mt-0.5 shrink-0 text-accent-ink" /> {t("bellNote")}{" "}
+          <Link href="/meldungen" className="text-accent-ink hover:underline">
+            {t("centerLink")}
+          </Link>
         </p>
 
         <section aria-labelledby="notify-channels">

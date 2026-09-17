@@ -6,6 +6,7 @@ import { safeFetch } from "@/lib/security/ssrf";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { makeT, tk, type TFunction } from "@/lib/i18n/messages";
 import { eventsOf, ntfyRequest, webhookBody, withUrgency, type Channel, type Notice, type NotifyEvent } from "./format";
+import { decideNotice, readRules } from "./rulesLogic";
 import { sendMail } from "./mail";
 import { deliverDiscord } from "@/lib/discord/discord";
 
@@ -67,19 +68,36 @@ export async function storeInbox(userId: string, n: Notice): Promise<void> {
 
 export const hasChannel = (s: NotificationSettings) => Boolean(s.ntfyUrl || s.webhookUrl || s.email);
 
+/** Woher die Meldung kommt – für die Regeln (#109). */
+export interface NotifyOrigin {
+  projectId?: string | null;
+  /** Wer sie ausgelöst hat (Konto- oder Git-Name) */
+  author?: string | null;
+}
+
 /**
  * Ein Konto über einen Anlass benachrichtigen – sofern es ihn nicht
- * ausgeschaltet hat: immer in den Posteingang, dazu an die eingetragenen Kanäle.
+ * ausgeschaltet hat und die Regeln passen: immer in den Posteingang, dazu an
+ * die eingetragenen Kanäle. Wichtige Wörter kommen auch bei ausgeschaltetem
+ * Anlass durch und gelten als dringend.
  */
-export async function notifyUser(userId: string, event: NotifyEvent, build: (t: TFunction<"notify">, locale: Locale) => Notice): Promise<void> {
+export async function notifyUser(
+  userId: string,
+  event: NotifyEvent,
+  build: (t: TFunction<"notify">, locale: Locale) => Notice,
+  origin: NotifyOrigin = {},
+): Promise<void> {
   try {
     const [s, user] = await Promise.all([
       db.notificationSettings.findUnique({ where: { userId } }),
       db.user.findUnique({ where: { id: userId }, select: { locale: true, active: true } }),
     ]);
-    if (!user?.active || (s && !eventsOf(s.events)[event])) return;
+    if (!user?.active) return;
     const locale: Locale = isLocale(user.locale) ? user.locale : "de";
-    const notice = build(makeT(locale, "notify"), locale);
+    const built = build(makeT(locale, "notify"), locale);
+    const decision = decideNotice(readRules(s?.rules), s?.events ?? {}, { event, projectId: origin.projectId, author: origin.author, text: `${built.title}\n${built.message}` });
+    if (!decision.send) return;
+    const notice = decision.important ? { ...built, priority: built.priority ?? ("high" as const) } : built;
     await storeInbox(userId, notice);
     if (s && hasChannel(s)) await deliver(s, notice);
     // Discord-Server des Kontos (#105) – eigene Fehlerablage am Link
@@ -96,6 +114,7 @@ export function notificationView(s: NotificationSettings | null) {
     webhookUrl: s?.webhookUrl ?? "",
     email: s?.email ?? "",
     events: eventsOf(s?.events),
+    rules: readRules(s?.rules),
     urgentCritical: s?.urgentCritical ?? true,
     lastError: s?.lastError ?? null,
     lastSentAt: s?.lastSentAt?.toISOString() ?? null,

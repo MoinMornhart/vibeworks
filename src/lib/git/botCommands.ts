@@ -1,13 +1,14 @@
 import type { Prisma, Task, TaskStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { appLink } from "@/lib/notify";
+import { appLink, notifyUser } from "@/lib/notify";
 import { nextTaskPosition, syncProjectProgress, transitionTask } from "@/lib/tasks";
 import { dayKeyToDate } from "@/lib/taskDates";
 import { statusLabelsOf } from "@/lib/boardConfig";
 import { isAiLocked } from "@/lib/aiLock";
 import { normalizeGitPeople, roleOf } from "./issueImportLogic";
 import type { IssueApi, IssueComment } from "./providers";
-import { describeCommand, HELP_TEXT, infoText, mayCommand, mentionsBot, parseCommands, replyText, type BotCommand } from "./botCommandsLogic";
+import { BOT_MARKER, describeCommand, HELP_TEXT, infoText, mayCommand, mentionsBot, parseCommands, replyText, REPLY_MARKER, type BotCommand } from "./botCommandsLogic";
+import { truncate } from "@/lib/utils";
 
 // Bot-Befehle aus Issue-Kommentaren ausführen (#79, #81). Läuft beim
 // Issue-Abgleich mit: neue Kommentare seit dem letzten Lauf lesen, Befehle
@@ -27,6 +28,36 @@ export async function permissionOf(api: IssueApi, projectId: string, login: stri
   const value = await api.permission(login).catch(() => null);
   permissions.set(key, { at: Date.now(), value });
   return value;
+}
+
+/**
+ * Antworten im Issue melden (#109): alles von Menschen, was nicht aus
+ * VibeWorks selbst kommt. Empfänger sind die Besitzerin des Projekts und wer
+ * die Aufgabe angelegt hat – jeder nur einmal je Kommentar.
+ */
+async function notifyReplies(projectId: string, comments: IssueComment[], botLogin: string | null): Promise<void> {
+  const own = botLogin?.toLowerCase() ?? null;
+  const human = comments.filter((c) => c.author && c.author.toLowerCase() !== own && !c.author.endsWith("[bot]") && !c.body.includes(REPLY_MARKER) && !c.body.includes(BOT_MARKER));
+  if (!human.length) return;
+  const project = await db.project.findUnique({ where: { id: projectId }, select: { name: true, ownerId: true } });
+  if (!project) return;
+  const tasks = await db.task.findMany({
+    where: { projectId, issueNumber: { in: [...new Set(human.map((c) => c.issueNumber))] } },
+    select: { id: true, title: true, issueNumber: true, createdById: true },
+  });
+  const byNumber = new Map(tasks.map((t) => [t.issueNumber!, t]));
+  for (const c of human.slice(-MAX_COMMENTS)) {
+    const task = byNumber.get(c.issueNumber);
+    if (!task) continue;
+    for (const userId of new Set([project.ownerId, task.createdById].filter((x): x is string => Boolean(x)))) {
+      await notifyUser(userId, "issueComment", (t) => ({
+        event: "issueComment",
+        title: t("events.issueComment.title", { author: c.author, title: truncate(task.title, 60) }),
+        message: t("events.issueComment.message", { text: truncate(c.body.replace(/\s+/g, " ").trim(), 300) }),
+        url: appLink(`/projects/${projectId}?aufgabe=${task.id}#tasks`),
+      }), { projectId, author: c.author });
+    }
+  }
 }
 
 /** Befehle anwenden – ohne after(), der Abgleich läuft auch außerhalb von Anfragen. */
@@ -81,6 +112,8 @@ export async function runBotCommands(projectId: string, api: IssueApi, botLogin:
   }
   const newest = comments.reduce((max, c) => Math.max(max, new Date(c.createdAt).getTime()), since.getTime());
   await db.project.update({ where: { id: projectId }, data: { issueCommentsAt: new Date(newest) } });
+
+  await notifyReplies(projectId, comments, botLogin).catch((err) => console.warn("[bot] Meldung:", err));
 
   const own = botLogin?.toLowerCase() ?? null;
   const relevant = comments
