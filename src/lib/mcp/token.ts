@@ -1,6 +1,7 @@
 import type { ApiToken } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { randomToken, sha256 } from "@/lib/crypto";
+import { keyState } from "./projectKeyLogic";
 
 // API-Schlüssel für Claude Code und andere MCP-Clients. Der Schlüssel selbst
 // wird nur einmal beim Erstellen gezeigt; gespeichert ist allein sein
@@ -21,7 +22,7 @@ export function bearerOf(header: string | null): string | null {
 }
 
 /** Warum ein Schlüssel nicht angenommen wird – als Code im 401 (#25). Unbekannt und widerrufen sind nicht unterscheidbar: widerrufene Zeilen sind gelöscht. */
-export type ApiTokenProblem = "missing" | "malformed" | "invalid_or_revoked" | "account_inactive";
+export type ApiTokenProblem = "missing" | "malformed" | "invalid_or_revoked" | "account_inactive" | "paused" | "expired" | "no_projects";
 
 /** Konto zum Bearer-Schlüssel – oder die Ursache, warum nicht. meta: wer gerade anfragt (Prüfspur am Schlüssel). */
 export async function checkApiToken(header: string | null, meta: { ip?: string | null; userAgent?: string | null } = {}) {
@@ -34,6 +35,10 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
   });
   if (!row) return { problem: "invalid_or_revoked" as ApiTokenProblem };
   if (!row.user.active) return { problem: "account_inactive" as ApiTokenProblem };
+  // Projekt-Schlüssel (#106): pausiert, abgelaufen oder alle Projekte widerrufen
+  const state = keyState(row);
+  if (state === "paused" || state === "expired") return { problem: state as ApiTokenProblem };
+  if (state === "empty") return { problem: "no_projects" as ApiTokenProblem };
   // „Zuletzt benutzt“ samt Adresse und Programm höchstens einmal pro Minute schreiben
   if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > 60_000) {
     await db.apiToken
@@ -46,6 +51,7 @@ export async function checkApiToken(header: string | null, meta: { ip?: string |
       user: row.user,
       rulesAckAt: row.rulesAckAt,
       rulesVersion: row.rulesVersion,
+      projectIds: row.projectScoped ? row.projectIds : null,
       settings: { scope: row.scope, reminderMode: row.reminderMode, reminderText: row.reminderText, reminderEvery: row.reminderEvery, reminderUntil: row.reminderUntil },
     },
   };
@@ -77,6 +83,11 @@ export function serializeApiToken(t: ApiToken) {
     reminderText: t.reminderText,
     reminderEvery: t.reminderEvery,
     reminderUntil: t.reminderUntil?.toISOString() ?? null,
+    projectScoped: t.projectScoped,
+    projectIds: t.projectIds,
+    expiresAt: t.expiresAt?.toISOString() ?? null,
+    disabledAt: t.disabledAt?.toISOString() ?? null,
+    state: keyState(t),
   };
 }
 export type ApiTokenItem = ReturnType<typeof serializeApiToken>;

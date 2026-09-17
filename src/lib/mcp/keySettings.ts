@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { KEY_LIFETIMES } from "./projectKeyLogic";
 
 // Einstellungen je API-Schlüssel (#48/#49): welche Werkzeuge er nutzen darf
 // und wie oft die KI an ihre Pflichten erinnert wird. Ohne Datenbank.
@@ -11,7 +12,7 @@ export type ReminderMode = (typeof REMINDER_MODES)[number];
 /** Immer erlaubt – ohne sie kann die KI die Regeln nicht holen. */
 const ALWAYS = new Set(["get_agent_rules", "confirm_agent_rules"]);
 /** Zusätzlich zu den lesenden Werkzeugen bei „tasks“. */
-const TASK_TOOLS = new Set(["create_task", "create_task_in_projects", "update_task", "add_to_today", "remove_from_today", "start_timer", "stop_timer", "resolve_error", "add_code_memo", "start_workflow", "complete_workflow_step"]);
+const TASK_TOOLS = new Set(["create_task", "create_task_in_projects", "update_task", "add_to_today", "remove_from_today", "start_timer", "stop_timer", "resolve_error", "add_code_memo", "start_workflow", "complete_workflow_step", "add_task_comment"]);
 
 export function toolAllowed(tool: { name: string; annotations?: { readOnlyHint?: boolean } }, scope: string): boolean {
   if (scope === "all" || ALWAYS.has(tool.name)) return true;
@@ -48,4 +49,7 @@ export const keySettingsSchema = z.object({
   reminderEvery: z.number().int().min(1).max(100).optional(),
   /** Ab jetzt gültig für … (#100) */
   reminderDuration: z.enum(REMINDER_DURATIONS).optional(),
+  /** Schlüssel pausieren bzw. neue Laufzeit ab jetzt (#106) */
+  paused: z.boolean().optional(),
+  lifetime: z.enum(KEY_LIFETIMES).optional(),
 });

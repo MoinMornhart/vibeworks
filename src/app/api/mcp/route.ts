@@ -15,6 +15,21 @@ import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 import { seenTaskIdsOfResult, taskIdOfCall } from "@/lib/taskInfoLogic";
 import { reminderFor, toolAllowed } from "@/lib/mcp/keySettings";
 import { runNoticeFor } from "@/lib/aiWorkflows";
+import { runWithProjectScope } from "@/lib/mcp/keyScope";
+import { toolAllowedForKey } from "@/lib/mcp/projectKeyLogic";
+import type { PromptProvider, ResourceProvider } from "@/lib/mcp/protocol";
+
+/** Projekt-Schlüssel sehen nur die Workflow-Befehle, keine eigenen Prompts des Kontos (#106). */
+const scopedPrompts: PromptProvider<McpContext> = {
+  list: async (ctx) => (await MCP_PROMPTS.list(ctx)).filter((p) => p.name.startsWith("workflow-")),
+  get: async (name, args, ctx) => (name.startsWith("workflow-") ? MCP_PROMPTS.get(name, args, ctx) : null),
+};
+/** … und keine kontoweiten Übersichten (Probleme, Tagesplan). */
+const ACCOUNT_RESOURCES = new Set(["vibeworks://problems", "vibeworks://today"]);
+const scopedResources: ResourceProvider<McpContext> = {
+  list: async (ctx) => (await MCP_RESOURCES.list(ctx)).filter((r) => !ACCOUNT_RESOURCES.has(r.uri)),
+  read: async (uri, ctx) => (ACCOUNT_RESOURCES.has(uri) ? null : MCP_RESOURCES.read(uri, ctx)),
+};
 
 /** Werkzeuge, die den Schritt selbst nennen – dort kein zusätzlicher Workflow-Hinweis. */
 const WORKFLOW_TOOLS = new Set(["start_workflow", "complete_workflow_step"]);
@@ -62,13 +77,14 @@ export async function POST(req: NextRequest) {
   // Bestätigt heißt: genau diese Fassung der Regeln – sonst neu erinnern (#79)
   const rulesOutdated = Boolean(auth.rulesAckAt) && auth.rulesVersion !== rulesVersion(locale);
   let rulesAcked = Boolean(auth.rulesAckAt) && !rulesOutdated;
-  const { status, body } = await handleBody(raw, ctx, {
+  const scoped = auth.projectIds !== null;
+  const { status, body } = await runWithProjectScope(auth.projectIds, () => handleBody(raw, ctx, {
     info: { name: "vibeworks", title: "VibeWorks", version: CHANGELOG[0]?.version ?? "0.0.0" },
     instructions: MCP_INSTRUCTIONS,
     // Nur die Werkzeuge, die dieser Schlüssel nutzen darf – andere gibt es für ihn nicht
-    tools: allMcpTools().filter((tool) => toolAllowed(tool, auth.settings.scope)),
-    prompts: MCP_PROMPTS,
-    resources: MCP_RESOURCES,
+    tools: allMcpTools().filter((tool) => toolAllowed(tool, auth.settings.scope) && toolAllowedForKey(tool.name, scoped)),
+    prompts: scoped ? scopedPrompts : MCP_PROMPTS,
+    resources: scoped ? scopedResources : MCP_RESOURCES,
     onInitialize: async (client) => {
       await db.apiToken.update({ where: { id: auth.tokenId }, data: { clientName: client.name, clientVersion: client.version, clientProtocol: client.protocol } });
     },
@@ -97,7 +113,7 @@ export async function POST(req: NextRequest) {
       console.error("[mcp]", err);
       return "Internal error";
     },
-  });
+  }));
   return status === 202 ? new NextResponse(null, { status: 202 }) : NextResponse.json(body, { status });
 }
 

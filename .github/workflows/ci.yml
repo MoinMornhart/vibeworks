@@ -1,0 +1,50 @@
+# Prüfung jedes Pushs und Pull Requests (#106): Typen, Tests, Build und
+# Code-Analyse mit fallow (ungenutzter Code, Zyklen). Bekannte fallow-Befunde
+# stehen in .fallow-baseline.json – rot wird die CI nur bei neuen.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Der Build braucht keine Datenbank – nur eine gültige Adresse für Prisma
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten
+        run: npm ci
+
+      - name: Typen
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Code-Analyse (fallow)
+        run: npx fallow dead-code --baseline .fallow-baseline.json --fail-on-issues --format github-annotations
+
+      - name: Build
+        run: npm run build

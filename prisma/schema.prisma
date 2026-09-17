@@ -968,10 +968,17 @@ model ApiToken {
   reminderMode      String    @default("default")
   reminderText      String?
   reminderEvery     Int       @default(10)
+  /// Projekt-Schlüssel (#106): nur diese Projekte – bei projectScoped und leerer Liste: gar nichts mehr
+  projectScoped     Boolean   @default(false)
+  projectIds        String[]  @default([])
+  /// Läuft ab (null: nie) bzw. ist pausiert
+  expiresAt         DateTime?
+  disabledAt        DateTime?
   calls             McpCall[]
   createdAt         DateTime  @default(now())
 
   @@index([userId])
+  @@index([projectIds], type: Gin)
 }
 
 /// MCP-Aufrufe fürs Protokoll im Konto – nur Werkzeug, Ergebnis, Dauer, keine Eingaben. Nach 30 Tagen weg.

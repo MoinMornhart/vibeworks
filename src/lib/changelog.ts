@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.2",
+    date: "2026-09-17",
+    title: "Projekt-Schlüssel für andere KIs, Issue-Gespräche über MCP, fallow in der CI",
+    titleEn: "Project keys for other AIs, issue conversations over MCP, fallow in CI",
+    changes: [
+      {
+        type: "neu",
+        text: "Projekt-Schlüssel: ein API-Schlüssel nur für ausgewählte Projekte (eigene und solche, in denen du Mitglieder einladen darfst) – mit Laufzeit, Pause-Knopf und deutlicher Warnung. Er sieht keine Docs, Prompts, Suche, Zeiten oder deinen Tagesplan",
+        en: "Project keys: an API key for selected projects only (your own and those where you may invite members) – with a lifetime, pause button and a clear warning. It sees no docs, prompts, search, time tracking or your daily plan",
+        link: "/account#mcp",
+      },
+      {
+        type: "neu",
+        text: "Besitzer fremder Projekte werden über jeden solchen Schlüssel benachrichtigt und können ihm im Projekt („KI-Schlüssel mit Zugriff“) den Zugriff entziehen – der Inhaber erfährt es ebenfalls",
+        en: "Owners of other people's projects are notified about every such key and can revoke its access in the project (“AI keys with access”) – the key holder is told as well",
+      },
+      {
+        type: "neu",
+        text: "MCP: list_task_comments und add_task_comment – KIs lesen und schreiben im Issue einer Aufgabe, gepostet über den Projekt-Bot und mit dem Namen des Schlüssels unterschrieben",
+        en: "MCP: list_task_comments and add_task_comment – AIs read and write in a task's issue, posted through the project bot and signed with the key's name",
+      },
+      {
+        type: "besser",
+        text: "Repo-Check und eigene CI nutzen jetzt fallow (kostenlos): ungenutzte Dateien, Exporte und Abhängigkeiten sowie Import-Zyklen in JavaScript/TypeScript. VibeWorks selbst prüft jeden Push mit Typen, Tests, fallow und Build",
+        en: "Repo check and our own CI now use fallow (free): unused files, exports and dependencies plus import cycles in JavaScript/TypeScript. VibeWorks itself checks every push with types, tests, fallow and build",
+      },
+    ],
+  },
+  {
     version: "1.2.1",
     date: "2026-09-17",
     title: "Discord-Bot per Klick",

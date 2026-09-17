@@ -49,6 +49,8 @@ import { fillPrompt } from "@/lib/prompts";
 import { protectedChanges } from "@/lib/protect";
 import { currentEntry, stopRunning } from "@/lib/timeServer";
 import { MAX_FOCUS } from "@/lib/today";
+import { postTaskComment, taskComments } from "@/lib/taskComments";
+import { limitOrThrow } from "@/lib/security/rateLimit";
 import { missingPaths, readStructure, structureInputSchema } from "@/lib/projectStructureLogic";
 import { saveStructure, structureView } from "@/lib/projectStructure";
 import { BUILTIN_WORKFLOWS, VERIFY_BEFORE_DONE, WORKFLOW_GUIDE, workflowSaveSchema } from "@/lib/aiWorkflowLogic";
@@ -497,6 +499,38 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         await logActivity({ projectId: current.id, userId, kind: "PROJECT_UPDATED", summary: "Projektangaben bearbeitet", meta: { fields: otherFields } });
       }
       return { id: updated.id, name: updated.name, status: updated.status, priority: updated.priority, progress, summary: updated.summary };
+    },
+  },
+  {
+    name: "list_task_comments",
+    title: "List task comments",
+    description:
+      "The conversation in the Git issue of a task (last 50 comments): author, text, whether it came from the VibeWorks bot. Read it before you answer, so you don't repeat what others already said.",
+    inputSchema: { type: "object", properties: { task: { type: "string", description: "Task id" } }, required: ["task"], additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    run: async (args, { userId }) => {
+      const { task } = await requireAiTask(userId, ref.parse(args.task));
+      if (!task.issueNumber) return { issue: null, comments: [], note: "This task has no Git issue." };
+      return { issue: task.issueUrl, comments: await taskComments(task) };
+    },
+  },
+  {
+    name: "add_task_comment",
+    title: "Comment on a task's issue",
+    description:
+      "Write a comment into the Git issue of a task – posted through the project's VibeWorks bot (or its issue access), signed with your key's name, so other people and AIs see who wrote it. Mention someone with @name if they should react. Keep it short and factual; never post secrets.",
+    inputSchema: {
+      type: "object",
+      properties: { task: { type: "string", description: "Task id" }, text: { type: "string", maxLength: 5000, description: "Markdown" } },
+      required: ["task", "text"],
+      additionalProperties: false,
+    },
+    run: async (args, ctx) => {
+      const input = z.object({ task: ref, text: z.string().trim().min(1).max(5000) }).parse(args);
+      const { task } = await requireAiTask(ctx.userId, input.task, "tasks.edit");
+      limitOrThrow(`mcp-comment:${ctx.tokenId ?? ctx.userId}`, 20, 10 * 60_000);
+      await postTaskComment(task, await aiName(ctx), input.text);
+      return { posted: true, issue: task.issueUrl };
     },
   },
   {

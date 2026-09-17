@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot, Check, CircleAlert, Copy, History, KeyRound, LifeBuoy, Plus, ScrollText, ShieldCheck } from "lucide-react";
+import { Bot, Check, CircleAlert, Copy, FolderLock, History, KeyRound, LifeBuoy, Pause, Play, Plus, ScrollText, ShieldAlert, ShieldCheck } from "lucide-react";
+import { KEY_LIFETIMES, MAX_KEY_PROJECTS, type KeyLifetime } from "@/lib/mcp/projectKeyLogic";
+import { Toggle } from "@/components/theme/controls";
 import { FormError } from "@/components/ui/FormError";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
@@ -52,6 +54,32 @@ export function ApiTokensSection({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallItem[] | null>(null);
+  // Projekt-Schlüssel (#106)
+  const [scoped, setScoped] = useState(false);
+  const [grantable, setGrantable] = useState<Array<{ id: string; name: string; own: boolean; owner: string }> | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [lifetime, setLifetime] = useState<KeyLifetime>("never");
+  const projectName = (id: string) => grantable?.find((p) => p.id === id)?.name ?? `#${id.slice(-6)}`;
+
+  useEffect(() => {
+    if (grantable || !(scoped || items.some((i) => i.projectScoped))) return;
+    api<{ projects: Array<{ id: string; name: string; own: boolean; owner: string }> }>("/api/account/api-tokens/projects")
+      .then((r) => setGrantable(r.projects))
+      .catch(() => setGrantable([]));
+  }, [scoped, items, grantable]);
+
+  async function setPaused(item: ApiTokenItem, paused: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api<{ item: ApiTokenItem }>(`/api/account/api-tokens/${item.id}`, { method: "PATCH", body: { paused } });
+      setItems((list) => list.map((x) => (x.id === item.id ? res.item : x)));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const endpoint = `${appUrl}/api/mcp`;
   const command = (token: string) => `claude mcp add --scope user --transport http vibeworks ${endpoint} --header "Authorization: Bearer ${token}"`;
@@ -70,10 +98,14 @@ export function ApiTokensSection({
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ token: string; item: ApiTokenItem }>("/api/account/api-tokens", { method: "POST", body: { name } });
+      const body = { name, ...(scoped ? { projects: picked } : {}), ...(lifetime !== "never" ? { lifetime } : {}) };
+      const res = await api<{ token: string; item: ApiTokenItem }>("/api/account/api-tokens", { method: "POST", body });
       setItems((list) => [...list, res.item]);
       setFresh({ token: res.token, name: res.item.name });
       setName("");
+      setPicked([]);
+      setScoped(false);
+      setLifetime("never");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -171,6 +203,21 @@ export function ApiTokensSection({
                     );
                   })()}
                 </p>
+                <p className="flex flex-wrap items-center gap-1.5 text-xs" data-testid="api-token-scope" suppressHydrationWarning>
+                  {item.projectScoped ? (
+                    <span className="chip !py-0.5 text-[11px]" title={item.projectIds.map(projectName).join(", ")}>
+                      <FolderLock size={11} /> {t("projectKey.projects", { list: item.projectIds.map(projectName).join(", ") || "–" })}
+                    </span>
+                  ) : (
+                    <span className="text-muted">{t("projectKey.allProjects")}</span>
+                  )}
+                  {item.state !== "active" && (
+                    <span className="chip !py-0.5 border-amber-500/40 text-[11px] text-amber-400" data-testid="api-token-state">
+                      {t(`projectKey.state.${item.state}`)}
+                    </span>
+                  )}
+                  {item.expiresAt && item.state === "active" && <span className="text-muted">{t("projectKey.expires", { when: f.dateTime(item.expiresAt) })}</span>}
+                </p>
                 <p className="text-xs text-muted" suppressHydrationWarning>
                   <span className="font-mono">{item.hint}</span> · {item.lastUsedAt ? t("lastUsed", { ago: f.ago(item.lastUsedAt) }) : t("neverUsed")} · {t("created", { ago: f.ago(item.createdAt) })}
                 </p>
@@ -186,6 +233,9 @@ export function ApiTokensSection({
                 )}
               </div>
               <KeySettings item={item} onSaved={(next) => setItems((list) => list.map((x) => (x.id === next.id ? next : x)))} />
+              <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void setPaused(item, !item.disabledAt)} data-testid="api-token-pause">
+                {item.disabledAt ? <Play size={13} /> : <Pause size={13} />} {item.disabledAt ? t("projectKey.resume") : t("projectKey.pause")}
+              </button>
               {confirming === item.id ? (
                 <div className="flex gap-2">
                   <button type="button" className="btn btn-sm text-red-400" disabled={busy} onClick={() => void revoke(item.id)}>{t("revokeConfirm")}</button>
@@ -212,9 +262,52 @@ export function ApiTokensSection({
           <label className="label" htmlFor="api-token-name">{t("name")}</label>
           <input id="api-token-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={60} />
         </div>
-        <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !name.trim()}>
+        <label className="text-sm">
+          <span className="label">{t("projectKey.lifetime")}</span>
+          <select className="field w-auto" value={lifetime} onChange={(e) => setLifetime(e.target.value as KeyLifetime)} data-testid="api-token-lifetime">
+            {KEY_LIFETIMES.map((l) => (
+              <option key={l} value={l}>
+                {t(`projectKey.lifetimes.${l}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !name.trim() || (scoped && picked.length === 0)} data-testid="api-token-create">
           <Plus size={14} /> {busy ? t("creating") : t("create")}
         </button>
+        <div className="basis-full space-y-2 rounded-2xl border px-3 py-2" data-testid="project-key">
+          <Toggle label={t("projectKey.toggle")} hint={t("projectKey.hint")} checked={scoped} onChange={setScoped} />
+          {scoped &&
+            (grantable === null ? (
+              <div className="h-8 animate-pulse rounded-lg bg-fg/5" />
+            ) : grantable.length === 0 ? (
+              <p className="text-xs text-muted">{t("projectKey.none")}</p>
+            ) : (
+              <fieldset className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto" data-testid="project-key-projects">
+                <legend className="sr-only">{t("projectKey.pick")}</legend>
+                {grantable.map((p) => {
+                  const on = picked.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={cn("chip !py-0.5 text-xs", on && "chip-active")}
+                      aria-pressed={on}
+                      disabled={!on && picked.length >= MAX_KEY_PROJECTS}
+                      onClick={() => setPicked((list) => (on ? list.filter((x) => x !== p.id) : [...list, p.id]))}
+                    >
+                      {p.name} <span className="text-[10px] text-muted">{p.own ? t("projectKey.own") : t("projectKey.of", { name: p.owner })}</span>
+                    </button>
+                  );
+                })}
+              </fieldset>
+            ))}
+          {scoped && picked.length > 0 && (
+            <p className="flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200" data-testid="project-key-warn">
+              <ShieldAlert size={14} className="mt-0.5 shrink-0" /> {t("projectKey.warn", { n: picked.length, list: picked.map(projectName).join(", ") })}
+            </p>
+          )}
+        </div>
       </form>
       <div className="mt-3">
         <FormError message={error} />

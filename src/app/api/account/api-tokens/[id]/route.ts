@@ -4,6 +4,7 @@ import { requireApiUser } from "@/lib/auth/guard";
 import { tk } from "@/lib/i18n/messages";
 import { serializeApiToken } from "@/lib/mcp/token";
 import { keySettingsSchema, reminderUntilFor } from "@/lib/mcp/keySettings";
+import { keyExpiry } from "@/lib/mcp/projectKeyLogic";
 
 type Params = { id: string };
 
@@ -20,6 +21,8 @@ export const PATCH = route<Params>(async (req, { params }) => {
       ...(input.reminderText !== undefined ? { reminderText: input.reminderText || null } : {}),
       // Ablauf gilt ab dem Speichern (#100)
       ...(input.reminderDuration ? { reminderUntil: reminderUntilFor(input.reminderDuration) } : {}),
+      ...(input.paused !== undefined ? { disabledAt: input.paused ? new Date() : null } : {}),
+      ...(input.lifetime ? { expiresAt: keyExpiry(input.lifetime) } : {}),
     },
   });
   if (!count) throw notFound(tk("mcp", "errors.notFound"));

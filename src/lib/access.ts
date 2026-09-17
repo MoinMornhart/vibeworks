@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { ApiError, notFound } from "@/lib/api";
 import { tk } from "@/lib/i18n/messages";
 import { allProjectPermissions, legacyLevel, permissionsOf, type ProjectPermission } from "@/lib/rolesLogic";
+import { scopedProjectIds } from "@/lib/mcp/keyScope";
 
 // Wer darf was an einem Projekt?
 //   Besitzer – alles, auch Teilen nach außen, Repository, Token und Löschen
@@ -22,7 +23,12 @@ export const ACCESS_LABEL: Record<ProjectAccess, string> = { OWNER: "Besitzer", 
 const inTeam = (userId: string) => ({ team: { members: { some: { userId } } } });
 
 /** Prisma-Filter: Projekte, die das Konto besitzt, in denen es Mitglied ist oder die an eines seiner Teams freigegeben sind. */
-export const visibleTo = (userId: string) => ({ OR: [{ ownerId: userId }, { members: { some: { userId } } }, { teams: { some: inTeam(userId) } }] });
+export const visibleTo = (userId: string) => {
+  const base = { OR: [{ ownerId: userId }, { members: { some: { userId } } }, { teams: { some: inTeam(userId) } }] };
+  // Projekt-Schlüssel (#106): in dessen MCP-Aufruf nur die freigegebenen Projekte – als AND, damit ein id-Filter daneben bleibt
+  const ids = scopedProjectIds();
+  return ids ? { ...base, AND: [{ id: { in: ids } }] } : base;
+};
 
 const grantSelect = { role: true, roleRef: { select: { name: true, key: true, permissions: true } } } as const;
 
