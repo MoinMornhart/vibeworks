@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.2",
+    date: "2026-09-17",
+    title: "Dateifilter: Zweig wählbar, Funde gebündelt",
+    titleEn: "File filter: pick a branch, findings grouped",
+    changes: [
+      {
+        type: "neu",
+        text: "Dateifilter: Zweig auswählen und dort prüfen. Entfernen per Pull Request bleibt dem Hauptzweig vorbehalten – das steht jetzt auch dabei",
+        en: "File filter: pick a branch and check it there. Removing via pull request stays with the main branch – and says so now",
+        link: "/#file-filter",
+      },
+      {
+        type: "besser",
+        text: "Funde stehen nach Muster gebündelt („dist/ – 128 Dateien“) statt als lange Liste, mit Beispielen, Auswahl je Muster und einem Knopf, um einen Vorschlag als Regel zu übernehmen. Erkannt wird mehr: Bauordner, Medien, Datenbanken und Archive",
+        en: "Findings are grouped by pattern (“dist/ – 128 files”) instead of one long list, with examples, selection per pattern and a button to turn a suggestion into a rule. More is detected: build folders, media, databases and archives",
+      },
+      {
+        type: "besser",
+        text: "Hinweis am Pull-Request-Bereich: Der rote Haken „vibeworks/dateifilter“ kommt vom Dateifilter, nicht von deiner CI",
+        en: "Note in the pull request section: the red check “vibeworks/dateifilter” comes from the file filter, not from your CI",
+      },
+    ],
+  },
+  {
     version: "1.3.1",
     date: "2026-09-17",
     title: "Issues aus dem Repository bleiben aktuell",

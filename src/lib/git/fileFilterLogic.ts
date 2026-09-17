@@ -34,6 +34,19 @@ export const TRASH_PRESETS = [
   ".env", ".env.local", ".env.production", "*.pem", "*.key", "*.p12", "*.pfx",
   "*.zip", "*.7z", "*.rar",
 ];
+/**
+ * Weiterer typischer Müll, der nur als Vorschlag auftaucht (#109): Bauwerke,
+ * Medien und Datenbanken. Als Regel muss man sie bewusst aufnehmen – in
+ * manchen Projekten gehören sie dazu.
+ */
+const TRASH_EXTRA_SUGGESTIONS = [
+  "dist/", "build/", "out/", "target/", "bin/", "obj/", ".gradle/", ".venv/", "venv/", "vendor/", ".cache/", ".parcel-cache/", ".turbo/", "logs/", "tmp/",
+  "*.class", "*.jar", "*.war", "*.o", "*.obj", "*.a", "*.lib", "*.iso", "*.img", "*.dmg", "*.msi",
+  "*.mp4", "*.mov", "*.avi", "*.mkv", "*.wav", "*.psd", "*.ai", "*.sketch",
+  "*.sqlite", "*.sqlite3", "*.db", "*.mdb", "*.dump",
+  "*.orig", "*.rej", "*.old", "*.tar", "*.tgz",
+];
+
 /** Dateien, die Projekte meist brauchen – als Vorschlag für den Schutz. */
 export const PROTECTED_PRESETS = ["package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "prisma/schema.prisma", ".github/workflows/", "tsconfig.json", "Dockerfile", "README.md", "LICENSE"];
 
@@ -97,6 +110,17 @@ function matchSegments(path: string[], pat: string[]): boolean {
 
 const matchesAny = (path: string, patterns: string[]) => patterns.some((p) => matchGlob(path, p));
 
+export interface ScanGroup {
+  pattern: string;
+  /** Aus einer eigenen Regel (false: nur ein Vorschlag) */
+  rule: boolean;
+  count: number;
+  /** Die ersten Dateien als Beispiel */
+  examples: string[];
+  /** Alle Dateien der Gruppe – zum Auswählen */
+  files: string[];
+}
+
 export interface FilterScan {
   /** Dateien, auf die ein Müll-Muster passt */
   trash: Array<{ file: string; pattern: string }>;
@@ -106,12 +130,14 @@ export interface FilterScan {
   protectedFiles: string[];
   /** Geschützte Muster ohne passende Datei – vielleicht schon gelöscht */
   missingProtected: string[];
+  /** Fundstellen nach Muster zusammengefasst (#109) – zuerst die eigenen Regeln */
+  groups: ScanGroup[];
 }
 
 export function scanFiles(files: string[], filter: Pick<FileFilter, "rules">, limit = 300): FilterScan {
   const trashRules = filter.rules.filter((r) => r.kind === "trash").map((r) => r.pattern);
   const protectedRules = filter.rules.filter((r) => r.kind === "protected").map((r) => r.pattern);
-  const presets = TRASH_PRESETS.filter((p) => !trashRules.includes(p));
+  const presets = [...TRASH_PRESETS, ...TRASH_EXTRA_SUGGESTIONS].filter((p) => !trashRules.includes(p));
   const trash: FilterScan["trash"] = [];
   const suggestions: FilterScan["suggestions"] = [];
   const protectedFiles: string[] = [];
@@ -126,7 +152,25 @@ export function scanFiles(files: string[], filter: Pick<FileFilter, "rules">, li
     if (protectedRules.some((p) => matchGlob(file, p)) && protectedFiles.length < limit) protectedFiles.push(file);
   }
   const missingProtected = protectedRules.filter((p) => !files.some((f) => matchGlob(f, p)));
-  return { trash, suggestions, protectedFiles, missingProtected };
+  return { trash, suggestions, protectedFiles, missingProtected, groups: groupHits(trash, suggestions) };
+}
+
+/** Fundstellen nach Muster bündeln (#109) – „dist/ (128 Dateien)“ statt 128 Zeilen. */
+function groupHits(trash: FilterScan["trash"], suggestions: FilterScan["suggestions"]): ScanGroup[] {
+  const map = new Map<string, ScanGroup>();
+  const add = (hits: FilterScan["trash"], rule: boolean) => {
+    for (const hit of hits) {
+      const key = (rule ? "r:" : "s:") + hit.pattern;
+      const group = map.get(key) ?? { pattern: hit.pattern, rule, count: 0, examples: [], files: [] };
+      group.count++;
+      if (group.examples.length < 3) group.examples.push(hit.file);
+      group.files.push(hit.file);
+      map.set(key, group);
+    }
+  };
+  add(trash, true);
+  add(suggestions, false);
+  return [...map.values()].sort((a, b) => Number(b.rule) - Number(a.rule) || b.count - a.count || a.pattern.localeCompare(b.pattern));
 }
 
 export interface PrFile {

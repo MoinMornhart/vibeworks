@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ExternalLink, Filter, GitPullRequest, Plus, RefreshCw, ShieldCheck, Trash2, TriangleAlert } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { useMsg, useT } from "@/lib/i18n/client";
-import { PROTECTED_PRESETS, TRASH_PRESETS, type FilterKind, type FilterRule } from "@/lib/git/fileFilterLogic";
+import { PROTECTED_PRESETS, TRASH_PRESETS, type FilterKind, type FilterRule, type ScanGroup } from "@/lib/git/fileFilterLogic";
 import type { FilterView } from "@/lib/git/fileFilter";
 import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
@@ -21,10 +21,13 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
   const [pattern, setPattern] = useState("");
   const [kind, setKind] = useState<FilterKind>("trash");
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [branch, setBranch] = useState<string | null>(null);
 
   function apply(v: FilterView) {
     setView(v);
     setRules(v.filter.rules);
+    setBranch(v.branch);
+    // Eigene Regeln sind vorausgewählt, Vorschläge nicht
     setPicked(new Set(v.scan?.trash.map((x) => x.file) ?? []));
   }
 
@@ -43,7 +46,19 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
     }
   }
 
-  const load = () => void run(api<{ view: FilterView }>(`/api/projects/${projectId}/file-filter`));
+  const load = (wanted?: string | null) =>
+    void run(api<{ view: FilterView }>(`/api/projects/${projectId}/file-filter${wanted ? `?branch=${encodeURIComponent(wanted)}` : ""}`));
+  /** Alle Dateien einer Gruppe an- oder abwählen */
+  const toggleGroup = (g: ScanGroup) =>
+    setPicked((s) => {
+      const n = new Set(s);
+      const all = g.files.every((f) => n.has(f));
+      for (const f of g.files) {
+        if (all) n.delete(f);
+        else n.add(f);
+      }
+      return n;
+    });
   const saveRules = (next: FilterRule[]) => void run(api<{ view: FilterView }>(`/api/projects/${projectId}/file-filter`, { method: "PUT", body: { rules: next } }));
   const addRule = (p: string, k: FilterKind) => {
     const clean = p.trim();
@@ -66,6 +81,7 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
     if (res) window.open(res.pr.url, "_blank", "noopener,noreferrer");
   }
 
+  const onDefaultBranch = !view?.branch || !view.defaultBranch || view.branch === view.defaultBranch;
   const trashRules = rules.filter((r) => r.kind === "trash");
   const protectedRules = rules.filter((r) => r.kind === "protected");
 
@@ -75,7 +91,28 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
         <h2 id="file-filter-heading" className="flex items-center gap-2 text-lg font-semibold">
           <Filter size={18} className="text-accent-ink" /> {t("filter.title")}
         </h2>
-        <button type="button" className={cn("btn btn-sm", !view && "btn-primary")} onClick={load} disabled={busy} data-testid="file-filter-load">
+        {view && view.branches.length > 1 && (
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="sr-only">{t("filter.branch")}</span>
+            <select
+              className="field !w-auto py-1 text-xs"
+              value={branch ?? ""}
+              disabled={busy}
+              onChange={(e) => {
+                setBranch(e.target.value);
+                load(e.target.value);
+              }}
+              data-testid="file-filter-branch"
+            >
+              {view.branches.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <button type="button" className={cn("btn btn-sm", !view && "btn-primary")} onClick={() => load(branch)} disabled={busy} data-testid="file-filter-load">
           <RefreshCw size={14} className={cn(busy && "animate-spin")} /> {view ? t("filter.reload") : t("filter.load")}
         </button>
       </div>
@@ -160,26 +197,51 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
                 </p>
               )}
               <p className="text-xs text-muted">{t("filter.protectedCount", { n: view.scan.protectedFiles.length })}</p>
-              {[...view.scan.trash.map((x) => ({ ...x, suggestion: false })), ...view.scan.suggestions.map((x) => ({ ...x, suggestion: true }))].length === 0 ? (
+              {view.scan.groups.length === 0 ? (
                 <p className="text-xs text-emerald-400">{t("filter.clean")}</p>
               ) : (
                 <div className="rounded-xl border px-3 py-2">
                   <p className="mb-1 font-medium">{t("filter.found")}</p>
-                  <ul className="max-h-64 space-y-0.5 overflow-y-auto">
-                    {[...view.scan.trash.map((x) => ({ ...x, suggestion: false })), ...view.scan.suggestions.map((x) => ({ ...x, suggestion: true }))].map((x) => (
-                      <li key={x.file} className="flex items-center gap-2 text-xs" data-testid="file-filter-hit">
-                        {canEdit && <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--vw-accent)]" checked={picked.has(x.file)} onChange={() => toggle(x.file)} aria-label={x.file} />}
-                        <code className="min-w-0 flex-1 break-all">{x.file}</code>
-                        <span className={cn("rounded px-1 font-mono text-[10px]", x.suggestion ? "bg-sky-400/15 text-sky-300" : "bg-amber-400/15 text-amber-300")}>
-                          {x.suggestion ? t("filter.suggestion", { pattern: x.pattern }) : x.pattern}
+                  {/* Nach Muster gebündelt (#109): „dist/ – 128 Dateien“ statt 128 Zeilen */}
+                  <ul className="max-h-72 space-y-1 overflow-y-auto" data-testid="file-filter-groups">
+                    {view.scan.groups.map((g) => (
+                      <li key={`${g.rule ? "r" : "s"}:${g.pattern}`} className="flex items-start gap-2 text-xs" data-testid="file-filter-group" data-pattern={g.pattern}>
+                        {canEdit && (
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-3.5 w-3.5 accent-[var(--vw-accent)]"
+                            checked={g.files.every((f) => picked.has(f))}
+                            onChange={() => toggleGroup(g)}
+                            aria-label={t("filter.groupToggle")}
+                          />
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <code className="font-mono">{g.pattern}</code>
+                            <span className={cn("rounded px-1 font-mono text-[10px]", g.rule ? "bg-amber-400/15 text-amber-300" : "bg-sky-400/15 text-sky-300")}>
+                              {g.rule ? t("filter.kind.trash") : t("filter.suggestionBadge")}
+                            </span>
+                            <span className="text-muted">{t("filter.groupCount", { n: g.count })}</span>
+                            {canEdit && !g.rule && (
+                              <button type="button" className="chip !py-0 text-[11px]" disabled={busy} onClick={() => addRule(g.pattern, "trash")}>
+                                + {t("filter.addAsRule")}
+                              </button>
+                            )}
+                          </span>
+                          <span className="block break-all text-muted">{g.examples.join(", ")}{g.count > g.examples.length ? " …" : ""}</span>
                         </span>
                       </li>
                     ))}
                   </ul>
-                  {canEdit && view.github && (
+                  {canEdit && view.github && onDefaultBranch && (
                     <button type="button" className="btn btn-primary btn-sm mt-2" disabled={busy || !picked.size} onClick={() => void cleanup()} data-testid="file-filter-cleanup">
                       <GitPullRequest size={13} /> {t("filter.cleanup", { n: picked.size })}
                     </button>
+                  )}
+                  {view.github && !onDefaultBranch && (
+                    <p className="mt-2 text-[11px] text-amber-400" data-testid="file-filter-other-branch">
+                      {t("filter.otherBranch", { branch: view.branch ?? "?", main: view.defaultBranch ?? "?" })}
+                    </p>
                   )}
                   {!view.github && <p className="mt-1 text-[11px] text-muted">{t("filter.githubOnly")}</p>}
                 </div>
@@ -198,6 +260,7 @@ export function FileFilterPanel({ projectId, canEdit, webUrl }: { projectId: str
                   </button>
                 )}
               </div>
+              <p className="mb-2 text-[11px] text-muted">{t("filter.prExplain")}</p>
               {view.prError && <p className="text-xs text-red-400">{msg(view.prError)}</p>}
               {!rules.length ? (
                 <p className="text-xs text-muted">{t("filter.prsNeedRules")}</p>

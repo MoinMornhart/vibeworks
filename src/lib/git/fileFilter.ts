@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/api";
 import { decrypt } from "@/lib/crypto";
 import { appLink } from "@/lib/notify";
 import { tk } from "@/lib/i18n/messages";
-import { ensureCodeCopy } from "./codeCopy";
+import { ensureCodeCopy, projectBranches } from "./codeCopy";
 import { listFilesViaGit } from "./gitCli";
 import { parseRepoUrl } from "./parse";
 import { apiBase, authHeaders, GitError, request } from "./providers";
@@ -63,6 +63,10 @@ export interface PrCheck {
 
 export interface FilterView {
   filter: FileFilter;
+  /** Geprüfter Zweig, Hauptzweig und alle Zweige des Repositorys (#109) */
+  branch: string | null;
+  defaultBranch: string | null;
+  branches: string[];
   scan: FilterScan | null;
   scanError: string | null;
   github: boolean;
@@ -71,11 +75,13 @@ export interface FilterView {
 }
 
 /** Filter, Scan der Code-Kopie und der Stand der offenen Pull Requests. */
-export async function filterView(projectId: string): Promise<FilterView> {
+export async function filterView(projectId: string, wanted?: string | null): Promise<FilterView> {
   const project = await db.project.findUnique({ where: { id: projectId }, select: { fileFilter: true } });
   const filter = normalizeFilter(project?.fileFilter);
-  const copy = await ensureCodeCopy(projectId);
+  const cache = await db.repoCache.findUnique({ where: { projectId }, select: { defaultBranch: true } });
+  const copy = await ensureCodeCopy(projectId, wanted ?? null);
   const files = copy.head ? await listFilesViaGit(projectId, copy.branch) : [];
+  const branches = await projectBranches(projectId).catch(() => []);
   const scan = files.length ? scanFiles(files, filter) : null;
   const ctx = await githubContext(projectId);
   let prs: PrCheck[] = [];
@@ -87,7 +93,7 @@ export async function filterView(projectId: string): Promise<FilterView> {
       prError = err instanceof Error ? err.message : tk("git", "errors.gitFailed");
     }
   }
-  return { filter, scan, scanError: scan ? null : copy.error, github: Boolean(ctx), prs, prError };
+  return { filter, branch: copy.branch, defaultBranch: cache?.defaultBranch ?? null, branches, scan, scanError: scan ? null : copy.error, github: Boolean(ctx), prs, prError };
 }
 
 interface GhPull {

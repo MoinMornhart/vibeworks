@@ -95,3 +95,21 @@ describe("appendGitignore", () => {
     expect(appendGitignore("*.exe", ["*.exe"])).toBe("*.exe");
   });
 });
+
+describe("Funde bündeln (#109)", () => {
+  it("fasst nach Muster zusammen: eigene Regeln zuerst, dann die größten Vorschläge", () => {
+    const files = ["dist/a.js", "dist/b.js", "dist/c.js", "dist/d.js", "app.log", "notes.md", "video.mp4", "src/index.ts"];
+    const scan = scanFiles(files, { rules: [{ pattern: "*.log", kind: "trash" }] });
+    expect(scan.groups.map((g) => [g.pattern, g.rule, g.count])).toEqual([
+      ["*.log", true, 1],
+      ["dist/", false, 4],
+      ["*.mp4", false, 1],
+    ]);
+    const dist = scan.groups.find((g) => g.pattern === "dist/")!;
+    expect(dist.examples).toEqual(["dist/a.js", "dist/b.js", "dist/c.js"]);
+    expect(dist.files).toHaveLength(4);
+    // Ohne Fund keine Gruppe, Quellcode bleibt unangetastet
+    expect(scan.groups.some((g) => g.files.includes("src/index.ts") || g.files.includes("notes.md"))).toBe(false);
+  });
+});
+

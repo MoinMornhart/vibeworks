@@ -21,11 +21,15 @@ const postSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("check") }),
 ]);
 
-export const GET = route<Params>(async (_req, { params }) => {
+const BRANCH = /^(?!.*\.\.)[\w][\w./-]*$/;
+
+// Zweig wählbar (#109): geprüft wird die lokale Kopie dieses Zweigs
+export const GET = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { project } = await requireProject(user.id, (await params).id);
   limitOrThrow(`file-filter:${user.id}`, 30, MINUTE);
-  return json({ view: await filterView(project.id) });
+  const branch = req.nextUrl.searchParams.get("branch");
+  return json({ view: await filterView(project.id, branch && BRANCH.test(branch) ? branch : null) });
 });
 
 export const PUT = route<Params>(async (req, { params }) => {
