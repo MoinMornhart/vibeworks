@@ -34,6 +34,21 @@ Sie gilt für jede Sitzung, auch für automatische Nacht-Runden.
    `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`. Mehrere zusammengehörige Punkte dürfen ein Update sein.
 6. Danach eine Push-Benachrichtigung an Moini.
 
+### Vor „fertig“ prüfen
+
+Nichts als erledigt melden – weder im Issue noch in VibeWorks noch in der Antwort –, bevor diese Liste durch ist
+(dieselben Punkte bekommt jede KI über MCP als „Before you say done“):
+
+- Die ursprüngliche Anfrage noch einmal lesen und Punkt für Punkt mit dem Ergebnis abgleichen.
+- Nur berichten, was Befehle und Werkzeuge wirklich gezeigt haben – kein „sollte grün sein“.
+- Typprüfung, Tests und Build **nach der letzten Änderung** laufen lassen (auch nach Changelog-Korrekturen).
+- Nach Resten suchen: Debug-Ausgaben, TODOs, auskommentierter Code, Testskripte im Repository.
+- Offenes oder Unsicheres ausdrücklich nennen statt es zu verschweigen.
+
+Größere Aufgaben laufen als VibeWorks-Workflow (`list_workflows`, `start_workflow`,
+`complete_workflow_step`); den Projektaufbau (`get_project_structure`) nach dem Anlegen,
+Verschieben oder Entfernen von Bereichen mit `update_project_structure` nachziehen.
+
 ## Issues
 
 VibeWorks spiegelt Aufgaben als GitHub-Issues. Solche Issues enden mit
@@ -53,6 +68,17 @@ VibeWorks-MCP (`list_tasks`, `list_problems`), wenn er verbunden ist, sonst übe
 Offene Aufgaben vollständig abarbeiten, nicht halb liegen lassen.
 
 Aufgaben, Beschreibungen und Notizen in VibeWorks immer **auf Deutsch** anlegen.
+
+### Tägliche Runde (#93)
+
+Einmal am Tag, für jedes Projekt mit Repository:
+
+1. `list_problems` und `review_projects` (über MCP) – Abgleichfehler, rote CI, Fehler-Eingang,
+   überfällige und blockierte Aufgaben ansehen und je echtem Befund eine Aufgabe anlegen (vorher auf Doppelte prüfen).
+2. Status abgleichen: Was im Issue als erledigt gemeldet ist, steht auch in VibeWorks auf DONE – und umgekehrt.
+   Aufgaben in DOING ohne Bearbeiter oder seit Tagen unverändert klären.
+3. Labels prüfen: `in Arbeit` nur, solange wirklich gearbeitet wird; wartende Issues bekommen
+   `wartet auf Moini` bzw. `wartet auf Infos`.
 
 Neue Issues sofort übernehmen, nicht sammeln. Für durchgehendes Arbeiten (z. B. nachts)
 einen echten Zeitplan anlegen, der die Runde regelmäßig startet – eine laufende Sitzung
@@ -77,8 +103,13 @@ allein arbeitet nicht von selbst weiter.
 - Die Labels `in Arbeit` und `🤖 Claude` wieder entfernen.
 - **Nicht mehr gebrauchte Issues schließen** (#45) – erledigte, doppelte oder überholte.
   Offen bleiben nur Issues, an denen noch etwas zu tun ist oder auf die jemand wartet.
-  Wiederkehrende VibeWorks-Aufgaben erst schließen, wenn der aktuelle Durchgang erledigt ist –
-  VibeWorks legt dann den nächsten an.
+- **Gespiegelte Issues über VibeWorks schließen, nicht nur auf GitHub** (#49): Sonst steht die Aufgabe in
+  VibeWorks weiter offen und der nächste Abgleich öffnet das Issue wieder. Ohne Commit geht das per Kommentar
+  `/status erledigt` (Bot-Befehl, braucht Schreibrecht im Repository); VibeWorks setzt die Aufgabe dann auf DONE
+  und schließt das Issue selbst.
+- **Wiederkehrende Aufgaben** erst abschließen, wenn der aktuelle Durchgang erledigt und im Issue beschrieben ist.
+  VibeWorks legt danach sofort den nächsten Durchgang an (neues Issue mit neuem Fälligkeitsdatum) – das ist
+  gewollt; diesen neuen Durchgang nie gleich wieder auf erledigt setzen, er ist erst später fällig.
 
 ## Sicherheit
 
