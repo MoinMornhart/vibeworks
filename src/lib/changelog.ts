@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.7",
+    date: "2026-09-17",
+    title: "Team-Workflows",
+    titleEn: "Team workflows",
+    changes: [
+      {
+        type: "neu",
+        text: "Team-Workflows: KI-Workflows einmal auf der Team-Seite anlegen – sie gelten in allen Projekten, die an das Team freigegeben sind, auch für die KI über MCP. Ein Projekt-Workflow mit gleichem Schlüssel hat Vorrang",
+        en: "Team workflows: create AI workflows once on the team page – they apply to every project shared with the team, including for the AI over MCP. A project workflow with the same key takes precedence",
+        link: "/teams",
+      },
+      {
+        type: "neu",
+        text: "Neues Team-Recht „Team-Workflows verwalten“ – die Standardrolle Admin und alle Rollen, die das Team verwalten dürfen, haben es",
+        en: "New team permission “Manage team workflows” – the default Admin role and every role allowed to manage the team have it",
+      },
+    ],
+  },
+  {
     version: "1.2.6",
     date: "2026-09-17",
     title: "Aufbau-Wächter und Wochenbericht",

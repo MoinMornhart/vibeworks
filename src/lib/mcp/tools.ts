@@ -1205,7 +1205,7 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
         db.workflowRun.findMany({ where: { projectId: project.id, status: "running" }, orderBy: { updatedAt: "desc" }, take: 10 }),
       ]);
       return {
-        workflows: workflows.map((w) => ({ key: w.key, title: w.title, description: w.description, steps: w.steps.length, builtin: w.builtin })),
+        workflows: workflows.map((w) => ({ key: w.key, title: w.title, description: w.description, steps: w.steps.length, builtin: w.builtin, ...(w.team ? { team: w.team.name } : {}) })),
         running: runs.map(serializeRun).map((r) => ({ id: r.id, workflow: r.workflow, title: r.title, done: r.done, total: r.total, taskId: r.taskId })),
       };
     },

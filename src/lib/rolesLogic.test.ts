@@ -30,7 +30,7 @@ describe("Rechte", () => {
     expect(permissionsOf([]).size).toBe(0);
   });
   it("Team-Rechte: Rolle oder alte Stufe", () => {
-    expect([...teamPermissionsOf({ role: "ADMIN", roleRef: null })]).toEqual(["team.invite", "team.remove", "team.roles", "team.manage"]);
+    expect([...teamPermissionsOf({ role: "ADMIN", roleRef: null })]).toEqual(["team.invite", "team.remove", "team.roles", "team.workflows", "team.manage"]);
     expect(teamPermissionsOf({ role: "MEMBER", roleRef: null }).size).toBe(0);
     expect([...teamPermissionsOf({ role: "ADMIN", roleRef: { permissions: ["team.invite", "tasks.edit"] } })]).toEqual(["team.invite"]);
     const byKey = Object.fromEntries(BUILTIN_ROLES.map((r) => [r.key, r]));

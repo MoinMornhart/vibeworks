@@ -31,7 +31,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{ key: "work" | "project" | "code"
 /** Rechte, die Zugriff weitergeben oder Code im Repository ausführen – in der Oberfläche hervorgehoben. */
 export const SENSITIVE_PERMISSIONS: readonly ProjectPermission[] = ["members.invite", "keys.grant", "ci.manage"];
 
-export const TEAM_PERMISSIONS = ["team.invite", "team.remove", "team.roles", "team.manage"] as const;
+export const TEAM_PERMISSIONS = ["team.invite", "team.remove", "team.roles", "team.workflows", "team.manage"] as const;
 export type TeamPermission = (typeof TEAM_PERMISSIONS)[number];
 
 export type RoleScope = "project" | "team";

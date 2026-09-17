@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { TaskStatus } from "@/generated/prisma/client";
-import { Activity, ArrowLeft, Bot, Check, FolderKanban, Lightbulb, MessageSquare, Send, UsersRound, X } from "lucide-react";
+import { Activity, ArrowLeft, Bot, Check, FolderKanban, Lightbulb, MessageSquare, Send, UsersRound, Workflow, X } from "lucide-react";
+import type { WorkflowView } from "@/lib/aiWorkflows";
+import { WorkflowItems } from "@/components/projects/WorkflowPanel";
 import type { TeamChatMessage, TeamHubView } from "@/lib/teamHub";
 import { MAX_TEAM_MESSAGE, MAX_WISH_BODY, MAX_WISH_TITLE } from "@/lib/teamHubLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -32,6 +34,39 @@ function Card({ icon, title, hint, children, testId }: { icon: React.ReactNode; 
       {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+type TeamWorkflowList = { workflows: WorkflowView[]; canManage: boolean; key?: string };
+
+/** Team-Workflows (#82): gelten in allen Projekten des Teams. */
+function TeamWorkflows({ teamId }: { teamId: string }) {
+  const t = useT("workflows");
+  const [data, setData] = useState<TeamWorkflowList | null>(null);
+  useEffect(() => {
+    let alive = true;
+    api<TeamWorkflowList>(`/api/teams/${teamId}/workflows`)
+      .then((res) => alive && setData(res))
+      .catch(() => alive && setData({ workflows: [], canManage: false }));
+    return () => {
+      alive = false;
+    };
+  }, [teamId]);
+  return (
+    <Card icon={<Workflow size={17} />} title={t("teamSection.title")} hint={t("teamSection.hint")} testId="hub-workflows">
+      {!data ? (
+        <div className="h-12 animate-pulse rounded-xl bg-fg/5" />
+      ) : (
+        <WorkflowItems<TeamWorkflowList>
+          base={`/api/teams/${teamId}/workflows`}
+          workflows={data.workflows}
+          canEdit={data.canManage}
+          prompt={(w) => t("teamSection.prompt", { key: w.key })}
+          inTeam
+          onChange={setData}
+        />
+      )}
+    </Card>
   );
 }
 
@@ -247,6 +282,8 @@ export function TeamHub({ initial, meId }: { initial: TeamHubView; meId: string 
               </ul>
             )}
           </Card>
+
+          <TeamWorkflows teamId={hub.id} />
 
           <Card icon={<MessageSquare size={17} />} title={t("chat.title")} hint={t("chat.hint")} testId="hub-chat">
             <ol ref={listRef} className="max-h-80 space-y-2 overflow-y-auto pr-1">

@@ -30,11 +30,40 @@ export interface WorkflowView {
   steps: WorkflowStep[];
   builtin: boolean;
   authorName: string | null;
+  /** Team-Workflow (#82): gilt über dieses Team – im Projekt nicht änderbar */
+  team: { id: string; name: string } | null;
 }
 
-/** Mitgelieferte (in der gewünschten Sprache – für die KI englisch) und eigene Workflows eines Projekts. */
+type WorkflowRow = { key: string; id: string; title: string; description: string; steps: unknown; authorName: string | null };
+const ownView = (w: WorkflowRow, team: WorkflowView["team"] = null): WorkflowView => ({
+  key: w.key,
+  id: w.id,
+  title: w.title,
+  description: w.description,
+  steps: readSteps(w.steps),
+  builtin: false,
+  authorName: w.authorName,
+  team,
+});
+
+/**
+ * Mitgelieferte (in der gewünschten Sprache – für die KI englisch), eigene und
+ * die Workflows der Teams, an die das Projekt freigegeben ist. Gleicher
+ * Schlüssel: der eigene des Projekts gewinnt.
+ */
 export async function workflowsFor(projectId: string, lang: Locale): Promise<WorkflowView[]> {
-  const own = await db.aiWorkflow.findMany({ where: { projectId }, orderBy: { createdAt: "asc" } });
+  const [own, teams] = await Promise.all([
+    db.aiWorkflow.findMany({ where: { projectId }, orderBy: { createdAt: "asc" } }),
+    db.projectTeam.findMany({ where: { projectId }, select: { team: { select: { id: true, name: true } } } }),
+  ]);
+  const teamRows = teams.length ? await db.aiWorkflow.findMany({ where: { teamId: { in: teams.map((x) => x.team.id) } }, orderBy: { createdAt: "asc" } }) : [];
+  const ownKeys = new Set(own.map((w) => w.key));
+  const seen = new Set<string>();
+  const fromTeams = teamRows.flatMap((w) => {
+    if (ownKeys.has(w.key) || seen.has(w.key)) return [];
+    seen.add(w.key);
+    return [ownView(w, teams.find((x) => x.team.id === w.teamId)?.team ?? null)];
+  });
   return [
     ...BUILTIN_WORKFLOWS.map((w) => ({
       key: w.key,
@@ -44,8 +73,10 @@ export async function workflowsFor(projectId: string, lang: Locale): Promise<Wor
       steps: w.steps.map((s) => s[lang]),
       builtin: true,
       authorName: null,
+      team: null,
     })),
-    ...own.map((w) => ({ key: w.key, id: w.id, title: w.title, description: w.description, steps: readSteps(w.steps), builtin: false, authorName: w.authorName })),
+    ...own.map((w) => ownView(w)),
+    ...fromTeams,
   ];
 }
 
@@ -69,6 +100,24 @@ export async function saveWorkflow(projectId: string, input: WorkflowSave, opts:
   if (count >= 30) throw new ApiError(400, "At most 30 own workflows per project.");
   const taken = (await db.aiWorkflow.findMany({ where: { projectId }, select: { key: true } })).map((w) => w.key);
   return db.aiWorkflow.create({ data: { ...data, projectId, key: workflowKeyFor(input.title, taken), authorName: opts.authorName, via: opts.via } });
+}
+
+/** Workflows eines Teams (#82) – für die Team-Seite. */
+export async function teamWorkflows(teamId: string): Promise<WorkflowView[]> {
+  const rows = await db.aiWorkflow.findMany({ where: { teamId }, orderBy: { createdAt: "asc" } });
+  return rows.map((w) => ownView(w));
+}
+
+export async function saveTeamWorkflow(teamId: string, input: WorkflowSave, opts: { key?: string; authorName: string; via: "web" | "mcp" }) {
+  const data = { title: input.title, description: input.description, steps: input.steps as unknown as Prisma.InputJsonValue };
+  if (opts.key) {
+    const current = await db.aiWorkflow.findUnique({ where: { teamId_key: { teamId, key: opts.key } } });
+    if (!current) throw new ApiError(404, "Workflow not found.");
+    return db.aiWorkflow.update({ where: { id: current.id }, data });
+  }
+  const taken = (await db.aiWorkflow.findMany({ where: { teamId }, select: { key: true } })).map((w) => w.key);
+  if (taken.length >= 30) throw new ApiError(400, "At most 30 workflows per team.");
+  return db.aiWorkflow.create({ data: { ...data, teamId, key: workflowKeyFor(input.title, taken), authorName: opts.authorName, via: opts.via } });
 }
 
 export function serializeRun(r: WorkflowRun) {
