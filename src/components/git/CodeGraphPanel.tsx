@@ -218,8 +218,12 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   };
 
   // Mausrad zoomt das Netz – als eigener Listener, sonst scrollt der Browser die Seite (#67)
-  // Pinch mit zwei Fingern genauso: native Listener, sonst zoomt der Browser die Seite (#mobil)
+  // Pinch mit zwei Fingern genauso: native Listener, sonst zoomt der Browser die Seite (#mobil).
+  // Wichtig: die Basis der Geste kommt aus einem ref, nicht aus dem Effect-Verschluss –
+  // sonst rechnet der Zoom mit dem Stand von beim Mounten und das Netz „fällt zusammen“.
   const hasGraph = Boolean(graph && !graph.empty);
+  const viewRef = useRef(view);
+  viewRef.current = view;
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -230,11 +234,12 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       return { mx, my, dist: Math.max(1, Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)) };
     };
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
       e.preventDefault();
       drag.current = null;
-      const { dist } = center(e.touches);
-      pinch.current = { dist, k: view.k, x: view.x, y: view.y };
+      if (e.touches.length >= 2) {
+        const { dist } = center(e.touches);
+        pinch.current = { dist, k: viewRef.current.k, x: viewRef.current.x, y: viewRef.current.y };
+      }
     };
     const onTouchMove = (e: TouchEvent) => {
       const base = pinch.current;
@@ -283,8 +288,15 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
     document.body.style.overflow = "hidden";
     // Echter Vollbildmodus, wo erlaubt (Handy): keine Browserleiste mehr, die
     // die Höhe verzieht – sonst bleibt es die Overlay-Ansicht mit h-dvh.
+    // Safari (iOS) braucht das herstellerspezifische webkitRequestFullscreen.
     const stage = document.querySelector<HTMLElement>("[data-testid='code-graph-stage']");
-    if (stage?.requestFullscreen) stage.requestFullscreen().catch(() => {});
+    const el = stage as (HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void }) | null;
+    try {
+      if (el?.requestFullscreen) void el.requestFullscreen().catch(() => {});
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch {
+      /* Vollbild verweigert – Overlay-Ansicht bleibt */
+    }
     const onFsChange = () => {
       if (!document.fullscreenElement) setFull(false);
     };
@@ -293,7 +305,9 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("fullscreenchange", onFsChange);
       document.body.style.overflow = overflow;
+      const doc = document as Document & { webkitExitFullscreen?: () => void };
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
     };
   }, [full]);
 
