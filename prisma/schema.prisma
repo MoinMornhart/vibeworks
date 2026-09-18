@@ -377,6 +377,8 @@ model Project {
   issuesOffAt         DateTime?
   /// Repo-Check (GitHub-Workflow) automatisch einrichten und auswerten – aus = Datei wird entfernt
   repoCheck           Boolean        @default(true)
+  /// Zweig für den Repo-Check – null heißt Standardzweig
+  checkBranch         String?
   /// Aufgaben aus dem Repo-Check: off · urgent (Geheimnisse, Lücken) · all (dazu Semgrep-Befunde)
   checkTasks          String         @default("off")
   /// Lighthouse-Check der Live-Seite (#82, GitHub-Workflow) – aus, bis der Besitzer ihn einschaltet

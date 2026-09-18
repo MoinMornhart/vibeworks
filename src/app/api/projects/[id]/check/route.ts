@@ -8,6 +8,7 @@ import { getT } from "@/lib/i18n/server";
 import { tk } from "@/lib/i18n/messages";
 import { GitError } from "@/lib/git/providers";
 import { refreshRepoCheck, serializeRepoCheck, setRepoCheck, startRepoCheck } from "@/lib/git/repoCheck";
+import { checkBranchError, normalizeCheckBranch } from "@/lib/git/repoCheckBranch";
 import { syncCheckTasks } from "@/lib/git/checkTasks";
 import { CHECK_KINDS, CHECK_TASK_MODES, checkItems } from "@/lib/git/checkTasksLogic";
 import { parseCheckReport } from "@/lib/git/repoCheckLogic";
@@ -22,16 +23,18 @@ const bodySchema = z.union([
   z.object({ action: z.enum(["task", "draft"]), kind: z.enum(CHECK_KINDS), index: z.number().int().min(0).max(5000) }),
   // Automatische Aufgaben: aus · nur Dringendes · alles – nur der Besitzer
   z.object({ action: z.literal("autoTasks"), mode: z.enum(CHECK_TASK_MODES) }),
+  // Zweig für den Repo-Check (#125) – nur der Besitzer; null heißt Standardzweig
+  z.object({ action: z.literal("setBranch"), branch: z.string().max(200).nullable() }),
 ]);
 
 // Repo-Check eines Projekts. Die Ergebnisse sehen nur Projektmitglieder;
 // öffentliche Seiten bekommen sie nie (siehe serializeRepoCache).
 async function view(projectId: string) {
   const [project, cache] = await Promise.all([
-    db.project.findUnique({ where: { id: projectId }, select: { repoCheck: true, checkTasks: true } }),
+    db.project.findUnique({ where: { id: projectId }, select: { repoCheck: true, checkBranch: true, checkTasks: true } }),
     db.repoCache.findUnique({ where: { projectId } }),
   ]);
-  return serializeRepoCheck(project?.repoCheck ?? false, cache, project?.checkTasks ?? "off");
+  return serializeRepoCheck(project?.repoCheck ?? false, cache, project?.checkTasks ?? "off", project?.checkBranch);
 }
 
 export const GET = route<Params>(async (_req, { params }) => {
@@ -47,7 +50,7 @@ export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   const { id } = await params;
   const body = await readBody(req, bodySchema, { maxBytes: 1024 });
-  const need = body.action === "enable" || body.action === "disable" || body.action === "autoTasks" ? "OWNER" : body.action === "task" || body.action === "draft" ? "tasks.edit" : "git.sync";
+  const need = body.action === "enable" || body.action === "disable" || body.action === "autoTasks" || body.action === "setBranch" ? "OWNER" : body.action === "task" || body.action === "draft" ? "tasks.edit" : "git.sync";
   const { project } = await requireProject(user.id, id, need);
   if (!project.repoUrl) throw new ApiError(400, tk("check", "errors.noRepo"));
 
@@ -80,6 +83,14 @@ export const POST = route<Params>(async (req, { params }) => {
     await db.project.update({ where: { id }, data: { checkTasks: body.mode } });
     const cache = await db.repoCache.findUnique({ where: { projectId: id }, select: { checkReport: true } });
     if (cache?.checkReport && body.mode !== "off") await syncCheckTasks(id, parseCheckReport(cache.checkReport));
+  } else if (body.action === "setBranch") {
+    // Zweig säubern und prüfen (git check-ref-format, grob) – ungültig → 400
+    const branch = normalizeCheckBranch(body.branch);
+    const error = checkBranchError(branch ?? "");
+    if (error) throw new ApiError(400, error);
+    await db.project.update({ where: { id }, data: { checkBranch: branch } });
+    // Bericht und Lauf des alten Zweigs sind nicht mehr der Stand des neuen: neu einrichten
+    await db.repoCache.updateMany({ where: { projectId: id }, data: { checkFetchedAt: null } });
   } else if (body.action === "run") {
     limitOrThrow(`repo-check-run:${id}`, 3, 10 * MINUTE);
     try {

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { confirmDialog } from "@/lib/client/dialogs";
 
 type Kind = "secrets" | "vulnerabilities" | "findings" | "todos";
-type Action = "run" | "refresh" | "enable" | "disable" | "task" | "draft" | "autoTasks";
+type Action = "run" | "refresh" | "enable" | "disable" | "task" | "draft" | "autoTasks" | "setBranch";
 
 const KINDS: Kind[] = ["secrets", "vulnerabilities", "findings", "todos"];
 const TOOL: Record<Kind, keyof CheckReport["tools"]> = { secrets: "gitleaks", vulnerabilities: "osv", findings: "semgrep", todos: "todos" };
@@ -102,6 +102,7 @@ export function RepoCheckPanel({
   const [shown, setShown] = useState(PAGE);
   const [copied, setCopied] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<TaskForm> | null>(null);
+  const [branch, setBranch] = useState(initial.branch ?? "");
   const router = useRouter();
 
   // „Als Aufgabe“ (#60): erst das Aufgaben-Fenster mit dem Vorschlag, angelegt wird beim Speichern
@@ -133,6 +134,7 @@ export function RepoCheckPanel({
     }
   }
   useEffect(() => setCheck(initial), [initial]);
+  useEffect(() => setBranch(initial.branch ?? ""), [initial.branch]);
 
   async function send(action: Action, extra: Record<string, unknown> = {}) {
     const res = await api<{ check: RepoCheckView; removed: boolean; warning: string | null; task?: { title: string } | null }>(`/api/projects/${projectId}/check`, { body: { action, ...extra } });
@@ -159,6 +161,13 @@ export function RepoCheckPanel({
     }
   }
 
+  // Zweig speichern (#125): nur der Besitzer – leer heißt Standardzweig
+  async function saveBranch() {
+    if ((initial.branch ?? "") === branch.trim()) return;
+    await act("setBranch", { branch: branch.trim() || null });
+    setNote(t("branch.saved"));
+  }
+
   const pending = check.enabled && (check.status === "waiting" || check.status === "running");
   useEffect(() => {
     if (!canRun || !check.enabled) return;
@@ -177,6 +186,7 @@ export function RepoCheckPanel({
 
   const r = check.report;
   const urgent = checkIsUrgent(r);
+  // Fallback-Zweig für Datei-Links: der Bericht nennt den Commit, sonst der gewählte Zweig
   const rows = r && open ? rowsOf(open, r, check.webUrl, check.branch) : [];
 
   return (
@@ -233,6 +243,23 @@ export function RepoCheckPanel({
             ))}
           </select>
           <span className="w-full text-xs text-muted">{t("tasks.modeHint")}</span>
+        </label>
+      )}
+
+      {canManage && check.enabled && (
+        <label className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted">{t("branch.label")}</span>
+          <input
+            type="text"
+            className="field w-auto min-w-40 py-1 text-sm"
+            data-testid="check-branch"
+            value={branch}
+            placeholder={check.defaultBranch ?? "main"}
+            disabled={busy !== null}
+            onChange={(e) => setBranch(e.target.value)}
+            onBlur={() => void saveBranch()}
+          />
+          <span className="w-full text-xs text-muted">{t("branch.hint")}</span>
         </label>
       )}
 
