@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.8",
+    date: "2026-09-18",
+    title: "Arbeiter aus Issue-Kommentaren",
+    titleEn: "Workers from issue comments",
+    changes: [
+      {
+        type: "besser",
+        text: "Wer an einem Issue arbeitet, zeigt die Aufgabe jetzt auch aus Kommentaren: KI-Antworten über VibeWorks und Bot-Befehle zählen als Bearbeiter",
+        en: "Who works on an issue now also shows from comments: AI replies via VibeWorks and bot commands count as workers",
+        link: "/account#git",
+      },
+    ],
+  },
+  {
     version: "1.3.7",
     date: "2026-09-18",
     title: "KI-Agenten arbeiten immer über VibeWorks",

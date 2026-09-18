@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { issueBody, workersFromIssue } from "./issues";
+import { BOT_MARKER, REPLY_MARKER } from "./botCommandsLogic";
+import type { IssueComment } from "./providers";
 
 describe("Wer arbeitet am Issue?", () => {
   it("Bearbeiter-Labels und Zuweisungen, ohne Doppelte", () => {
@@ -8,6 +10,19 @@ describe("Wer arbeitet am Issue?", () => {
     expect(workersFromIssue({ labels: ["🤖", "feature"], assignees: [] })).toEqual([]);
     expect(workersFromIssue({ labels: ["Arbeiter Claude", "Bughunter anna"], assignees: [] })).toEqual(["Claude", "anna"]);
     expect(workersFromIssue({ labels: [], assignees: [] })).toEqual([]);
+  });
+
+  it("KI- und Bot-Kommentare zählen als Arbeiter (#125), ohne Doppelte", () => {
+    const ai = (author: string, name: string): IssueComment => ({ id: 1, issueNumber: 1, author, body: `**${name}** (über VibeWorks):\n\nStatus aktualisiert.\n\n${REPLY_MARKER}`, createdAt: "", url: "" });
+    expect(workersFromIssue({ labels: [], assignees: [], comments: [ai("vibeworks[bot]", "Claude")] })).toEqual(["Claude"]);
+    // Doppelt genannt (Label + Kommentar) nur einmal
+    expect(workersFromIssue({ labels: ["🤖 Claude"], assignees: [], comments: [ai("vibeworks[bot]", "Claude")] })).toEqual(["Claude"]);
+    // Bot-Antwort zählt den Bot selbst
+    const bot = (author: string): IssueComment => ({ id: 2, issueNumber: 1, author, body: `Erledigt – Status gesetzt.\n\n${BOT_MARKER}`, createdAt: "", url: "" });
+    expect(workersFromIssue({ labels: [], assignees: [], comments: [bot("vibeworks[bot]")] })).toEqual(["vibeworks[bot]"]);
+    // Gewöhnliche Kommentare ohne Marker verraten niemanden – auch nicht aus dem Text
+    const plain = (author: string, body: string): IssueComment => ({ id: 3, issueNumber: 1, author, body, createdAt: "", url: "" });
+    expect(workersFromIssue({ labels: [], assignees: [], comments: [plain("anna", "**Bob** hat mal hier geschrieben (über VibeWorks):"), plain("bot[bot]", "Ein Bot-Marker-Text ohne echten Marker")] })).toEqual([]);
   });
 
   it("der eingetragene Bearbeiter steht im Issue-Text", () => {
