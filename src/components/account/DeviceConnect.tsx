@@ -67,14 +67,14 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
           {done === "allowed" ? <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-400" /> : <XCircle size={20} className="mt-0.5 shrink-0 text-muted" />}
           {t(`device.${done}`)}
         </p>
-        <p className="mt-2 text-sm text-muted">{done === "allowed" ? t("device.autoCloseHint", { defaultValue: "Fenster schließt sich in 5 Sekunden..." }) : ""}</p>
+        <p className="mt-2 text-sm text-muted">{done === "allowed" ? t("device.autoCloseHint") : ""}</p>
         {done === "allowed" && (
           <div className="flex flex-wrap gap-2 mt-4">
             <Link href="/account#mcp" className="btn btn-sm">
               {t("section.title")}
             </Link>
             <button className="btn btn-sm" onClick={() => window.close()}>
-              {t("device.closeWindow", { defaultValue: "Fenster schließen" })}
+              {t("device.closeWindow")}
             </button>
           </div>
         )}

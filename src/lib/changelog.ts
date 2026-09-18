@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.6",
+    date: "2026-09-18",
+    title: "Fenster-Verbindung repariert",
+    titleEn: "Device connect fixed",
+    changes: [
+      {
+        type: "fix",
+        text: "Fertig-Meldung beim Verbinden eines KI-Programms: Hinweis zum automatischen Schließen und Knopf „Fenster schließen“ erscheinen wieder in der richtigen Sprache",
+        en: "Done screen when connecting an AI program: the auto-close hint and the “Close window” button show up again in the right language",
+        link: "/verbinden",
+      },
+    ],
+  },
+  {
     version: "1.3.5",
     date: "2026-09-17",
     title: "Ansicht aufräumen",
