@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.7",
+    date: "2026-09-18",
+    title: "KI-Agenten arbeiten immer über VibeWorks",
+    titleEn: "AI agents always work through VibeWorks",
+    changes: [
+      {
+        type: "besser",
+        text: "Neue Pflichtregel für KI-Agenten: Status, Notizen und Probleme laufen immer über den VibeWorks-MCP – in der Arbeitsweise, den Agenten-Regeln und als Skill-Datei",
+        en: "New mandatory rule for AI agents: status, notes and problems always go through the VibeWorks MCP – in the working guide, the agent rules and as a skill file",
+        link: "/account#mcp",
+      },
+    ],
+  },
+  {
     version: "1.3.6",
     date: "2026-09-18",
     title: "Fenster-Verbindung repariert",

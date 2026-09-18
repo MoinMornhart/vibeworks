@@ -5,6 +5,12 @@ Sie gilt für jede Sitzung, auch für automatische Nacht-Runden.
 
 ## Grundregeln
 
+- **VibeWorks MCP immer nutzen:** Wenn MCP-Werkzeuge verbunden sind, laufen Aufgaben, Notizen,
+  Probleme und Statusmeldungen IMMER über den VibeWorks-MCP (`list_tasks`, `list_problems`,
+  `update_task`, `create_note`, `complete_workflow_step` …) – nicht über GitHub-Kommentare oder
+  eigene Notizen. Regel: Vor jeder Antwort die offenen Aufgaben prüfen, ohne Aufgabe keine Code-
+  änderung, am Ende den Status über MCP setzen. Ist kein MCP verbunden, dieses mit Moini klären
+  statt stillschweigend nur über GitHub zu arbeiten.
 - **Sprache:** Antworten, Commit-Nachrichten, Code-Kommentare und Oberflächentexte auf Deutsch.
   Jeder sichtbare Text braucht auch eine englische Fassung (`src/lib/i18n/messages/*.ts`, `en` mit `Shape<typeof de>`).
 - **Nichts Geheimes committen:** keine Tokens, Passwörter, `.env`-Dateien und nie den Ordner `data/`.

@@ -41,6 +41,7 @@ VibeWorks (${appUrl}) is the user's self-hosted project control center. You reac
 
 ## Mandatory – always work through VibeWorks
 These rules are not optional. Follow them in every session and every reply.
+0. Always prefer VibeWorks MCP tools over side channels: read and write task status, notes, problems and structure through this MCP server, not through GitHub comments or local memory. If the MCP tools are missing in your environment, say so and ask the user to connect VibeWorks instead of silently working GitHub-only.
 1. Start of every reply: call list_tasks (and list_problems when something may be broken) before you do anything else.
 2. No work without a task: before you change code or files, find the matching task (get_task). If there is none, create one with create_task first.
 3. Status always true: set DOING with your name as assignee the moment you start, BLOCKED with a reason when stuck, DONE only when the work is really finished and verified (see "Before you say done").
