@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.9",
+    date: "2026-09-18",
+    title: "Repo-Check auf Wunschzweig",
+    titleEn: "Repo check on a chosen branch",
+    changes: [
+      {
+        type: "neu",
+        text: "Der Repo-Check kann jetzt einen anderen Zweig prüfen: Zweig eintragen (leer = Standardzweig) – Workflow-Datei, Läufe und Berichte stammen dann von dort",
+        en: "The repo check can now check a different branch: enter a branch (empty = default) – workflow file, runs and reports then come from there",
+        link: "/projects#repo-check",
+      },
+    ],
+  },
+  {
     version: "1.3.8",
     date: "2026-09-18",
     title: "Arbeiter aus Issue-Kommentaren",

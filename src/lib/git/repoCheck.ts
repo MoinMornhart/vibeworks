@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { tk } from "@/lib/i18n/messages";
 import { appLink, notifyUser } from "@/lib/notify";
 import { GitError } from "./providers";
+import { normalizeCheckBranch } from "./repoCheckBranch";
 import { artifactJson, deleteRepoFile, dispatchWorkflow, githubTarget, installError, latestWorkflowRun, readRepoFile, writeRepoFile, type GhTarget } from "./githubActions";
 import { REPO_CHECK_ARTIFACT, REPO_CHECK_FILE, REPO_CHECK_PATH, REPO_CHECK_WORKFLOW } from "./repoCheckWorkflow";
 import { checkGotWorse, parseCheckReport, type CheckReport } from "./repoCheckLogic";
@@ -47,14 +48,16 @@ async function context(projectId: string) {
       repoUrl: true,
       repoTokenCipher: true,
       repoCheck: true,
+      checkBranch: true,
       checkTasks: true,
       repoCache: { select: { provider: true, defaultBranch: true, checkStatus: true, checkReport: true, checkRunUrl: true, checkFetchedAt: true, checkInstalledAt: true } },
     },
   });
   const cache = project?.repoCache;
   if (!project || !cache) return null;
+  // Zweig für den Repo-Check (#125): leer/null heißt Standardzweig
   // Einrichten und Artefakte laden geht nur mit Token
-  const target = await githubTarget(project);
+  const target = await githubTarget(project, normalizeCheckBranch(project.checkBranch));
   return target ? { project, cache, target } : null;
 }
 type Ctx = NonNullable<Awaited<ReturnType<typeof context>>>;
@@ -207,11 +210,16 @@ async function notifyCheckAlert(project: { id: string; name: string; ownerId: st
 
 type CheckFields = Pick<RepoCache, "webUrl" | "defaultBranch" | "checkStatus" | "checkReport" | "checkRunUrl" | "checkRunAt" | "checkFetchedAt" | "checkError">;
 
-/** Nur für angemeldete Projektmitglieder – nie für öffentliche Seiten. */
-export function serializeRepoCheck(enabled: boolean, c: CheckFields | null, autoTasks = "off") {
+/**
+ * Nur für angemeldete Projektmitglieder – nie für öffentliche Seiten.
+ * branch ist der gewählte Zweig für den Check (#125, null heißt Standardzweig),
+ * defaultBranch der Standard des Repositories – beides braucht die Oberfläche.
+ */
+export function serializeRepoCheck(enabled: boolean, c: CheckFields | null, autoTasks = "off", checkBranch: unknown = null) {
   return {
     enabled,
     autoTasks,
+    branch: normalizeCheckBranch(checkBranch),
     status: (c?.checkStatus ?? null) as CheckStatus | null,
     report: c?.checkReport ? parseCheckReport(c.checkReport) : null,
     runUrl: c?.checkRunUrl ?? null,
@@ -219,7 +227,7 @@ export function serializeRepoCheck(enabled: boolean, c: CheckFields | null, auto
     fetchedAt: c?.checkFetchedAt?.toISOString() ?? null,
     error: c?.checkError ?? null,
     webUrl: c?.webUrl ?? "",
-    branch: c?.defaultBranch ?? null,
+    defaultBranch: c?.defaultBranch ?? null,
   };
 }
 export type RepoCheckView = ReturnType<typeof serializeRepoCheck>;

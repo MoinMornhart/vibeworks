@@ -17,6 +17,11 @@ const de = {
   removed: "Ausgeschaltet – die Workflow-Datei wurde aus dem Repository entfernt.",
   removeFailed: "Ausgeschaltet, aber die Datei ließ sich nicht entfernen: {error}",
   off: "Der Repo-Check ist für dieses Projekt aus.",
+  branch: {
+    label: "Zweig:",
+    hint: "Leer = Standardzweig. VibeWorks prüft dann diesen Zweig: legt die Workflow-Datei dort an, startet Läufe dort und holt deren Berichte.",
+    saved: "Zweig gespeichert – der nächste Lauf prüft diesen Stand.",
+  },
   needToken: "Für den Repo-Check braucht das Projekt einen GitHub-Zugang – ein Token mit den Rechten „repo“ und „workflow“.",
   createToken: "Token mit workflow-Recht erstellen",
   status: {
@@ -98,6 +103,7 @@ const de = {
     noArtifact: "Der Lauf hat keinen Bericht hinterlassen (Artefakt fehlt oder ist abgelaufen).",
     tooLarge: "Der Bericht ist zu groß.",
     badReport: "Der Bericht ließ sich nicht lesen.",
+    badBranch: "Dieser Zweigname ist nicht möglich – bitte einen gültigen Git-Zweignamen angeben.",
   },
 };
 
@@ -115,6 +121,11 @@ const en: Shape<typeof de> = {
   removed: "Turned off – the workflow file was removed from the repository.",
   removeFailed: "Turned off, but the file couldn't be removed: {error}",
   off: "The repo check is off for this project.",
+  branch: {
+    label: "Branch:",
+    hint: "Empty = default branch. VibeWorks then checks that branch: creates the workflow file there, dispatches runs there and fetches their reports.",
+    saved: "Branch saved – the next run checks that state.",
+  },
   needToken: "The repo check needs GitHub access for this project – a token with the “repo” and “workflow” scopes.",
   createToken: "Create a token with the workflow scope",
   status: {
@@ -196,6 +207,7 @@ const en: Shape<typeof de> = {
     noArtifact: "The run left no report (artifact missing or expired).",
     tooLarge: "The report is too large.",
     badReport: "The report couldn't be read.",
+    badBranch: "This branch name isn't possible – please provide a valid Git branch name.",
   },
 };
 

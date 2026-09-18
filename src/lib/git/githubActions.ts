@@ -22,7 +22,11 @@ export interface GhTarget {
 }
 
 /** API-Zugang eines GitHub-Projekts – nur mit Token, denn Einrichten und Artefakte brauchen ihn. */
-export async function githubTarget(project: { id: string; ownerId: string; repoUrl: string | null; repoTokenCipher: string | null }): Promise<GhTarget | null> {
+export async function githubTarget(
+  project: { id: string; ownerId: string; repoUrl: string | null; repoTokenCipher: string | null },
+  /** Zweig-Auswahl des Repo-Checks (#125): null/leer heißt Standardzweig */
+  checkBranch?: string | null,
+): Promise<GhTarget | null> {
   if (!project.repoUrl) return null;
   const cache = await db.repoCache.findUnique({ where: { projectId: project.id }, select: { provider: true, defaultBranch: true } });
   if (cache?.provider !== "github") return null;
@@ -36,7 +40,7 @@ export async function githubTarget(project: { id: string; ownerId: string; repoU
     token = null;
   }
   if (!token) return null;
-  return { api: apiBase("github", parsed), headers: authHeaders("github", token), branch: cache.defaultBranch };
+  return { api: apiBase("github", parsed), headers: authHeaders("github", token), branch: checkBranch?.trim() || cache.defaultBranch };
 }
 
 export async function readRepoFile(t: GhTarget, path: string): Promise<{ sha: string; text: string } | null> {
