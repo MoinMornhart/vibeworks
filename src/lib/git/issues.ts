@@ -8,10 +8,11 @@ import { issuesPaused } from "./repoAreasLogic";
 import { guessProvider, parseRepoUrl, type GitProvider, type ParsedRepo } from "./parse";
 import { issueTokenFor, userIssueToken } from "./token";
 import { runBotCommands } from "./botCommands";
+import { BOT_MARKER, REPLY_MARKER } from "./botCommandsLogic";
 import { importNewIssues, refreshImportedTasks } from "./issueImport";
 import { taskIsAiLocked } from "@/lib/aiLock";
 import { appLink, notifyUser } from "@/lib/notify";
-import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
+import { GitError, issueApi, STATUS_LABELS, type IssueApi, type IssueComment, type IssueInput, type IssueRef, type StatusLabel } from "./providers";
 
 // Aufgaben ↔ Issues. Jede Aufgabe eines Projekts mit Repository und Token
 // bekommt ein Issue; Titel, Text und Status folgen der Aufgabe:
@@ -51,10 +52,22 @@ export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "du
 /** Labels, die sagen, wer an einem Issue arbeitet: „🤖 Claude“, „👤 anna“. */
 const WORKER_LABEL = /^(?:🤖|👤|Arbeiter|Bughunter)\s*/i;
 
-/** Bearbeiter laut Issue: Bearbeiter-Labels und Zuweisungen (als @login), ohne Doppelte. */
-export function workersFromIssue(issue: Pick<IssueRef, "labels" | "assignees">): string[] {
+/**
+ * Arbeiter auch aus den Kommentaren lesen (#125): KI-Antworten über VibeWorks
+ * sind mit „**Name** (über VibeWorks):“ unterschrieben und enden auf dem
+ * Antwort-Marker, Bot-Befehle melden den Bot selbst – der Kommentar-Text bleibt
+ * immer außen vor, damit kein Name aus dem Inhalt erfunden wird.
+ */
+const WORKER_SIGNATURE = /^\*\*(\S[^*]{0,60}?)\*\* \(über VibeWorks\):/;
+
+/** Bearbeiter laut Issue: Bearbeiter-Labels, Zuweisungen und kommentierende KI-/Bot-Arbeiter, ohne Doppelte. */
+export function workersFromIssue(issue: Pick<IssueRef, "labels" | "assignees"> & { comments?: IssueComment[] }): string[] {
   const fromLabels = issue.labels.filter((l) => WORKER_LABEL.test(l.trim())).map((l) => l.trim().replace(WORKER_LABEL, "").trim());
-  return [...new Set([...fromLabels, ...issue.assignees.map((a) => `@${a}`)].filter(Boolean))].slice(0, 10);
+  const fromComments = (issue.comments ?? [])
+    .filter((c) => c.body.includes(REPLY_MARKER) || c.body.includes(BOT_MARKER))
+    .map((c) => WORKER_SIGNATURE.exec(c.body)?.[1]?.trim() ?? (c.body.includes(BOT_MARKER) ? c.author : null))
+    .filter((n): n is string => Boolean(n));
+  return [...new Set([...fromLabels, ...issue.assignees.map((a) => `@${a}`), ...fromComments])].filter(Boolean).slice(0, 10);
 }
 
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -269,8 +282,10 @@ async function runSync(projectId: string): Promise<IssueSyncResult | null> {
     const closedViaGit: string[] = [];
     for (const task of linked) {
       const issue = byNumber.get(task.issueNumber!)!;
-      // Bearbeiter laut Issue – ohne updatedAt anzufassen, das entscheidet über die Richtung des Statusabgleichs
-      const workers = workersFromIssue(issue);
+      // Bearbeiter laut Issue – ohne updatedAt anzufassen, das entscheidet über die Richtung des Statusabgleichs.
+      // Kommentare nur nachlesen, wenn die Labels niemanden verraten – so bleibt die API-Last klein (#125).
+      const comments = workersFromIssue(issue).length || !issue.updatedAt ? undefined : await ctx.api.comments(task.issueNumber!).catch(() => undefined);
+      const workers = workersFromIssue({ ...issue, comments });
       if (!sameList(workers, task.issueAssignees)) await db.$executeRaw`UPDATE "Task" SET "issueAssignees" = ${workers}::text[] WHERE "id" = ${task.id}`;
       const target = statusFromIssue(issue);
       if (target === task.status) continue;
