@@ -37,7 +37,7 @@ import { projectPeople } from "@/lib/projectPeople";
 import { StructurePanel } from "@/components/projects/StructurePanel";
 import { WorkflowPanel } from "@/components/projects/WorkflowPanel";
 import { ProjectKeysPanel } from "@/components/projects/ProjectKeysPanel";
-import { CiPanel } from "@/components/git/CiPanel";
+import { CiTeaser } from "@/components/git/CiPanel";
 import { LighthousePanel } from "@/components/git/LighthousePanel";
 import { viewOf } from "@/lib/uiPrefs";
 
@@ -188,8 +188,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           hasToken={Boolean(repoTokenHint || account)}
         />
       )}
-      {/* Auch nach gescheitertem Abgleich zeigen – das Panel nennt dann den Grund (#54) */}
-      {show("project.ci") && project.repoUrl && repoCache?.provider === "github" && <CiPanel projectId={project.id} canEdit={can("ci.manage")} />}
+      {/* CI ist jetzt eine eigene Seite („CI-Pipeline“ in der Kartenliste) – hier nur noch der Verweis */}
+      {show("project.ci") && project.repoUrl && repoCache?.provider === "github" && <CiTeaser projectId={project.id} />}
       {show("project.lighthouse") && project.repoUrl && repoCache?.provider === "github" && (isOwner || project.liveUrl) && (
         <LighthousePanel projectId={project.id} canRun={can("git.sync")} canManage={isOwner} hasToken={Boolean(repoTokenHint || account)} />
       )}

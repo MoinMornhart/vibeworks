@@ -930,6 +930,10 @@ model RepoCache {
   lhFetchedAt      DateTime?
   lhError          String?
   lhInstalledAt    DateTime?
+  /// Lighthouse-Zeitplan: "daily" | "weekly" (null = wöchentlich wie bisher)
+  lhSchedule       String?
+  /// Stundenversatz in UTC (0–23), damit nicht alle Projekte gleichzeitig prüfen
+  lhHour           Int?
 }
 
 /// Git-Verbindung eines Kontos (GitHub, GitLab, Gitea/Forgejo, auch selbst

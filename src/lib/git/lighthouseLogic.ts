@@ -97,11 +97,24 @@ with open("${LH_REPORT_FILE}", "w", encoding="utf-8") as f:
     json.dump(out, f)
 print(json.dumps({"scores": out["scores"], "brokenLinks": len(out["brokenLinks"])}))`;
 
+/** Feste Zeitpläne für den Lighthouse-Check (Stunde in UTC) – „wann“ in den Einstellungen. */
+export const LH_SCHEDULES = {
+  daily: (h: number) => `${((41 + h) % 60 >= 60 ? 0 : 41)} ${(5 + h) % 24} * * *`,
+  weekly: (h: number) => `41 ${(5 + h) % 24} * * 1`,
+} as const;
+export type LhSchedule = keyof typeof LH_SCHEDULES;
+export const LH_CRON = /^([\d*/,-]+\s+){4}[\d*/,-]+$/;
+
+/** Cron für den gewählten Rhythmus, mit Stundenversatz aus der Einstellung. */
+export function lighthouseCron(schedule: LhSchedule, hour = 0): string {
+  return LH_SCHEDULES[schedule](hour);
+}
+
 /** Workflow für eine geprüfte Live-Adresse (siehe safeLiveUrl). */
-export function buildLighthouseWorkflow(liveUrl: string): string {
+export function buildLighthouseWorkflow(liveUrl: string, cron = "41 5 * * 1"): string {
   return [
     LH_MARKER,
-    "# Prüft einmal pro Woche Leistung, Barrierefreiheit, Best Practices und SEO (Lighthouse)",
+    "# Prüft nach Zeitplan Leistung, Barrierefreiheit, Best Practices und SEO (Lighthouse)",
     "# sowie kaputte Links (lychee) – kostenlos im GitHub-Runner, ohne KI und ohne Zugriff auf den Code.",
     "# Datei löschen = Check aus.",
     "name: VibeWorks Lighthouse",
@@ -110,7 +123,7 @@ export function buildLighthouseWorkflow(liveUrl: string): string {
     "  push:",
     `    paths: [${JSON.stringify(LH_PATH)}]`,
     "  schedule:",
-    '    - cron: "41 5 * * 1"',
+    `    - cron: ${JSON.stringify(cron)}`,
     "  workflow_dispatch:",
     "",
     "permissions:",

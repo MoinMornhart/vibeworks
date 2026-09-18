@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, Gauge, Link2Off, RefreshCw } from "lucide-react";
+import { Clock, ExternalLink, Gauge, Link2Off, RefreshCw, Save } from "lucide-react";
 import type { LighthouseView } from "@/lib/git/lighthouse";
 import { LH_CATEGORIES, LH_DROP } from "@/lib/git/lighthouseLogic";
 import { api, errorMessage } from "@/lib/client/api";
@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/Toaster";
 import { cn } from "@/lib/utils";
 import { confirmDialog } from "@/lib/client/dialogs";
 
-type Action = "run" | "refresh" | "enable" | "disable";
+type Action = "run" | "refresh" | "enable" | "disable" | "schedule";
 /** Solange ein Lauf aussteht, so oft nachsehen (nur bei sichtbarem Tab). */
 const POLL_MS = 60_000;
 
@@ -29,11 +29,23 @@ export function LighthousePanel({ projectId, canRun, canManage, hasToken }: { pr
   const [lh, setLh] = useState<LighthouseView | null>(null);
   const [busy, setBusy] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Zeitplan („wann und wie“): Rhythmus + Stunde in UTC, nur für Besitzer
+  const [schedule, setSchedule] = useState<"daily" | "weekly">("weekly");
+  const [hour, setHour] = useState(5);
+  const [scheduleDirty, setScheduleDirty] = useState(false);
+
+  const adopt = (v: LighthouseView) => {
+    setLh(v);
+    if (!scheduleDirty) {
+      setSchedule(v.schedule);
+      setHour(v.hour);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
     api<{ lighthouse: LighthouseView }>(`/api/projects/${projectId}/lighthouse`)
-      .then((res) => alive && setLh(res.lighthouse))
+      .then((res) => alive && adopt(res.lighthouse))
       .catch((e) => alive && setError(errorMessage(e)));
     return () => {
       alive = false;
@@ -47,7 +59,7 @@ export function LighthousePanel({ projectId, canRun, canManage, hasToken }: { pr
     }
     try {
       const res = await api<{ lighthouse: LighthouseView; removed: boolean; warning: string | null }>(`/api/projects/${projectId}/lighthouse`, { body: { action } });
-      setLh(res.lighthouse);
+      adopt(res.lighthouse);
       if (action === "enable") toast(t("enabled"));
       if (action === "run") toast(t("started"));
       if (action === "disable") toast(res.warning ? msg(res.warning) : res.removed ? t("removed") : t("disabled"), res.warning ? "error" : undefined);
@@ -55,6 +67,21 @@ export function LighthousePanel({ projectId, canRun, canManage, hasToken }: { pr
       if (!quiet) setError(errorMessage(e));
     } finally {
       if (!quiet) setBusy(null);
+    }
+  }
+
+  async function saveSchedule() {
+    setBusy("schedule");
+    setError(null);
+    try {
+      const res = await api<{ lighthouse: LighthouseView; removed: boolean; warning: string | null }>(`/api/projects/${projectId}/lighthouse`, { body: { action: "schedule", schedule, hour } });
+      adopt(res.lighthouse);
+      setScheduleDirty(false);
+      toast(t("schedule.saved"));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -123,6 +150,46 @@ export function LighthousePanel({ projectId, canRun, canManage, hasToken }: { pr
       ) : (
         <div className="space-y-4">
           {lh.error && <p className="text-sm text-amber-400">{msg(lh.error)}</p>}
+          {canManage && (
+            <div className="flex flex-wrap items-end gap-2 rounded-2xl border p-3 text-sm" data-testid="lighthouse-schedule">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-muted"><Clock size={13} /> {t("schedule.title")}</span>
+              <label className="flex items-center gap-1 text-xs">
+                {t("schedule.every")}
+                <select
+                  className="field w-auto !py-1 text-xs"
+                  value={schedule}
+                  onChange={(e) => {
+                    setSchedule(e.target.value as "daily" | "weekly");
+                    setScheduleDirty(true);
+                  }}
+                  data-testid="lighthouse-schedule-mode"
+                >
+                  <option value="weekly">{t("schedule.weekly")}</option>
+                  <option value="daily">{t("schedule.daily")}</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-1 text-xs">
+                {t("schedule.hour")}
+                <select
+                  className="field w-auto !py-1 text-xs"
+                  value={hour}
+                  onChange={(e) => {
+                    setHour(Number(e.target.value));
+                    setScheduleDirty(true);
+                  }}
+                  data-testid="lighthouse-schedule-hour"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00 UTC</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="btn btn-primary btn-sm" disabled={busy !== null || !scheduleDirty} onClick={() => void saveSchedule()} data-testid="lighthouse-schedule-save">
+                <Save size={13} /> {t("schedule.save")}
+              </button>
+              <p className="basis-full text-[11px] text-muted">{t("schedule.hint")}</p>
+            </div>
+          )}
           {r && !hasScores && <p className="text-sm text-amber-400">{r.error || t("noReport")}</p>}
           {r && hasScores && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="lighthouse-scores">

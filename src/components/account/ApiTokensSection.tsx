@@ -252,13 +252,13 @@ export function ApiTokensSection({
       )}
 
       <form
-        className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap"
+        className="flex flex-col items-stretch gap-2 sm:flex sm:flex-wrap sm:items-end"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
         }}
       >
-        <div className="col-span-2 min-w-0 sm:flex-1">
+        <div className="min-w-0 sm:flex-1">
           <label className="label" htmlFor="api-token-name">{t("name")}</label>
           <input id="api-token-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={60} />
         </div>

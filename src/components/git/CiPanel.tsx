@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Loader2, MinusCircle, Play, Plus, Save, Trash2, Upload, Workflow, XCircle } from "lucide-react";
+import Link from "next/link";
+import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Loader2, MinusCircle, Maximize2, Minus, Play, Plus, Save, Trash2, Upload, Workflow, XCircle, ZoomIn } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
@@ -26,6 +27,22 @@ const STATE_TONE: Record<NodeState, string> = {
   skipped: "text-muted",
 };
 const SCHEDULES = { daily: "0 3 * * *", weekly: "0 3 * * 1" } as const;
+
+/** Verweiskarte auf der Projektseite – der Editor lebt auf der eigenen CI-Seite. */
+export function CiTeaser({ projectId }: { projectId: string }) {
+  const t = useT("ci");
+  return (
+    <section id="ci" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="ci-heading" data-testid="ci">
+      <h2 id="ci-heading" className="flex items-center gap-2 text-lg font-semibold">
+        <Workflow size={18} className="text-accent-ink" /> {t("title")}
+      </h2>
+      <p className="mt-1 mb-3 text-sm text-muted">{t("teaser")}</p>
+      <Link href={`/projects/${projectId}/ci`} className="btn btn-primary btn-sm" data-testid="ci-open">
+        <Workflow size={14} /> {t("openDesigner")}
+      </Link>
+    </section>
+  );
+}
 
 /** CI-Designer (#107): Auslöser und Blöcke zusammenstellen, ins Repository schreiben, Lauf live verfolgen. */
 export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
@@ -144,6 +161,40 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
 
   const scheduleMode = !draft?.triggers.schedule ? "off" : draft.triggers.schedule === SCHEDULES.daily ? "daily" : draft.triggers.schedule === SCHEDULES.weekly ? "weekly" : "custom";
   const nodes = status?.nodes ?? {};
+
+  // ── Node-Ansicht (n8n-artig): Steps als verbundene Kästchen, zoom- und verschiebbar ──
+  const [canvasView, setCanvasView] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragNode, setDragNode] = useState<{ i: number; id: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const [layout, setLayout] = useState<Record<string, { x: number; y: number }>>({});
+  const dragPan = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
+  const showCanvas = canvasView && draft && draft.steps.length > 0;
+  const nodePos = (i: number, id: string) => layout[id] ?? { x: 24 + i * 190, y: 96 };
+
+  const onNodeDown = (i: number, id: string, e: React.PointerEvent) => {
+    e.stopPropagation();
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const p = nodePos(i, id);
+    setDragNode({ i, id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y });
+  };
+  const onNodeMove = (e: React.PointerEvent) => {
+    if (!dragNode) return;
+    const k = Math.max(0.4, zoom);
+    setLayout((l) => ({ ...l, [dragNode.id]: { x: dragNode.ox + (e.clientX - dragNode.sx) / k, y: dragNode.oy + (e.clientY - dragNode.sy) / k } }));
+  };
+  const onStageDown = (e: React.PointerEvent) => {
+    dragPan.current = { sx: e.clientX, sy: e.clientY, px: pan.x, py: pan.y };
+  };
+  const onStageMove = (e: React.PointerEvent) => {
+    const d = dragPan.current;
+    if (!d) return;
+    setPan({ x: d.px + (e.clientX - d.sx), y: d.py + (e.clientY - d.sy) });
+  };
+  const stopDrag = () => {
+    dragPan.current = null;
+    setDragNode(null);
+  };
   // Als Funktion, nicht als Komponente – sonst hängt React die Knöpfe bei jedem Rendern neu ein
   const inserter = (at: number) =>
     canEdit && draft && draft.steps.length < MAX_STEPS ? (
@@ -246,6 +297,98 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
               </label>
             )}
           </fieldset>
+
+          {showCanvas && (
+            <div className="relative overflow-hidden rounded-2xl border bg-bg/40" data-testid="ci-canvas">
+              {/* Werkzeugleiste: Ansicht umschalten, zoomen, einpassen */}
+              <div className="absolute right-2 top-2 z-10 flex gap-1">
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setCanvasView(false)} aria-label={t("canvasOff")} title={t("canvasOff")} data-testid="ci-canvas-off">
+                  <Maximize2 size={14} className="rotate-45" />
+                </button>
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.min(1.6, z + 0.2))} aria-label={t("zoomIn")} data-testid="ci-zoom-in">
+                  <ZoomIn size={14} />
+                </button>
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} aria-label={t("zoomOut")} data-testid="ci-zoom-out">
+                  <Minus size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-icon btn-sm bg-bg"
+                  onClick={() => {
+                    setZoom(1);
+                    setPan({ x: 0, y: 0 });
+                    setLayout({});
+                  }}
+                  aria-label={t("fit")}
+                  data-testid="ci-fit"
+                >
+                  <Maximize2 size={14} />
+                </button>
+              </div>
+              <div
+                className="h-64 cursor-grab touch-none select-none active:cursor-grabbing sm:h-80"
+                onPointerDown={onStageDown}
+                onPointerMove={(e) => {
+                  onStageMove(e);
+                  onNodeMove(e);
+                }}
+                onPointerUp={stopDrag}
+                onPointerLeave={stopDrag}
+              >
+                <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: "1600px", height: "320px" }} className="relative">
+                  {/* Verbindungen zwischen aufeinanderfolgenden Steps */}
+                  <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+                    {draft.steps.map((s, i) => {
+                      if (i === 0) return null;
+                      const a = nodePos(i - 1, draft.steps[i - 1].id);
+                      const b = nodePos(i, s.id);
+                      const x1 = a.x + 170,
+                        y1 = a.y + 30,
+                        x2 = b.x,
+                        y2 = b.y + 30;
+                      const state = nodes[s.id] ?? "idle";
+                      return <path key={s.id} d={`M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2 - 40} ${y2}, ${x2} ${y2}`} fill="none" stroke={state === "running" ? "var(--vw-accent, #a78bfa)" : "currentColor"} strokeOpacity={state === "running" ? 0.9 : 0.25} strokeWidth={state === "running" ? 2.5 : 1.5} className="text-fg" data-testid="ci-edge" data-state={state} />;
+                    })}
+                  </svg>
+                  {draft.steps.map((s, i) => {
+                    const state = nodes[s.id] ?? "idle";
+                    const Icon = STATE_ICON[state];
+                    const p = nodePos(i, s.id);
+                    return (
+                      <div
+                        key={s.id}
+                        className={cn(
+                          "absolute w-[170px] cursor-grab rounded-xl border bg-bg p-2 shadow-lg active:cursor-grabbing",
+                          state === "running" && "border-accent/70 shadow-accent/20",
+                          state === "failure" && "border-red-500/60",
+                          state === "success" && "border-emerald-500/50",
+                        )}
+                        style={{ left: p.x, top: p.y }}
+                        onPointerDown={(e) => onNodeDown(i, s.id, e)}
+                        data-testid="ci-canvas-node"
+                        data-kind={s.kind}
+                        data-state={state}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Icon size={14} className={cn("shrink-0", STATE_TONE[state])} />
+                          <span className="min-w-0 truncate text-xs font-medium" title={s.name}>
+                            {s.name}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-[10px] text-muted">{t(`kinds.${s.kind}`)}</p>
+                        {state === "running" && (
+                          <span className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-full bg-fg/10">
+                            <span className="block h-full w-1/3 animate-[vw-canvas-run_1.2s_ease-in-out_infinite] rounded-full bg-accent" />
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="border-t px-3 py-1 text-[11px] text-muted">{t("canvasHint")}</p>
+            </div>
+          )}
 
           <div data-testid="ci-steps">
             <p className="mb-1 text-xs font-semibold text-muted">{t("steps")}</p>

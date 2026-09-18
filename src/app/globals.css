@@ -248,6 +248,15 @@
   }
 }
 
+@keyframes vw-canvas-run {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
 @keyframes vw-fade-in {
   from {
     opacity: 0;

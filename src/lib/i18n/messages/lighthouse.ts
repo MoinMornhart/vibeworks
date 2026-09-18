@@ -47,6 +47,16 @@ const de = {
     noLiveUrl: "Das Projekt hat keine gültige Live-Adresse (http oder https).",
     githubOnly: "Der Lighthouse-Check braucht ein GitHub-Repository.",
   },
+  schedule: {
+    title: "Wann prüfen?",
+    every: "Rhythmus",
+    weekly: "wöchentlich",
+    daily: "täglich",
+    hour: "Uhrzeit",
+    save: "Zeitplan speichern",
+    saved: "Zeitplan gespeichert – der Workflow im Repository wird angepasst.",
+    hint: "Zeit in UTC. Der Versatz verhindert, dass alle Projekte gleichzeitig beim GitHub-Runner anliegen.",
+  },
 };
 
 const en: Shape<typeof de> = {
@@ -92,6 +102,16 @@ const en: Shape<typeof de> = {
     off: "The Lighthouse check is turned off for this project.",
     noLiveUrl: "The project has no valid live address (http or https).",
     githubOnly: "The Lighthouse check needs a GitHub repository.",
+  },
+  schedule: {
+    title: "When to check?",
+    every: "Cadence",
+    weekly: "weekly",
+    daily: "daily",
+    hour: "Time",
+    save: "Save schedule",
+    saved: "Schedule saved – the workflow in the repository is being updated.",
+    hint: "Time in UTC. The offset keeps all projects from hitting the GitHub runner at the same moment.",
   },
 };
 

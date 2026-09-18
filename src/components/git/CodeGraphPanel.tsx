@@ -9,6 +9,7 @@ import type { ProjectCodeGraph } from "@/lib/codeGraph";
 import { blobUrl } from "@/lib/git/repoCheckLogic";
 import { neighborsOf } from "@/lib/codeGraphLogic";
 import { api, errorMessage } from "@/lib/client/api";
+import { SAVER_FRAME_SKIP, useSaverMode } from "@/lib/client/saverMode";
 import { useFormat, useMsg, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/Toaster";
@@ -53,6 +54,10 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const [showPkgs, setShowPkgs] = useState(true);
   const [onlyGroup, setOnlyGroup] = useState<string | null>(null);
   const [, setFrame] = useState(0);
+  // Sparmodus auf Handys: Simulation seltener rechnen, das Netz bleibt bedienbar
+  const saver = useSaverMode();
+  const saverRef = useRef(false);
+  saverRef.current = saver;
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
   const pos = useRef(new Map<string, Pos>());
   const svgRef = useRef<SVGSVGElement>(null);
@@ -156,7 +161,14 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
     const list = nodes.map((n) => ({ id: n.id, p: pos.current.get(n.id)!, deg: n.degree }));
     const index = new Map(list.map((n, i) => [n.id, i]));
     const links = edges.map((e) => [index.get(e.source)!, index.get(e.target)!] as const);
+    let tick = 0;
     const step = () => {
+      // Sparmodus (#mobil): nur jeden dritten Bild rechnen – sieht fast gleich aus, kostet deutlich weniger
+      tick++;
+      if (saverRef.current && tick % SAVER_FRAME_SKIP !== 0) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
       const alpha = heat.current;
       if (alpha < 0.02) return;
       const repel = 900 * alpha;
