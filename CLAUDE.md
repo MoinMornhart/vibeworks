@@ -80,8 +80,9 @@ Einmal am Tag, für JEDES Projekt mit Repository IMMER mit VibeWorks verbinden u
 3. Labels prüfen: `in Arbeit` nur, solange wirklich gearbeitet wird; wartende Issues bekommen
    `wartet auf Moini` bzw. `wartet auf Infos`. Arbeiter-Labels (z.B. `Arbeiter Claude`, `Bughunter anna`) werden automatisch erkannt.
 4. Berechtigungen der Accounts auf VibeWorks sicherstellen (Prüfung der Rechte zur KI-Kommunikation bei automatisierten Aktionen).
+5. GitHub-Issues verwalten (#118): Ein System (GitHub App / Webhook / Runner / VM, kostenfrei) integrieren, das Repos, Commits und Rechte ("Arbeiter", "Bughunter") prüft und mit VibeWorks synchronisiert. Issues sollen in beide Richtungen sauber abgebildet werden.
 
-Neue Issues sofort übernehmen, nicht sammeln. Für durchgehendes Arbeiten (z. B. nachts)
+Neue Issues sofort übernehmen, nicht sammeln. Für durchgehendes Arbeiten (z.B. nachts)
 einen echten Zeitplan anlegen, der die Runde regelmäßig startet – eine laufende Sitzung
 allein arbeitet nicht von selbst weiter.
 
