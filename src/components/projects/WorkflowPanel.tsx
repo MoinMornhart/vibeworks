@@ -29,9 +29,9 @@ export function CopyPrompt({ text, label }: { text: string; label?: string }) {
     window.setTimeout(() => setDone(false), 1600);
   }
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <code className="min-w-0 flex-1 break-words rounded-lg border bg-black/20 px-2 py-1 text-xs">{text}</code>
-      <button type="button" className="btn btn-sm shrink-0" onClick={() => void copy()} data-testid="copy-prompt">
+      <button type="button" className="btn btn-sm shrink-0 self-start sm:self-auto" onClick={() => void copy()} data-testid="copy-prompt">
         {done ? <Check size={14} /> : <Copy size={14} />} {done ? t("copied") : (label ?? t("copyPrompt"))}
       </button>
     </div>

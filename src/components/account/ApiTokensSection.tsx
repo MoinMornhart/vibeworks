@@ -252,19 +252,19 @@ export function ApiTokensSection({
       )}
 
       <form
-        className="flex flex-wrap items-end gap-2"
+        className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
         }}
       >
-        <div className="min-w-0 flex-1">
+        <div className="col-span-2 min-w-0 sm:flex-1">
           <label className="label" htmlFor="api-token-name">{t("name")}</label>
           <input id="api-token-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={60} />
         </div>
         <label className="text-sm">
           <span className="label">{t("projectKey.lifetime")}</span>
-          <select className="field w-auto" value={lifetime} onChange={(e) => setLifetime(e.target.value as KeyLifetime)} data-testid="api-token-lifetime">
+          <select className="field w-full sm:w-auto" value={lifetime} onChange={(e) => setLifetime(e.target.value as KeyLifetime)} data-testid="api-token-lifetime">
             {KEY_LIFETIMES.map((l) => (
               <option key={l} value={l}>
                 {t(`projectKey.lifetimes.${l}`)}

@@ -57,6 +57,9 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const pos = useRef(new Map<string, Pos>());
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ kind: "pan" | "node"; id?: string; sx: number; sy: number; vx: number; vy: number } | null>(null);
+  // Touch (#mobil): aktive Finger für Pinch-Zoom – zwei Finger zoomen wie beim Mausrad
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; k: number; x: number; y: number } | null>(null);
   const heat = useRef(0);
 
   const load = useCallback(async (wanted: string | null = null, refresh = false) => {
@@ -405,7 +408,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       )}
 
       {graph && !graph.empty && inStage(
-        <div className={cn(full && "fixed inset-0 z-50 flex flex-col overflow-hidden bg-bg p-3 sm:p-4")} data-testid="code-graph-stage">
+        <div className={cn(full && "fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-bg p-3 sm:p-4")} data-testid="code-graph-stage">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <label className="relative">
               <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -449,11 +452,31 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                 viewBox={`0 0 ${W} ${H}`}
                 className={cn("block w-full touch-none select-none", full ? "h-full" : "h-[26rem] sm:h-[34rem]")}
                 onPointerDown={(e) => {
-                  (e.target as Element).setPointerCapture?.(e.pointerId);
+                  // Fangen immer am SVG, nicht am Punkt – sonst verliert Touch die Bewegung
+                  e.currentTarget.setPointerCapture?.(e.pointerId);
+                  pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                  if (pointers.current.size === 2) {
+                    const [a, b] = [...pointers.current.values()];
+                    pinch.current = { dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), k: view.k, x: view.x, y: view.y };
+                    drag.current = null;
+                    return;
+                  }
                   const id = (e.target as Element).getAttribute("data-node");
                   drag.current = id ? { kind: "node", id, sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y } : { kind: "pan", sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y };
                 }}
                 onPointerMove={(e) => {
+                  if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                  // Zwei Finger: um die Fingermitte zoomen
+                  if (pointers.current.size >= 2 && pinch.current) {
+                    const [a, b] = [...pointers.current.values()];
+                    const dist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+                    const r = svgRef.current!.getBoundingClientRect();
+                    const mx = (((a.x + b.x) / 2 - r.left) / r.width) * W;
+                    const my = (((a.y + b.y) / 2 - r.top) / r.height) * H;
+                    const k = Math.min(6, Math.max(0.2, pinch.current.k * (dist / pinch.current.dist)));
+                    setView({ k, x: mx - ((mx - pinch.current.x) * k) / pinch.current.k, y: my - ((my - pinch.current.y) * k) / pinch.current.k });
+                    return;
+                  }
                   const d = drag.current;
                   if (!d) return;
                   if (d.kind === "pan") {
@@ -467,9 +490,16 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                   }
                 }}
                 onPointerUp={(e) => {
+                  pointers.current.delete(e.pointerId);
+                  if (pointers.current.size < 2) pinch.current = null;
                   const d = drag.current;
                   drag.current = null;
                   if (d && Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) < 5) setSelected(d.kind === "node" ? d.id ?? null : null);
+                }}
+                onPointerCancel={(e) => {
+                  pointers.current.delete(e.pointerId);
+                  if (pointers.current.size < 2) pinch.current = null;
+                  drag.current = null;
                 }}
                 role="img"
                 aria-label={t("title")}

@@ -60,10 +60,12 @@ export function PortfolioSection({ initial }: { initial: PortfolioView }) {
       <div className="space-y-5" data-testid="portfolio-section">
         <Toggle label={t("public")} hint={t("publicHint")} checked={pub} onChange={setPub} />
         {saved.public && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <code className="min-w-0 flex-1 break-all rounded-lg border bg-black/30 p-2.5 font-mono text-xs">{saved.url}</code>
-            <button type="button" className="btn btn-sm" onClick={() => void copy()}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t("copied") : t("copy")}</button>
-            <a href={saved.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm"><ExternalLink size={14} /> {t("open")}</a>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" className="btn btn-sm" onClick={() => void copy()}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t("copied") : t("copy")}</button>
+              <a href={saved.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm"><ExternalLink size={14} /> {t("open")}</a>
+            </div>
           </div>
         )}
         <div>

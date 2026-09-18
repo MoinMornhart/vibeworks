@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-09-18",
+    title: "Handy-Verbesserungen",
+    titleEn: "Mobile improvements",
+    changes: [
+      {
+        type: "fix",
+        text: "Das Codennetz läuft jetzt auch auf Touch-Geräten: zwei Finger zoomen, Ziehen und Antippen funktionieren zuverlässig, Vollbild füllt das Handydisplay korrekt",
+        en: "The code graph now works on touch devices: pinch with two fingers to zoom, dragging and tapping are reliable, fullscreen fills the phone screen correctly",
+        link: "/projects#code-graph",
+      },
+      {
+        type: "fix",
+        text: "Lange Adressen und Befehle (Ideen-Eingang, Portfolio, Aufbau, API-Schlüssel) brechen auf schmalen Bildschirmen nicht mehr Zeichen für Zeichen – die Schaltflächen rücken unter die Box",
+        en: "Long addresses and commands (idea inbox, portfolio, structure, API keys) no longer wrap character by character on narrow screens – buttons move below the box",
+      },
+    ],
+  },
+  {
     version: "1.3.9",
     date: "2026-09-18",
     title: "Repo-Check auf Wunschzweig",

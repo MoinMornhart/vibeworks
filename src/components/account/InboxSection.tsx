@@ -57,12 +57,14 @@ export function InboxSection({ initial }: { initial: InboxInfo }) {
         <div className="space-y-5">
           <div>
             <p className="label">{t("settings.webhook")}</p>
-            <div className="flex flex-wrap items-start gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
               <code className="min-w-0 flex-1 break-all rounded-lg border bg-black/30 p-2.5 font-mono text-xs" data-testid="inbox-webhook">{info.webhookUrl}</code>
-              <button type="button" className="btn btn-sm" onClick={() => void copy(info.webhookUrl, "url")}>
-                {copied === "url" ? <Check size={14} /> : <Copy size={14} />} {copied === "url" ? t("settings.copied") : t("settings.copy")}
-              </button>
-              <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void save(true)}><RefreshCw size={14} /> {t("settings.regenerate")}</button>
+              <div className="flex shrink-0 gap-2">
+                <button type="button" className="btn btn-sm" onClick={() => void copy(info.webhookUrl, "url")}>
+                  {copied === "url" ? <Check size={14} /> : <Copy size={14} />} {copied === "url" ? t("settings.copied") : t("settings.copy")}
+                </button>
+                <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void save(true)}><RefreshCw size={14} /> {t("settings.regenerate")}</button>
+              </div>
             </div>
             <p className="mt-1 text-xs text-muted">{t("settings.webhookHint")}</p>
             <div className="mt-2 flex flex-wrap items-start gap-2">
