@@ -57,8 +57,8 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   const pos = useRef(new Map<string, Pos>());
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ kind: "pan" | "node"; id?: string; sx: number; sy: number; vx: number; vy: number } | null>(null);
-  // Touch (#mobil): aktive Finger für Pinch-Zoom – zwei Finger zoomen wie beim Mausrad
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  // Touch: aktive Finger für Pinch-Zoom – über native Listener (React-Handler sind
+  // passiv, dort würde preventDefault den Seitenzoom nicht stoppen)
   const pinch = useRef<{ dist: number; k: number; x: number; y: number } | null>(null);
   const heat = useRef(0);
 
@@ -218,10 +218,35 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
   };
 
   // Mausrad zoomt das Netz – als eigener Listener, sonst scrollt der Browser die Seite (#67)
+  // Pinch mit zwei Fingern genauso: native Listener, sonst zoomt der Browser die Seite (#mobil)
   const hasGraph = Boolean(graph && !graph.empty);
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
+    const center = (touches: TouchList) => {
+      const r = svg.getBoundingClientRect();
+      const mx = ((touches[0].clientX + touches[1].clientX) / 2 - r.left) / r.width * W;
+      const my = ((touches[0].clientY + touches[1].clientY) / 2 - r.top) / r.height * H;
+      return { mx, my, dist: Math.max(1, Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)) };
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      e.preventDefault();
+      drag.current = null;
+      const { dist } = center(e.touches);
+      pinch.current = { dist, k: view.k, x: view.x, y: view.y };
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const base = pinch.current;
+      if (!base || e.touches.length !== 2) return;
+      e.preventDefault();
+      const { mx, my, dist } = center(e.touches);
+      const k = Math.min(6, Math.max(0.2, base.k * (dist / base.dist)));
+      setView({ k, x: mx - ((mx - base.x) * k) / base.k, y: my - ((my - base.y) * k) / base.k });
+    };
+    const onTouchEnd = () => {
+      pinch.current = null;
+    };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const r = svg.getBoundingClientRect();
@@ -233,7 +258,20 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
       });
     };
     svg.addEventListener("wheel", onWheel, { passive: false });
-    return () => svg.removeEventListener("wheel", onWheel);
+    svg.addEventListener("touchstart", onTouchStart, { passive: false });
+    svg.addEventListener("touchmove", onTouchMove, { passive: false });
+    svg.addEventListener("touchend", onTouchEnd);
+    svg.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      svg.removeEventListener("wheel", onWheel);
+      svg.removeEventListener("touchstart", onTouchStart);
+      svg.removeEventListener("touchmove", onTouchMove);
+      svg.removeEventListener("touchend", onTouchEnd);
+      svg.removeEventListener("touchcancel", onTouchEnd);
+    };
+    // view im Verschluss: die Geste nimmt die Lage beim Aufsetzen als Basis,
+    // deshalb reicht der Stand von hasGraph/full
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasGraph, full]);
 
   // Vollbild: Esc schließt, danach neu einpassen
@@ -243,9 +281,19 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
     document.addEventListener("keydown", onKey);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Echter Vollbildmodus, wo erlaubt (Handy): keine Browserleiste mehr, die
+    // die Höhe verzieht – sonst bleibt es die Overlay-Ansicht mit h-dvh.
+    const stage = document.querySelector<HTMLElement>("[data-testid='code-graph-stage']");
+    if (stage?.requestFullscreen) stage.requestFullscreen().catch(() => {});
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setFull(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
     return () => {
       document.removeEventListener("keydown", onKey);
+      document.removeEventListener("fullscreenchange", onFsChange);
       document.body.style.overflow = overflow;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     };
   }, [full]);
 
@@ -433,7 +481,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
             </button>
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn min-h-11"
               data-testid="code-graph-fullscreen"
               onClick={() => {
                 setFull((v) => !v);
@@ -441,7 +489,7 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                 window.setTimeout(fit, 60);
               }}
             >
-              {full ? <Minimize2 size={13} /> : <Expand size={13} />} {full ? t("exitFullscreen") : t("fullscreen")}
+              {full ? <Minimize2 size={16} /> : <Expand size={16} />} {full ? t("exitFullscreen") : t("fullscreen")}
             </button>
           </div>
 
@@ -452,31 +500,15 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                 viewBox={`0 0 ${W} ${H}`}
                 className={cn("block w-full touch-none select-none", full ? "h-full" : "h-[26rem] sm:h-[34rem]")}
                 onPointerDown={(e) => {
-                  // Fangen immer am SVG, nicht am Punkt – sonst verliert Touch die Bewegung
+                  // Fangen immer am SVG, nicht am Punkt – sonst verliert Touch die Bewegung.
+                  // Bei zwei Fingern übernimmt der native Touch-Pinch (oben).
                   e.currentTarget.setPointerCapture?.(e.pointerId);
-                  pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-                  if (pointers.current.size === 2) {
-                    const [a, b] = [...pointers.current.values()];
-                    pinch.current = { dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), k: view.k, x: view.x, y: view.y };
-                    drag.current = null;
-                    return;
-                  }
+                  if (pinch.current) return;
                   const id = (e.target as Element).getAttribute("data-node");
                   drag.current = id ? { kind: "node", id, sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y } : { kind: "pan", sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y };
                 }}
                 onPointerMove={(e) => {
-                  if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-                  // Zwei Finger: um die Fingermitte zoomen
-                  if (pointers.current.size >= 2 && pinch.current) {
-                    const [a, b] = [...pointers.current.values()];
-                    const dist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
-                    const r = svgRef.current!.getBoundingClientRect();
-                    const mx = (((a.x + b.x) / 2 - r.left) / r.width) * W;
-                    const my = (((a.y + b.y) / 2 - r.top) / r.height) * H;
-                    const k = Math.min(6, Math.max(0.2, pinch.current.k * (dist / pinch.current.dist)));
-                    setView({ k, x: mx - ((mx - pinch.current.x) * k) / pinch.current.k, y: my - ((my - pinch.current.y) * k) / pinch.current.k });
-                    return;
-                  }
+                  if (pinch.current) return;
                   const d = drag.current;
                   if (!d) return;
                   if (d.kind === "pan") {
@@ -490,15 +522,12 @@ export function CodeGraphPanel({ projectId, canEdit = false }: { projectId: stri
                   }
                 }}
                 onPointerUp={(e) => {
-                  pointers.current.delete(e.pointerId);
-                  if (pointers.current.size < 2) pinch.current = null;
+                  if (pinch.current) return;
                   const d = drag.current;
                   drag.current = null;
                   if (d && Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) < 5) setSelected(d.kind === "node" ? d.id ?? null : null);
                 }}
-                onPointerCancel={(e) => {
-                  pointers.current.delete(e.pointerId);
-                  if (pointers.current.size < 2) pinch.current = null;
+                onPointerCancel={() => {
                   drag.current = null;
                 }}
                 role="img"

@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.1",
+    date: "2026-09-18",
+    title: "Codennetz auf dem Handy richtig bedienbar",
+    titleEn: "Code graph fully usable on phones",
+    changes: [
+      {
+        type: "fix",
+        text: "Zwei-Finger-Zoom im Codennetz funktioniert jetzt zuverlässig: die Geste zoomt das Netz statt der Seite, auseinander ziehen vergrößert wirklich",
+        en: "Two-finger zoom in the code graph now works reliably: the gesture zooms the graph instead of the page, spreading fingers truly zooms in",
+        link: "/projects#code-graph",
+      },
+      {
+        type: "besser",
+        text: "Vollbild nutzt auf dem Handy den echten Vollbildmodus – keine Browserleiste und keine aufklappende Tastatur mehr; die Schaltfläche ist größer und leichter zu treffen",
+        en: "Fullscreen on phones now uses true fullscreen – no browser bar and no popping-up keyboard anymore; the button is larger and easier to hit",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-09-18",
     title: "Handy-Verbesserungen",
