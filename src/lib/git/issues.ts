@@ -49,7 +49,7 @@ export function issueBody(task: Pick<Task, "id" | "description" | "labels" | "du
 }
 
 /** Labels, die sagen, wer an einem Issue arbeitet: „🤖 Claude“, „👤 anna“. */
-const WORKER_LABEL = /^(?:🤖|👤)\s*/u;
+const WORKER_LABEL = /^(?:🤖|👤|Arbeiter|Bughunter)\s*/i;
 
 /** Bearbeiter laut Issue: Bearbeiter-Labels und Zuweisungen (als @login), ohne Doppelte. */
 export function workersFromIssue(issue: Pick<IssueRef, "labels" | "assignees">): string[] {
