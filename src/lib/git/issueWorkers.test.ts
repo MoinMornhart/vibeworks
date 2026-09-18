@@ -6,6 +6,7 @@ describe("Wer arbeitet am Issue?", () => {
     expect(workersFromIssue({ labels: ["in Arbeit", "🤖 Claude", "bug"], assignees: ["moinmornhart"] })).toEqual(["Claude", "@moinmornhart"]);
     expect(workersFromIssue({ labels: ["👤 anna", "👤 anna"], assignees: [] })).toEqual(["anna"]);
     expect(workersFromIssue({ labels: ["🤖", "feature"], assignees: [] })).toEqual([]);
+    expect(workersFromIssue({ labels: ["Arbeiter Claude", "Bughunter anna"], assignees: [] })).toEqual(["Claude", "anna"]);
     expect(workersFromIssue({ labels: [], assignees: [] })).toEqual([]);
   });
 

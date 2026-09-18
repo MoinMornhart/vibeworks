@@ -69,16 +69,17 @@ Offene Aufgaben vollständig abarbeiten, nicht halb liegen lassen.
 
 Aufgaben, Beschreibungen und Notizen in VibeWorks immer **auf Deutsch** anlegen.
 
-### Tägliche Runde (#93)
+### Tägliche Runde (#93, #102)
 
-Einmal am Tag, für jedes Projekt mit Repository:
+Einmal am Tag, für JEDES Projekt mit Repository IMMER mit VibeWorks verbinden und prüfen:
 
 1. `list_problems` und `review_projects` (über MCP) – Abgleichfehler, rote CI, Fehler-Eingang,
    überfällige und blockierte Aufgaben ansehen und je echtem Befund eine Aufgabe anlegen (vorher auf Doppelte prüfen).
-2. Status abgleichen: Was im Issue als erledigt gemeldet ist, steht auch in VibeWorks auf DONE – und umgekehrt.
-   Aufgaben in DOING ohne Bearbeiter oder seit Tagen unverändert klären.
+2. Status synchron abgleichen: Was im Issue auf GitHub gemeldet ist, MUSS auch in VibeWorks korrekt aktualisiert werden (inkl. DONE).
+   Aufgaben in DOING ohne Bearbeiter oder seit Tagen unverändert klären. Fehlerfreie Funktion der Projekte sicherstellen.
 3. Labels prüfen: `in Arbeit` nur, solange wirklich gearbeitet wird; wartende Issues bekommen
-   `wartet auf Moini` bzw. `wartet auf Infos`.
+   `wartet auf Moini` bzw. `wartet auf Infos`. Arbeiter-Labels (z.B. `Arbeiter Claude`, `Bughunter anna`) werden automatisch erkannt.
+4. Berechtigungen der Accounts auf VibeWorks sicherstellen (Prüfung der Rechte zur KI-Kommunikation bei automatisierten Aktionen).
 
 Neue Issues sofort übernehmen, nicht sammeln. Für durchgehendes Arbeiten (z. B. nachts)
 einen echten Zeitplan anlegen, der die Runde regelmäßig startet – eine laufende Sitzung
