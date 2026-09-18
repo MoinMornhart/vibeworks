@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.2",
+    date: "2026-09-18",
+    title: "Codennetz-Zoom endgültig repariert",
+    titleEn: "Code graph zoom truly fixed",
+    changes: [
+      {
+        type: "fix",
+        text: "Der Zwei-Finger-Zoom nahm fälschlich die Ansicht vom Laden der Seite als Ausgang – nach dem ersten Einpassen zog das Netz deshalb beim Auseinanderziehen zusammen; jetzt stimmt die Geste in jeder Lage",
+        en: "Two-finger zoom wrongly used the view from page load as its base – after the first auto-fit spreading fingers contracted the graph; the gesture now behaves correctly in every state",
+        link: "/projects#code-graph",
+      },
+      {
+        type: "besser",
+        text: "Vollbild klappt jetzt auch in Safari auf dem iPhone/iPad (herstellerspezifischer Aufruf ergänzt)",
+        en: "Fullscreen now also works in Safari on iPhone/iPad (vendor-specific call added)",
+      },
+    ],
+  },
+  {
     version: "1.4.1",
     date: "2026-09-18",
     title: "Codennetz auf dem Handy richtig bedienbar",

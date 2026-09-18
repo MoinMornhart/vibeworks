@@ -24,3 +24,6 @@ Thumbs.db
 *.log
 coverage/
 .vscode/
+
+# Lokale Agenten-Notizen (nicht committen – nur .claude/skills/ reist mit)
+.claude/local/
