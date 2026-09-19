@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.8",
+    date: "2026-09-19",
+    title: "Bot klar erkennbar: neutraler Name, Organisations-Unterstützung",
+    titleEn: "Bot clearly recognizable: neutral name, organization support",
+    changes: [
+      {
+        type: "besser",
+        text: "Der Bot per Klick heißt jetzt neutral „vibeworks-bot“ – sein Name leitet sich nicht mehr vom persönlichen Konto ab, sondern ist klar als Bot erkennbar",
+        en: "The one-click bot is now neutrally named “vibeworks-bot” – its name no longer derives from the personal account, making it clearly recognizable as a bot",
+        link: "/account#git-zugang",
+      },
+      {
+        type: "neu",
+        text: "Bot in Organisationen: Auf der Installationsseite lässt sich ein Organisations-Konto wählen – der Bot arbeitet damit auch in Organisations-Repositories; die Verbindungsseite erklärt den Weg",
+        en: "Bot in organizations: the installation page lets you pick an organization account – the bot then also works in organization repositories; the connections page explains the path",
+      },
+    ],
+  },
+  {
     version: "1.4.7",
     date: "2026-09-19",
     title: "Schlüssel-Formular aufgeräumt: Felder nebeneinander statt rechts gequetscht",

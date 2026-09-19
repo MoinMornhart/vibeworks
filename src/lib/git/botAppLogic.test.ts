@@ -12,9 +12,12 @@ describe("botAppManifest", () => {
     expect(m.redirect_url).toBe("https://vw.example/api/account/git-credentials/bot-app/callback");
   });
 
-  it("baut kurze, gültige Namen", () => {
-    expect(botAppName("Moin_Mornhart")).toBe("vibeworks-moinmornhart");
+  it("nennt den Bot neutral – ohne das Verbindungskonto im Namen (#140)", () => {
+    // Der Bot soll nicht wie ein Benutzerkonto aussehen: kein Login im Namen,
+    // immer der neutrale Bot-Name (GitHub hängt bei Konflikten selbst Ziffern an)
+    expect(botAppName("Moin_Mornhart")).toBe("vibeworks-bot");
     expect(botAppName(null)).toBe("vibeworks-bot");
+    expect(botAppName("Moin-Team")).toBe("vibeworks-bot");
     expect(botAppName("a".repeat(60)).length).toBeLessThanOrEqual(34);
   });
 });

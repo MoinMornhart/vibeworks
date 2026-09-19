@@ -408,6 +408,8 @@ export function GitConnectionsSection({
                               >
                                 {t("git.botAppManage")}
                               </a>
+                              {/* Organisationen: Die Installation gilt pro Konto – auch Org-Konten (#140) */}
+                              <span className="basis-full text-muted">{t("git.botAppOrgHint")}</span>
                             </>
                           )}
                           <button

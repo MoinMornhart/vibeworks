@@ -20,10 +20,18 @@ export interface BotAppManifest {
   default_events: [];
 }
 
-/** App-Namen sind bei GitHub weltweit eindeutig und höchstens 34 Zeichen lang. */
+/**
+ * App-Namen sind bei GitHub weltweit eindeutig und höchstens 34 Zeichen lang.
+ * Der Name leitet sich NICHT mehr vom Verbindungskonto ab (#140): Er soll nicht
+ * wie ein Benutzerkonto aussehen, sondern klar als Bot erkennbar sein. Bei
+ * Namenskonflikt hängt GitHub selbst Ziffern an – übernommen wird ohnehin der
+ * echte Slug aus der Konvertierungs-Antwort.
+ */
 export function botAppName(login: string | null): string {
-  const clean = (login ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24);
-  return clean ? `vibeworks-${clean}` : "vibeworks-bot";
+  // login wird weiter angenommen (Rückwärtskompatibilität der Signatur), aber
+  // bewusst NICHT in den Namen gemischt – der Bot gehört niemandem persönlich.
+  void login;
+  return "vibeworks-bot";
 }
 
 export function botAppManifest(appUrl: string, login: string | null): BotAppManifest {
@@ -42,7 +50,11 @@ export function botAppManifest(appUrl: string, login: string | null): BotAppMani
 /** Der Code aus dem Rücksprung landet in einer URL – nur harmlose Zeichen zulassen. */
 export const validManifestCode = (code: unknown): code is string => typeof code === "string" && /^[A-Za-z0-9_-]{8,100}$/.test(code);
 
-/** Seite, auf der man die App in Repositories installiert. */
+/**
+ * Seite, auf der man die App in Repositories installiert. Auf dieser Seite
+ * wählt man das Konto aus – persönlich ODER eine Organisation; dort stehen
+ * dann die Repositories der Organisation zur Auswahl (#140).
+ */
 export const botAppInstallUrl = (slug: string) => `${BOT_APP_WEB}/apps/${encodeURIComponent(slug)}/installations/new`;
 /** Einstellungen der App – dort lässt sie sich löschen. */
 export const botAppSettingsUrl = (slug: string) => `${BOT_APP_WEB}/settings/apps/${encodeURIComponent(slug)}/advanced`;
