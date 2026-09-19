@@ -11,7 +11,10 @@ const SESSION_COOKIES = ["__Host-vw_session", "vw_session"];
 // /u/<name>: öffentliches Portfolio (nur wenn eingeschaltet)
 // /go: Hinweisseite für Links (#65) – auch geteilte Seiten enthalten Links
 // /reset: „Passwort vergessen“ – wer sein Passwort vergessen hat, ist gerade nicht angemeldet
-const PUBLIC_PATHS = ["/login", "/setup", "/register", "/reset", "/anmeldung-pruefen", "/go", "/s", "/u","/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in", "/api/discord/interactions","/manifest.webmanifest"];
+// /.well-known: OAuth-Metadaten für KI-Programme (#141) – harmlos lesbar, sonst lehnt
+// ChatGPT den Connector ab („does not implement OAuth“), weil es statt der
+// Metadaten nur unsere Anmelde-Weiterleitung sieht
+const PUBLIC_PATHS = ["/login", "/setup", "/register", "/reset", "/anmeldung-pruefen", "/go", "/s", "/u", "/api/auth", "/api/health", "/api/locale", "/api/webhooks", "/api/mcp", "/api/inbox/in", "/api/errors/in", "/api/discord/interactions", "/manifest.webmanifest", "/.well-known"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

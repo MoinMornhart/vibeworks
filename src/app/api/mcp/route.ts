@@ -66,10 +66,10 @@ export async function POST(req: NextRequest) {
       {
         status: 401,
         headers: {
-          "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}"`,
-          // Ressourcen-Metadaten – manche Clients folgen genau diesem Zeiger (MCP-Auth-Spec)
-          "WWW-Authenticate-Resource-Metadata": `${config.appUrl}/.well-known/oauth-protected-resource`,
-          "Access-Control-Expose-Headers": "WWW-Authenticate, WWW-Authenticate-Resource-Metadata",
+          // Ressourcen-Metadaten gleich im Header (MCP-Auth-Spec): manche Clients
+          // folgen nur diesem Zeiger und sonst nichts anderem
+          "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}", resource_metadata="${config.appUrl}/.well-known/oauth-protected-resource"`,
+          "Access-Control-Expose-Headers": "WWW-Authenticate",
         },
       },
     );

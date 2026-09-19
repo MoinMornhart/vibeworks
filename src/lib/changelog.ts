@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-09-19",
+    title: "OAuth-Metadaten sind wieder öffentlich – ChatGPT verbindet sich jetzt",
+    titleEn: "OAuth metadata is public again – ChatGPT now connects",
+    changes: [
+      {
+        type: "fix",
+        text: "Der Anmelde-Schutz hat versehentlich die OAuth-Metadaten unter /.well-known hinter die Anmeldung geschickt – ChatGPT meldete „does not implement OAuth“. Die Metadaten sind wieder frei lesbar (sie enthalten nichts Geheimes) und liegen auch am pfadbasierten Ort, den ChatGPT fragt",
+        en: "The login guard accidentally sent OAuth metadata under /.well-known behind the login – ChatGPT reported “does not implement OAuth”. The metadata is freely readable again (it contains no secrets) and is also served at the path-based location ChatGPT queries",
+      },
+      {
+        type: "besser",
+        text: "Die 401-Antwort des MCP-Endpunkts trägt den Ressourcen-Metadaten-Zeiger jetzt direkt im WWW-Authenticate-Header – Clients, die nur diesem folgen, finden den Weg",
+        en: "The MCP endpoint's 401 response now carries the resource-metadata pointer directly in the WWW-Authenticate header – clients that only follow this pointer find their way",
+      },
+    ],
+  },
+  {
     version: "1.4.9",
     date: "2026-09-19",
     title: "MCP mit OAuth (PKCE): ChatGPT & Co. verbinden sich selbst",
