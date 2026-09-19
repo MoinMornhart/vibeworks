@@ -7,13 +7,14 @@ import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { KEY_SCOPES, type KeyScope } from "@/lib/mcp/keySettings";
 import type { PendingDevice } from "@/lib/mcp/deviceAuth";
+import type { PendingOAuth } from "@/lib/mcp/oauthFlow";
 
-/** Freigabe einer Geräte-Anmeldung (#104): Code prüfen, Umfang wählen, bewusst bestätigen. */
-export function DeviceConnect({ initialCode, initial }: { initialCode: string; initial: PendingDevice | null }) {
+/** Freigabe einer Geräte-Anmeldung (#104) oder OAuth-Autorisierung (#141): Code prüfen, Umfang wählen, bewusst bestätigen. */
+export function DeviceConnect({ initialCode, initial }: { initialCode: string; initial: PendingDevice | PendingOAuth | null }) {
   const t = useT("mcp");
   const f = useFormat();
   const [code, setCode] = useState(initialCode);
-  const [device, setDevice] = useState<PendingDevice | null>(initial);
+  const [device, setDevice] = useState<PendingDevice | PendingOAuth | null>(initial);
   const [scope, setScope] = useState<KeyScope>(initial?.scope ?? "tasks");
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -25,9 +26,10 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ device: PendingDevice | null }>(`/api/account/device?code=${encodeURIComponent(code)}`);
-      setDevice(res.device);
-      if (res.device) setScope(res.device.scope);
+      const res = await api<{ device: PendingDevice | null; oauth: PendingOAuth | null }>(`/api/account/device?code=${encodeURIComponent(code)}`);
+      const found = res.device ?? res.oauth;
+      setDevice(found);
+      if (found) setScope(found.scope);
       else setError(t("device.notFound"));
     } catch (err) {
       setError(errorMessage(err));
@@ -109,10 +111,14 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
         <div className="space-y-4" data-testid="device-request">
           <div>
             <p className="font-semibold">{t("device.request", { name: device.clientName })}</p>
-            <p className="mt-1 font-mono text-2xl tracking-widest" data-testid="device-shown-code">{device.code}</p>
+            <p className="mt-1 font-mono text-2xl tracking-widest" data-testid="device-shown-code">{device.code.length > 12 ? `${device.code.slice(0, 4)}…${device.code.slice(-4)}` : device.code}</p>
             <p className="text-xs text-muted" suppressHydrationWarning>
               {device.ip ? t("device.from", { when: f.ago(device.createdAt), ip: device.ip }) : t("device.fromUnknown", { when: f.ago(device.createdAt) })}
             </p>
+            {/* OAuth (#141): wohin das Programm nach der Freigabe zurückkehrt */}
+            {"redirectUri" in device && typeof device.redirectUri === "string" && (
+              <p className="mt-1 break-all text-xs text-muted">{t("device.oauthRedirect", { url: device.redirectUri })}</p>
+            )}
           </div>
           <p className="flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
             <ShieldAlert size={18} className="mt-0.5 shrink-0" /> {t("device.warn")}
