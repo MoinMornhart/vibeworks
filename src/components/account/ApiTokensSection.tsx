@@ -252,30 +252,34 @@ export function ApiTokensSection({
       )}
 
       <form
-        className="flex flex-col items-stretch gap-2 sm:flex sm:flex-wrap sm:items-end"
+        className="space-y-3 rounded-2xl border p-4"
         onSubmit={(e) => {
           e.preventDefault();
           void create();
         }}
       >
-        <div className="min-w-0 sm:flex-1">
-          <label className="label" htmlFor="api-token-name">{t("name")}</label>
-          <input id="api-token-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={60} />
+        <p className="text-sm font-semibold">{t("createTitle")}</p>
+        {/* Name + Gültigkeit nebeneinander (Handy: untereinander), Knopf rechts daneben */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_auto] sm:items-end">
+          <div className="min-w-0">
+            <label className="label" htmlFor="api-token-name">{t("name")}</label>
+            <input id="api-token-name" className="field w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={60} />
+          </div>
+          <div className="min-w-0">
+            <label className="label" htmlFor="api-token-lifetime">{t("projectKey.lifetime")}</label>
+            <select id="api-token-lifetime" className="field w-full" value={lifetime} onChange={(e) => setLifetime(e.target.value as KeyLifetime)} data-testid="api-token-lifetime">
+              {KEY_LIFETIMES.map((l) => (
+                <option key={l} value={l}>
+                  {t(`projectKey.lifetimes.${l}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary btn-sm whitespace-nowrap" disabled={busy || !name.trim() || (scoped && picked.length === 0)} data-testid="api-token-create">
+            <Plus size={14} /> {busy ? t("creating") : t("create")}
+          </button>
         </div>
-        <label className="text-sm">
-          <span className="label">{t("projectKey.lifetime")}</span>
-          <select className="field w-full sm:w-auto" value={lifetime} onChange={(e) => setLifetime(e.target.value as KeyLifetime)} data-testid="api-token-lifetime">
-            {KEY_LIFETIMES.map((l) => (
-              <option key={l} value={l}>
-                {t(`projectKey.lifetimes.${l}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className="btn btn-primary btn-sm" disabled={busy || !name.trim() || (scoped && picked.length === 0)} data-testid="api-token-create">
-          <Plus size={14} /> {busy ? t("creating") : t("create")}
-        </button>
-        <div className="basis-full space-y-2 rounded-2xl border px-3 py-2" data-testid="project-key">
+        <div className="space-y-2" data-testid="project-key">
           <Toggle label={t("projectKey.toggle")} hint={t("projectKey.hint")} checked={scoped} onChange={setScoped} />
           {scoped &&
             (grantable === null ? (
