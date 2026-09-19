@@ -102,6 +102,9 @@ export interface IssueContext {
   botLogin: string | null;
   /** Schreibt über einen Bot statt über das Konto des Besitzers */
   viaBot: boolean;
+  /** Bot als GitHub App eingerichtet, aber NICHT in diesem Repository installiert (#136-Recherche):
+   *  Kommentare laufen dann unter dem Konto des Besitzers – die Oberfläche zeigt den Installations-Link. */
+  botInstallUrl: string | null;
   ownerId: string;
   repoUrl: string;
   parsed: ParsedRepo;
@@ -133,7 +136,17 @@ export async function issueContext(projectId: string): Promise<IssueContext | nu
   const parsed = parseRepoUrl(project.repoUrl);
   const provider = (project.repoCache?.provider || guessProvider(parsed?.host ?? "")) as GitProvider | "";
   if (!parsed || !provider || provider === "git") return null; // Anbieter erst nach dem ersten Abgleich bekannt; beliebige Git-Server kennen keine Issues
-  return { api: issueApi(provider, parsed, stored.token), provider, projectId, botLogin: stored.botLogin, viaBot: stored.source === "bot", ownerId: project.ownerId, repoUrl: project.repoUrl, parsed };
+  return {
+    api: issueApi(provider, parsed, stored.token),
+    provider,
+    projectId,
+    botLogin: stored.botLogin,
+    viaBot: stored.source === "bot",
+    botInstallUrl: stored.botInstallUrl,
+    ownerId: project.ownerId,
+    repoUrl: project.repoUrl,
+    parsed,
+  };
 }
 
 /** Gesperrte Aufgaben (#76): Das Issue verrät weder Titel noch Text – die KI liest auch GitHub. */
