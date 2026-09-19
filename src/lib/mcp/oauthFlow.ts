@@ -6,7 +6,7 @@ import { makeT, tk } from "@/lib/i18n/messages";
 import { isLocale } from "@/lib/i18n/config";
 import { storeInbox } from "@/lib/notify";
 import { MAX_TOKENS, newApiToken } from "./token";
-import { OAUTH_TTL_MS, newAuthorizationCode, newClientId, s256Challenge, tokenResult } from "./oauthFlowLogic";
+import { OAUTH_TTL_MS, newAuthorizationCode, newClientId, oauthReturnUrl, s256Challenge, tokenResult } from "./oauthFlowLogic";
 import type { KeyScope } from "./keySettings";
 
 // OAuth-Abläufe (#141) mit Datenbank, parallel zur Geräte-Anmeldung (#104):
@@ -41,14 +41,15 @@ export async function startAuthorization(input: { clientId: string; clientName: 
       codeChallenge: input.codeChallenge,
       scope: input.scope,
       redirectUri: input.redirectUri,
+      state: input.state,
       ip: input.ip,
       expiresAt: new Date(Date.now() + OAUTH_TTL_MS),
     },
   });
-  // Der Mensch sieht nur den Freigabe-Auftrag – mit Code landet er direkt im Formular
+  // Der Mensch sieht nur den Freigabe-Auftrag – der state des Programms bleibt
+  // serverseitig gemerkt und kommt erst auf der Rückkehr mit
   const url = new URL(`${config.appUrl}/verbinden`);
   url.searchParams.set("oauth", code);
-  if (input.state) url.searchParams.set("state", input.state);
   return url.toString();
 }
 
@@ -57,7 +58,9 @@ export async function pendingByOAuthCode(input: string) {
   if (input.length < 10 || input.length > 128) return null;
   const row = await db.oAuthFlow.findUnique({ where: { codeHash: sha256(input) } });
   if (!row || row.status !== "pending" || row.expiresAt.getTime() <= Date.now()) return null;
-  return { code: input, clientId: row.clientId, clientName: row.clientName, scope: row.scope as KeyScope, ip: row.ip, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() };
+  // redirectUri und state wandern mit: die Seite zeigt sie an und nach der
+  // Freigabe kehrt der Browser dorthin zurück – sonst hängt ChatGPT ewig
+  return { code: input, clientId: row.clientId, clientName: row.clientName, scope: row.scope as KeyScope, redirectUri: row.redirectUri, state: row.state, ip: row.ip, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() };
 }
 export type PendingOAuth = NonNullable<Awaited<ReturnType<typeof pendingByOAuthCode>>>;
 
@@ -67,7 +70,8 @@ export async function decideOAuth(userId: string, input: { code: string; approve
   if (!pending) throw new ApiError(404, tk("mcp", "device.notFound"));
   if (!input.approve) {
     await db.oAuthFlow.updateMany({ where: { codeHash: sha256(pending.code), status: "pending" }, data: { status: "denied", userId } });
-    return { approved: false };
+    // Auch bei Ablehnung zurück zum Programm – dort erscheint access_denied
+    return { approved: false, returnTo: oauthReturnUrl(pending.redirectUri, null, pending.state) };
   }
   if ((await db.apiToken.count({ where: { userId } })) >= MAX_TOKENS) throw new ApiError(400, tk("mcp", "errors.limit", { n: MAX_TOKENS }));
   const scope = input.scope ?? pending.scope;
@@ -89,7 +93,9 @@ export async function decideOAuth(userId: string, input: { code: string; approve
     message: `${pending.clientName} · ${hint}${pending.ip ? ` · ${pending.ip}` : ""}`,
     url: "/account#mcp",
   });
-  return { approved: true, keyId: key.id, scope };
+  // Der Browser kehrt zum Programm zurück – mit Code (dorthin gehört er, nicht
+  // in die Freigabe-Antwort) und dem state des Programms
+  return { approved: true, keyId: key.id, scope, returnTo: oauthReturnUrl(pending.redirectUri, pending.code, pending.state) };
 }
 
 /** Token-Endpunkt: Prüfung (PKCE, Redirect, Client) und genau einmal ausgeben. */
