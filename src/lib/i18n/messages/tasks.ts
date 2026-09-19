@@ -97,6 +97,10 @@ const de = {
       sent: "Antwort steht im Issue.",
       noIssue: "Diese Aufgabe hat noch kein Issue.",
       noSync: "Für dieses Projekt ist der Issue-Abgleich aus oder es fehlt ein Zugang.",
+      identityHint:
+        "Der Bot ist in diesem Repository nicht installiert – der Kommentar ist unter dem Konto des Besitzers erschienen. Bot-App installieren, damit KI-Kommentare mit eigener Bot-Identität erscheinen.",
+      botForbidden:
+        "Der Bot darf nicht in das Issue schreiben (HTTP 403) – der Bot-App fehlen Rechte oder ihre Freigabe ist abgelaufen. Im App-Einstellungen nachziehen: {url}",
       commandsHint: "Im Issue lässt sich die Aufgabe auch per Befehl steuern, z. B. /status erledigt – /hilfe zeigt alle.",
     },
     noteOnCard: "Hinweis an die KI: {text}",
@@ -262,6 +266,10 @@ const en: Shape<typeof de> = {
       sent: "Your reply is in the issue.",
       noIssue: "This task has no issue yet.",
       noSync: "Issue sync is off for this project or access is missing.",
+      identityHint:
+        "The bot is not installed in this repository – the comment appeared under the owner's account. Install the bot app so AI comments show their own bot identity.",
+      botForbidden:
+        "The bot may not write to the issue (HTTP 403) – the bot app lacks permissions or its approval has expired. Update in the app settings: {url}",
       commandsHint: "In the issue you can also control the task with commands, e.g. /status erledigt – /hilfe lists them all.",
     },
     noteOnCard: "Note for the AI: {text}",

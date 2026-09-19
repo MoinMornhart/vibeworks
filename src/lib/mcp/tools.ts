@@ -532,8 +532,16 @@ export const MCP_TOOLS: ToolDef<McpContext>[] = [
       const input = z.object({ task: ref, text: z.string().trim().min(1).max(5000) }).parse(args);
       const { task } = await requireAiTask(ctx.userId, input.task, "tasks.edit");
       limitOrThrow(`mcp-comment:${ctx.tokenId ?? ctx.userId}`, 20, 10 * 60_000);
-      await postTaskComment(task, await aiName(ctx), input.text);
-      return { posted: true, issue: task.issueUrl };
+      const res = await postTaskComment(task, await aiName(ctx), input.text);
+      return {
+        posted: true,
+        issue: task.issueUrl,
+        // Identität des Kommentars – ohne Bot schreibt er unter dem Konto des Besitzers
+        viaBot: res.viaBot,
+        // Bot-App fehlt in diesem Repository: hier lässt sie sich installieren,
+        // damit Kommentare nicht mehr unter dem Besitzer-Konto erscheinen
+        ...(res.botInstallUrl ? { botInstallUrl: res.botInstallUrl, identityHint: tk("tasks", "info.conversation.identityHint") } : {}),
+      };
     },
   },
   {

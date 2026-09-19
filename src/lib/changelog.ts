@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.6",
+    date: "2026-09-19",
+    title: "Bot-Identität transparent: Hinweis + Installations-Link, wenn der Bot fehlt",
+    titleEn: "Bot identity transparent: hint + install link when the bot is missing",
+    changes: [
+      {
+        type: "neu",
+        text: "KI-Kommentare im Issue melden jetzt, unter welcher Identität sie erschienen sind – und liefern einen Installations-Link, wenn der Bot im Repository fehlt (sonst läuft der Kommentar unter dem Konto des Besitzers)",
+        en: "AI comments on an issue now report which identity they were posted under – and include an install link when the bot is missing in the repository (otherwise the comment runs under the owner's account)",
+        link: "/account#git-zugang",
+      },
+      {
+        type: "besser",
+        text: "Schreibfehler des Bots (HTTP 403) erklären jetzt, dass der Bot-App Rechte fehlen – mit direktem Link zu den App-Einstellungen zur erneuten Freigabe",
+        en: "Bot write failures (HTTP 403) now explain that the bot app lacks permissions – with a direct link to the app settings for re-approval",
+      },
+    ],
+  },
+  {
     version: "1.4.5",
     date: "2026-09-19",
     title: "CI-Designer wie ein Flow-Editor: Start-Node, verbinden, Node-Menü",

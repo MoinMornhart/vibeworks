@@ -39,28 +39,49 @@ export async function tokenCipherFor(project: ProjectTokenInput): Promise<{ ciph
  * Token für Issues: der Bot der Verbindung zu genau diesem Server, falls
  * eingerichtet – als GitHub App (per Klick) oder als eigenes Bot-Konto. So legt
  * VibeWorks Issues nicht unter dem Profil des Besitzers an. Sonst wie gewohnt
- * Projekt- oder Konto-Token. Liefert das Token im Klartext.
+ * Projekt- oder Konto-Token. Liefert das Token im Klartext. Mit Bot-App, aber
+ * ohne Installation in diesem Repository auch den Installations-Link –
+ * dann läuft es (mit Hinweis) über den eigenen Zugang.
  */
-export async function issueTokenFor(project: ProjectTokenInput): Promise<{ token: string; source: TokenSource | "bot"; botLogin: string | null } | null> {
+export async function issueTokenFor(project: ProjectTokenInput): Promise<{
+  token: string;
+  source: TokenSource | "bot";
+  botLogin: string | null;
+  /** Bot-App fehlt in diesem Repository – hier lässt sie sich installieren */
+  botInstallUrl: string | null;
+} | null> {
   // Hinweis: source „bot“ heißt, Issues laufen nicht unter dem Konto des Besitzers
   const parsed = parseRepoUrl(project.repoUrl);
   if (parsed) {
     const bot = await db.gitCredential.findUnique({
       where: { userId_host: { userId: project.ownerId, host: parsed.hostPort } },
-      select: { botCipher: true, botAppId: true, botAppKeyCipher: true, botLogin: true },
+      select: { botCipher: true, botAppId: true, botAppKeyCipher: true, botLogin: true, botAppSlug: true },
     });
     if (bot?.botAppId && bot.botAppKeyCipher) {
-      // Nicht in diesem Repository installiert: wie früher über den eigenen Zugang
+      // Nicht in diesem Repository installiert: wie früher über den eigenen Zugang –
+      // aber mit Link, damit man die Installation nachholen kann (Identität bleibt sonst der Besitzer)
       const token = await appIssueToken({ botAppId: bot.botAppId, botAppKeyCipher: bot.botAppKeyCipher }, parsed);
-      if (token) return { token, source: "bot", botLogin: bot.botLogin };
+      if (token) return { token, source: "bot", botLogin: bot.botLogin, botInstallUrl: null };
+      return {
+        token: (await fallbackIssueToken(project)) ?? "",
+        source: "account",
+        botLogin: null,
+        botInstallUrl: bot.botAppSlug ? botAppInstallUrl(bot.botAppSlug) : null,
+      };
     } else if (bot?.botCipher) {
       const token = tryDecrypt(bot.botCipher);
-      if (token) return { token, source: "bot", botLogin: bot.botLogin };
+      if (token) return { token, source: "bot", botLogin: bot.botLogin, botInstallUrl: null };
     }
   }
   const stored = await tokenCipherFor(project);
   const token = stored && tryDecrypt(stored.cipher);
-  return stored && token ? { token, source: stored.source, botLogin: null } : null;
+  return stored && token ? { token, source: stored.source, botLogin: null, botInstallUrl: null } : null;
+}
+
+/** Konto- oder Projekt-Zugang als Rückfallebene – null ohne Zugang. */
+async function fallbackIssueToken(project: ProjectTokenInput): Promise<string | null> {
+  const stored = await tokenCipherFor(project);
+  return stored ? tryDecrypt(stored.cipher) : null;
 }
 
 /** Eigener Git-Zugang einer Person für den Server dieses Repositories (#76) – im Klartext. */

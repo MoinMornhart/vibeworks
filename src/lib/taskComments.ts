@@ -2,6 +2,7 @@ import type { Task } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api";
 import { issueContext } from "@/lib/git/issues";
 import { BOT_MARKER, REPLY_MARKER } from "@/lib/git/botCommandsLogic";
+import { botAppSettingsUrl } from "@/lib/git/botAppLogic";
 import { GitError } from "@/lib/git/providers";
 import { tk } from "@/lib/i18n/messages";
 
@@ -37,13 +38,21 @@ export async function taskComments(task: Pick<Task, "projectId" | "issueNumber">
 }
 
 /** Antwort ins Issue – wer schreibt, steht sichtbar dabei (Person oder KI mit Schlüsselname). */
-export async function postTaskComment(task: Pick<Task, "projectId" | "issueNumber">, author: string, text: string) {
+export async function postTaskComment(task: Pick<Task, "projectId" | "issueNumber">, author: string, text: string): Promise<{ viaBot: boolean; botInstallUrl: string | null }> {
   if (!task.issueNumber) throw new ApiError(400, tk("tasks", "info.conversation.noIssue"));
   const ctx = await contextFor(task.projectId);
   const body = `**${author}** (über VibeWorks):\n\n${text}\n\n${REPLY_MARKER}`;
   try {
     await ctx.api.comment(task.issueNumber, body);
   } catch (err) {
+    // 403 unter dem Bot: meist fehlen der Bot-App Rechte – Hinweis mit Link zur
+    // App-Einstellung, wo Berechtigungen erneut freigegeben werden können
+    if (err instanceof GitError && err.status === 403 && ctx.viaBot && ctx.botLogin?.endsWith("[bot]")) {
+      const url = botAppSettingsUrl(ctx.botLogin.replace(/\[bot\]$/, ""));
+      throw new ApiError(502, tk("tasks", "info.conversation.botForbidden", { url }));
+    }
     throw new ApiError(502, err instanceof GitError ? err.message : tk("git", "errors.issueFailed"));
   }
+  // Identität transparent machen: ohne Bot schreibt der Kommentar unter dem Konto des Besitzers
+  return { viaBot: ctx.viaBot, botInstallUrl: ctx.botInstallUrl };
 }
