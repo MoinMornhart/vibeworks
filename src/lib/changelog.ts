@@ -28,6 +28,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.4",
+    date: "2026-09-19",
+    title: "CI-Designer: Vollbild und Bearbeiten direkt an den Nodes",
+    titleEn: "CI designer: fullscreen and editing right at the nodes",
+    changes: [
+      {
+        type: "neu",
+        text: "Vollbild-Knopf für die Node-Ansicht – ohne Browserleiste, zurück per Esc oder Knopf, mit Speichern direkt im Vollbild",
+        en: "Fullscreen button for the node view – no browser bars, exit with Esc or the button, saving right in fullscreen",
+        link: "/projects#ci",
+      },
+      {
+        type: "neu",
+        text: "Node antippen bearbeitet ihn direkt am Kästchen (Name, Wann, Skript, Version, Befehle) – nicht mehr nur in der Liste unten",
+        en: "Tap a node to edit it right there (name, when, script, version, commands) – no longer only in the list below",
+        link: "/projects#ci",
+      },
+      {
+        type: "fix",
+        text: "Der Pfeil-Knopf verwirrte: Er zeigt jetzt klar „Als Liste zeigen“ und in der Liste gibt es den Rückweg „Als Nodes zeigen“",
+        en: "The arrow button was confusing: it now clearly says “Show as list” and the list has the way back, “Show as nodes”",
+        link: "/projects#ci",
+      },
+    ],
+  },
+  {
     version: "1.4.3",
     date: "2026-09-18",
     title: "CI-Designer als eigene Seite mit Node-Ansicht, Sparmodus für Handys",

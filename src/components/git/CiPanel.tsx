@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Loader2, MinusCircle, Maximize2, Minus, Play, Plus, Save, Trash2, Upload, Workflow, XCircle, ZoomIn } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Expand, List, Loader2, MinusCircle, Maximize2, Minimize2, Minus, Play, Plus, Save, Trash2, Upload, Workflow, X, XCircle, ZoomIn } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
@@ -164,19 +165,56 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
 
   // ── Node-Ansicht (n8n-artig): Steps als verbundene Kästchen, zoom- und verschiebbar ──
   const [canvasView, setCanvasView] = useState(true);
+  // Vollbild der Node-Ansicht: echte Fullscreen-API auf dem Stage-Element – ohne
+  // Browserleiste/Tastatur, zurück per Esc oder Knopf (wie im Codennetz).
+  const [full, setFull] = useState(false);
+  // Im Vollbild direkt am Node bearbeiten (vom Nutzer gewünscht): markierter Step
+  const [editNode, setEditNode] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragNode, setDragNode] = useState<{ i: number; id: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [layout, setLayout] = useState<Record<string, { x: number; y: number }>>({});
   const dragPan = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const showCanvas = canvasView && draft && draft.steps.length > 0;
   const nodePos = (i: number, id: string) => layout[id] ?? { x: 24 + i * 190, y: 96 };
+
+  // Vollbild: Esc schließt, der Browser meldet das Ende über fullscreenchange
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFull(false);
+    document.addEventListener("keydown", onKey);
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setFull(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    try {
+      const el = stageRef.current as (HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void }) | null;
+      if (el?.requestFullscreen) void el.requestFullscreen().catch(() => {});
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch {
+      /* Vollbild verweigert – Overlay-Ansicht bleibt */
+    }
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("fullscreenchange", onFsChange);
+      const doc = document as Document & { webkitExitFullscreen?: () => void };
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+    };
+  }, [full]);
 
   const onNodeDown = (i: number, id: string, e: React.PointerEvent) => {
     e.stopPropagation();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     const p = nodePos(i, id);
     setDragNode({ i, id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y });
+  };
+  // Antippen (kaum Bewegung) wählt den Node zum Bearbeiten – im Vollbild direkt am Kästchen
+  const onNodeUp = (id: string, e: React.PointerEvent) => {
+    const d = dragNode;
+    setDragNode(null);
+    if (d && Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) < 6) setEditNode((cur) => (cur === id ? null : id));
   };
   const onNodeMove = (e: React.PointerEvent) => {
     if (!dragNode) return;
@@ -222,6 +260,9 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
         <span className="h-4 w-px bg-fg/15" />
       </div>
     );
+
+  // Vollbild per Portal: im Glas-Panel (backdrop-filter) bliebe „fixed“ im Panel gefangen
+  const inStage = (el: React.ReactNode) => (full && typeof document !== "undefined" ? createPortal(el, document.body) : el);
 
   return (
     <section id="ci" className="glass scroll-mt-24 p-6 sm:p-8" aria-labelledby="ci-heading" data-testid="ci">
@@ -298,17 +339,17 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
             )}
           </fieldset>
 
-          {showCanvas && (
-            <div className="relative overflow-hidden rounded-2xl border bg-bg/40" data-testid="ci-canvas">
-              {/* Werkzeugleiste: Ansicht umschalten, zoomen, einpassen */}
-              <div className="absolute right-2 top-2 z-10 flex gap-1">
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setCanvasView(false)} aria-label={t("canvasOff")} title={t("canvasOff")} data-testid="ci-canvas-off">
-                  <Maximize2 size={14} className="rotate-45" />
+          {showCanvas && inStage(
+            <div ref={stageRef} className={cn("relative overflow-hidden rounded-2xl border bg-bg/40", full && "fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden rounded-none border-0 p-3 sm:p-4")} data-testid="ci-canvas">
+              {/* Werkzeugleiste: Ansicht umschalten, zoomen, Vollbild, einpassen */}
+              <div className="absolute right-2 top-2 z-10 flex flex-wrap justify-end gap-1">
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => { setFull(false); setCanvasView(false); }} aria-label={t("canvasOff")} title={t("canvasOff")} data-testid="ci-canvas-off">
+                  <List size={14} />
                 </button>
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.min(1.6, z + 0.2))} aria-label={t("zoomIn")} data-testid="ci-zoom-in">
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.min(1.6, z + 0.2))} aria-label={t("zoomIn")} title={t("zoomIn")} data-testid="ci-zoom-in">
                   <ZoomIn size={14} />
                 </button>
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} aria-label={t("zoomOut")} data-testid="ci-zoom-out">
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} aria-label={t("zoomOut")} title={t("zoomOut")} data-testid="ci-zoom-out">
                   <Minus size={14} />
                 </button>
                 <button
@@ -320,13 +361,22 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                     setLayout({});
                   }}
                   aria-label={t("fit")}
+                  title={t("fit")}
                   data-testid="ci-fit"
                 >
                   <Maximize2 size={14} />
                 </button>
+                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setFull((v) => !v)} aria-label={full ? t("exitFullscreen") : t("fullscreen")} title={full ? t("exitFullscreen") : t("fullscreen")} data-testid="ci-fullscreen">
+                  {full ? <Minimize2 size={14} /> : <Expand size={14} />}
+                </button>
+                {full && canEdit && (
+                  <button type="button" className="btn btn-sm bg-bg !px-2 !py-1 text-xs" disabled={busy} onClick={() => void save()} data-testid="ci-canvas-save">
+                    <Save size={13} /> {t("save")}
+                  </button>
+                )}
               </div>
               <div
-                className="h-64 cursor-grab touch-none select-none active:cursor-grabbing sm:h-80"
+                className={cn("cursor-grab touch-none select-none active:cursor-grabbing", full ? "min-h-0 flex-1" : "h-64 sm:h-80")}
                 onPointerDown={onStageDown}
                 onPointerMove={(e) => {
                   onStageMove(e);
@@ -362,9 +412,11 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                           state === "running" && "border-accent/70 shadow-accent/20",
                           state === "failure" && "border-red-500/60",
                           state === "success" && "border-emerald-500/50",
+                          editNode === s.id && "z-20 w-64 ring-2 ring-accent",
                         )}
                         style={{ left: p.x, top: p.y }}
                         onPointerDown={(e) => onNodeDown(i, s.id, e)}
+                        onPointerUp={(e) => onNodeUp(s.id, e)}
                         data-testid="ci-canvas-node"
                         data-kind={s.kind}
                         data-state={state}
@@ -376,6 +428,55 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                           </span>
                         </div>
                         <p className="mt-0.5 truncate text-[10px] text-muted">{t(`kinds.${s.kind}`)}</p>
+                        {editNode === s.id && canEdit && (
+                          <div className="mt-2 space-y-1.5 border-t border-fg/10 pt-2" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
+                            <label className="block text-[10px] leading-snug text-muted">
+                              {t("name")}
+                              <input className="field mt-0.5 !py-0.5 text-xs" value={s.name} maxLength={60} onChange={(e) => patchStep(i, { name: e.target.value })} aria-label={t("name")} data-testid="ci-node-name" />
+                            </label>
+                            <label className="block text-[10px] leading-snug text-muted">
+                              {t("when")}
+                              <select className="field mt-0.5 !py-0.5 text-xs" value={s.when} onChange={(e) => patchStep(i, { when: e.target.value as CiStep["when"] })} aria-label={t("when")}>
+                                {STEP_WHEN.map((w) => (
+                                  <option key={w} value={w}>
+                                    {t(`whenOptions.${w}`)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            {s.kind === "npm-script" && (
+                              <label className="block text-[10px] leading-snug text-muted">
+                                {t("script")}
+                                <input className="field mt-0.5 !py-0.5 font-mono text-xs" value={s.script ?? ""} onChange={(e) => patchStep(i, { script: e.target.value })} aria-label={t("script")} />
+                              </label>
+                            )}
+                            {(s.kind === "node-install" || s.kind === "python-install" || s.kind === "go-test") && (
+                              <label className="block text-[10px] leading-snug text-muted">
+                                {t("version")}
+                                <input className="field mt-0.5 !py-0.5 font-mono text-xs" value={s.version ?? ""} onChange={(e) => patchStep(i, { version: e.target.value || undefined })} placeholder={s.kind === "node-install" ? "22" : s.kind === "python-install" ? "3.12" : "stable"} aria-label={t("version")} />
+                              </label>
+                            )}
+                            {s.kind === "custom" && (
+                              <textarea
+                                className="field min-h-16 !py-0.5 font-mono text-xs"
+                                value={s.run ?? ""}
+                                onChange={(e) => patchStep(i, { run: e.target.value })}
+                                placeholder={"npm run e2e\n./scripts/check.sh"}
+                                aria-label={t("run")}
+                                spellCheck={false}
+                              />
+                            )}
+                            <div className="flex items-center justify-between gap-1">
+                              <label className="flex min-w-0 items-center gap-1 text-[10px] leading-snug text-muted">
+                                <input type="checkbox" className="shrink-0" checked={s.continueOnError} onChange={(e) => patchStep(i, { continueOnError: e.target.checked })} />
+                                <span className="min-w-0">{t("continueOnError")}</span>
+                              </label>
+                              <button type="button" className="btn btn-ghost btn-icon h-6 w-6 shrink-0" onClick={() => setEditNode(null)} aria-label={t("closeEdit")} title={t("closeEdit")} data-testid="ci-node-close">
+                                <X size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         {state === "running" && (
                           <span className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-full bg-fg/10">
                             <span className="block h-full w-1/3 animate-[vw-canvas-run_1.2s_ease-in-out_infinite] rounded-full bg-accent" />
@@ -386,12 +487,19 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                   })}
                 </div>
               </div>
-              <p className="border-t px-3 py-1 text-[11px] text-muted">{t("canvasHint")}</p>
-            </div>
+              <p className={cn("border-t px-3 py-1 text-[11px] text-muted", full && "shrink-0")}>{t("canvasHint")}</p>
+            </div>,
           )}
 
           <div data-testid="ci-steps">
-            <p className="mb-1 text-xs font-semibold text-muted">{t("steps")}</p>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-muted">{t("steps")}</p>
+              {draft.steps.length > 0 && !canvasView && (
+                <button type="button" className="btn btn-sm !py-1 text-xs" onClick={() => setCanvasView(true)} data-testid="ci-canvas-on">
+                  <Expand size={13} /> {t("canvasOn")}
+                </button>
+              )}
+            </div>
             {inserter(0)}
             {draft.steps.map((s, i) => {
               const state = nodes[s.id] ?? "idle";
