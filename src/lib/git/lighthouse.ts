@@ -15,11 +15,13 @@ import {
   LH_MARKER,
   LH_PATH,
   LH_REPORT_FILE,
+  lighthouseCron,
   lighthouseProblems,
   nextBaseline,
   parseLighthouseReport,
   readBaseline,
   safeLiveUrl,
+  type LhSchedule,
   type LighthouseReport,
 } from "./lighthouseLogic";
 
@@ -59,7 +61,7 @@ async function context(projectId: string) {
       status: true,
       buriedAt: true,
       owner: { select: { locale: true } },
-      repoCache: { select: { lhStatus: true, lhReport: true, lhBaseline: true, lhRunUrl: true, lhFetchedAt: true, lhInstalledAt: true } },
+      repoCache: { select: { lhStatus: true, lhReport: true, lhBaseline: true, lhRunUrl: true, lhFetchedAt: true, lhInstalledAt: true, lhSchedule: true, lhHour: true } },
     },
   });
   if (!project?.repoCache) return null;
@@ -71,7 +73,9 @@ type Ctx = NonNullable<Awaited<ReturnType<typeof context>>>;
 const readWorkflow = (t: GhTarget) => readRepoFile(t, LH_PATH);
 
 async function ensureWorkflow(ctx: Ctx, url: string): Promise<"created" | "updated" | "current" | "custom" | "removed"> {
-  const text = buildLighthouseWorkflow(url);
+  // Zeitplan aus der Einstellung (null = wöchentlich wie bisher, Versatz gegen Gleichzeitigkeit)
+  const cron = lighthouseCron((ctx.cache.lhSchedule as LhSchedule | null) ?? "weekly", ctx.cache.lhHour ?? 0);
+  const text = buildLighthouseWorkflow(url, cron);
   const current = await readWorkflow(ctx.target);
   if (!current) {
     if (ctx.cache.lhInstalledAt && INSTALLED.has(ctx.cache.lhStatus ?? "")) return "removed";
@@ -237,13 +241,28 @@ export async function setLighthouse(projectId: string, enabled: boolean): Promis
   }
 }
 
-type LhFields = Pick<RepoCache, "lhStatus" | "lhReport" | "lhBaseline" | "lhRunUrl" | "lhRunAt" | "lhFetchedAt" | "lhError">;
+/** Zeitplan einstellen („wann und wie“): Rhythmus und Stundenversatz; schreibt die Workflow-Datei neu. */
+export async function setLighthouseSchedule(projectId: string, schedule: LhSchedule, hour: number): Promise<{ updated: boolean; error: string | null }> {
+  const enabled = (await db.project.findUnique({ where: { id: projectId }, select: { lighthouse: true } }))?.lighthouse;
+  if (!enabled) return { updated: false, error: tk("lighthouse", "errors.off") };
+  await db.repoCache.updateMany({
+    where: { projectId },
+    // Zurücksetzen, damit der Abgleich die Datei mit dem neuen Cron neu schreibt
+    data: { lhSchedule: schedule, lhHour: hour, lhInstalledAt: null },
+  });
+  void refreshLighthouse(projectId, true).catch((err) => console.error("[lighthouse]", projectId, err));
+  return { updated: true, error: null };
+}
+
+type LhFields = Pick<RepoCache, "lhStatus" | "lhReport" | "lhBaseline" | "lhRunUrl" | "lhRunAt" | "lhFetchedAt" | "lhError" | "lhSchedule" | "lhHour">;
 
 /** Nur für Projektmitglieder. */
 export function serializeLighthouse(enabled: boolean, liveUrl: string | null, c: LhFields | null) {
   return {
     enabled,
     liveUrl: safeLiveUrl(liveUrl),
+    schedule: (c?.lhSchedule as LhSchedule | null) ?? "weekly",
+    hour: c?.lhHour ?? 0,
     status: (c?.lhStatus ?? null) as LhStatus | null,
     report: c?.lhReport ? parseLighthouseReport(c.lhReport) : null,
     baseline: readBaseline(c?.lhBaseline),

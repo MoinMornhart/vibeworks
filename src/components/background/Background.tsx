@@ -6,6 +6,7 @@ import { presetColors, type Theme } from "@/lib/theme";
 import { CANVAS_ENGINES, type CanvasPreset } from "./engines";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { cn } from "@/lib/utils";
+import { useSaverMode } from "@/lib/client/saverMode";
 
 // Der Hintergrund hinter allen Seiten. Drei Arten: animierte Vorlage,
 // eigener Farbverlauf oder eigenes Bild. Liest das aktive Design (inklusive
@@ -102,8 +103,10 @@ export function gradientCss(g: Theme["background"]["gradient"]): string {
 export function BackgroundView({ theme, contained = false, still = false }: { theme: Theme; contained?: boolean; still?: boolean }) {
   const dark = useIsDark(theme);
   const reduced = useMedia("(prefers-reduced-motion: reduce)");
+  const saver = useSaverMode();
   const bg = theme.background;
-  const frozen = still || reduced;
+  // Sparmodus auf Handys: Animationen aus, wie bei „Bewegung reduzieren“ (#mobil)
+  const frozen = still || reduced || saver;
   const style = {
     "--vw-speed": Math.max((bg.type === "gradient" ? bg.gradient.speed : bg.preset.speed) / 100, 0.01),
   } as CSSProperties;

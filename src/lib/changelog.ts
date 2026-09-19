@@ -28,6 +28,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.3",
+    date: "2026-09-18",
+    title: "CI-Designer als eigene Seite mit Node-Ansicht, Sparmodus für Handys",
+    titleEn: "CI designer on its own page with node view, saver mode for phones",
+    changes: [
+      {
+        type: "neu",
+        text: "Der CI-Designer hat jetzt eine eigene Seite: die Pipeline als verbundene Nodes mit Zoomen und Verschieben, laufende Schritte leuchten und fließen, alles bleibt einstell- und startbar",
+        en: "The CI designer now has its own page: the pipeline as connected nodes with zoom and pan, running steps glow and flow, everything stays configurable and startable",
+        link: "/projects#ci",
+      },
+      {
+        type: "neu",
+        text: "Lighthouse-Check einstellbar: wann geprüft wird (täglich oder wöchentlich, mit Uhrzeit) stellt der Besitzer direkt am Panel ein",
+        en: "Lighthouse check configurable: when to check (daily or weekly, with a time) is set by the owner right in the panel",
+      },
+      {
+        type: "besser",
+        text: "Sparmodus auf Handys: Hintergrundanimationen ruhen und die Netz-Simulation rechnet seltener – weniger Strom, alles bleibt bedienbar",
+        en: "Saver mode on phones: background animations pause and the graph simulation runs less often – less battery, everything stays usable",
+      },
+    ],
+  },
+  {
     version: "1.4.2",
     date: "2026-09-18",
     title: "Codennetz-Zoom endgültig repariert",

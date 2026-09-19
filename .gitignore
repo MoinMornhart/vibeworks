@@ -25,5 +25,6 @@ Thumbs.db
 coverage/
 .vscode/
 
-# Lokale Agenten-Notizen (nicht committen – nur .claude/skills/ reist mit)
+# Lokale Agenten-Notizen und Skills (nur für diese Umgebung, nicht committen)
 .claude/local/
+.claude/skills/
