@@ -55,9 +55,23 @@ export async function POST(req: NextRequest) {
     // Klare Ursache statt eines Sammelfehlers (#25): fehlt, kaputt, unbekannt/widerrufen oder Konto gesperrt
     const code = checked.problem ?? "invalid_or_revoked";
     return NextResponse.json(
-      // Programme ohne Schlüssel finden hier den Weg zur Geräte-Anmeldung (#104)
-      { error: translateMessage("en", tk("mcp", `errors.token.${code}`)), code, device_authorization: `${config.appUrl}/api/mcp/device` },
-      { status: 401, headers: { "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}"` } },
+      // Programme ohne Schlüssel finden hier die Wege hinein: Geräte-Anmeldung (#104)
+      // oder OAuth mit PKCE (ChatGPT & Co., #141)
+      {
+        error: translateMessage("en", tk("mcp", `errors.token.${code}`)),
+        code,
+        device_authorization: `${config.appUrl}/api/mcp/device`,
+        oauth: { authorization_endpoint: `${config.appUrl}/api/mcp/oauth/authorize`, token_endpoint: `${config.appUrl}/api/mcp/oauth/token`, registration_endpoint: `${config.appUrl}/api/mcp/oauth/register`, code_challenge_methods_supported: ["S256"] },
+      },
+      {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": `Bearer realm="VibeWorks", error="invalid_token", error_description="${code}"`,
+          // Ressourcen-Metadaten – manche Clients folgen genau diesem Zeiger (MCP-Auth-Spec)
+          "WWW-Authenticate-Resource-Metadata": `${config.appUrl}/.well-known/oauth-protected-resource`,
+          "Access-Control-Expose-Headers": "WWW-Authenticate, WWW-Authenticate-Resource-Metadata",
+        },
+      },
     );
   }
   const locale: Locale = isLocale(auth.user.locale) ? auth.user.locale : "de";

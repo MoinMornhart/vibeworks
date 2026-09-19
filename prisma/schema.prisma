@@ -999,6 +999,33 @@ model ProjectTemplate {
   @@index([ownerId])
 }
 
+/// OAuth-Anmeldung für KI-Programme (ChatGPT & Co., #141): Autorisierungs-Codes
+/// mit PKCE – der Mensch gibt auf /verbinden frei wie bei der Geräte-Anmeldung.
+model OAuthFlow {
+  id             String    @id @default(cuid())
+  /// Client-Kennung aus der dynamischen Registrierung, z. B. "app_abc123"
+  clientId       String
+  clientName     String
+  /// SHA-256 des Autorisierungs-Codes – der Code selbst liegt nur beim Programm
+  codeHash       String    @unique
+  /// SHA-256 des PKCE-Verifiers, geprüft wird beim Token-Abruf
+  codeChallenge  String
+  scope          String    @default("tasks")
+  /// pending · approved · denied · claimed
+  status         String    @default("pending")
+  userId         String?
+  tokenId        String?
+  tokenCipher    String?
+  redirectUri    String
+  ip             String?
+  lastPollAt     DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+
+  @@index([clientId])
+  @@index([expiresAt])
+}
+
 /// API-Schlüssel für Claude Code und andere MCP-Clients – gespeichert wird nur der SHA-256.
 model ApiToken {
   id                String    @id @default(cuid())

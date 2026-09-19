@@ -41,6 +41,13 @@ export const deviceDecisionSchema = z.object({
   scope: z.enum(KEY_SCOPES).optional(),
 });
 
+/** OAuth-Freigabe (#141): längere Codes, sonst derselbe Auftrag. */
+export const oauthDecisionSchema = z.object({
+  code: z.string().min(10).max(128),
+  approve: z.boolean(),
+  scope: z.enum(KEY_SCOPES).optional(),
+});
+
 export type DeviceStatus = "pending" | "approved" | "denied" | "claimed";
 
 export type PollResult =

@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.9",
+    date: "2026-09-19",
+    title: "MCP mit OAuth (PKCE): ChatGPT & Co. verbinden sich selbst",
+    titleEn: "MCP with OAuth (PKCE): ChatGPT & Co. connect themselves",
+    changes: [
+      {
+        type: "neu",
+        text: "KI-Programme, die OAuth verlangen (z. B. ChatGPT-Connectors), registrieren sich jetzt selbst am MCP-Endpunkt – die Freigabe bleibt beim Menschen auf der bewährten Seite „KI-Programm verbinden“",
+        en: "AI programs that require OAuth (e.g. ChatGPT connectors) now register themselves at the MCP endpoint – approval stays with you on the proven “Connect an AI program” page",
+        link: "/verbinden",
+      },
+      {
+        type: "besser",
+        text: "Der MCP-Endpunkt wirbt OAuth-Server-Metadaten mit PKCE (S256) aus – genau das verlangte ChatGPT und lehnte den Connector vorher ab",
+        en: "The MCP endpoint now advertises OAuth server metadata with PKCE (S256) – exactly what ChatGPT requires and previously rejected",
+      },
+    ],
+  },
+  {
     version: "1.4.8",
     date: "2026-09-19",
     title: "Bot klar erkennbar: neutraler Name, Organisations-Unterstützung",
