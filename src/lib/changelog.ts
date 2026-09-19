@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.7",
+    date: "2026-09-19",
+    title: "Schlüssel-Formular aufgeräumt: Felder nebeneinander statt rechts gequetscht",
+    titleEn: "Key form tidied up: fields side by side instead of squeezed to the right",
+    changes: [
+      {
+        type: "fix",
+        text: "Beim Anlegen eines API-Schlüssels hingen Name, Gültigkeit und Knopf verloren rechts in einer schmalen Spalte – jetzt als saubere Karte mit Feldern nebeneinander (auf dem Handy untereinander)",
+        en: "When creating an API key, name, validity and button hung lost on the right in a narrow column – now a clean card with fields side by side (stacked on mobile)",
+        link: "/account#mcp",
+      },
+    ],
+  },
+  {
     version: "1.4.6",
     date: "2026-09-19",
     title: "Bot-Identität transparent: Hinweis + Installations-Link, wenn der Bot fehlt",

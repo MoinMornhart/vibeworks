@@ -44,6 +44,7 @@ const de = {
   can: "Claude kann damit Projekte und Aufgaben lesen, Aufgaben anlegen und verschieben (Issues laufen mit), Notizen und Docs lesen und schreiben und alles durchsuchen.",
   name: "Name des Schlüssels",
   namePlaceholder: "z. B. Laptop – Claude Code",
+  createTitle: "Neuen Schlüssel anlegen",
   create: "Schlüssel erstellen",
   creating: "Erstelle …",
   fresh: {
@@ -208,6 +209,7 @@ const en: Shape<typeof de> = {
   can: "Claude can read projects and tasks, create and move tasks (issues follow along), read and write notes and docs, and search everything.",
   name: "Key name",
   namePlaceholder: "e.g. Laptop – Claude Code",
+  createTitle: "Create a new key",
   create: "Create key",
   creating: "Creating …",
   fresh: {
