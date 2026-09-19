@@ -84,7 +84,10 @@ export const authorizeSchema = z.object({
   response_type: z.literal("code"),
   client_id: z.string().min(1).max(80),
   redirect_uri: z.string().max(500),
-  scope: z.enum(KEY_SCOPES).default("tasks"),
+  // ChatGPT & Co. schicken eigene Scopes (z. B. "mcp", "openid profile") mit –
+  // statt sie abzulehnen, merken wir nur, ob Schreibrechte gewünscht sind, und
+  // zeigen dem Menschen später zur Auswahl. (#141)
+  scope: z.string().max(200).transform((s) => (s.split(/[\s+]/).includes("all") ? "all" : "tasks")).default("tasks"),
   state: z.string().max(200).optional(),
   code_challenge: z.string().min(43).max(128),
   code_challenge_method: z.literal("S256").default("S256"),

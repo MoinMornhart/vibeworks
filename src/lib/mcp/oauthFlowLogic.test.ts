@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizeView, newAuthorizationCode, newClientId, oauthMetadata, oauthReturnUrl, protectedResourceMetadata, s256Challenge, tokenResult, validRedirectUris } from "./oauthFlowLogic";
+import { authorizeSchema, authorizeView, newAuthorizationCode, newClientId, oauthMetadata, oauthReturnUrl, protectedResourceMetadata, s256Challenge, tokenResult, validRedirectUris } from "./oauthFlowLogic";
 
 describe("oauthMetadata", () => {
   it("werbt S256 als Challenge-Methode – genau das prüft ChatGPT (#141)", () => {
@@ -88,6 +88,21 @@ describe("oauthReturnUrl", () => {
     const url = new URL(oauthReturnUrl("https://cli/callback?layout=compact", "c", null));
     expect(url.searchParams.get("layout")).toBe("compact");
     expect(url.searchParams.get("code")).toBe("c");
+  });
+});
+
+describe("authorizeSchema", () => {
+  it("trennt Scope-Toleranz (#141): fremde Scopes werden zugeordnet, statt die Autorisierung abzulehnen", () => {
+    const base = { response_type: "code", client_id: "app_abc", redirect_uri: "https://cli/callback", code_challenge: "c".repeat(43) };
+    // ChatGPT schickt z. B. "mcp" oder "openid profile email mcp" – gehört zu "tasks"
+    const parsed = authorizeSchema.parse({ ...base, scope: "mcp" });
+    expect(parsed.scope).toBe("tasks");
+    expect(authorizeSchema.parse({ ...base, scope: "openid profile email mcp" }).scope).toBe("tasks");
+    // "all" bleibt Schreiben – auch in gemischten Listen
+    expect(authorizeSchema.parse({ ...base, scope: "all" }).scope).toBe("all");
+    expect(authorizeSchema.parse({ ...base, scope: "read all" }).scope).toBe("all");
+    // ohne Scope: Standard
+    expect(authorizeSchema.parse(base).scope).toBe("tasks");
   });
 });
 
