@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Expand, List, Loader2, MinusCircle, Maximize2, Minimize2, Minus, Play, Plus, Save, Trash2, Upload, Workflow, X, XCircle, ZoomIn } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Circle, CircleDashed, ExternalLink, Expand, GitBranch, List, Loader2, MinusCircle, Maximize2, Minimize2, Minus, Pencil, Play, Plus, Save, Trash2, Upload, Workflow, X, XCircle, ZoomIn } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
 import { useFormat, useT } from "@/lib/i18n/client";
 import { toast } from "@/components/ui/Toaster";
-import { MAX_STEPS, newStep, STEP_KINDS, STEP_WHEN, type CiPipeline, type CiStep, type NodeState, type StepKind } from "@/lib/git/ciPipelineLogic";
+import { entryStepId, MAX_STEPS, newStep, nextStepId, STEP_KINDS, stepFlow, STEP_WHEN, type CiPipeline, type CiStep, type NodeState, type StepKind } from "@/lib/git/ciPipelineLogic";
 import type { CiStatus, CiView } from "@/lib/git/ciPipeline";
 import { cn } from "@/lib/utils";
 
@@ -178,6 +178,37 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
   const stageRef = useRef<HTMLDivElement>(null);
   const showCanvas = canvasView && draft && draft.steps.length > 0;
   const nodePos = (i: number, id: string) => layout[id] ?? { x: 24 + i * 190, y: 96 };
+  // Verbinden wie in n8n: Ausgang (Port) antippen, dann Ziel-Node antippen.
+  // Die Kette bleibt dabei intakt – „verbinden“ heißt hier: den gewählten Step
+  // direkt nach dem Ausgangs-Node einsortieren (GitHub führt strikt der Reihe aus).
+  const [linkFrom, setLinkFrom] = useState<string | null>(null);
+  const [nodeMenu, setNodeMenu] = useState<string | null>(null);
+  const flow = draft ? stepFlow(draft.steps) : [];
+  const mainId = draft ? entryStepId(draft.steps) : null;
+
+  const insertAfter = (at: number, kind: StepKind) => {
+    insert(at, kind);
+    setNodeMenu(null);
+    setLinkFrom(null);
+  };
+  // Ausgang gewählt: der zu verbindende Step wandert direkt hinter den Ausgang
+  const linkTo = (targetId: string) => {
+    if (!draft || !linkFrom || linkFrom === targetId) {
+      setLinkFrom(null);
+      return;
+    }
+    const fromIdx = draft.steps.findIndex((s) => s.id === linkFrom);
+    const targetIdx = draft.steps.findIndex((s) => s.id === targetId);
+    if (fromIdx < 0 || targetIdx < 0) {
+      setLinkFrom(null);
+      return;
+    }
+    const steps = [...draft.steps];
+    const [moved] = steps.splice(targetIdx, 1);
+    steps.splice(fromIdx + 1, 0, moved);
+    setSteps(steps);
+    setLinkFrom(null);
+  };
 
   // Vollbild: Esc schließt, der Browser meldet das Ende über fullscreenchange
   useEffect(() => {
@@ -342,19 +373,19 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
           {showCanvas && inStage(
             <div ref={stageRef} className={cn("relative overflow-hidden rounded-2xl border bg-bg/40", full && "fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden rounded-none border-0 p-3 sm:p-4")} data-testid="ci-canvas">
               {/* Werkzeugleiste: Ansicht umschalten, zoomen, Vollbild, einpassen */}
-              <div className="absolute right-2 top-2 z-10 flex flex-wrap justify-end gap-1">
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => { setFull(false); setCanvasView(false); }} aria-label={t("canvasOff")} title={t("canvasOff")} data-testid="ci-canvas-off">
-                  <List size={14} />
+              <div className="absolute right-2 top-2 z-10 flex max-w-[60%] flex-wrap justify-end gap-1">
+                <button type="button" className="btn btn-ghost btn-icon h-9 w-9 bg-bg" onClick={() => { setFull(false); setCanvasView(false); }} aria-label={t("canvasOff")} title={t("canvasOff")} data-testid="ci-canvas-off">
+                  <List size={16} />
                 </button>
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.min(1.6, z + 0.2))} aria-label={t("zoomIn")} title={t("zoomIn")} data-testid="ci-zoom-in">
-                  <ZoomIn size={14} />
+                <button type="button" className="btn btn-ghost btn-icon h-9 w-9 bg-bg" onClick={() => setZoom((z) => Math.min(1.6, z + 0.2))} aria-label={t("zoomIn")} title={t("zoomIn")} data-testid="ci-zoom-in">
+                  <ZoomIn size={16} />
                 </button>
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} aria-label={t("zoomOut")} title={t("zoomOut")} data-testid="ci-zoom-out">
-                  <Minus size={14} />
+                <button type="button" className="btn btn-ghost btn-icon h-9 w-9 bg-bg" onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} aria-label={t("zoomOut")} title={t("zoomOut")} data-testid="ci-zoom-out">
+                  <Minus size={16} />
                 </button>
                 <button
                   type="button"
-                  className="btn btn-ghost btn-icon btn-sm bg-bg"
+                  className="btn btn-ghost btn-icon h-9 w-9 bg-bg"
                   onClick={() => {
                     setZoom(1);
                     setPan({ x: 0, y: 0 });
@@ -364,10 +395,10 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                   title={t("fit")}
                   data-testid="ci-fit"
                 >
-                  <Maximize2 size={14} />
+                  <Maximize2 size={16} />
                 </button>
-                <button type="button" className="btn btn-ghost btn-icon btn-sm bg-bg" onClick={() => setFull((v) => !v)} aria-label={full ? t("exitFullscreen") : t("fullscreen")} title={full ? t("exitFullscreen") : t("fullscreen")} data-testid="ci-fullscreen">
-                  {full ? <Minimize2 size={14} /> : <Expand size={14} />}
+                <button type="button" className="btn btn-ghost btn-icon h-9 w-9 bg-bg" onClick={() => setFull((v) => !v)} aria-label={full ? t("exitFullscreen") : t("fullscreen")} title={full ? t("exitFullscreen") : t("fullscreen")} data-testid="ci-fullscreen">
+                  {full ? <Minimize2 size={16} /> : <Expand size={16} />}
                 </button>
                 {full && canEdit && (
                   <button type="button" className="btn btn-sm bg-bg !px-2 !py-1 text-xs" disabled={busy} onClick={() => void save()} data-testid="ci-canvas-save">
@@ -376,7 +407,7 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                 )}
               </div>
               <div
-                className={cn("cursor-grab touch-none select-none active:cursor-grabbing", full ? "min-h-0 flex-1" : "h-64 sm:h-80")}
+                className={cn("cursor-grab touch-none select-none active:cursor-grabbing", full ? "min-h-0 flex-1" : "h-72 sm:h-80")}
                 onPointerDown={onStageDown}
                 onPointerMove={(e) => {
                   onStageMove(e);
@@ -386,24 +417,41 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                 onPointerLeave={stopDrag}
               >
                 <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: "1600px", height: "320px" }} className="relative">
+                  {/* Start-Node (Main): wo die Pipeline beginnt – Auslöser stehen darunter */}
+                  {mainId && (() => {
+                    const p = nodePos(0, mainId);
+                    const mx = Math.max(0, p.x - 210);
+                    const my = p.y + 30 - 24;
+                    return (
+                      <div className="absolute w-[130px] rounded-xl border-2 border-dashed border-accent/50 bg-accent/5 p-2 text-center shadow-lg" style={{ left: mx, top: my }} data-testid="ci-canvas-main" title={t("mainNodeHint")}>
+                        <Workflow size={16} className="mx-auto text-accent-ink" />
+                        <p className="mt-1 text-xs font-semibold">{t("mainNode")}</p>
+                        <p className="text-[10px] leading-tight text-muted">{t("mainNodeHint")}</p>
+                      </div>
+                    );
+                  })()}
                   {/* Verbindungen zwischen aufeinanderfolgenden Steps */}
-                  <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
-                    {draft.steps.map((s, i) => {
-                      if (i === 0) return null;
-                      const a = nodePos(i - 1, draft.steps[i - 1].id);
-                      const b = nodePos(i, s.id);
+                  <svg className={cn("absolute inset-0 h-full w-full", linkFrom ? "pointer-events-none" : "pointer-events-none")} aria-hidden>
+                    {flow.map((e) => {
+                      const iFrom = draft.steps.findIndex((s) => s.id === e.from);
+                      const iTo = draft.steps.findIndex((s) => s.id === e.to);
+                      if (iFrom < 0 || iTo < 0) return null;
+                      const a = nodePos(iFrom, e.from);
+                      const b = nodePos(iTo, e.to);
                       const x1 = a.x + 170,
                         y1 = a.y + 30,
                         x2 = b.x,
                         y2 = b.y + 30;
-                      const state = nodes[s.id] ?? "idle";
-                      return <path key={s.id} d={`M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2 - 40} ${y2}, ${x2} ${y2}`} fill="none" stroke={state === "running" ? "var(--vw-accent, #a78bfa)" : "currentColor"} strokeOpacity={state === "running" ? 0.9 : 0.25} strokeWidth={state === "running" ? 2.5 : 1.5} className="text-fg" data-testid="ci-edge" data-state={state} />;
+                      const state = nodes[e.to] ?? "idle";
+                      return <path key={`${e.from}-${e.to}`} d={`M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2 - 40} ${y2}, ${x2} ${y2}`} fill="none" stroke={state === "running" ? "var(--vw-accent, #a78bfa)" : "currentColor"} strokeOpacity={state === "running" ? 0.9 : 0.25} strokeWidth={state === "running" ? 2.5 : 1.5} className="text-fg" data-testid="ci-edge" data-state={state} />;
                     })}
                   </svg>
                   {draft.steps.map((s, i) => {
                     const state = nodes[s.id] ?? "idle";
                     const Icon = STATE_ICON[state];
                     const p = nodePos(i, s.id);
+                    const isMain = s.id === mainId;
+                    const isLinkTarget = Boolean(linkFrom && linkFrom !== s.id);
                     return (
                       <div
                         key={s.id}
@@ -413,21 +461,91 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                           state === "failure" && "border-red-500/60",
                           state === "success" && "border-emerald-500/50",
                           editNode === s.id && "z-20 w-64 ring-2 ring-accent",
+                          isMain && "border-accent/60",
+                          isLinkTarget && "ring-2 ring-accent/60",
                         )}
                         style={{ left: p.x, top: p.y }}
-                        onPointerDown={(e) => onNodeDown(i, s.id, e)}
-                        onPointerUp={(e) => onNodeUp(s.id, e)}
+                        onPointerDown={(e) => (linkFrom ? e.stopPropagation() : onNodeDown(i, s.id, e))}
+                        onPointerUp={(e) => (linkFrom ? (e.stopPropagation(), linkTo(s.id)) : onNodeUp(s.id, e))}
                         data-testid="ci-canvas-node"
                         data-kind={s.kind}
                         data-state={state}
                       >
                         <div className="flex items-center gap-1.5">
+                          {isMain && <GitBranch size={14} className="shrink-0 text-accent-ink" />}
                           <Icon size={14} className={cn("shrink-0", STATE_TONE[state])} />
                           <span className="min-w-0 truncate text-xs font-medium" title={s.name}>
                             {s.name}
                           </span>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              className="ml-auto shrink-0 rounded p-0.5 text-muted hover:bg-fg/10 hover:text-fg"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onPointerUp={(e) => {
+                                e.stopPropagation();
+                                setNodeMenu((m) => (m === s.id ? null : s.id));
+                                setEditNode(null);
+                              }}
+                              aria-label={t("nodeMenu")}
+                              title={t("nodeMenu")}
+                              data-testid="ci-node-menu-btn"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
                         </div>
                         <p className="mt-0.5 truncate text-[10px] text-muted">{t(`kinds.${s.kind}`)}</p>
+                        {/* Ausgang (Port): antippen, dann Ziel-Node antippen – sortiert ihn direkt dahinter */}
+                        {canEdit && draft.steps.length > 1 && (
+                          <button
+                            type="button"
+                            className={cn(
+                              "absolute -right-2 top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-full border-2 bg-bg shadow",
+                              linkFrom === s.id ? "border-accent bg-accent/20" : "border-fg/30 hover:border-accent",
+                            )}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => {
+                              e.stopPropagation();
+                              setLinkFrom((cur) => (cur === s.id ? null : s.id));
+                              setEditNode(null);
+                              setNodeMenu(null);
+                            }}
+                            aria-label={linkFrom === s.id ? t("linkCancel") : t("linkFrom")}
+                            title={linkFrom === s.id ? t("linkCancel") : t("linkFrom")}
+                            data-testid="ci-node-port"
+                          />
+                        )}
+                        {nodeMenu === s.id && canEdit && (
+                          <div className="absolute left-0 top-full z-30 mt-1 w-44 rounded-xl border bg-bg p-1 text-xs shadow-xl" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()} data-testid="ci-node-menu">
+                            <button type="button" className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left hover:bg-fg/10" onClick={() => { setEditNode(s.id); setNodeMenu(null); }}>
+                              <Pencil size={12} /> {t("editNode")}
+                            </button>
+                            {draft.steps.length < MAX_STEPS && (
+                              <button type="button" className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left hover:bg-fg/10" onClick={() => { setPalette(i + 1); setNodeMenu(null); }}>
+                                <Plus size={12} /> {t("insertAfterNode")}
+                              </button>
+                            )}
+                            {i > 0 && (
+                              <button type="button" className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left hover:bg-fg/10" onClick={() => { move(i, -1); setNodeMenu(null); }}>
+                                <ArrowUp size={12} /> {t("up")}
+                              </button>
+                            )}
+                            {i < draft.steps.length - 1 && (
+                              <button type="button" className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left hover:bg-fg/10" onClick={() => { move(i, 1); setNodeMenu(null); }}>
+                                <ArrowDown size={12} /> {t("down")}
+                              </button>
+                            )}
+                            {draft.steps.length > 1 && (
+                              <button type="button" className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left hover:bg-fg/10 hover:text-red-400" onClick={() => { setSteps(draft.steps.filter((_, j) => j !== i)); setNodeMenu(null); setEditNode(null); }}>
+                                <Trash2 size={12} /> {t("remove")}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {linkFrom === s.id && (
+                          <p className="mt-1 rounded-lg bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent-ink">{t("linkWaiting")}</p>
+                        )}
                         {editNode === s.id && canEdit && (
                           <div className="mt-2 space-y-1.5 border-t border-fg/10 pt-2" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
                             <label className="block text-[10px] leading-snug text-muted">
@@ -487,7 +605,7 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
                   })}
                 </div>
               </div>
-              <p className={cn("border-t px-3 py-1 text-[11px] text-muted", full && "shrink-0")}>{t("canvasHint")}</p>
+              <p className={cn("border-t px-3 py-1 text-[11px] text-muted", full && "shrink-0")}>{linkFrom ? <span className="font-medium text-accent-ink">{t("linkHint")}</span> : t("canvasHint")}</p>
             </div>,
           )}
 

@@ -28,6 +28,38 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.5",
+    date: "2026-09-19",
+    title: "CI-Designer wie ein Flow-Editor: Start-Node, verbinden, Node-Menü",
+    titleEn: "CI designer like a flow editor: start node, connect, node menu",
+    changes: [
+      {
+        type: "neu",
+        text: "Start-Node zeigt, wo die Pipeline beginnt – die Blöcke hängen sichtbar dahinter",
+        en: "A start node shows where the pipeline begins – the blocks hang visibly behind it",
+        link: "/projects#ci",
+      },
+      {
+        type: "neu",
+        text: "Nodes verbinden wie im Flow-Editor: Ausgang antippen, Ziel antippen – der Block wandert in den Ablauf dahinter",
+        en: "Connect nodes like in a flow editor: tap the output, tap the target – the block moves into the flow behind it",
+        link: "/projects#ci",
+      },
+      {
+        type: "neu",
+        text: "Node-Menü am Kästchen: bearbeiten, danach einfügen, verschieben, entfernen – ohne die Liste unten zu brauchen",
+        en: "Node menu on the box: edit, insert after, move, remove – without needing the list below",
+        link: "/projects#ci",
+      },
+      {
+        type: "besser",
+        text: "Auf Handys: größere Werkzeug-Knöpfe (44 px) und mehr Platz für die Node-Ansicht",
+        en: "On phones: bigger tool buttons (44 px) and more room for the node view",
+        link: "/projects#ci",
+      },
+    ],
+  },
+  {
     version: "1.4.4",
     date: "2026-09-19",
     title: "CI-Designer: Vollbild und Bearbeiten direkt an den Nodes",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCiWorkflow, CI_MARKER, ciPipelineSchema, duplicateNames, newStep, nodeStates, suggestPipeline, type CiPipeline } from "./ciPipelineLogic";
+import { buildCiWorkflow, CI_MARKER, ciPipelineSchema, duplicateNames, entryStepId, newStep, nextStepId, nodeStates, stepFlow, suggestPipeline, type CiPipeline } from "./ciPipelineLogic";
 
 const pipeline = (steps: CiPipeline["steps"], triggers: Partial<CiPipeline["triggers"]> = {}): CiPipeline => ({
   triggers: { push: ["main"], pullRequest: true, schedule: null, manual: true, ...triggers },
@@ -8,6 +8,22 @@ const pipeline = (steps: CiPipeline["steps"], triggers: Partial<CiPipeline["trig
 });
 
 describe("CI-Designer (#107)", () => {
+  it("Ablauf-Reihenfolge für die Node-Ansicht: erster Step ist Einstieg, jeder verbindet zum nächsten", () => {
+    const a = newStep("node-install");
+    const b = newStep("npm-script", { script: "test" });
+    const c = newStep("custom", { run: "echo hi" });
+    expect(stepFlow([a, b, c])).toEqual([
+      { from: a.id, to: b.id },
+      { from: b.id, to: c.id },
+    ]);
+    expect(stepFlow([a])).toEqual([]);
+    expect(entryStepId([a, b, c])).toBe(a.id);
+    expect(entryStepId([])).toBeNull();
+    expect(nextStepId([a, b, c], b.id)).toBe(c.id);
+    expect(nextStepId([a, b, c], c.id)).toBeNull();
+    expect(nextStepId([a, b, c], "unbekannt")).toBeNull();
+  });
+
   it("Vorschlag aus den Dateien des Repositorys", () => {
     const p = suggestPipeline(["package.json", "requirements.txt", "go.mod", "src/a.ts"], "main", ["lint", "test", "dev"]);
     expect(p.steps.map((s) => s.kind)).toEqual(["node-install", "npm-script", "npm-script", "fallow", "python-install", "pytest", "go-test"]);

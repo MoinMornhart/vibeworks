@@ -68,6 +68,30 @@ export function newStep(kind: StepKind, extra: Partial<CiStep> = {}): CiStep {
   return { id: newStepId(), kind, name: STEP_DEFAULT_NAME[kind], when: "success", continueOnError: false, ...extra };
 }
 
+// ── Ablauf-Reihenfolge für die Node-Ansicht ────────────────
+// GitHub Actions führt die Blöcke streng hintereinander aus. Die Node-Ansicht
+// bildet das mit „jeder Node verbindet zum nächsten“ ab – die Verbindungen
+// ergeben sich aus der Reihenfolge, liegen aber als Paare vor, damit die
+// Ansicht sie zeichnen kann, ohne die Liste zu lesen.
+
+/** Verbindungen (von → nach) in Ablauf-Reihenfolge; der erste Step ist der Einstieg. */
+export function stepFlow(steps: { id: string }[]): { from: string; to: string }[] {
+  const out: { from: string; to: string }[] = [];
+  for (let i = 1; i < steps.length; i++) out.push({ from: steps[i - 1].id, to: steps[i].id });
+  return out;
+}
+
+/** Der Main-Node (Einstieg) ist der erste Step; ohne Steps gibt es keinen. */
+export function entryStepId(steps: { id: string }[]): string | null {
+  return steps[0]?.id ?? null;
+}
+
+/** Nächster Step in der Kette (für „danach einfügen“ in der Node-Ansicht). */
+export function nextStepId(steps: { id: string }[], id: string): string | null {
+  const i = steps.findIndex((s) => s.id === id);
+  return i >= 0 ? steps[i + 1]?.id ?? null : null;
+}
+
 /** Vorschlag aus den Dateien des Repositorys – damit man nicht bei null anfängt. */
 export function suggestPipeline(files: string[], defaultBranch: string | null, scripts: string[] = []): CiPipeline {
   const has = (re: RegExp) => files.some((f) => re.test(f));
