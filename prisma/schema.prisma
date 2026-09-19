@@ -1017,6 +1017,8 @@ model OAuthFlow {
   tokenId        String?
   tokenCipher    String?
   redirectUri    String
+  /// state des Programms – wandert auf der Rückkehr unverändert mit
+  state          String?
   ip             String?
   lastPollAt     DateTime?
   expiresAt      DateTime

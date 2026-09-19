@@ -120,3 +120,13 @@ export function tokenResult(row: { status: string; codeChallenge: string; expire
 export function authorizeView(input: z.infer<typeof authorizeSchema>) {
   return { clientId: input.client_id, redirectUri: input.redirect_uri, scope: input.scope, codeChallenge: input.code_challenge, state: input.state ?? null };
 }
+
+/** Rückkehr-Adresse für den Browser des Menschen: Programm-Seite plus Code und state. */
+export function oauthReturnUrl(redirectUri: string, code: string | null, state: string | null): string {
+  const url = new URL(redirectUri);
+  // Bei Ablehnung statt des Codes der Standard-Fehler (RFC 6749 §4.1.2.1)
+  if (code) url.searchParams.set("code", code);
+  else url.searchParams.set("error", "access_denied");
+  if (state) url.searchParams.set("state", state);
+  return url.toString();
+}

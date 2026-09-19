@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizeView, newAuthorizationCode, newClientId, oauthMetadata, protectedResourceMetadata, s256Challenge, tokenResult, validRedirectUris } from "./oauthFlowLogic";
+import { authorizeView, newAuthorizationCode, newClientId, oauthMetadata, oauthReturnUrl, protectedResourceMetadata, s256Challenge, tokenResult, validRedirectUris } from "./oauthFlowLogic";
 
 describe("oauthMetadata", () => {
   it("werbt S256 als Challenge-Methode – genau das prüft ChatGPT (#141)", () => {
@@ -66,6 +66,28 @@ describe("tokenResult", () => {
     expect(tokenResult({ ...pending, expiresAt: new Date(Date.now() - 1) }, input, "app_abc")).toEqual({ kind: "error", error: "expired_token" });
     expect(tokenResult(null, input, "app_abc")).toEqual({ kind: "error", error: "invalid_grant" });
     expect(tokenResult({ ...pending, status: "claimed" }, input, "app_abc")).toEqual({ kind: "error", error: "invalid_grant" });
+  });
+});
+
+describe("oauthReturnUrl", () => {
+  it("kehrt zur Programm-Seite zurück – mit Code und state", () => {
+    const url = oauthReturnUrl("https://chatgpt.com/connector_platform_oauth_redirect", "der-code", "probe123");
+    expect(url.startsWith("https://chatgpt.com/connector_platform_oauth_redirect?")).toBe(true);
+    expect(url).toContain("code=der-code");
+    expect(url).toContain("state=probe123");
+  });
+
+  it("ohne Code: access_denied statt Code (Ablehnung, RFC 6749 Abschnitt 4.1.2.1)", () => {
+    const url = new URL(oauthReturnUrl("https://cli/callback", null, "s1"));
+    expect(url.searchParams.get("error")).toBe("access_denied");
+    expect(url.searchParams.get("code")).toBeNull();
+    expect(url.searchParams.get("state")).toBe("s1");
+  });
+
+  it("bestehende Parameter der Redirect-Adresse bleiben erhalten", () => {
+    const url = new URL(oauthReturnUrl("https://cli/callback?layout=compact", "c", null));
+    expect(url.searchParams.get("layout")).toBe("compact");
+    expect(url.searchParams.get("code")).toBe("c");
   });
 });
 

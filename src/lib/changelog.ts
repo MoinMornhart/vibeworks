@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.1",
+    date: "2026-09-19",
+    title: "OAuth-Freigabe kehrt zum Programm zurück",
+    titleEn: "OAuth approval now returns to the program",
+    changes: [
+      {
+        type: "fix",
+        text: "Nach dem Erlauben auf der Freigabe-Seite hing ChatGPT ewig: Der Browser kehrte nie zur Programm-Adresse zurück. Jetzt wird die Autorisierung dorthin abgeschlossen (mit Code und state) – auch eine Ablehnung meldet sich sauber zurück",
+        en: "After approving on the consent page, ChatGPT hung forever: the browser never returned to the program's address. The authorization now completes there (with code and state) – a denial also reports back cleanly",
+        link: "/verbinden",
+      },
+      {
+        type: "besser",
+        text: "Die Freigabe-Seite zeigt den state des Programms nicht mehr an – er bleibt serverseitig gemerkt und kommt nur auf der Rückkehr mit",
+        en: "The consent page no longer shows the program's state – it stays server-side and only travels on the return trip",
+      },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-09-19",
     title: "OAuth-Metadaten sind wieder öffentlich – ChatGPT verbindet sich jetzt",

@@ -20,6 +20,8 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(initialCode && !initial ? t("device.notFound") : null);
   const [done, setDone] = useState<"allowed" | "denied" | null>(null);
+  // OAuth (#141): nach der Entscheidung kehrt der Browser zum Programm zurück
+  const [returnTo, setReturnTo] = useState<string | null>(null);
 
   async function check(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +45,8 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
     setBusy(true);
     setError(null);
     try {
-      await api("/api/account/device", { body: { code: device.code, approve, scope } });
+      const res = await api<{ approved: boolean; returnTo?: string }>("/api/account/device", { body: { code: device.code, approve, scope } });
+      setReturnTo(res.returnTo ?? null);
       setDone(approve ? "allowed" : "denied");
     } catch (err) {
       setError(errorMessage(err));
@@ -53,15 +56,17 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
   }
 
   if (done) {
+    // OAuth: kurz zeigen, was entschieden wurde, dann zurück zum Programm –
+    // es nimmt den Code dort entgegen. Geräte-Anmeldung: Fenster schließt sich.
     if (typeof window !== "undefined") {
-      setTimeout(() => {
-        try {
+      if (returnTo) {
+        setTimeout(() => { window.location.href = returnTo; }, 1500);
+      } else {
+        setTimeout(() => {
           window.close();
           setTimeout(() => { window.location.href = "/account#mcp"; }, 500); // Fallback
-        } catch (e) {
-          window.location.href = "/account#mcp"; // Fallback if close is blocked
-        }
-      }, 5000);
+        }, 5000);
+      }
     }
     return (
       <section className="glass p-6" role="status" data-testid="device-done" data-result={done}>
@@ -69,7 +74,7 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
           {done === "allowed" ? <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-400" /> : <XCircle size={20} className="mt-0.5 shrink-0 text-muted" />}
           {t(`device.${done}`)}
         </p>
-        <p className="mt-2 text-sm text-muted">{done === "allowed" ? t("device.autoCloseHint") : ""}</p>
+        <p className="mt-2 text-sm text-muted">{returnTo ? t("device.returning") : done === "allowed" ? t("device.autoCloseHint") : ""}</p>
         {done === "allowed" && (
           <div className="flex flex-wrap gap-2 mt-4">
             <Link href="/account#mcp" className="btn btn-sm">
