@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
 import { api, errorMessage } from "@/lib/client/api";
@@ -55,19 +55,25 @@ export function DeviceConnect({ initialCode, initial }: { initialCode: string; i
     }
   }
 
-  if (done) {
-    // OAuth: kurz zeigen, was entschieden wurde, dann zurück zum Programm –
-    // es nimmt den Code dort entgegen. Geräte-Anmeldung: Fenster schließt sich.
-    if (typeof window !== "undefined") {
-      if (returnTo) {
-        setTimeout(() => { window.location.href = returnTo; }, 1500);
-      } else {
-        setTimeout(() => {
-          window.close();
-          setTimeout(() => { window.location.href = "/account#mcp"; }, 500); // Fallback
-        }, 5000);
-      }
+  // OAuth: kurz zeigen, was entschieden wurde, dann zurück zum Programm –
+  // es nimmt den Code dort entgegen. Geräte-Anmeldung: Fenster schließt sich.
+  // Timer im Effekt statt im Render – so feuert die Weiterleitung genau einmal
+  // und wird beim Aushängen wieder aufgeräumt.
+  useEffect(() => {
+    if (!done) return;
+    if (returnTo) {
+      const timer = setTimeout(() => { window.location.href = returnTo; }, 1500);
+      return () => clearTimeout(timer);
     }
+    const timer = setTimeout(() => {
+      window.close();
+      // Fallback, falls das Fenster sich nicht schließen lässt (nicht per Skript geöffnet)
+      setTimeout(() => { window.location.href = "/account#mcp"; }, 500);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [done, returnTo]);
+
+  if (done) {
     return (
       <section className="glass p-6" role="status" data-testid="device-done" data-result={done}>
         <p className="flex items-start gap-2">
