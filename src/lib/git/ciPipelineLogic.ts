@@ -51,7 +51,7 @@ export const ciPipelineSchema = z.object({
 });
 export type CiPipeline = z.infer<typeof ciPipelineSchema>;
 
-const newStepId = () => Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+const newStepId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 8);
 
 const STEP_DEFAULT_NAME: Record<StepKind, string> = {
   "node-install": "Node einrichten",
