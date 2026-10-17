@@ -5,7 +5,7 @@
 export const UI_GROUPS = [
   {
     key: "nav",
-    keys: ["nav.today", "nav.tasks", "nav.prompts", "nav.review", "nav.community", "nav.docs", "menu.teams", "menu.inbox", "menu.costs"],
+    keys: ["nav.today", "nav.tasks", "nav.prompts", "nav.review", "nav.community", "nav.docs", "nav.boards", "menu.teams", "menu.inbox", "menu.costs"],
   },
   {
     key: "dashboard",

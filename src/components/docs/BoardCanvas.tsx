@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Copy, Eraser, Highlighter, ImagePlus, Maximize2, Minus, MousePointer2, Pen, Pencil, Plus, Square, StickyNote, Trash2, Type } from "lucide-react";
+import { Circle, Copy, Eraser, Expand, Highlighter, ImagePlus, Maximize2, Minus, MousePointer2, Move, Pen, Pencil, Plus, RotateCw, Shrink, Square, StickyNote, Trash2, Type } from "lucide-react";
 import {
   BOARD_COLORS,
   BOARD_ITEM_KINDS,
@@ -20,6 +20,7 @@ import {
   newBoardItem,
   parseBoard,
   resizeItem,
+  rotateItem,
   serializeBoard,
   strokeBounds,
   strokeItem,
@@ -34,6 +35,11 @@ import { useT } from "@/lib/i18n/client";
 // Bewegt wird über Zeiger-Ereignisse mit Listenern am Fenster (nicht über
 // setPointerCapture): das trägt Maus und Finger gleich gut und hält auch, wenn
 // der Zeiger das Element verlässt. Zwei Finger zoomen über die Touch-Ereignisse.
+//
+// Ein ausgewähltes Element hat eigene Anfasser: oben links zum Verschieben,
+// oben in der Mitte zum Drehen, unten rechts für die Größe. Texteingabe und
+// Ziehen kommen sich so nicht in die Quere – ein zweites Tippen auf ein
+// ausgewähltes Textelement öffnet den Text, auch ohne Doppelklick.
 
 const ICONS: Record<BoardItemKind, typeof StickyNote> = { note: StickyNote, text: Type, rect: Square, ellipse: Circle, line: Minus, image: ImagePlus, ink: Pen };
 
@@ -69,8 +75,15 @@ const ZOOM_MAX = 3;
 type View = { x: number; y: number; z: number };
 type Drag =
   | { mode: "pan"; sx: number; sy: number; view: View }
-  | { mode: "move"; id: string; sx: number; sy: number; item: BoardItem }
-  | { mode: "size"; id: string; sx: number; sy: number; item: BoardItem };
+  /** `tapEdit`: Loslassen ohne Bewegung öffnet den Text; `moved` merkt sich, ob wirklich gezogen wurde. */
+  | { mode: "move"; id: string; sx: number; sy: number; item: BoardItem; tapEdit?: boolean; moved?: boolean }
+  | { mode: "size"; id: string; sx: number; sy: number; item: BoardItem }
+  | { mode: "rotate"; id: string; sx: number; sy: number; item: BoardItem };
+
+/** Erst ab dieser Strecke (Bildschirmpunkte) gilt ein Tippen als Ziehen. */
+const TAP_SLOP = 4;
+/** Elemente mit Text: Zettel, Text, Rechteck, Ellipse. */
+const hasText = (kind: BoardItemKind) => kind !== "line" && kind !== "image" && kind !== "ink";
 
 export function BoardCanvas({ value, onChange }: { value: string; onChange: (content: string) => void }) {
   const t = useT("docs");
@@ -84,6 +97,9 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
   const [tool, setTool] = useState<Tool>("select");
   const [stroke, setStroke] = useState(4);
   const [color, setColor] = useState<BoardColor>("blue");
+  // Vollbild: über die Fullscreen-API, sonst (iPhone) als Fläche über der ganzen Seite
+  const [full, setFull] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
   // Der Strich, der gerade gezogen wird – erst beim Loslassen wird ein Element daraus.
   const [draft, setDraft] = useState<Array<{ x: number; y: number }> | null>(null);
   const drawing = useRef<Array<{ x: number; y: number }> | null>(null);
@@ -206,8 +222,17 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
         setView({ ...cur.view, x: cur.view.x + dx, y: cur.view.y + dy });
         return;
       }
+      if (cur.mode === "move" && !cur.moved) {
+        // Ein kleines Wackeln beim Tippen verschiebt noch nichts
+        if (Math.hypot(dx, dy) < TAP_SLOP) return;
+        cur.moved = true;
+      }
       const z = viewRef.current.z;
-      const changed = cur.mode === "move" ? moveItem(cur.item, dx / z, dy / z) : resizeItem(cur.item, dx / z, dy / z);
+      let changed: BoardItem;
+      if (cur.mode === "rotate") {
+        const p = toBoard(e.clientX, e.clientY);
+        changed = rotateItem(cur.item, p.x, p.y, e.shiftKey ? 15 : 0);
+      } else changed = cur.mode === "move" ? moveItem(cur.item, dx / z, dy / z) : resizeItem(cur.item, dx / z, dy / z);
       setItems((list) => list.map((i) => (i.id === cur.id ? changed : i)));
     };
     const up = () => {
@@ -216,7 +241,12 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       window.removeEventListener("pointercancel", up);
       const cur = drag.current;
       drag.current = null;
-      if (cur && cur.mode !== "pan") onChange(serializeBoard(itemsRef.current));
+      if (!cur || cur.mode === "pan") return;
+      if (cur.mode === "move" && !cur.moved) {
+        if (cur.tapEdit) setEditing(cur.id);
+        return;
+      }
+      onChange(serializeBoard(itemsRef.current));
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -358,6 +388,30 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
     if (itemsRef.current.length) fitView();
   }, [fitView]);
 
+  // ── Vollbild ────────────────────────────────────────────
+  // Wie im CI-Designer: Der Browser meldet das Ende über fullscreenchange.
+  // Ohne Fullscreen-API bleibt die Fläche als Overlay über der Seite.
+  useEffect(() => {
+    if (!full) return;
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setFull(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    try {
+      const el = shell.current as (HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void }) | null;
+      if (el?.requestFullscreen) void el.requestFullscreen().catch(() => {});
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch {
+      /* Vollbild verweigert – Overlay-Ansicht bleibt */
+    }
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      const doc = document as Document & { webkitExitFullscreen?: () => void };
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+    };
+  }, [full]);
+
   // ── Tasten ──────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -367,8 +421,11 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       }
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "Escape") setSel(null);
-      else if ((e.key === "Delete" || e.key === "Backspace") && sel) {
+      // Esc hebt erst die Auswahl auf, dann das Vollbild (Overlay-Fall)
+      if (e.key === "Escape") {
+        if (sel) setSel(null);
+        else if (full) setFull(false);
+      } else if ((e.key === "Delete" || e.key === "Backspace") && sel) {
         e.preventDefault();
         remove(sel);
       }
@@ -376,7 +433,7 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, editing]);
+  }, [sel, editing, full]);
 
   // Bild aus der Zwischenablage einfügen – nur, solange kein Text bearbeitet wird.
   useEffect(() => {
@@ -392,12 +449,20 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
 
-  const grip = 14 / view.z;
+  // Anfasser bleiben auf dem Bildschirm gleich groß, egal wie weit gezoomt ist
+  const grip = 16 / view.z;
+  const handle = 26 / view.z;
 
   return (
-    <div className="flex min-h-0 flex-col gap-2">
-      {/* Werkzeuge */}
-      <div className="flex flex-wrap items-center gap-2">
+    <div
+      ref={shell}
+      data-board-shell
+      data-board-full={full || undefined}
+      className={cn("flex min-h-0 flex-col gap-2", full && "fixed inset-0 z-50 bg-bg p-2 sm:p-3")}
+      style={full ? { paddingTop: "max(0.5rem, env(safe-area-inset-top))", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))", paddingLeft: "max(0.5rem, env(safe-area-inset-left))", paddingRight: "max(0.5rem, env(safe-area-inset-right))" } : undefined}
+    >
+      {/* Werkzeuge – bleiben im Vollbild oben stehen und liegen über der Fläche */}
+      <div className="relative z-10 flex flex-wrap items-center gap-2">
         <div className="flex rounded-lg border bg-bg/40 p-0.5" role="radiogroup" aria-label={t("editor.board.label")}>
           {TOOLS.map((w) => {
             const Icon = TOOL_ICONS[w];
@@ -502,6 +567,17 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
           <button type="button" data-board-fit className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg" onClick={fitView} title={t("editor.board.fit")} aria-label={t("editor.board.fit")}>
             <Maximize2 size={15} />
           </button>
+          <button
+            type="button"
+            data-board-fullscreen
+            aria-pressed={full}
+            className={cn("rounded-md p-1.5 hover:bg-fg/10 hover:text-fg", full ? "text-accent-ink" : "text-muted")}
+            onClick={() => setFull((f) => !f)}
+            title={full ? t("editor.board.exitFullscreen") : t("editor.board.fullscreen")}
+            aria-label={full ? t("editor.board.exitFullscreen") : t("editor.board.fullscreen")}
+          >
+            {full ? <Shrink size={15} /> : <Expand size={15} />}
+          </button>
         </div>
         {selected && (
           <div className="fade-in flex flex-wrap items-center gap-2">
@@ -522,11 +598,16 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
             </div>
             )}
             <div className="flex rounded-lg border bg-bg/40 p-0.5">
-              {selected.kind !== "line" && selected.kind !== "image" && selected.kind !== "ink" && (
+              {hasText(selected.kind) && (
                 <button type="button" data-board-edit className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg" onClick={() => setEditing(selected.id)} title={t("editor.board.edit")} aria-label={t("editor.board.edit")}>
                   <Pencil size={15} />
                 </button>
               )}
+              {selected.rotation ?
+                <button type="button" data-board-unrotate className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg" onClick={() => patch(selected.id, (i) => { const next = { ...i }; delete next.rotation; return next; })} title={t("editor.board.straighten")} aria-label={t("editor.board.straighten")}>
+                  <RotateCw size={15} className="-scale-x-100" />
+                </button>
+              : null}
               <button type="button" data-board-copy className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg" onClick={() => duplicate(selected)} title={t("editor.board.duplicate")} aria-label={t("editor.board.duplicate")}>
                 <Copy size={15} />
               </button>
@@ -545,7 +626,7 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       <div
         ref={wrap}
         data-board-canvas
-        className={cn("relative h-[60vh] min-h-80 touch-none select-none overflow-hidden rounded-xl border bg-bg/30", dropping && "border-accent")}
+        className={cn("relative touch-none select-none overflow-hidden rounded-xl border bg-bg/30", full ? "min-h-0 flex-1" : "h-[60vh] min-h-80", dropping && "border-accent")}
         onDragOver={(e) => {
           if (!e.dataTransfer.types.includes("Files")) return;
           e.preventDefault();
@@ -598,19 +679,21 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
                   item.kind === "image" && "overflow-hidden rounded-lg bg-fg/5 shadow-lg",
                   active && "outline-2 outline-offset-2 outline-accent",
                 )}
-                style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
+                style={{ left: item.x, top: item.y, width: item.w, height: item.h, transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined }}
                 onPointerDown={(e) => {
                   if (e.button !== 0 && e.pointerType === "mouse") return;
                   // Beim Zeichnen und Radieren gehört das Ereignis der Fläche.
                   if (tool !== "select") return;
                   e.stopPropagation();
+                  // Zweites Tippen auf ein schon gewähltes Textelement öffnet den Text
+                  const tapEdit = sel === item.id && editing !== item.id && hasText(item.kind);
                   setSel(item.id);
                   if (editing !== item.id) setEditing(null);
-                  startDrag({ mode: "move", id: item.id, sx: e.clientX, sy: e.clientY, item });
+                  startDrag({ mode: "move", id: item.id, sx: e.clientX, sy: e.clientY, item, tapEdit });
                 }}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
-                  if (item.kind !== "line" && item.kind !== "image" && item.kind !== "ink") setEditing(item.id);
+                  if (hasText(item.kind)) setEditing(item.id);
                 }}
               >
                 {/* Linien sind dünn – diese Fläche macht sie treffbar. */}
@@ -652,22 +735,59 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
                     placeholder={t("editor.board.textPlaceholder")}
                     aria-label={t("editor.board.textLabel")}
                   />
-                : item.kind !== "line" && item.kind !== "image" && item.kind !== "ink" ?
+                : hasText(item.kind) ?
                   <p className={cn("h-full overflow-hidden whitespace-pre-wrap break-words text-[14px] leading-snug", (item.kind === "rect" || item.kind === "ellipse") && "flex items-center justify-center text-center")}>
                     {item.text}
                   </p>
                 : null}
                 {active && (
-                  <span
-                    data-board-grip
-                    className="absolute -bottom-1 -right-1 cursor-se-resize rounded-sm border border-bg bg-accent"
-                    style={{ width: grip, height: grip }}
-                    onPointerDown={(e) => {
-                      if (e.button !== 0 && e.pointerType === "mouse") return;
-                      e.stopPropagation();
-                      startDrag({ mode: "size", id: item.id, sx: e.clientX, sy: e.clientY, item });
-                    }}
-                  />
+                  <>
+                    <span
+                      data-board-grip
+                      className="absolute cursor-se-resize rounded-sm border border-bg bg-accent"
+                      style={{ width: grip, height: grip, right: -grip / 2, bottom: -grip / 2 }}
+                      onPointerDown={(e) => {
+                        if (e.button !== 0 && e.pointerType === "mouse") return;
+                        e.stopPropagation();
+                        startDrag({ mode: "size", id: item.id, sx: e.clientX, sy: e.clientY, item });
+                      }}
+                    />
+                    {/* Verschieben – auch während der Text offen ist */}
+                    <span
+                      data-board-move
+                      role="button"
+                      aria-label={t("editor.board.move")}
+                      title={t("editor.board.move")}
+                      className="absolute flex cursor-move items-center justify-center rounded-full border border-bg bg-accent text-on-accent shadow"
+                      style={{ width: handle, height: handle, left: -handle / 2, top: -handle / 2 }}
+                      onPointerDown={(e) => {
+                        if (e.button !== 0 && e.pointerType === "mouse") return;
+                        e.stopPropagation();
+                        e.preventDefault();
+                        startDrag({ mode: "move", id: item.id, sx: e.clientX, sy: e.clientY, item, moved: true });
+                      }}
+                    >
+                      <Move size={14 / view.z} />
+                    </span>
+                    {/* Drehen – Strich und Griff über der Oberkante */}
+                    <span className="pointer-events-none absolute left-1/2 w-px bg-accent" style={{ top: -handle * 1.2, height: handle * 1.2 }} aria-hidden />
+                    <span
+                      data-board-rotate
+                      role="button"
+                      aria-label={t("editor.board.rotate")}
+                      title={t("editor.board.rotate")}
+                      className="absolute left-1/2 flex cursor-grab items-center justify-center rounded-full border border-bg bg-accent text-on-accent shadow"
+                      style={{ width: handle, height: handle, top: -handle * 1.7, marginLeft: -handle / 2 }}
+                      onPointerDown={(e) => {
+                        if (e.button !== 0 && e.pointerType === "mouse") return;
+                        e.stopPropagation();
+                        e.preventDefault();
+                        startDrag({ mode: "rotate", id: item.id, sx: e.clientX, sy: e.clientY, item });
+                      }}
+                    >
+                      <RotateCw size={14 / view.z} />
+                    </span>
+                  </>
                 )}
               </div>
             );

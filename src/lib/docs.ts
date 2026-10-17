@@ -1,5 +1,6 @@
 import type { Doc, Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
+import { boardPreview, parseBoard } from "./docs/boardLogic";
 
 // Mini-Docs: Seiten eines Kontos als Baum. Jede Abfrage filtert auf den
 // Besitzer; fremde IDs verhalten sich wie nicht vorhandene.
@@ -51,6 +52,25 @@ export async function loadTree(ownerId: string): Promise<DocTreeItem[]> {
   });
   return rows.map(serializeTreeItem);
 }
+
+/** Mehr Leinwände zeigt die Übersicht nicht auf einmal – der Rest steht im Seitenbaum. */
+const BOARDS_LIMIT = 200;
+
+/**
+ * Alle Leinwände eines Kontos für die Übersicht (#211). Der Inhalt wird hier
+ * auf dem Server zu einem kleinen Abbild verdichtet – an den Browser gehen nur
+ * Rahmen und Farben, kein Text, keine Striche, keine Bild-Kennungen.
+ */
+export async function loadBoards(ownerId: string) {
+  const rows = await db.doc.findMany({
+    where: { ownerId, kind: "BOARD" },
+    select: { id: true, title: true, icon: true, kind: true, pinned: true, content: true, updatedAt: true },
+    orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
+    take: BOARDS_LIMIT,
+  });
+  return rows.map(({ content, ...d }) => ({ ...d, updatedAt: d.updatedAt.toISOString(), preview: boardPreview(parseBoard(content)) }));
+}
+export type BoardOverviewItem = Awaited<ReturnType<typeof loadBoards>>[number];
 
 export async function findOwnDoc(ownerId: string, id: string) {
   return db.doc.findFirst({ where: { id, ownerId } });

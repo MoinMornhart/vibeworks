@@ -3,7 +3,7 @@
 import { CalendarRange as ReviewIcon, History as TimelineIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shield, StickyNote, UserRound } from "lucide-react";
+import { BookOpen, FolderKanban, LayoutDashboard, ListChecks, Palette, Search, Shapes, Shield, StickyNote, UserRound } from "lucide-react";
 import type { ProjectListItem } from "@/lib/projects";
 import { matchesAll, type SearchResult } from "@/lib/search";
 import { api } from "@/lib/client/api";
@@ -174,6 +174,7 @@ export function CommandPalette({ isAdmin }: { isAdmin: boolean }) {
       { label: tr("nav.review"), href: "/review", icon: <ReviewIcon size={16} /> },
       { label: tr("nav.timeline"), href: "/timeline", icon: <TimelineIcon size={16} /> },
       { label: tr("nav.docs"), href: "/docs", icon: <BookOpen size={16} /> },
+      { label: tr("nav.boards"), href: "/boards", icon: <Shapes size={16} /> },
       { label: tr("nav.design"), href: "/design", icon: <Palette size={16} /> },
       { label: tr("nav.account"), href: "/account", icon: <UserRound size={16} /> },
       ...(isAdmin ? [{ label: tr("nav.administration"), href: "/admin", icon: <Shield size={16} /> }] : []),

@@ -8,6 +8,17 @@ const de = {
   meta: {
     title: "Docs",
   },
+  boards: {
+    title: "Leinwände",
+    subtitle: "Alle deine Leinwände auf einen Blick – mit kleiner Vorschau.",
+    toDocs: "Zu den Docs",
+    all: "Alle Leinwände",
+    search: "Leinwand suchen …",
+    noMatch: "Keine Leinwand passt zur Suche.",
+    emptyTitle: "Noch keine Leinwand",
+    emptyText: "Auf einer Leinwand legst du Zettel, Texte, Formen und Bilder frei ab, drehst sie und zeichnest mit Stift und Marker.",
+    pinned: "Angeheftet",
+  },
   tree: {
     label: "Seiten",
     title: "Docs",
@@ -113,6 +124,11 @@ const de = {
       zoomIn: "Größer",
       zoomOut: "Kleiner",
       fit: "Alles einpassen",
+      fullscreen: "Vollbild",
+      exitFullscreen: "Vollbild beenden",
+      move: "Verschieben",
+      rotate: "Drehen (Umschalt: in 15°-Schritten)",
+      straighten: "Gerade stellen",
       addImage: "Bild einfügen",
       uploading: "Bild wird hochgeladen …",
       uploadFailed: "Bild konnte nicht hochgeladen werden",
@@ -131,7 +147,7 @@ const de = {
       textLabel: "Text des Elements",
       items: plural("{n} Element", "{n} Elemente"),
       empty: "Noch leer – oben ein Element wählen.",
-      hint: "Bilder kannst du hineinziehen oder mit Strg+V einfügen. Ziehen verschiebt, die Ecke ändert die Größe, Doppelklick bearbeitet den Text. Leere Fläche ziehen verschiebt den Ausschnitt, zwei Finger oder Strg+Rad zoomen.",
+      hint: "Bilder kannst du hineinziehen oder mit Strg+V einfügen. Ziehen oder der Griff oben links verschiebt, der Griff oben dreht, die Ecke ändert die Größe. Nochmal tippen oder Doppelklick bearbeitet den Text. Leere Fläche ziehen verschiebt den Ausschnitt, zwei Finger oder Strg+Rad zoomen.",
     },
     children: {
       label: "Unterseiten",
@@ -148,6 +164,17 @@ const de = {
 const en: Shape<typeof de> = {
   meta: {
     title: "Docs",
+  },
+  boards: {
+    title: "Canvases",
+    subtitle: "All your canvases at a glance – with a small preview.",
+    toDocs: "Go to Docs",
+    all: "All canvases",
+    search: "Search canvases …",
+    noMatch: "No canvas matches the search.",
+    emptyTitle: "No canvas yet",
+    emptyText: "On a canvas you freely place notes, text, shapes and images, rotate them and draw with pen and marker.",
+    pinned: "Pinned",
   },
   tree: {
     label: "Pages",
@@ -254,6 +281,11 @@ const en: Shape<typeof de> = {
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
       fit: "Fit to view",
+      fullscreen: "Full screen",
+      exitFullscreen: "Exit full screen",
+      move: "Move",
+      rotate: "Rotate (Shift: in 15° steps)",
+      straighten: "Straighten",
       addImage: "Insert image",
       uploading: "Uploading image …",
       uploadFailed: "The image could not be uploaded",
@@ -272,7 +304,7 @@ const en: Shape<typeof de> = {
       textLabel: "Element text",
       items: plural("{n} element", "{n} elements"),
       empty: "Empty so far – pick an element above.",
-      hint: "You can drag images in or paste them with Ctrl+V. Drag to move, the corner resizes, double-click edits the text. Drag empty space to pan, pinch or Ctrl+wheel to zoom.",
+      hint: "You can drag images in or paste them with Ctrl+V. Drag or use the top-left handle to move, the top handle rotates, the corner resizes. Tap again or double-click to edit the text. Drag empty space to pan, pinch or Ctrl+wheel to zoom.",
     },
     children: {
       label: "Subpages",

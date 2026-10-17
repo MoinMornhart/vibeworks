@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.8",
+    date: "2026-10-17",
+    title: "Leinwand: drehen, eigene Anfasser, Vollbild und eine Übersicht",
+    titleEn: "Canvas: rotate, dedicated handles, full screen and an overview",
+    changes: [
+      {
+        type: "neu",
+        text: "Elemente auf der Leinwand lassen sich drehen: Der runde Griff über der Oberkante dreht um die Mitte, bei 0, 90, 180 und 270 Grad rastet er ein, mit gedrückter Umschalttaste in 15-Grad-Schritten. „Gerade stellen“ holt ein Element zurück. Auch gedrehte Elemente lassen sich an der Ecke vergrößern, ohne wegzurutschen",
+        en: "Items on the canvas can be rotated: the round handle above the top edge turns them around their centre, snapping at 0, 90, 180 and 270 degrees, or in 15-degree steps while holding Shift. “Straighten” resets an item. Rotated items can still be resized at the corner without sliding away",
+      },
+      {
+        type: "besser",
+        text: "Ein ausgewähltes Element hat jetzt einen eigenen Anfasser zum Verschieben (oben links) – auch während der Text offen ist. Ein zweites Tippen auf ein ausgewähltes Textfeld öffnet den Text, auf dem Handy ohne Doppeltippen. Die Anfasser sind größer und bleiben bei jedem Zoom gleich groß",
+        en: "A selected item now has its own move handle (top left) – even while its text is open. Tapping a selected text box again opens the text, on phones without a double tap. The handles are larger and keep the same size at any zoom level",
+      },
+      {
+        type: "neu",
+        text: "Vollbild für die Leinwand: Der Knopf neben „Alles einpassen“ holt die Fläche über den ganzen Bildschirm, die Werkzeuge bleiben oben erreichbar. Auf Geräten ohne Vollbild-Funktion legt sie sich über die ganze Seite",
+        en: "Full screen for the canvas: the button next to “Fit to view” spreads it across the whole screen, with the tools still reachable at the top. On devices without a full-screen function it covers the whole page instead",
+      },
+      {
+        type: "neu",
+        text: "Eigene Übersicht „Leinwände“ im Menü: alle Leinwände mit kleiner Vorschau, Suche und „Neue Leinwand“. Unter „Ansicht“ lässt sich der Eintrag ausblenden",
+        en: "A dedicated “Canvases” overview in the menu: all canvases with a small preview, search and “New canvas”. The entry can be hidden under “View”",
+        link: "/boards",
+      },
+    ],
+  },
+  {
     version: "1.7.7",
     date: "2026-10-17",
     title: "Sicherheitslücken geschlossen, Bausteine aufgefrischt",

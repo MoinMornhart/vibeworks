@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardBounds, BOARD_MAX, BOARD_MAX_ITEMS, boardId, freeSpot, hitsStroke, imageBox, moveItem, newBoardItem, parseBoard, resizeItem, serializeBoard, strokeBounds, strokeItem } from "./boardLogic";
+import { boardBounds, BOARD_MAX, BOARD_MAX_ITEMS, boardId, boardPreview, freeSpot, hitsStroke, imageBox, moveItem, newBoardItem, normRotation, parseBoard, resizeItem, rotateItem, serializeBoard, strokeBounds, strokeItem } from "./boardLogic";
 
 describe("Leinwand (#211)", () => {
   it("legt ein neues Element um den Zeigepunkt herum an", () => {
@@ -149,5 +149,113 @@ describe("Freihand (#211 Schritt 3)", () => {
   it("nennt den Maßstab eines Strichs", () => {
     expect(strokeBounds([0, 0, 30, 60])).toEqual({ w: 30, h: 60 });
     expect(strokeBounds([])).toEqual({ w: 1, h: 1 });
+  });
+});
+
+describe("Drehen (#211)", () => {
+  const box = { ...newBoardItem("text", { x: 0, y: 0 }, "t"), x: 0, y: 0, w: 200, h: 100 };
+
+  it("bringt jede Drehung auf ganze Grad zwischen -180 und 179", () => {
+    expect(normRotation(0)).toBe(0);
+    expect(normRotation(45.4)).toBe(45);
+    expect(normRotation(180)).toBe(-180);
+    expect(normRotation(270)).toBe(-90);
+    expect(normRotation(-450)).toBe(-90);
+    expect(normRotation(720)).toBe(0);
+    expect(normRotation("90")).toBe(0);
+    expect(normRotation(Number.NaN)).toBe(0);
+    expect(normRotation(Infinity)).toBe(0);
+  });
+
+  it("liest die Drehung ein und lässt sie bei 0 ganz weg", () => {
+    const raw = JSON.stringify({ items: [{ ...box, rotation: 450 }, { ...box, id: "u", rotation: 0 }, { ...box, id: "v", rotation: "schräg" }] });
+    const [a, b, c] = parseBoard(raw).items;
+    expect(a.rotation).toBe(90);
+    expect("rotation" in b).toBe(false);
+    expect("rotation" in c).toBe(false);
+    // Hin und zurück bleibt die Drehung erhalten
+    expect(parseBoard(serializeBoard([a])).items[0].rotation).toBe(90);
+  });
+
+  it("dreht über den Griff: Zeiger rechts der Mitte heißt 90 Grad", () => {
+    // Mitte liegt bei 100/50
+    expect(rotateItem(box, 300, 50).rotation).toBe(90);
+    expect(rotateItem(box, 100, 300).rotation).toBe(-180);
+    expect(rotateItem(box, -100, 50).rotation).toBe(-90);
+    // Genau über der Mitte: keine Drehung, das Feld fällt weg
+    expect("rotation" in rotateItem({ ...box, rotation: 30 }, 100, -200)).toBe(false);
+  });
+
+  it("rastet nahe an rechten Winkeln ein und dreht mit Schritt in Stufen", () => {
+    // 3 Grad neben 90 → 90
+    const p = (deg: number) => {
+      const rad = ((deg - 90) * Math.PI) / 180;
+      return [100 + Math.cos(rad) * 200, 50 + Math.sin(rad) * 200] as const;
+    };
+    expect(rotateItem(box, ...p(93)).rotation).toBe(90);
+    expect(rotateItem(box, ...p(37)).rotation).toBe(37);
+    expect(rotateItem(box, ...p(37), 15).rotation).toBe(30);
+    // Zeiger genau auf der Mitte ändert nichts
+    expect(rotateItem({ ...box, rotation: 12 }, 100, 50).rotation).toBe(12);
+  });
+
+  it("vergrößert ein gedrehtes Element entlang seiner Kanten und hält die Ecke fest", () => {
+    const gedreht = { ...box, rotation: 90 };
+    // Bei 90 Grad zeigt die eigene Breite nach unten: 50 nach unten macht es 50 breiter
+    const r = resizeItem(gedreht, 0, 50);
+    expect(r).toMatchObject({ w: 250, h: 100 });
+    // Die gedrehte linke obere Ecke liegt vorher und nachher an derselben Stelle
+    const ecke = (i: typeof r) => {
+      const rad = ((i.rotation ?? 0) * Math.PI) / 180;
+      const cx = i.x + i.w / 2;
+      const cy = i.y + i.h / 2;
+      return [Math.round(cx - (i.w / 2) * Math.cos(rad) + (i.h / 2) * Math.sin(rad)), Math.round(cy - (i.w / 2) * Math.sin(rad) - (i.h / 2) * Math.cos(rad))];
+    };
+    expect(ecke(r)).toEqual(ecke(gedreht));
+    // Ohne Drehung bleibt alles wie bisher
+    expect(resizeItem(box, 20, 10)).toMatchObject({ x: 0, y: 0, w: 220, h: 110 });
+  });
+
+  it("rechnet die Drehung in den Rahmen fürs Einpassen ein", () => {
+    const quer = { ...box, rotation: 90 };
+    const b = boardBounds([quer])!;
+    expect(b).toEqual({ x: 50, y: -50, w: 100, h: 200 });
+  });
+
+  it("trifft mit dem Radierer auch einen gedrehten Strich", () => {
+    const strich = strokeItem([{ x: 0, y: 50 }, { x: 200, y: 50 }], "s", "blue", 4)!;
+    const senkrecht = { ...strich, rotation: 90 };
+    const mitte = { x: strich.x + strich.w / 2, y: strich.y + strich.h / 2 };
+    // Über der Mitte liegt der gedrehte Strich, rechts davon nicht mehr
+    expect(hitsStroke(senkrecht, mitte.x, mitte.y - 80, 6)).toBe(true);
+    expect(hitsStroke(senkrecht, mitte.x + 80, mitte.y, 6)).toBe(false);
+    expect(hitsStroke(strich, mitte.x + 80, mitte.y, 6)).toBe(true);
+  });
+});
+
+describe("Vorschau für die Übersicht (#211)", () => {
+  it("passt den Inhalt in einen Rahmen mit Breite 100", () => {
+    expect(boardPreview({ items: [] })).toEqual({ height: 60, shapes: [], count: 0 });
+    const items = [
+      { ...newBoardItem("note", { x: 0, y: 0 }, "a"), x: 0, y: 0, w: 100, h: 100 },
+      { ...newBoardItem("rect", { x: 0, y: 0 }, "b"), x: 900, y: 0, w: 100, h: 100, rotation: 45 },
+    ];
+    const p = boardPreview({ items });
+    expect(p.count).toBe(2);
+    expect(p.height).toBe(30);
+    for (const s of p.shapes) {
+      expect(s.x).toBeGreaterThanOrEqual(0);
+      expect(s.x + s.w).toBeLessThanOrEqual(100);
+    }
+    expect(p.shapes[1].rotation).toBe(45);
+    // Text bleibt draußen
+    expect(JSON.stringify(p)).not.toContain("text");
+  });
+
+  it("zeigt höchstens 120 Formen, zählt aber alle", () => {
+    const items = Array.from({ length: 300 }, (_, n) => newBoardItem("rect", { x: n * 10, y: 0 }, `r${n}`));
+    const p = boardPreview({ items });
+    expect(p.shapes).toHaveLength(120);
+    expect(p.count).toBe(300);
   });
 });

@@ -32,6 +32,7 @@ const de = {
       review: "Rückblick",
       community: "Community",
       docs: "Docs",
+      boards: "Leinwände",
     },
     menu: {
       teams: "Teams",
@@ -91,6 +92,7 @@ const en: Shape<typeof de> = {
       review: "Review",
       community: "Community",
       docs: "Docs",
+      boards: "Canvases",
     },
     menu: {
       teams: "Teams",
