@@ -22,7 +22,7 @@ import {
   Webhook,
   XCircle,
 } from "lucide-react";
-import type { RepoCacheView } from "@/lib/git/sync";
+import type { CommitView, RepoCacheView } from "@/lib/git/sync";
 import type { CiState, CiStatus } from "@/lib/git/ci";
 import type { IssueSyncResult } from "@/lib/git/issues";
 import type { CommitInfo } from "@/lib/git/providers";
@@ -124,10 +124,15 @@ function CommitTitle({ text, issueBase }: { text: string; issueBase: string | nu
   );
 }
 
-function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase: string | null; last: boolean }) {
+function CommitRow({ commit, issueBase, last, loadBodies }: { commit: CommitView; issueBase: string | null; last: boolean; loadBodies: () => Promise<void> }) {
   const t = useT("git");
   const locale = useLocale();
   const [open, setOpen] = useState(false);
+  // Ausführliche Texte kommen erst beim ersten Aufklappen (#214)
+  const toggle = () => {
+    if (!open && commit.bodyCut) void loadBodies();
+    setOpen((o) => !o);
+  };
   const time = new Date(commit.date).toLocaleTimeString(INTL_LOCALE[locale], { hour: "2-digit", minute: "2-digit" });
   const author = commit.author === STORED_UNKNOWN_AUTHOR ? t("commits.unknownAuthor") : commit.author;
   return (
@@ -157,12 +162,13 @@ function CommitRow({ commit, issueBase, last }: { commit: CommitInfo; issueBase:
           <span>{author}</span>
           <span aria-hidden>·</span>
           <time dateTime={commit.date} title={new Date(commit.date).toLocaleString(INTL_LOCALE[locale])}>{time}</time>
-          {commit.body && (
-            <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="inline-flex items-center gap-0.5 hover:text-fg">
+          {(commit.body || commit.bodyCut) && (
+            <button type="button" onClick={toggle} aria-expanded={open} data-commit-details className="inline-flex items-center gap-0.5 hover:text-fg">
               {t("commits.details")} <ChevronDown size={12} className={cn("transition", open && "rotate-180")} />
             </button>
           )}
         </div>
+        {open && commit.bodyCut && <p className="mt-2 text-xs text-muted">…</p>}
         {open && commit.body && (
           <pre className="mt-2 whitespace-pre-wrap break-words rounded-lg border bg-bg/40 p-3 font-mono text-xs leading-relaxed text-muted">{commit.body}</pre>
         )}
@@ -503,9 +509,14 @@ export function GitPanel({
   const canManage = mode === "owner";
   const router = useRouter();
   const [cache, setCache] = useState(initialCache);
+  // Laufendes oder erledigtes Nachladen der Commit-Texte; ein neuer Stand ohne Texte setzt es zurück
+  const bodiesRef = useRef<Promise<void> | null>(null);
   const [access, setAccess] = useState(initialAccess);
   const [linked, setLinked] = useState(linkedIssues);
-  useEffect(() => setCache(initialCache), [initialCache]);
+  useEffect(() => {
+    setCache(initialCache);
+    bodiesRef.current = null;
+  }, [initialCache]);
   useEffect(() => setAccess(initialAccess), [initialAccess]);
   useEffect(() => setLinked(linkedIssues), [linkedIssues]);
 
@@ -524,14 +535,17 @@ export function GitPanel({
 
   const provider = (cache?.provider || guessProvider(parseRepoUrl(repoUrl)?.host ?? "")) as GitProvider | "" | null;
 
-  const sync = useCallback(async () => {
+  /** `force`: vom Knopf – sonst gleicht der Server nur ab, wenn sein Stand nicht mehr frisch ist (#214). */
+  const sync = useCallback(async (force = false) => {
     if (!repoUrl || !canSync || busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
-      const res = await api<{ cache: RepoCacheView | null; issues: IssueSyncResult | null; issuesOffAt?: string | null }>(`/api/projects/${projectId}/git`, { method: "POST", body: {} });
+      const res = await api<{ cache: RepoCacheView | null; issues: IssueSyncResult | null; issuesOffAt?: string | null; skipped?: boolean }>(`/api/projects/${projectId}/git`, { method: "POST", body: { force } });
       setCache(res.cache);
+      bodiesRef.current = null;
+      if (res.skipped) return;
       if (res.issuesOffAt !== undefined) setAccess((a) => ({ ...a, issuesOffAt: res.issuesOffAt }));
       setIssues(res.issues);
       if (res.issues) setLinked(res.issues.linked);
@@ -544,6 +558,19 @@ export function GitPanel({
       setBusy(false);
     }
   }, [projectId, repoUrl, router, canSync]);
+
+  /** Holt den Stand einmal mit allen Commit-Texten – beim ersten Aufklappen (#214). */
+  const loadBodies = useCallback(() => {
+    bodiesRef.current ??= api<{ cache: RepoCacheView | null }>(`/api/projects/${projectId}/git`)
+      .then((res) => {
+        if (res.cache) setCache(res.cache);
+      })
+      .catch((e) => {
+        bodiesRef.current = null; // beim nächsten Aufklappen erneut versuchen
+        setError(errorMessage(e));
+      });
+    return bodiesRef.current;
+  }, [projectId]);
 
   // Beim Öffnen abgleichen, wenn der Stand älter als 5 Minuten ist, und
   // danach alle 5 Minuten, solange der Tab sichtbar ist.
@@ -563,7 +590,7 @@ export function GitPanel({
     try {
       const res = await api<{ access: Access }>(`/api/projects/${projectId}/git`, { method: "PUT", body });
       setAccess(res.access);
-      await sync(); // prüft das Token und trägt fehlende Issues nach
+      await sync(true); // prüft das Token und trägt fehlende Issues nach
     } catch (e) {
       setAccessError(errorMessage(e));
     } finally {
@@ -589,7 +616,7 @@ export function GitPanel({
   const commits = cache?.commits ?? [];
   const authors = useMemo(() => new Set(commits.map((c) => c.author)).size, [commits]);
   const groups = useMemo(() => {
-    const out: Array<{ key: string; commits: CommitInfo[] }> = [];
+    const out: Array<{ key: string; commits: CommitView[] }> = [];
     for (const c of commits.slice(0, shown)) {
       const key = localDay(new Date(c.date));
       const last = out[out.length - 1];
@@ -658,7 +685,7 @@ export function GitPanel({
               </button>
             )}
             {canSync && (
-              <button type="button" className="btn btn-sm" onClick={() => void sync()} disabled={busy} aria-label={t("panel.syncNow")}>
+              <button type="button" className="btn btn-sm" onClick={() => void sync(true)} disabled={busy} aria-label={t("panel.syncNow")}>
                 <RefreshCw size={14} className={cn(busy && "animate-spin")} /> <span className="hidden sm:inline">{t("panel.sync")}</span>
               </button>
             )}
@@ -752,7 +779,7 @@ export function GitPanel({
                   </h3>
                   <ol>
                     {g.commits.map((c, i) => (
-                      <CommitRow key={c.sha} commit={c} issueBase={issueBase} last={i === g.commits.length - 1} />
+                      <CommitRow key={c.sha} commit={c} issueBase={issueBase} last={i === g.commits.length - 1} loadBodies={loadBodies} />
                     ))}
                   </ol>
                 </div>

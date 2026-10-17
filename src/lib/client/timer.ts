@@ -23,9 +23,18 @@ const publish = (t: RunningTimer | null) => {
   for (const l of listeners) l(t);
 };
 
-async function refreshTimer() {
-  const res = await api<{ current: RunningTimer | null }>("/api/time").catch(() => null);
-  if (res) publish(res.current);
+// Eine Anfrage für alle: Auf der Projektseite meldete sich sonst jede Karte mit
+// Start-Knopf einzeln, bevor die erste Antwort da war (#214, 16 Abrufe beim Öffnen).
+let pending: Promise<void> | null = null;
+
+function refreshTimer(): Promise<void> {
+  pending ??= api<{ current: RunningTimer | null }>("/api/time")
+    .then((res) => publish(res.current))
+    .catch(() => {})
+    .finally(() => {
+      pending = null;
+    });
+  return pending;
 }
 
 export async function startTimer(taskId: string, focusMinutes?: number) {

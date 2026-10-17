@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.9",
+    date: "2026-10-17",
+    title: "Projektseite deutlich leichter",
+    titleEn: "Project page much lighter",
+    changes: [
+      {
+        type: "besser",
+        text: "Die Projektseite baut sich nicht mehr jede Minute komplett neu auf. Sie fragt nur noch einen kurzen Änderungsstempel ab und lädt erst neu, wenn sich wirklich etwas getan hat – gemessen mit großem Repo-Stand gingen bei jedem Takt sonst 1,1 MB über die Leitung",
+        en: "The project page no longer rebuilds itself completely every minute. It only asks for a short change stamp and reloads once something has really changed – measured with a large repository state, every tick used to send 1.1 MB",
+      },
+      {
+        type: "besser",
+        text: "Beim Öffnen kommen nur noch 1,5 statt 4,2 MB an, die Antwort ist ein Drittel schneller: Ausführliche Commit-Texte werden erst beim Aufklappen geholt, die Paketliste zeigt zunächst 50 Einträge, und die Lighthouse-Berichte werden nicht mehr nebenbei mitgeladen",
+        en: "Opening it now transfers 1.5 instead of 4.2 MB and responds a third faster: detailed commit messages are fetched when expanded, the package list starts with 50 entries, and the Lighthouse reports are no longer loaded along the way",
+      },
+      {
+        type: "besser",
+        text: "Ein offener Tab stößt keinen eigenen Git-Abgleich mehr an, wenn der Stand jünger als vier Minuten ist – „Jetzt abgleichen“ gleicht weiterhin sofort ab. Die CI-Seite fragt im Hintergrund-Tab nicht mehr alle paar Sekunden nach",
+        en: "An open tab no longer starts its own Git sync when the state is less than four minutes old – “Sync now” still syncs right away. The CI page stops polling every few seconds while its tab is in the background",
+      },
+      {
+        type: "fix",
+        text: "Der laufende Timer wurde beim Öffnen einer Projektseite von jeder Aufgabenkarte einzeln abgefragt (16 Anfragen statt einer), und der Repo-Check zeigte beim ersten Aufbau immer den Hauptzweig statt des eingestellten",
+        en: "Opening a project page queried the running timer once per task card (16 requests instead of one), and the repo check always showed the default branch on first render instead of the configured one",
+      },
+    ],
+  },
+  {
     version: "1.7.8",
     date: "2026-10-17",
     title: "Leinwand: drehen, eigene Anfasser, Vollbild und eine Übersicht",

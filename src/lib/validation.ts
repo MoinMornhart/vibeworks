@@ -258,6 +258,9 @@ export const templateCreateSchema = z.object({
   description: z.string().trim().max(300).nullish(),
 });
 
+/** Git-Abgleich anstoßen: `force` vom Knopf „Jetzt abgleichen“, sonst reicht ein frischer Stand (#214). */
+export const gitSyncSchema = z.object({ force: z.boolean().optional() });
+
 export const repoAccessSchema = z.object({
   /** Neue Issues übernehmen (#69) */
   issueImport: z.enum(["off", "trusted", "all"]).optional(),
