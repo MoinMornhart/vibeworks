@@ -1,6 +1,8 @@
 import net from "node:net";
 import tls from "node:tls";
-import { assertFetchable, FetchBlockedError, safeFetch } from "@/lib/security/ssrf";
+import { lookup } from "node:dns/promises";
+import { assertFetchable, FetchBlockedError, isBlockedIp, safeFetch } from "@/lib/security/ssrf";
+import { config } from "@/lib/config";
 import { saveUpload, sniffImage } from "@/lib/uploads";
 import { tk } from "@/lib/i18n/messages";
 
@@ -73,11 +75,19 @@ export async function sslExpiry(url: string): Promise<Date | null> {
   if (u.protocol !== "https:") return null;
   await assertFetchable(u);
   const host = u.hostname.replace(/^\[|\]$/g, "");
+  // Gegen DNS-Rebinding: einmal auflösen, geprüfte IP festnageln und genau die
+  // verbinden – nicht den Namen erneut auflösen lassen. Name bleibt als SNI.
+  const target = net.isIP(host)
+    ? host
+    : (await lookup(host, { all: true }).catch(() => []))
+        .map((a) => a.address)
+        .find((ip) => !isBlockedIp(ip, { blockPrivate: config.gitBlockPrivate, allowLoopback: config.gitAllowLoopback }));
+  if (!target) return null;
   return new Promise((resolve) => {
     const socket = tls.connect(
       // Absicht: Hier wird nur das Ablaufdatum gelesen – auch von abgelaufenen oder
       // fremd signierten Zertifikaten, um genau davor zu warnen. Es fließen keine Daten.
-      { host, port: Number(u.port) || 443, servername: net.isIP(host) ? undefined : host, rejectUnauthorized: false, timeout: 10_000 }, // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
+      { host: target, port: Number(u.port) || 443, servername: net.isIP(host) ? undefined : host, rejectUnauthorized: false, timeout: 10_000 }, // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
       () => {
         const cert = socket.getPeerCertificate();
         socket.end();

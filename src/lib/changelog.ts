@@ -28,6 +28,34 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.0",
+    date: "2026-10-17",
+    title: "Sicherheits-Durchgang: SSRF-Schutz verschärft",
+    titleEn: "Security pass: tighter SSRF protection",
+    changes: [
+      {
+        type: "fix",
+        text: "Der Server klopft nicht mehr versehentlich das private Netz ab: Adressen im LAN (10.x, 192.168.x, 172.16–31.x) sind beim Prüfen von Live-Seiten und Repositories jetzt ab Werk gesperrt. Wer ein selbst gehostetes Gitea oder eine Live-Seite im eigenen Netz prüfen lässt, setzt dafür GIT_BLOCK_PRIVATE=false",
+        en: "The server no longer accidentally probes the private network: LAN addresses (10.x, 192.168.x, 172.16–31.x) are now blocked by default when checking live sites and repositories. To check a self-hosted Gitea or a live site on your own network, set GIT_BLOCK_PRIVATE=false",
+      },
+      {
+        type: "fix",
+        text: "DNS-Rebinding geschlossen: Die geprüfte Adresse wird beim Verbinden festgenagelt, damit ein Name nicht zwischen Prüfung und Abruf heimlich auf einen internen Rechner umschwenken kann – gilt für Abrufe und für die Zertifikatsprüfung",
+        en: "DNS rebinding closed: the validated address is pinned at connection time, so a name cannot secretly switch to an internal host between the check and the request – for fetches and for the certificate check",
+      },
+      {
+        type: "fix",
+        text: "Die IP-Ratengrenzen (Anmeldung, Registrierung, Passwort zurücksetzen) lassen sich nicht mehr über einen gefälschten X-Forwarded-For-Kopf umgehen: Es zählt die Adresse, die der eigene Proxy gesetzt hat (einstellbar über TRUSTED_PROXY_HOPS)",
+        en: "The IP rate limits (sign-in, registration, password reset) can no longer be bypassed with a spoofed X-Forwarded-For header: the address set by your own proxy counts (configurable via TRUSTED_PROXY_HOPS)",
+      },
+      {
+        type: "besser",
+        text: "Der Code aus der MFA-E-Mail wird in konstanter Zeit verglichen – wie schon beim Authenticator",
+        en: "The MFA email code is compared in constant time – as it already was for the authenticator",
+      },
+    ],
+  },
+  {
     version: "1.7.9",
     date: "2026-10-17",
     title: "Projektseite deutlich leichter",
