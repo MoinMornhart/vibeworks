@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.7",
+    date: "2026-10-17",
+    title: "Sicherheitslücken geschlossen, Bausteine aufgefrischt",
+    titleEn: "Security holes closed, building blocks refreshed",
+    changes: [
+      {
+        type: "fix",
+        text: "Next.js 16.4.2 schließt sechs bekannte Lücken, darunter eine Server-Side Request Forgery in der Bildoptimierung und mehrere Fälle von Cache-Vergiftung. Dazu sharp 0.35.5 und source-map-js 1.2.2 – npm audit meldet für VibeWorks keine Lücke mehr",
+        en: "Next.js 16.4.2 closes six known holes, including a server-side request forgery in image optimisation and several cache-poisoning cases. Also sharp 0.35.5 and source-map-js 1.2.2 – npm audit no longer reports any hole for VibeWorks",
+      },
+      {
+        type: "fix",
+        text: "Die Windows-App baut mit Electron 44.9.0 und frischen Fassungen von brace-expansion, fast-uri und http-cache-semantics. Offen bleibt sprintf-js: Dafür gibt es noch keine Version ohne Lücke, es läuft nur beim Bauen der App mit",
+        en: "The Windows app now builds with Electron 44.9.0 and fresh versions of brace-expansion, fast-uri and http-cache-semantics. sprintf-js remains open: there is no fixed version yet, and it only runs while building the app",
+      },
+      {
+        type: "besser",
+        text: "Vierzehn weitere Bausteine auf dem neuesten Stand, unter anderem React 19.3.1, Prisma 7.10.1, zod 4.6.7, lucide-react 1.59.0 und nodemailer 10.1.2 – reine Wartung, sichtbar ändert sich nichts",
+        en: "Fourteen more building blocks up to date, including React 19.3.1, Prisma 7.10.1, zod 4.6.7, lucide-react 1.59.0 and nodemailer 10.1.2 – pure maintenance, nothing changes visibly",
+      },
+    ],
+  },
+  {
     version: "1.7.6",
     date: "2026-10-05",
     title: "Spürbar flotter bei vielen Aufgaben",
