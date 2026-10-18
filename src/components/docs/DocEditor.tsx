@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { BoardCanvas } from "./BoardCanvas";
+import { boardId } from "@/lib/docs/boardLogic";
 import { docIcon } from "@/lib/docs/kinds";
 import type { DocDetail, DocTreeItem } from "@/lib/docs";
 import { api, errorMessage } from "@/lib/client/api";
@@ -67,6 +68,9 @@ export function DocEditor({
   const [error, setError] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  // Kennung dieses Tabs: die Live-Übertragung überspringt damit das eigene Echo (#211)
+  const clientId = useRef<string>("");
+  if (!clientId.current) clientId.current = boardId();
 
   // ── Automatisches Speichern ─────────────────────────────
   const latest = useRef({ title, icon, content });
@@ -95,7 +99,7 @@ export function DocEditor({
     inFlight.current = true;
     setState("saving");
     try {
-      const res = await api<{ doc: DocDetail; item: DocTreeItem }>(`/api/docs/${doc.id}`, { method: "PATCH", body: snapshot });
+      const res = await api<{ doc: DocDetail; item: DocTreeItem }>(`/api/docs/${doc.id}`, { method: "PATCH", body: { ...snapshot, clientId: clientId.current } });
       lastSaved.current = json;
       setSavedAt(res.doc.updatedAt);
       setError(null);
@@ -122,6 +126,16 @@ export function DocEditor({
     setState("dirty");
     schedule();
   };
+
+  // Eine Leinwand-Änderung aus einem anderen Tab/Gerät übernehmen (#211): Inhalt
+  // setzen und als gespeicherten Stand merken, damit sie nicht wieder hochgeladen
+  // wird und die Abmeldung beim Verlassen nichts Altes zurückschreibt.
+  const applyRemote = useCallback((remoteContent: string) => {
+    setContent(remoteContent);
+    latest.current = { ...latest.current, content: remoteContent };
+    lastSaved.current = JSON.stringify(latest.current);
+    setState("saved");
+  }, [t]);
 
   // Beim Verlassen der Seite (Wechsel im Baum) noch Ungespeichertes sichern.
   useEffect(
@@ -269,7 +283,7 @@ export function DocEditor({
 
       {isBoard ? (
         <div className="mt-4 flex-1">
-          <BoardCanvas value={content} onChange={(v) => change({ content: v })} />
+          <BoardCanvas value={content} onChange={(v) => change({ content: v })} docId={doc.id} clientId={clientId.current} onRemote={applyRemote} />
         </div>
       ) : (
       <div className={cn("mt-4 grid flex-1 gap-5", mode === "split" && "lg:grid-cols-2")}>

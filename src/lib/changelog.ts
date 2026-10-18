@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.2",
+    date: "2026-10-18",
+    title: "Leinwand live auf mehreren Geräten",
+    titleEn: "Canvas live across devices",
+    changes: [
+      {
+        type: "neu",
+        text: "Eine Leinwand, die in mehreren Tabs oder auf mehreren Geräten desselben Kontos offen ist, aktualisiert sich jetzt in Echtzeit: Was auf dem Handy entsteht, erscheint sofort am Rechner – ohne Neuladen. Das läuft über einen eigenen Live-Kanal auf dem Server (Server-Sent Events), ganz ohne Zusatzdienst und ohne Kosten",
+        en: "A canvas open in several tabs or on several devices of the same account now updates in real time: what you draw on your phone appears on your computer at once – without reloading. It runs over a dedicated live channel on the server (server-sent events), with no extra service and no cost",
+        link: "/boards",
+      },
+      {
+        type: "besser",
+        text: "Eine laufende Eingabe wird dabei nicht gestört: Ein Stand aus einem anderen Tab wird erst übernommen, wenn gerade nicht gezogen, gezeichnet oder getippt wird. Der Kanal gehört nur dem Besitzer der Leinwand",
+        en: "Ongoing input is not disturbed: a state from another tab is only applied when you are not currently dragging, drawing or typing. The channel belongs to the canvas owner only",
+      },
+    ],
+  },
+  {
     version: "1.8.1",
     date: "2026-10-18",
     title: "Fehler auf einmal ins Aufgabenboard holen",
