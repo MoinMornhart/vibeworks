@@ -29,6 +29,8 @@ export interface BoardItem {
   size?: number;
   /** Freihand als Marker: dicker und durchscheinend. */
   marker?: boolean;
+  /** Drehung in Grad um die Mitte, -180…179. Fehlt bei 0. */
+  rotation?: number;
 }
 
 export interface Board {
@@ -91,6 +93,7 @@ export function parseBoard(raw: unknown): Board {
     // Ein Strich ohne Punkte ebenso.
     const points = kind === "ink" ? readPoints(o.points) : null;
     if (kind === "ink" && !points) continue;
+    const rotation = normRotation(o.rotation);
     items.push({
       ...(kind === "image" ? { upload: o.upload as string } : {}),
       ...(points ? { points, size: clamp(o.size, 1, 64, 4), ...(o.marker === true ? { marker: true } : {}) } : {}),
@@ -102,6 +105,7 @@ export function parseBoard(raw: unknown): Board {
       h: clamp(o.h, kind === "line" ? 1 : BOARD_MIN_SIZE, BOARD_MAX_SIZE, 140),
       text: typeof o.text === "string" ? o.text.slice(0, BOARD_MAX_TEXT) : "",
       color: BOARD_COLORS.includes(o.color as BoardColor) ? (o.color as BoardColor) : "gray",
+      ...(rotation ? { rotation } : {}),
     });
   }
   return { items };
@@ -132,19 +136,86 @@ export function moveItem(item: BoardItem, dx: number, dy: number): BoardItem {
   return { ...item, x: clamp(item.x + dx, BOARD_MIN, BOARD_MAX, item.x), y: clamp(item.y + dy, BOARD_MIN, BOARD_MAX, item.y) };
 }
 
-/** Größe ändern – nie kleiner als die Mindestgröße, nie größer als erlaubt. */
-export function resizeItem(item: BoardItem, dw: number, dh: number): BoardItem {
+/**
+ * Größe über den Griff unten rechts ändern – dx/dy ist der Zug des Zeigers auf
+ * der Fläche. Bei einem gedrehten Element zählt der Zug entlang seiner eigenen
+ * Kanten, und die gegenüberliegende Ecke bleibt stehen, statt wegzurutschen.
+ * Nie kleiner als die Mindestgröße, nie größer als erlaubt.
+ */
+export function resizeItem(item: BoardItem, dx: number, dy: number): BoardItem {
   const min = item.kind === "line" ? 1 : BOARD_MIN_SIZE;
-  return { ...item, w: clamp(item.w + dw, BOARD_MIN_SIZE, BOARD_MAX_SIZE, item.w), h: clamp(item.h + dh, min, BOARD_MAX_SIZE, item.h) };
+  const rad = ((item.rotation ?? 0) * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  // Zug in die Richtung der eigenen Kanten drehen
+  const dw = dx * cos + dy * sin;
+  const dh = -dx * sin + dy * cos;
+  const w = clamp(item.w + dw, BOARD_MIN_SIZE, BOARD_MAX_SIZE, item.w);
+  const h = clamp(item.h + dh, min, BOARD_MAX_SIZE, item.h);
+  if (!item.rotation) return { ...item, w, h };
+  // Linke obere Ecke (gedreht) festhalten und die neue Mitte von dort aus bestimmen
+  const cx = item.x + item.w / 2;
+  const cy = item.y + item.h / 2;
+  const ax = cx + (-item.w / 2) * cos - (-item.h / 2) * sin;
+  const ay = cy + (-item.w / 2) * sin + (-item.h / 2) * cos;
+  const nx = ax + (w / 2) * cos - (h / 2) * sin;
+  const ny = ay + (w / 2) * sin + (h / 2) * cos;
+  return { ...item, w, h, x: clamp(nx - w / 2, BOARD_MIN, BOARD_MAX, item.x), y: clamp(ny - h / 2, BOARD_MIN, BOARD_MAX, item.y) };
+}
+
+/** Drehung auf ganze Grad im Bereich -180…179 bringen; Unbrauchbares wird 0. */
+export function normRotation(v: unknown): number {
+  if (typeof v !== "number" || !Number.isFinite(v)) return 0;
+  const r = ((Math.round(v) % 360) + 540) % 360 - 180;
+  return r === -0 ? 0 : r;
+}
+
+/** Wie nah an 0/90/180/270 Grad die Drehung einrastet. */
+const SNAP_DEG = 5;
+
+/**
+ * Drehen über den Griff über der Oberkante: Der Winkel ergibt sich aus der Mitte
+ * des Elements und dem Zeigepunkt (Flächenkoordinaten). Nahe an einem rechten
+ * Winkel rastet er ein, mit `step` (z. B. 15 bei gedrückter Umschalttaste) in Stufen.
+ */
+export function rotateItem(item: BoardItem, px: number, py: number, step = 0): BoardItem {
+  const cx = item.x + item.w / 2;
+  const cy = item.y + item.h / 2;
+  if (Math.hypot(px - cx, py - cy) < 1) return item;
+  // Der Griff sitzt oben – „Zeiger genau über der Mitte“ heißt 0 Grad.
+  let deg = (Math.atan2(py - cy, px - cx) * 180) / Math.PI + 90;
+  if (step > 0) deg = Math.round(deg / step) * step;
+  else {
+    const right = Math.round(deg / 90) * 90;
+    if (Math.abs(deg - right) <= SNAP_DEG) deg = right;
+  }
+  const next = { ...item };
+  delete next.rotation;
+  const rotation = normRotation(deg);
+  if (rotation) next.rotation = rotation;
+  return next;
+}
+
+/** Achsparalleler Rahmen eines Elements – bei Drehung um die gedrehten Ecken. */
+function itemExtent(i: BoardItem): { minX: number; minY: number; maxX: number; maxY: number } {
+  if (!i.rotation) return { minX: i.x, minY: i.y, maxX: i.x + i.w, maxY: i.y + i.h };
+  const rad = (i.rotation * Math.PI) / 180;
+  const hw = (Math.abs(Math.cos(rad)) * i.w + Math.abs(Math.sin(rad)) * i.h) / 2;
+  const hh = (Math.abs(Math.sin(rad)) * i.w + Math.abs(Math.cos(rad)) * i.h) / 2;
+  const cx = i.x + i.w / 2;
+  const cy = i.y + i.h / 2;
+  // Gerundet – sonst bleibt von cos(90°) ein Rest hinter dem Komma
+  return { minX: Math.round(cx - hw), minY: Math.round(cy - hh), maxX: Math.round(cx + hw), maxY: Math.round(cy + hh) };
 }
 
 /** Fläche, in der alle Elemente liegen – fürs Einpassen der Ansicht. */
 export function boardBounds(items: BoardItem[]): { x: number; y: number; w: number; h: number } | null {
   if (!items.length) return null;
-  const minX = Math.min(...items.map((i) => i.x));
-  const minY = Math.min(...items.map((i) => i.y));
-  const maxX = Math.max(...items.map((i) => i.x + i.w));
-  const maxY = Math.max(...items.map((i) => i.y + i.h));
+  const ext = items.map(itemExtent);
+  const minX = Math.min(...ext.map((e) => e.minX));
+  const minY = Math.min(...ext.map((e) => e.minY));
+  const maxX = Math.max(...ext.map((e) => e.maxX));
+  const maxY = Math.max(...ext.map((e) => e.maxY));
   return { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
 }
 
@@ -259,6 +330,16 @@ function distToSegment(px: number, py: number, ax: number, ay: number, bx: numbe
 /** Liegt der Punkt (Flächenkoordinaten) nah genug an diesem Strich? */
 export function hitsStroke(item: BoardItem, x: number, y: number, radius: number): boolean {
   if (item.kind !== "ink" || !item.points || item.points.length < 4) return false;
+  if (item.rotation) {
+    // Den Punkt in den ungedrehten Rahmen des Strichs zurückdrehen
+    const rad = (-item.rotation * Math.PI) / 180;
+    const cx = item.x + item.w / 2;
+    const cy = item.y + item.h / 2;
+    const rx = cx + (x - cx) * Math.cos(rad) - (y - cy) * Math.sin(rad);
+    const ry = cy + (x - cx) * Math.sin(rad) + (y - cy) * Math.cos(rad);
+    x = rx;
+    y = ry;
+  }
   const box = strokeBounds(item.points);
   const sx = item.w / box.w;
   const sy = item.h / box.h;
@@ -271,4 +352,50 @@ export function hitsStroke(item: BoardItem, x: number, y: number, radius: number
     if (distToSegment(x, y, ax, ay, bx, by) <= nah) return true;
   }
   return false;
+}
+
+// ── Vorschau für die Übersicht ──────────────────────────
+// Die Übersicht aller Leinwände zeigt je Leinwand ein kleines Abbild. Dafür
+// reichen Rahmen, Art und Farbe – Text, Punkte und Bilder bleiben auf dem Server.
+
+export interface BoardPreviewShape {
+  kind: BoardItemKind;
+  /** Lage im Vorschaurahmen 0…100 (x) bzw. 0…`height` (y). */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: BoardColor;
+  rotation?: number;
+}
+
+export interface BoardPreview {
+  /** Höhe des Rahmens bei Breite 100 – folgt dem Seitenverhältnis des Inhalts, gekappt. */
+  height: number;
+  shapes: BoardPreviewShape[];
+  count: number;
+}
+
+const PREVIEW_MAX_SHAPES = 120;
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** Kleines Abbild einer Leinwand – höchstens 120 Formen, auf 100 Breite gebracht. */
+export function boardPreview(board: Board): BoardPreview {
+  const b = boardBounds(board.items);
+  if (!b) return { height: 60, shapes: [], count: 0 };
+  const height = Math.min(100, Math.max(30, (b.h / b.w) * 100));
+  // Mit etwas Rand einpassen, ohne das Seitenverhältnis zu verzerren
+  const scale = Math.min(92 / b.w, (height - 8) / b.h);
+  const ox = (100 - b.w * scale) / 2 - b.x * scale;
+  const oy = (height - b.h * scale) / 2 - b.y * scale;
+  const shapes = board.items.slice(0, PREVIEW_MAX_SHAPES).map((i) => ({
+    kind: i.kind,
+    x: round1(i.x * scale + ox),
+    y: round1(i.y * scale + oy),
+    w: Math.max(0.6, round1(i.w * scale)),
+    h: Math.max(0.6, round1(i.h * scale)),
+    color: i.color,
+    ...(i.rotation ? { rotation: i.rotation } : {}),
+  }));
+  return { height: round1(height), shapes, count: board.items.length };
 }

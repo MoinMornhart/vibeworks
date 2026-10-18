@@ -28,6 +28,127 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.1",
+    date: "2026-10-18",
+    title: "Fehler auf einmal ins Aufgabenboard holen",
+    titleEn: "Turn all errors into tasks at once",
+    changes: [
+      {
+        type: "neu",
+        text: "Im Fehler-Eingang gibt es jetzt einen Knopf „Alle offenen als Aufgaben“: Mit einem Klick werden alle offenen Fehler, die noch keine Aufgabe haben, zusammen ins Board gelegt. Bereits verarbeitete und erledigte Fehler bleiben außen vor, höchstens 100 auf einmal",
+        en: "The error inbox now has an “All open as tasks” button: one click turns every open error that doesn't have a task yet into a board task at once. Errors already handled or resolved are left out, at most 100 at a time",
+      },
+    ],
+  },
+  {
+    version: "1.8.0",
+    date: "2026-10-17",
+    title: "Sicherheits-Durchgang: SSRF-Schutz verschärft",
+    titleEn: "Security pass: tighter SSRF protection",
+    changes: [
+      {
+        type: "fix",
+        text: "Der Server klopft nicht mehr versehentlich das private Netz ab: Adressen im LAN (10.x, 192.168.x, 172.16–31.x) sind beim Prüfen von Live-Seiten und Repositories jetzt ab Werk gesperrt. Wer ein selbst gehostetes Gitea oder eine Live-Seite im eigenen Netz prüfen lässt, setzt dafür GIT_BLOCK_PRIVATE=false",
+        en: "The server no longer accidentally probes the private network: LAN addresses (10.x, 192.168.x, 172.16–31.x) are now blocked by default when checking live sites and repositories. To check a self-hosted Gitea or a live site on your own network, set GIT_BLOCK_PRIVATE=false",
+      },
+      {
+        type: "fix",
+        text: "DNS-Rebinding geschlossen: Die geprüfte Adresse wird beim Verbinden festgenagelt, damit ein Name nicht zwischen Prüfung und Abruf heimlich auf einen internen Rechner umschwenken kann – gilt für Abrufe und für die Zertifikatsprüfung",
+        en: "DNS rebinding closed: the validated address is pinned at connection time, so a name cannot secretly switch to an internal host between the check and the request – for fetches and for the certificate check",
+      },
+      {
+        type: "fix",
+        text: "Die IP-Ratengrenzen (Anmeldung, Registrierung, Passwort zurücksetzen) lassen sich nicht mehr über einen gefälschten X-Forwarded-For-Kopf umgehen: Es zählt die Adresse, die der eigene Proxy gesetzt hat (einstellbar über TRUSTED_PROXY_HOPS)",
+        en: "The IP rate limits (sign-in, registration, password reset) can no longer be bypassed with a spoofed X-Forwarded-For header: the address set by your own proxy counts (configurable via TRUSTED_PROXY_HOPS)",
+      },
+      {
+        type: "besser",
+        text: "Der Code aus der MFA-E-Mail wird in konstanter Zeit verglichen – wie schon beim Authenticator",
+        en: "The MFA email code is compared in constant time – as it already was for the authenticator",
+      },
+    ],
+  },
+  {
+    version: "1.7.9",
+    date: "2026-10-17",
+    title: "Projektseite deutlich leichter",
+    titleEn: "Project page much lighter",
+    changes: [
+      {
+        type: "besser",
+        text: "Die Projektseite baut sich nicht mehr jede Minute komplett neu auf. Sie fragt nur noch einen kurzen Änderungsstempel ab und lädt erst neu, wenn sich wirklich etwas getan hat – gemessen mit großem Repo-Stand gingen bei jedem Takt sonst 1,1 MB über die Leitung",
+        en: "The project page no longer rebuilds itself completely every minute. It only asks for a short change stamp and reloads once something has really changed – measured with a large repository state, every tick used to send 1.1 MB",
+      },
+      {
+        type: "besser",
+        text: "Beim Öffnen kommen nur noch 1,5 statt 4,2 MB an, die Antwort ist ein Drittel schneller: Ausführliche Commit-Texte werden erst beim Aufklappen geholt, die Paketliste zeigt zunächst 50 Einträge, und die Lighthouse-Berichte werden nicht mehr nebenbei mitgeladen",
+        en: "Opening it now transfers 1.5 instead of 4.2 MB and responds a third faster: detailed commit messages are fetched when expanded, the package list starts with 50 entries, and the Lighthouse reports are no longer loaded along the way",
+      },
+      {
+        type: "besser",
+        text: "Ein offener Tab stößt keinen eigenen Git-Abgleich mehr an, wenn der Stand jünger als vier Minuten ist – „Jetzt abgleichen“ gleicht weiterhin sofort ab. Die CI-Seite fragt im Hintergrund-Tab nicht mehr alle paar Sekunden nach",
+        en: "An open tab no longer starts its own Git sync when the state is less than four minutes old – “Sync now” still syncs right away. The CI page stops polling every few seconds while its tab is in the background",
+      },
+      {
+        type: "fix",
+        text: "Der laufende Timer wurde beim Öffnen einer Projektseite von jeder Aufgabenkarte einzeln abgefragt (16 Anfragen statt einer), und der Repo-Check zeigte beim ersten Aufbau immer den Hauptzweig statt des eingestellten",
+        en: "Opening a project page queried the running timer once per task card (16 requests instead of one), and the repo check always showed the default branch on first render instead of the configured one",
+      },
+    ],
+  },
+  {
+    version: "1.7.8",
+    date: "2026-10-17",
+    title: "Leinwand: drehen, eigene Anfasser, Vollbild und eine Übersicht",
+    titleEn: "Canvas: rotate, dedicated handles, full screen and an overview",
+    changes: [
+      {
+        type: "neu",
+        text: "Elemente auf der Leinwand lassen sich drehen: Der runde Griff über der Oberkante dreht um die Mitte, bei 0, 90, 180 und 270 Grad rastet er ein, mit gedrückter Umschalttaste in 15-Grad-Schritten. „Gerade stellen“ holt ein Element zurück. Auch gedrehte Elemente lassen sich an der Ecke vergrößern, ohne wegzurutschen",
+        en: "Items on the canvas can be rotated: the round handle above the top edge turns them around their centre, snapping at 0, 90, 180 and 270 degrees, or in 15-degree steps while holding Shift. “Straighten” resets an item. Rotated items can still be resized at the corner without sliding away",
+      },
+      {
+        type: "besser",
+        text: "Ein ausgewähltes Element hat jetzt einen eigenen Anfasser zum Verschieben (oben links) – auch während der Text offen ist. Ein zweites Tippen auf ein ausgewähltes Textfeld öffnet den Text, auf dem Handy ohne Doppeltippen. Die Anfasser sind größer und bleiben bei jedem Zoom gleich groß",
+        en: "A selected item now has its own move handle (top left) – even while its text is open. Tapping a selected text box again opens the text, on phones without a double tap. The handles are larger and keep the same size at any zoom level",
+      },
+      {
+        type: "neu",
+        text: "Vollbild für die Leinwand: Der Knopf neben „Alles einpassen“ holt die Fläche über den ganzen Bildschirm, die Werkzeuge bleiben oben erreichbar. Auf Geräten ohne Vollbild-Funktion legt sie sich über die ganze Seite",
+        en: "Full screen for the canvas: the button next to “Fit to view” spreads it across the whole screen, with the tools still reachable at the top. On devices without a full-screen function it covers the whole page instead",
+      },
+      {
+        type: "neu",
+        text: "Eigene Übersicht „Leinwände“ im Menü: alle Leinwände mit kleiner Vorschau, Suche und „Neue Leinwand“. Unter „Ansicht“ lässt sich der Eintrag ausblenden",
+        en: "A dedicated “Canvases” overview in the menu: all canvases with a small preview, search and “New canvas”. The entry can be hidden under “View”",
+        link: "/boards",
+      },
+    ],
+  },
+  {
+    version: "1.7.7",
+    date: "2026-10-17",
+    title: "Sicherheitslücken geschlossen, Bausteine aufgefrischt",
+    titleEn: "Security holes closed, building blocks refreshed",
+    changes: [
+      {
+        type: "fix",
+        text: "Next.js 16.4.2 schließt sechs bekannte Lücken, darunter eine Server-Side Request Forgery in der Bildoptimierung und mehrere Fälle von Cache-Vergiftung. Dazu sharp 0.35.5 und source-map-js 1.2.2 – npm audit meldet für VibeWorks keine Lücke mehr",
+        en: "Next.js 16.4.2 closes six known holes, including a server-side request forgery in image optimisation and several cache-poisoning cases. Also sharp 0.35.5 and source-map-js 1.2.2 – npm audit no longer reports any hole for VibeWorks",
+      },
+      {
+        type: "fix",
+        text: "Die Windows-App baut mit Electron 44.9.0 und frischen Fassungen von brace-expansion, fast-uri und http-cache-semantics. Offen bleibt sprintf-js: Dafür gibt es noch keine Version ohne Lücke, es läuft nur beim Bauen der App mit",
+        en: "The Windows app now builds with Electron 44.9.0 and fresh versions of brace-expansion, fast-uri and http-cache-semantics. sprintf-js remains open: there is no fixed version yet, and it only runs while building the app",
+      },
+      {
+        type: "besser",
+        text: "Vierzehn weitere Bausteine auf dem neuesten Stand, unter anderem React 19.3.1, Prisma 7.10.1, zod 4.6.7, lucide-react 1.59.0 und nodemailer 10.1.2 – reine Wartung, sichtbar ändert sich nichts",
+        en: "Fourteen more building blocks up to date, including React 19.3.1, Prisma 7.10.1, zod 4.6.7, lucide-react 1.59.0 and nodemailer 10.1.2 – pure maintenance, nothing changes visibly",
+      },
+    ],
+  },
+  {
     version: "1.7.6",
     date: "2026-10-05",
     title: "Spürbar flotter bei vielen Aufgaben",

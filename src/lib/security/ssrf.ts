@@ -1,5 +1,7 @@
 import { lookup } from "node:dns/promises";
+import { lookup as lookupCb, type LookupAddress, type LookupOptions } from "node:dns";
 import net from "node:net";
+import { Agent } from "undici";
 import { config } from "@/lib/config";
 import { tk } from "@/lib/i18n/messages";
 
@@ -58,6 +60,30 @@ export async function assertFetchable(url: URL): Promise<void> {
 }
 
 /**
+ * DNS-Auflösung zum Verbindungszeitpunkt: genau die Adresse, zu der der Socket
+ * wirklich verbindet, wird geprüft. Das schließt DNS-Rebinding – ein Name, der
+ * bei der Vorprüfung öffentlich und beim Verbinden auf 127.0.0.1/169.254 zeigt.
+ */
+type LookupCb = (err: NodeJS.ErrnoException | null, address?: string | LookupAddress[], family?: number) => void;
+
+function guardedLookup(hostname: string, options: unknown, callback: LookupCb): void {
+  lookupCb(hostname, (options ?? {}) as LookupOptions, (err, address, family) => {
+    if (err) return callback(err);
+    const list: LookupAddress[] = Array.isArray(address) ? address : [{ address, family: family ?? 0 }];
+    const blocked = list.find((a) => isBlockedIp(a.address, { blockPrivate: config.gitBlockPrivate, allowLoopback: config.gitAllowLoopback }));
+    if (blocked) return callback(new FetchBlockedError(tk("git", "errors.blockedAddress", { host: hostname, ip: blocked.address })));
+    callback(null, address, family);
+  });
+}
+
+let ssrfDispatcher: Agent | null = null;
+/** Ein Agent, der bei jeder Verbindung die aufgelöste IP über guardedLookup prüft. */
+function dispatcher(): Agent {
+  ssrfDispatcher ??= new Agent({ connect: { lookup: guardedLookup as never } });
+  return ssrfDispatcher;
+}
+
+/**
  * fetch mit Prüfung vor jedem Sprung. Weiterleitungen werden selbst verfolgt
  * (höchstens drei) und neu geprüft; führen sie auf einen anderen Host,
  * fällt der Authorization-Header weg – das Token geht nie an Fremde.
@@ -73,7 +99,9 @@ export async function safeFetch(input: string, init: RequestInit & { timeoutMs?:
       headers,
       redirect: "manual",
       signal: AbortSignal.timeout(init.timeoutMs ?? 15_000),
-    });
+      // Verbindet nur zu IPs, die guardedLookup zulässt – schließt DNS-Rebinding
+      dispatcher: dispatcher(),
+    } as RequestInit & { dispatcher: Agent });
     const location = res.headers.get("location");
     if (res.status >= 300 && res.status < 400 && location) {
       url = new URL(location, url);

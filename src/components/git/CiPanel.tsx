@@ -87,6 +87,11 @@ export function CiPanel({ projectId, canEdit }: { projectId: string; canEdit: bo
     if (!view?.saved || !view.supported) return;
     let stopped = false;
     const tick = async () => {
+      // Im Hintergrund-Tab nicht abfragen – nur nachsehen, ob er wieder sichtbar ist
+      if (document.visibilityState !== "visible") {
+        poll.current = window.setTimeout(() => void tick(), 5000);
+        return;
+      }
       const s = await loadStatus();
       if (stopped) return;
       const active = s?.run && s.run.status !== "completed";

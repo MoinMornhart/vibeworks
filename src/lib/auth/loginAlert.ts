@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { clientIp } from "@/lib/clientIp";
-import { randomToken, sha256 } from "@/lib/crypto";
+import { randomToken, safeEqual, sha256 } from "@/lib/crypto";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { makeT } from "@/lib/i18n/messages";
 import { appLink, notifyUser } from "@/lib/notify";
@@ -53,7 +53,8 @@ export async function sendMfaEmailCode(pending: { id: string; emailCodeAt: Date 
 export function checkMfaEmailCode(pending: { emailCodeHash: string | null; emailCodeAt: Date | null }, code: string): boolean {
   if (!pending.emailCodeHash || !pending.emailCodeAt) return false;
   if (Date.now() - pending.emailCodeAt.getTime() > MFA_EMAIL_CODE_MINUTES * 60_000) return false;
-  return codeHash(code) === pending.emailCodeHash;
+  // Konstante Zeit wie bei TOTP und Webhook – kein zeichenweiser Zeitunterschied
+  return safeEqual(codeHash(code), pending.emailCodeHash);
 }
 
 /**

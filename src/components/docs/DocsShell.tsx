@@ -247,7 +247,8 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h1 className="text-2xl font-bold">{t("home.title")}</h1>
               <span className="flex flex-wrap gap-2">
-                <button className="btn btn-sm" onClick={() => void create(null, "BOARD")}><Shapes size={15} /> {t("tree.newBoard")}</button>
+                <Link href="/boards" className="btn btn-sm" data-docs-boards><Shapes size={15} /> {t("boards.all")}</Link>
+                <button className="btn btn-sm" onClick={() => void create(null, "BOARD")}><Plus size={15} /> {t("tree.newBoard")}</button>
                 <button className="btn btn-primary btn-sm" onClick={() => void create(null)}><Plus size={15} /> {t("tree.newPage")}</button>
               </span>
             </div>

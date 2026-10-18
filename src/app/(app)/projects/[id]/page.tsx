@@ -6,7 +6,8 @@ import { accessFromGrants, permsFromGrants, roleSelect, visibleTo, type ProjectA
 import { projectListSelect, serializeProject } from "@/lib/projects";
 import { NOTE_ORDER, serializeNote } from "@/lib/notes";
 import { serializeTask, TASK_ORDER } from "@/lib/tasks";
-import { serializeRepoCache } from "@/lib/git/sync";
+import { repoCacheViewSelect, serializeRepoCache } from "@/lib/git/sync";
+import { projectStamp } from "@/lib/projectStamp";
 import { accountTokenFor } from "@/lib/git/token";
 import { getSettings } from "@/lib/settings";
 import { getT } from "@/lib/i18n/server";
@@ -57,9 +58,11 @@ const loadProject = cache(async (id: string) => {
       gitPeople: true,
       repoCheck: true,
       checkTasks: true,
+      checkBranch: true,
       errorKey: true,
       boardConfig: true,
-      repoCache: true,
+      // Ohne Lighthouse-Berichte – die lädt ihr Bereich selbst (#214)
+      repoCache: { select: repoCacheViewSelect },
       liveCheckedAt: true,
       liveError: true,
       ownerId: true,
@@ -89,12 +92,13 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const can = (p: ProjectPermission) => perms.has(p);
   // Ausgeblendete Bereiche berücksichtigen (#109)
   const show = await viewOf((await requirePageUser()).id);
-  const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, issueImport, gitPeople, repoCheck, checkTasks, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
-  const [live, timeSeconds, people] = await Promise.all([
+  const { notes, tasks, costs, repoTokenHint, issueSync, issuesOffAt, issueImport, gitPeople, repoCheck, checkTasks, checkBranch, errorKey, boardConfig, repoCache, ownerId: _ownerId, owner, members: _members, teams: _teams, accessRequests, liveCheckedAt, liveError, ...rest } = project;
+  const [live, timeSeconds, people, stamp] = await Promise.all([
     project.liveUrl ? liveStats(project.id) : null,
     sumSeconds({ projectId: project.id }),
     // Vorschläge für „Bearbeiter“ nur für die, die Aufgaben bearbeiten dürfen
     perms.has("tasks.edit") ? projectPeople(project.id) : Promise.resolve([]),
+    projectStamp(project.id),
   ]);
   const done = tasks.filter((t) => t.status === "DONE").length;
   // Automatischer Fortschritt: Analyse für „Wie berechnet?“ – und nachziehen,
@@ -162,7 +166,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       <GitPanel
         projectId={project.id}
         repoUrl={project.repoUrl}
-        initialCache={repoCache ? serializeRepoCache(repoCache) : null}
+        initialCache={repoCache ? serializeRepoCache(repoCache, { bodies: false }) : null}
         initialAccess={{
           tokenHint: isOwner ? repoTokenHint : null,
           issueSync,
@@ -181,7 +185,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       {show("project.repoCheck") && project.repoUrl && repoCache?.provider === "github" && (
         <RepoCheckPanel
           projectId={project.id}
-          initial={serializeRepoCheck(repoCheck, repoCache, checkTasks)}
+          initial={serializeRepoCheck(repoCheck, repoCache, checkTasks, checkBranch)}
           canRun={can("git.sync")}
           canTask={can("tasks.edit")}
           canManage={isOwner}
@@ -196,7 +200,8 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       {show("project.conflicts") && project.repoUrl && repoCache?.provider === "github" && <ConflictPanel projectId={project.id} canEdit={isOwner} />}
       {show("project.fileFilter") && project.repoUrl && repoCache && <FileFilterPanel projectId={project.id} canEdit={isOwner} webUrl={repoCache.webUrl} />}
       {show("project.codeGraph") && project.repoUrl && repoCache && <CodeGraphPanel projectId={project.id} canEdit={can("notes.edit")} />}
-      <AutoRefresh />
+      {/* Neu aufgebaut wird nur, wenn sich der Stempel ändert (#214) */}
+      <AutoRefresh stamp={{ url: `/api/projects/${project.id}/stamp`, value: stamp }} />
     </div>
   );
 }

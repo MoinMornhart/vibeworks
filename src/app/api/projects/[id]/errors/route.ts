@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { json, readBody, route } from "@/lib/api";
+import { ApiError, json, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { requireProject } from "@/lib/access";
 import { randomToken } from "@/lib/crypto";
+import { getLocale } from "@/lib/i18n/server";
+import { tk } from "@/lib/i18n/messages";
 import { errorEndpoint, loadErrors, serializeAppError } from "@/lib/bugs";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
-import { AUTO_TASK_MODES } from "@/lib/errorTasks";
+import { AUTO_TASK_MODES, tasksFromOpenErrors } from "@/lib/errorTasks";
 
 type Params = { id: string };
 
@@ -14,6 +16,8 @@ const bodySchema = z.union([
   z.object({ action: z.enum(["enable", "rotate", "disable"]) }),
   // Fehler-Agent (#39): neue Fehler automatisch als Notfix-Aufgabe
   z.object({ action: z.literal("autoTask"), mode: z.enum(AUTO_TASK_MODES) }),
+  // Alle offenen Fehler ohne Aufgabe auf einmal ins Board holen
+  z.object({ action: z.literal("taskAll") }),
 ]);
 
 // Fehler-Eingang eines Projekts: die Fehler sehen alle Mitglieder, die
@@ -31,11 +35,20 @@ export const GET = route<Params>(async (_req, { params }) => {
 });
 
 // enable: Schlüssel anlegen (falls noch keiner) · rotate: neuer Schlüssel, der alte gilt nicht mehr · disable: Adresse weg
+// taskAll: alle offenen Fehler ohne Aufgabe auf einmal ins Board – nur „errors.manage“ + „tasks.edit“, nicht Besitzer.
 export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
-  const { project } = await requireProject(user.id, (await params).id, "OWNER");
-  limitOrThrow(`bugs-key:${user.id}`, 20, 10 * MINUTE);
+  const { id } = await params;
   const body = await readBody(req, bodySchema, { maxBytes: 512 });
+  if (body.action === "taskAll") {
+    const { project, access, perms } = await requireProject(user.id, id, "errors.manage");
+    if (!perms.has("tasks.edit")) throw new ApiError(403, tk("projects", "errors.viewOnly"));
+    limitOrThrow(`bugs-taskall:${user.id}`, 10, 10 * MINUTE);
+    const created = await tasksFromOpenErrors(user.id, project.id, await getLocale());
+    return json({ ...(await view(project.id, access === "OWNER")), created });
+  }
+  const { project } = await requireProject(user.id, id, "OWNER");
+  limitOrThrow(`bugs-key:${user.id}`, 20, 10 * MINUTE);
   if (body.action === "autoTask") {
     await db.project.update({ where: { id: project.id }, data: { errorAutoTask: body.mode } });
     return json(await view(project.id, true));

@@ -26,6 +26,9 @@ const SEVERITY_TONE: Record<Severity, string> = {
 };
 
 /** Abhängigkeiten aller Sprachen (#105): veraltet, Sicherheitswarnungen, Zweig wählbar, „Jetzt prüfen“. */
+/** So viele Pakete stehen zunächst in der Liste, der Rest kommt über „Weitere“. */
+const ROWS_STEP = 50;
+
 export function DepsPanel({ projectId, initial, canCheck, defaultBranch }: { projectId: string; initial: DepsReport | null; canCheck: boolean; defaultBranch: string | null }) {
   const t = useT("deps");
   const f = useFormat();
@@ -33,6 +36,8 @@ export function DepsPanel({ projectId, initial, canCheck, defaultBranch }: { pro
   const router = useRouter();
   const [report, setReport] = useState(initial);
   const [onlyIssues, setOnlyIssues] = useState(true);
+  // Lange Listen erst teilweise zeigen – bei 12 Manifesten sind es bis zu 2400 Zeilen (#214)
+  const [limit, setLimit] = useState(ROWS_STEP);
   const [ecosystem, setEcosystem] = useState<Ecosystem | "all">("all");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState<string | null>(initial?.branch ?? defaultBranch);
@@ -169,7 +174,7 @@ export function DepsPanel({ projectId, initial, canCheck, defaultBranch }: { pro
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fg/10">
-                  {rows.map((p) => {
+                  {rows.slice(0, limit).map((p) => {
                     const worst = [...p.advisories].sort((a, b) => severityRank(b.severity) - severityRank(a.severity))[0];
                     return (
                       <tr key={`${p.ecosystem ?? "npm"}:${p.name}`} data-testid="dep" data-ecosystem={p.ecosystem ?? "npm"}>
@@ -203,6 +208,11 @@ export function DepsPanel({ projectId, initial, canCheck, defaultBranch }: { pro
                   })}
                 </tbody>
               </table>
+              {rows.length > limit && (
+                <button type="button" className="btn btn-sm mt-3 w-full" data-deps-more onClick={() => setLimit((n) => n + ROWS_STEP)}>
+                  {t("more", { n: rows.length - limit })}
+                </button>
+              )}
             </div>
           )}
         </>

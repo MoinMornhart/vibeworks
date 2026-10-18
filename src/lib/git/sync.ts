@@ -12,14 +12,52 @@ import { syncProjectProgress } from "@/lib/tasks";
 import { refreshDeps } from "./deps";
 import { refreshRepoCheck } from "./repoCheck";
 import { refreshLighthouse } from "./lighthouse";
-import type { DepsReport } from "./depsLogic";
 
 /** Ab so vielen Fehlschlägen in Folge kommt eine Benachrichtigung (einmal, bis es wieder klappt). */
 const FAILS_BEFORE_NOTICE = 3;
 
 type SyncProject = { id: string; ownerId: string; repoUrl: string | null; repoTokenCipher: string | null };
 
-export function serializeRepoCache(c: RepoCache) {
+/**
+ * Was die Projektseite aus dem Repo-Zwischenspeicher braucht (#214). Die
+ * Lighthouse-Berichte holt sich ihr Bereich selbst – sie blieben sonst bei
+ * jedem Seitenaufbau ungenutzt im Speicher.
+ */
+export const repoCacheViewSelect = {
+  provider: true,
+  fullName: true,
+  webUrl: true,
+  defaultBranch: true,
+  description: true,
+  stars: true,
+  commits: true,
+  ci: true,
+  deps: true,
+  fetchedAt: true,
+  error: true,
+  checkStatus: true,
+  checkReport: true,
+  checkRunUrl: true,
+  checkRunAt: true,
+  checkFetchedAt: true,
+  checkError: true,
+  checkDismissed: true,
+} satisfies Prisma.RepoCacheSelect;
+
+/** Ein Commit für die Anzeige – `bodyCut`: der ausführliche Text kommt erst beim Aufklappen. */
+export type CommitView = CommitInfo & { bodyCut?: boolean };
+
+/**
+ * Für den Git-Bereich – ohne Abhängigkeiten, die zeigt ihr eigener Bereich (#214).
+ * Mit `bodies: false` bleiben die ausführlichen Commit-Texte weg; sichtbar sind
+ * sie ohnehin erst beim Aufklappen, und bei langen Nachrichten machen sie einen
+ * großen Teil der Seite aus.
+ */
+export function serializeRepoCache(
+  c: Pick<RepoCache, "provider" | "fullName" | "webUrl" | "defaultBranch" | "description" | "stars" | "commits" | "ci" | "fetchedAt" | "error">,
+  { bodies = true }: { bodies?: boolean } = {},
+) {
+  const commits = (c.commits as unknown as CommitInfo[]) ?? [];
   return {
     provider: c.provider,
     fullName: c.fullName,
@@ -27,9 +65,8 @@ export function serializeRepoCache(c: RepoCache) {
     defaultBranch: c.defaultBranch,
     description: c.description,
     stars: c.stars,
-    commits: (c.commits as unknown as CommitInfo[]) ?? [],
+    commits: bodies ? (commits as CommitView[]) : commits.map((k): CommitView => (k.body ? { ...k, body: "", bodyCut: true } : k)),
     ci: (c.ci as unknown as CiStatus | null) ?? null,
-    deps: (c.deps as unknown as DepsReport | null) ?? null,
     fetchedAt: c.fetchedAt.toISOString(),
     error: c.error,
   };

@@ -6,16 +6,23 @@ import { requireProject, type ProjectAccess } from "@/lib/access";
 import { decrypt, encrypt, randomToken } from "@/lib/crypto";
 import { guessProvider, parseRepoUrl, tokenHint, type GitProvider } from "@/lib/git/parse";
 import { accountTokenFor, tokenCipherFor } from "@/lib/git/token";
-import { serializeRepoCache, syncProjectRepository } from "@/lib/git/sync";
+import { repoCacheViewSelect, serializeRepoCache, syncProjectRepository } from "@/lib/git/sync";
 import { syncIssues } from "@/lib/git/issues";
 import { GitError } from "@/lib/git/providers";
 import { installWebhook, isPublicUrl, webhookUrl } from "@/lib/git/webhook";
 import { tk } from "@/lib/i18n/messages";
 import { isImportMode, normalizeGitPeople } from "@/lib/git/issueImportLogic";
-import { repoAccessSchema } from "@/lib/validation";
+import { gitSyncSchema, repoAccessSchema } from "@/lib/validation";
 import { limitOrThrow, MINUTE } from "@/lib/security/rateLimit";
 
 type Params = { id: string };
+
+/**
+ * So frisch muss ein Stand sein, damit ein automatischer Abgleich aus dem
+ * Browser ausfällt (#214). Projekte mit Token gleicht der Hintergrundtakt alle
+ * fünf Minuten ab – ohne diese Grenze holte jeder offene Tab alles noch einmal.
+ */
+const FRESH_MS = 4 * MINUTE;
 
 type AccessProject = Pick<Project, "id" | "ownerId" | "repoUrl" | "repoTokenHint" | "issueSync" | "issuesOffAt" | "webhookSecretCipher" | "webhookAt" | "issueImport" | "gitPeople">;
 
@@ -52,16 +59,24 @@ export const GET = route<Params>(async (_req, { params }) => {
 
 // Jetzt abgleichen: Commits und CI holen, danach Issues ↔ Aufgaben. Darf jedes
 // Mitglied anstoßen. Fehler kommen als cache.error bzw. issues.error zurück.
-export const POST = route<Params>(async (_req, { params }) => {
+// Ohne `force` bleibt es beim vorhandenen Stand, wenn er frisch ist (`skipped`).
+export const POST = route<Params>(async (req, { params }) => {
   const user = await requireApiUser();
   limitOrThrow(`git-sync:${user.id}`, 40, 10 * MINUTE);
   const { project } = await requireProject(user.id, (await params).id);
+  const { force } = await readBody(req, gitSyncSchema, { maxBytes: 256 });
   if (!project.repoUrl) return json({ cache: null, issues: null });
+  if (!force) {
+    const current = await db.repoCache.findUnique({ where: { projectId: project.id }, select: repoCacheViewSelect });
+    if (current && !current.error && Date.now() - current.fetchedAt.getTime() < FRESH_MS) {
+      return json({ cache: serializeRepoCache(current, { bodies: false }), issues: null, skipped: true });
+    }
+  }
   const cache = await syncProjectRepository(project);
   const issues = cache.error ? null : await syncIssues(project.id);
   // Eingeschränkte Bereiche (#66) gleich mitliefern – Issues abgeschaltet ist kein Fehler
   const after = await db.project.findUnique({ where: { id: project.id }, select: { issuesOffAt: true } });
-  return json({ cache: serializeRepoCache(cache), issues, issuesOffAt: after?.issuesOffAt?.toISOString() ?? null });
+  return json({ cache: serializeRepoCache(cache, { bodies: false }), issues, issuesOffAt: after?.issuesOffAt?.toISOString() ?? null });
 });
 
 // Projekteigenes Token, Issue-Spiegelung und Webhook – nur der Besitzer.

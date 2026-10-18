@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Bot, Eye, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shield, ShieldCheck, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Bot, Eye, Inbox, Languages, LayoutDashboard, ListChecks, LogOut, ChevronDown, MessageSquare, Palette, Wallet, Search, Shapes, Shield, ShieldCheck, Sun, UserRound, Users, UsersRound, Zap, type LucideIcon } from "lucide-react";
 import { OPEN_PALETTE_EVENT } from "@/components/CommandPalette";
 import { OPEN_CAPTURE_EVENT } from "@/components/QuickCapture";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -46,6 +46,7 @@ const NAV: NavItem[] = [
   { href: "/review", label: "nav.review", icon: CalendarRange, hideKey: "nav.review" },
   { href: "/community", label: "nav.community", icon: Users, community: true, hideKey: "nav.community" },
   { href: "/docs", label: "nav.docs", icon: BookOpen, hideKey: "nav.docs" },
+  { href: "/boards", label: "nav.boards", icon: Shapes, hideKey: "nav.boards" },
   // Design und Admin stehen im Profilmenü – die Leiste bleibt so auch mit laufendem Timer vollständig
 ];
 
