@@ -3,6 +3,7 @@ import { ApiError, json, notFound, readBody, route } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth/guard";
 import { docUpdateSchema } from "@/lib/validation";
 import { findOwnDoc, loadTree, moveAmongSiblings, nextDocPosition, serializeDoc, serializeTreeItem, wouldCreateCycle } from "@/lib/docs";
+import { publishDoc } from "@/lib/docs/liveBus";
 import { tk } from "@/lib/i18n/messages";
 
 type Params = { id: string };
@@ -46,6 +47,10 @@ export const PATCH = route<Params>(async (req, { params }) => {
   const doc = Object.keys(data).length
     ? await db.doc.update({ where: { id }, data })
     : await db.doc.findUniqueOrThrow({ where: { id } });
+
+  // Live an andere offene Tabs/Geräte desselben Kontos (#211). Nur bei echter
+  // Inhaltsänderung; der sendende Tab (clientId) überspringt sein eigenes Echo.
+  if (input.content !== undefined) publishDoc(id, { content: input.content, by: input.clientId ?? "" });
 
   return json({
     doc: serializeDoc(doc),

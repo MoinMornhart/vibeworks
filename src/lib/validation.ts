@@ -557,6 +557,8 @@ export const docUpdateSchema = z.object({
   parentId: z.string().max(40).nullable().optional(),
   move: z.enum(["up", "down"]).optional(),
   pinned: z.boolean().optional(),
+  /** Kennung des sendenden Tabs – damit die Live-Übertragung das eigene Echo überspringt (#211). */
+  clientId: z.string().max(40).optional(),
 });
 
 /** Nur relative Pfade innerhalb der App als Weiterleitungsziel. */

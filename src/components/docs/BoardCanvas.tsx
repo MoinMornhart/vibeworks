@@ -85,7 +85,15 @@ const TAP_SLOP = 4;
 /** Elemente mit Text: Zettel, Text, Rechteck, Ellipse. */
 const hasText = (kind: BoardItemKind) => kind !== "line" && kind !== "image" && kind !== "ink";
 
-export function BoardCanvas({ value, onChange }: { value: string; onChange: (content: string) => void }) {
+export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
+  value: string;
+  onChange: (content: string) => void;
+  /** Für die Live-Übertragung (#211): Dokument-Kennung und die Kennung dieses Tabs. */
+  docId?: string;
+  clientId?: string;
+  /** Ein übernommener Fremd-Stand – damit der Editor ihn als gespeichert merkt. */
+  onRemote?: (content: string) => void;
+}) {
   const t = useT("docs");
   const [items, setItems] = useState<BoardItem[]>(() => parseBoard(value).items);
   const [sel, setSel] = useState<string | null>(null);
@@ -110,6 +118,22 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<Drag | null>(null);
+  // Live-Übertragung (#211): laufende Eingabe nicht stören – Fremd-Stände warten
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
+  const onRemoteRef = useRef(onRemote);
+  onRemoteRef.current = onRemote;
+  const pendingRemote = useRef<string | null>(null);
+  /** Einen wartenden Fremd-Stand übernehmen, sobald nichts gezogen, gezeichnet oder getippt wird. */
+  const flushRemote = useCallback(() => {
+    if (pendingRemote.current === null || drag.current || drawing.current || editingRef.current !== null) return;
+    const content = pendingRemote.current;
+    pendingRemote.current = null;
+    const items = parseBoard(content).items;
+    setItems(items);
+    itemsRef.current = items;
+    onRemoteRef.current?.(content);
+  }, []);
 
   const selected = useMemo(() => items.find((i) => i.id === sel) ?? null, [items, sel]);
 
@@ -241,12 +265,17 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       window.removeEventListener("pointercancel", up);
       const cur = drag.current;
       drag.current = null;
-      if (!cur || cur.mode === "pan") return;
+      if (!cur || cur.mode === "pan") {
+        flushRemote();
+        return;
+      }
       if (cur.mode === "move" && !cur.moved) {
         if (cur.tapEdit) setEditing(cur.id);
+        else flushRemote();
         return;
       }
       onChange(serializeBoard(itemsRef.current));
+      flushRemote();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -279,6 +308,7 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       if (!fertig) return;
       const item = strokeItem(fertig, boardId(), color, tool === "marker" ? stroke * 2 : stroke, tool === "marker");
       if (item && itemsRef.current.length < BOARD_MAX_ITEMS) apply([...itemsRef.current, item]);
+      flushRemote();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -304,6 +334,7 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
       if (etwasWeg) onChange(serializeBoard(itemsRef.current));
+      flushRemote();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -448,6 +479,31 @@ export function BoardCanvas({ value, onChange }: { value: string; onChange: (con
     return () => window.removeEventListener("paste", onPaste);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
+
+  // Live: dieselbe Leinwand in einem anderen Tab/Gerät desselben Kontos (#211).
+  // Ein Server-Sent-Events-Kanal bringt gespeicherte Änderungen sofort her; das
+  // eigene Echo (gleiche clientId) wird übersprungen, laufende Eingaben nicht gestört.
+  useEffect(() => {
+    if (!docId || !clientId || typeof EventSource === "undefined") return;
+    const es = new EventSource(`/api/docs/${encodeURIComponent(docId)}/live`);
+    es.onmessage = (ev) => {
+      let data: { content?: unknown; by?: unknown };
+      try {
+        data = JSON.parse(ev.data);
+      } catch {
+        return;
+      }
+      if (typeof data.content !== "string" || data.by === clientId) return;
+      pendingRemote.current = data.content;
+      flushRemote();
+    };
+    return () => es.close();
+  }, [docId, clientId, flushRemote]);
+
+  // Nach dem Tippen einen wartenden Fremd-Stand übernehmen
+  useEffect(() => {
+    if (editing === null) flushRemote();
+  }, [editing, flushRemote]);
 
   // Anfasser bleiben auf dem Bildschirm gleich groß, egal wie weit gezoomt ist
   const grip = 16 / view.z;
