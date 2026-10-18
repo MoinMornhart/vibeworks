@@ -1,4 +1,5 @@
 import type { Shape } from "../types";
+import { plural } from "../translate";
 
 // Namensraum „bugs“: Fehler-Eingang (Laufzeitfehler eigener Apps) auf der Projektseite.
 
@@ -42,6 +43,7 @@ const de = {
     ignore: "Ignorieren",
     task: "Als Aufgabe",
     taskDone: "Aufgabe angelegt",
+    taskAll: "Alle offenen als Aufgaben",
     notfix: "Notfix",
     notfixHint: "Sofort als dringende Aufgabe für Claude – heute fällig.",
     delete: "Löschen",
@@ -52,6 +54,8 @@ const de = {
     hint: "Meldet deine App einen neuen Fehler – oder kommt ein erledigter wieder –, entsteht automatisch eine dringende Aufgabe für Claude (heute fällig, ohne Stack-Details). Höchstens 5 pro Stunde.",
   },
   taskCreated: "Aufgabe erfolgreich erstellt – sie steht jetzt im Board.",
+  tasksCreated: plural("{n} Aufgabe angelegt.", "{n} Aufgaben angelegt."),
+  noneToTask: "Keine offenen Fehler ohne Aufgabe.",
   task: {
     title: "Fehler beheben: {message}",
     notfixTitle: "Notfix: {message}",
@@ -103,6 +107,7 @@ const en: Shape<typeof de> = {
     ignore: "Ignore",
     task: "Make a task",
     taskDone: "Task created",
+    taskAll: "All open as tasks",
     notfix: "Notfix",
     notfixHint: "Straight to an urgent task for Claude – due today.",
     delete: "Delete",
@@ -113,6 +118,8 @@ const en: Shape<typeof de> = {
     hint: "When your app reports a new error – or a resolved one comes back – an urgent task for Claude is created automatically (due today, without stack details). At most 5 per hour.",
   },
   taskCreated: "Task created successfully – it is on the board now.",
+  tasksCreated: plural("{n} task created.", "{n} tasks created."),
+  noneToTask: "No open errors without a task.",
   task: {
     title: "Fix error: {message}",
     notfixTitle: "Notfix: {message}",

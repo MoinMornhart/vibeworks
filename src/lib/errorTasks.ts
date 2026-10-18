@@ -33,6 +33,29 @@ export async function taskFromError(userId: string, e: AppError, opts: { notfix:
   return db.appError.update({ where: { id: e.id }, data: { taskId: task.id } });
 }
 
+/** Höchstens so viele Fehler auf einen Schlag als Aufgaben – sonst flutet ein Knopfdruck das Board. */
+const MAX_BULK_TASKS = 100;
+
+/**
+ * Alle offenen Fehler eines Projekts, die noch keine Aufgabe haben, auf einmal
+ * als Aufgaben anlegen („Alle offenen als Aufgaben“). Gibt die Zahl der neu
+ * angelegten Aufgaben zurück. Keine Notfix-Aufgaben – normale Aufgaben, die der
+ * Besitzer einplanen kann.
+ */
+export async function tasksFromOpenErrors(userId: string, projectId: string, locale: Locale): Promise<number> {
+  const open = await db.appError.findMany({
+    where: { projectId, status: "open", taskId: null },
+    orderBy: { lastSeen: "desc" },
+    take: MAX_BULK_TASKS,
+  });
+  let created = 0;
+  for (const e of open) {
+    await taskFromError(userId, e, { notfix: false, locale });
+    created++;
+  }
+  return created;
+}
+
 /**
  * Fehler-Agent (#39): neuer oder zurückgekehrter Fehler → Notfix-Aufgabe für
  * Claude, wenn das Projekt es so eingestellt hat. Wirft nie.

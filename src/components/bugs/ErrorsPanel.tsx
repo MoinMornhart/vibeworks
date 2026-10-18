@@ -121,6 +121,16 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
     }
   }
 
+  /** Alle offenen Fehler ohne Aufgabe auf einmal ins Board holen. */
+  async function taskAll() {
+    const res = await run(() => api<Data & { created: number }>(`/api/projects/${projectId}/errors`, { body: { action: "taskAll" } }));
+    if (res) {
+      setData(res);
+      toast(res.created > 0 ? t("tasksCreated", { n: res.created }) : t("noneToTask"));
+      if (res.created > 0) router.refresh(); // neue Aufgaben im Board
+    }
+  }
+
   async function remove(item: AppErrorItem) {
     if (!(await confirmDialog(t("confirmDelete"), { danger: true }))) return;
     const res = await run(() => api<{ ok: boolean }>(`/api/projects/${projectId}/errors/${item.id}`, { method: "DELETE" }));
@@ -130,6 +140,8 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
   const errors = data?.errors ?? [];
   const counts = Object.fromEntries(FILTERS.map((k) => [k, k === "all" ? errors.length : errors.filter((e) => e.status === k).length])) as Record<Filter, number>;
   const shown = filter === "all" ? errors : errors.filter((e) => e.status === filter);
+  // Wie viele offene Fehler noch keine Aufgabe haben – dafür der „Alle“-Knopf
+  const openWithoutTask = errors.filter((e) => e.status === "open" && !e.taskId).length;
   const code = data?.endpoint ? snippets(data.endpoint) : null;
 
   return (
@@ -211,12 +223,17 @@ export function ErrorsPanel({ projectId, canEdit }: { projectId: string; canEdit
 
       {errors.length > 0 && (
         <>
-          <div className="mb-3 flex flex-wrap gap-1.5">
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
             {FILTERS.map((k) => (
               <button key={k} type="button" className={cn("chip", filter === k && "chip-active")} onClick={() => setFilter(k)}>
                 {t(`filters.${k}`)} <span className="tabular-nums text-muted">{counts[k]}</span>
               </button>
             ))}
+            {openWithoutTask > 0 && (
+              <button type="button" className="btn btn-sm ml-auto" disabled={busy} onClick={() => void taskAll()} data-testid="bugs-task-all">
+                <ListPlus size={14} /> {t("actions.taskAll")} <span className="tabular-nums opacity-70">{openWithoutTask}</span>
+              </button>
+            )}
           </div>
           {shown.length === 0 ? (
             <p className="text-sm text-muted">{filter === "open" ? t("emptyOpen") : t("empty")}</p>

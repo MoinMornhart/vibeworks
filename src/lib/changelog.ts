@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.1",
+    date: "2026-10-18",
+    title: "Fehler auf einmal ins Aufgabenboard holen",
+    titleEn: "Turn all errors into tasks at once",
+    changes: [
+      {
+        type: "neu",
+        text: "Im Fehler-Eingang gibt es jetzt einen Knopf „Alle offenen als Aufgaben“: Mit einem Klick werden alle offenen Fehler, die noch keine Aufgabe haben, zusammen ins Board gelegt. Bereits verarbeitete und erledigte Fehler bleiben außen vor, höchstens 100 auf einmal",
+        en: "The error inbox now has an “All open as tasks” button: one click turns every open error that doesn't have a task yet into a board task at once. Errors already handled or resolved are left out, at most 100 at a time",
+      },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-10-17",
     title: "Sicherheits-Durchgang: SSRF-Schutz verschärft",
