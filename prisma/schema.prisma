@@ -186,6 +186,7 @@ model User {
   activities           Activity[]
   uploads              Upload[]
   docs                 Doc[]
+  docAccess            DocAccess[]
   memberships          ProjectMember[]
   accessRequests       AccessRequest[]
   gitCredentials       GitCredential[]
@@ -1386,6 +1387,22 @@ model Doc {
   shareToken String?   @unique
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+  /// Geteilt mit bestimmten Konten (#211) – nur angemeldete Nutzer, kein öffentlicher Zugriff
+  shares     DocAccess[]
 
   @@index([ownerId, parentId, position])
+}
+
+/// Freigabe einer Leinwand/Seite an ein angemeldetes Konto (#211): Ansehen oder
+/// Bearbeiten. Der Besitzer bleibt über Doc.ownerId; hier stehen nur die Gäste.
+model DocAccess {
+  docId     String
+  doc       Doc         @relation(fields: [docId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectRole @default(VIEWER)
+  createdAt DateTime    @default(now())
+
+  @@id([docId, userId])
+  @@index([userId])
 }
