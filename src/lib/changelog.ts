@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.5",
+    date: "2026-10-19",
+    title: "Knopf für automatische Aufgaben wird jetzt angezeigt",
+    titleEn: "The automatic-tasks button now actually shows",
+    changes: [
+      {
+        type: "fix",
+        text: "Der neue Ein/Aus-Knopf „Funde automatisch als Aufgaben“ im Repo-Check war bisher für alle unsichtbar – der Projektseite fehlte die Berechtigung an das Panel. Wer ein Projekt bearbeiten darf, sieht den Knopf jetzt wirklich",
+        en: "The new on/off button “Turn findings into tasks” in the repo check was invisible for everyone – the project page did not pass the permission to the panel. Anyone who may edit a project now actually sees the button",
+        link: "/projects",
+      },
+    ],
+  },
+  {
     version: "1.8.4",
     date: "2026-10-19",
     title: "Funde per Knopfdruck automatisch als Aufgaben",
