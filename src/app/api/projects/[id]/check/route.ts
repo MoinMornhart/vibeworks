@@ -72,6 +72,8 @@ export const POST = route<Params>(async (req, { params }) => {
   let warning: string | null = null;
   let task: { id: string; title: string } | null = null;
   let draft: Record<string, unknown> | null = null;
+  // Wie viele Aufgaben beim Einschalten der Automatik gleich angelegt/aktualisiert wurden
+  let synced: number | null = null;
   if (body.action === "task" || body.action === "draft") {
     limitOrThrow(`repo-check-task:${user.id}`, 30, 10 * MINUTE);
     const cache = await db.repoCache.findUnique({ where: { projectId: id }, select: { checkReport: true } });
@@ -96,7 +98,8 @@ export const POST = route<Params>(async (req, { params }) => {
   } else if (body.action === "autoTasks") {
     await db.project.update({ where: { id }, data: { checkTasks: body.mode } });
     const cache = await db.repoCache.findUnique({ where: { projectId: id }, select: { checkReport: true } });
-    if (cache?.checkReport && body.mode !== "off") await syncCheckTasks(id, parseCheckReport(cache.checkReport));
+    // Beim Einschalten gleich über die aktuellen Funde laufen und melden, wie viele Aufgaben dabei entstanden/aktualisiert wurden
+    synced = cache?.checkReport && body.mode !== "off" ? await syncCheckTasks(id, parseCheckReport(cache.checkReport)) : 0;
   } else if (body.action === "dismiss" || body.action === "undismiss") {
     // Fehlalarm abhaken (#203): gespeichert wird Regel plus Fundstelle, nicht der Platz in der Liste
     limitOrThrow(`repo-check-dismiss:${user.id}`, 120, 10 * MINUTE);
@@ -140,5 +143,5 @@ export const POST = route<Params>(async (req, { params }) => {
     limitOrThrow(`repo-check-switch:${id}`, 10, 10 * MINUTE);
     ({ removed, error: warning } = await setRepoCheck(id, body.action === "enable"));
   }
-  return json({ check: await view(id), removed, warning, task: task ? { id: task.id, title: task.title } : null, draft });
+  return json({ check: await view(id), removed, warning, task: task ? { id: task.id, title: task.title } : null, draft, synced });
 });

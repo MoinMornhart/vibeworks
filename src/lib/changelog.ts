@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.4",
+    date: "2026-10-19",
+    title: "Funde per Knopfdruck automatisch als Aufgaben",
+    titleEn: "Turn findings into tasks with one button",
+    changes: [
+      {
+        type: "neu",
+        text: "Der Repo-Check hat jetzt einen klaren Ein/Aus-Knopf „Funde automatisch als Aufgaben“. Einmal eingeschaltet, laufen Lücken, mögliche Geheimnisse und Befunde sofort und bei jedem weiteren Lauf von selbst in die Aufgabenliste. Eine kurze Rückmeldung nennt, wie viele Aufgaben dabei angelegt oder aktualisiert wurden; feiner einstellen (nur Dringendes) und wieder ausschalten geht direkt daneben",
+        en: "The repo check now has a clear on/off button “Turn findings into tasks”. Once on, vulnerabilities, possible secrets and findings flow into the task list right away and on every later run. A short message tells you how many tasks were created or updated; you can fine-tune (urgent only) and turn it off right next to it",
+        link: "/projects",
+      },
+    ],
+  },
+  {
     version: "1.8.3",
     date: "2026-10-19",
     title: "Leinwände mit anderen teilen",
