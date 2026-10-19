@@ -140,7 +140,7 @@ export function RepoCheckPanel({
   useEffect(() => setBranch(initial.branch ?? ""), [initial.branch]);
 
   async function send(action: Action, extra: Record<string, unknown> = {}) {
-    const res = await api<{ check: RepoCheckView; removed: boolean; warning: string | null; task?: { title: string } | null }>(`/api/projects/${projectId}/check`, { body: { action, ...extra } });
+    const res = await api<{ check: RepoCheckView; removed: boolean; warning: string | null; task?: { title: string } | null; synced?: number | null }>(`/api/projects/${projectId}/check`, { body: { action, ...extra } });
     setCheck(res.check);
     return res;
   }
@@ -155,7 +155,14 @@ export function RepoCheckPanel({
         setNote(t("tasks.created", { title: res.task.title }));
         toast(t("tasks.created", { title: res.task.title }));
       }
-      if (action === "autoTasks") setNote(t("tasks.saved"));
+      if (action === "autoTasks") {
+        // Beim Einschalten melden, wie viele Aufgaben dabei entstanden/aktualisiert wurden
+        const n = res.synced ?? 0;
+        let text = t("tasks.saved");
+        if (extra.mode && extra.mode !== "off") text = n > 0 ? t("tasks.syncedCount", { n }) : t("tasks.syncedNone");
+        setNote(text);
+        toast(text);
+      }
       if (action === "disable") setNote(res.warning ? t("removeFailed", { error: msg(res.warning) }) : res.removed ? t("removed") : null);
     } catch (e) {
       setError(errorMessage(e));
@@ -230,23 +237,54 @@ export function RepoCheckPanel({
         {t("hint")} {t("private")} {t("ignoreHint")}
       </p>
       {canEditSettings && check.enabled && (
-        <label className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-muted">{t("tasks.modeLabel")}</span>
-          <select
-            className="field w-auto py-1 text-sm"
-            data-testid="check-auto-tasks"
-            value={check.autoTasks}
-            disabled={busy !== null}
-            onChange={(e) => void act("autoTasks", { mode: e.target.value as CheckTaskMode })}
-          >
-            {CHECK_TASK_MODES.map((m) => (
-              <option key={m} value={m}>
-                {t(`tasks.mode.${m}`)}
-              </option>
-            ))}
-          </select>
-          <span className="w-full text-xs text-muted">{t("tasks.modeHint")}</span>
-        </label>
+        // Auffälliger Ein/Aus-Knopf: Funde automatisch als Aufgaben anlegen (#216).
+        // „Ein“ nimmt alle Arten; läuft gleich einmal über die aktuellen Funde.
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-fg/10 bg-bg/20 p-3" data-auto-tasks>
+          <ListPlus size={20} className={cn("shrink-0", check.autoTasks === "off" ? "text-muted" : "text-emerald-400")} aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{t("tasks.autoTitle")}</p>
+            <p className="text-xs text-muted">
+              {check.autoTasks === "off" ? t("tasks.autoOffHint") : t(`tasks.autoOnHint.${check.autoTasks as "urgent" | "all"}`)}
+            </p>
+          </div>
+          {check.autoTasks === "off" ? (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              data-testid="check-auto-tasks-on"
+              disabled={busy !== null}
+              onClick={() => void act("autoTasks", { mode: "all" })}
+            >
+              <ListPlus size={14} /> {t("tasks.turnOn")}
+            </button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                className="field w-auto py-1 text-sm"
+                data-testid="check-auto-tasks"
+                aria-label={t("tasks.modeLabel")}
+                value={check.autoTasks}
+                disabled={busy !== null}
+                onChange={(e) => void act("autoTasks", { mode: e.target.value as CheckTaskMode })}
+              >
+                {CHECK_TASK_MODES.filter((m) => m !== "off").map((m) => (
+                  <option key={m} value={m}>
+                    {t(`tasks.mode.${m}`)}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-sm hover:!text-red-400"
+                data-testid="check-auto-tasks-off"
+                disabled={busy !== null}
+                onClick={() => void act("autoTasks", { mode: "off" })}
+              >
+                {t("tasks.turnOff")}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {canEditSettings && check.enabled && (

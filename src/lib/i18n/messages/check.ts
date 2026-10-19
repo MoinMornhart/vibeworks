@@ -80,6 +80,16 @@ const de = {
     modeLabel: "Aufgaben automatisch anlegen:",
     modeHint: "Je Art eine Sammel-Aufgabe für Claude, die sich selbst aktuell hält – neue Befunde kommen dazu, ist nichts mehr gemeldet, wird sie erledigt.",
     mode: { off: "Aus", urgent: "Nur Dringendes (Geheimnisse, Lücken)", all: "Alles (auch Befunde)" },
+    autoTitle: "Funde automatisch als Aufgaben",
+    autoOffHint: "Aus – Lücken, Geheimnisse und Befunde landen nicht von selbst in der Aufgabenliste.",
+    autoOnHint: {
+      urgent: "An – Geheimnisse und Sicherheitslücken werden automatisch zu Aufgaben.",
+      all: "An – alle Funde (auch Semgrep-Befunde) werden automatisch zu Aufgaben.",
+    },
+    turnOn: "Einschalten",
+    turnOff: "Ausschalten",
+    syncedNone: "Automatik an – zurzeit gibt es keine offenen Funde.",
+    syncedCount: plural("Automatik an – {n} Aufgabe angelegt bzw. aktualisiert.", "Automatik an – {n} Aufgaben angelegt bzw. aktualisiert."),
     single: {
       secrets: "Mögliches Geheimnis prüfen: {file}",
       vulnerabilities: "Sicherheitslücke beheben: {pkg} {version}",
@@ -194,6 +204,16 @@ const en: Shape<typeof de> = {
     modeLabel: "Create tasks automatically:",
     modeHint: "One collective task per kind for Claude that keeps itself up to date – new findings are added, and once nothing is reported it gets completed.",
     mode: { off: "Off", urgent: "Only urgent (secrets, vulnerabilities)", all: "Everything (including findings)" },
+    autoTitle: "Turn findings into tasks automatically",
+    autoOffHint: "Off – vulnerabilities, secrets and findings don't reach the task list on their own.",
+    autoOnHint: {
+      urgent: "On – secrets and vulnerabilities become tasks automatically.",
+      all: "On – all findings (including Semgrep findings) become tasks automatically.",
+    },
+    turnOn: "Turn on",
+    turnOff: "Turn off",
+    syncedNone: "Automation on – there are no open findings right now.",
+    syncedCount: plural("Automation on – {n} task created or updated.", "Automation on – {n} tasks created or updated."),
     single: {
       secrets: "Check possible secret: {file}",
       vulnerabilities: "Fix vulnerability: {pkg} {version}",
