@@ -85,9 +85,11 @@ const TAP_SLOP = 4;
 /** Elemente mit Text: Zettel, Text, Rechteck, Ellipse. */
 const hasText = (kind: BoardItemKind) => kind !== "line" && kind !== "image" && kind !== "ink";
 
-export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
+export function BoardCanvas({ value, onChange, canEdit = true, docId, clientId, onRemote }: {
   value: string;
   onChange: (content: string) => void;
+  /** Betrachter (#211) sehen live mit, dürfen aber nichts ändern. */
+  canEdit?: boolean;
   /** Für die Live-Übertragung (#211): Dokument-Kennung und die Kennung dieses Tabs. */
   docId?: string;
   clientId?: string;
@@ -162,7 +164,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
   }, [toBoard]);
 
   function add(kind: BoardItemKind, at?: { x: number; y: number }, upload?: string, box?: { w: number; h: number }) {
-    if (itemsRef.current.length >= BOARD_MAX_ITEMS) return;
+    if (!canEdit || itemsRef.current.length >= BOARD_MAX_ITEMS) return;
     const neu = newBoardItem(kind, at ?? center(), boardId(), upload);
     const item = freeSpot(itemsRef.current, box ? { ...neu, ...box, x: neu.x + (neu.w - box.w) / 2, y: neu.y + (neu.h - box.h) / 2 } : neu);
     apply([...itemsRef.current, item]);
@@ -177,6 +179,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
    * ausgeliefert wird über `/api/uploads/<id>`, also nichts Fremdes.
    */
   async function addImages(files: File[], at?: { x: number; y: number }) {
+    if (!canEdit) return;
     const bilder = files.filter((f) => f.type.startsWith("image/")).slice(0, 10);
     if (!bilder.length) return;
     setBusy(true);
@@ -222,13 +225,14 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
   }
 
   function duplicate(item: BoardItem) {
-    if (itemsRef.current.length >= BOARD_MAX_ITEMS) return;
+    if (!canEdit || itemsRef.current.length >= BOARD_MAX_ITEMS) return;
     const copy = { ...item, id: boardId(), x: item.x + 24, y: item.y + 24 };
     apply([...itemsRef.current, copy]);
     setSel(copy.id);
   }
 
   function remove(id: string) {
+    if (!canEdit) return;
     apply(itemsRef.current.filter((i) => i.id !== id));
     setSel(null);
     setEditing(null);
@@ -285,6 +289,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
   // ── Zeichnen und Radieren ───────────────────────────────
   /** Malt einen Strich, solange der Zeiger unten ist; beim Loslassen wird ein Element daraus. */
   function startStroke(cx: number, cy: number) {
+    if (!canEdit) return;
     const punkte = [toBoard(cx, cy)];
     drawing.current = punkte;
     setDraft([...punkte]);
@@ -317,6 +322,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
 
   /** Radiert ganze Striche weg, die unter dem Zeiger liegen. */
   function startErase(cx: number, cy: number) {
+    if (!canEdit) return;
     let etwasWeg = false;
     const weg = (x: number, y: number) => {
       const p = toBoard(x, y);
@@ -456,7 +462,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
       if (e.key === "Escape") {
         if (sel) setSel(null);
         else if (full) setFull(false);
-      } else if ((e.key === "Delete" || e.key === "Backspace") && sel) {
+      } else if ((e.key === "Delete" || e.key === "Backspace") && sel && canEdit) {
         e.preventDefault();
         remove(sel);
       }
@@ -519,6 +525,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
     >
       {/* Werkzeuge – bleiben im Vollbild oben stehen und liegen über der Fläche */}
       <div className="relative z-10 flex flex-wrap items-center gap-2">
+        {canEdit && (
         <div className="flex rounded-lg border bg-bg/40 p-0.5" role="radiogroup" aria-label={t("editor.board.label")}>
           {TOOLS.map((w) => {
             const Icon = TOOL_ICONS[w];
@@ -543,7 +550,8 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
             );
           })}
         </div>
-        {(tool === "pen" || tool === "marker") && (
+        )}
+        {(tool === "pen" || tool === "marker") && canEdit && (
           <div className="fade-in flex flex-wrap items-center gap-2">
             <div className="flex items-center rounded-lg border bg-bg/40 p-0.5" aria-label={t("editor.board.strokeSize")}>
               {BOARD_STROKE_SIZES.map((n) => (
@@ -575,7 +583,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
             </div>
           </div>
         )}
-        <div className={cn("flex rounded-lg border bg-bg/40 p-0.5", tool !== "select" && "hidden")} role="toolbar" aria-label={t("editor.board.add")}>
+        <div className={cn("flex rounded-lg border bg-bg/40 p-0.5", (tool !== "select" || !canEdit) && "hidden")} role="toolbar" aria-label={t("editor.board.add")}>
           {SHAPE_KINDS.map((kind) => {
             const Icon = ICONS[kind];
             return (
@@ -635,7 +643,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
             {full ? <Shrink size={15} /> : <Expand size={15} />}
           </button>
         </div>
-        {selected && (
+        {selected && canEdit && (
           <div className="fade-in flex flex-wrap items-center gap-2">
             {/* Ein Bild hat keine eigene Farbe. */}
             {selected.kind !== "image" && (
@@ -739,7 +747,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
                 onPointerDown={(e) => {
                   if (e.button !== 0 && e.pointerType === "mouse") return;
                   // Beim Zeichnen und Radieren gehört das Ereignis der Fläche.
-                  if (tool !== "select") return;
+                  if (tool !== "select" || !canEdit) return;
                   e.stopPropagation();
                   // Zweites Tippen auf ein schon gewähltes Textelement öffnet den Text
                   const tapEdit = sel === item.id && editing !== item.id && hasText(item.kind);
@@ -749,7 +757,7 @@ export function BoardCanvas({ value, onChange, docId, clientId, onRemote }: {
                 }}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
-                  if (hasText(item.kind)) setEditing(item.id);
+                  if (canEdit && hasText(item.kind)) setEditing(item.id);
                 }}
               >
                 {/* Linien sind dünn – diese Fläche macht sie treffbar. */}

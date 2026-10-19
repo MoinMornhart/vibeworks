@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.3",
+    date: "2026-10-19",
+    title: "Leinwände mit anderen teilen",
+    titleEn: "Share canvases with others",
+    changes: [
+      {
+        type: "neu",
+        text: "Eine Leinwand (oder Seite) lässt sich jetzt mit bestimmten angemeldeten Konten teilen – über den Knopf „Teilen“ oben. Du lädst jemanden per Benutzername ein und wählst, ob er nur ansehen oder auch bearbeiten darf. Kein öffentlicher Zugriff: nur eingeladene Konten, und nur der Besitzer verwaltet die Freigabe",
+        en: "A canvas (or page) can now be shared with specific signed-in accounts – via the new “Share” button at the top. You invite someone by username and choose whether they may only view or also edit. No public access: invited accounts only, and only the owner manages the sharing",
+        link: "/boards",
+      },
+      {
+        type: "neu",
+        text: "Geteilte Leinwände erscheinen in der Übersicht unter „Mit mir geteilt“ mit Besitzername und deinem Recht. Bearbeiter sehen und ändern live mit (wie in mehreren Tabs); Betrachter sehen jede Änderung sofort, können aber nichts verändern. Bilder einer geteilten Leinwand werden den Eingeladenen ausgeliefert",
+        en: "Shared canvases appear in the overview under “Shared with me” with the owner's name and your right. Editors see and change things live (as across tabs); viewers see every change at once but cannot modify anything. Images on a shared canvas are served to the invited accounts",
+      },
+    ],
+  },
+  {
     version: "1.8.2",
     date: "2026-10-18",
     title: "Leinwand live auf mehreren Geräten",

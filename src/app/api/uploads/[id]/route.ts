@@ -25,6 +25,15 @@ export const GET = route<Params>(async (_req, { params }) => {
   if (!upload && (await db.project.findFirst({ where: { coverUploadId: id, ...visibleTo(user.id) }, select: { id: true } }))) {
     upload = await db.upload.findFirst({ where: { id, kind: "cover" } });
   }
+  // Bild einer geteilten Leinwand (#211): sichtbar für jeden, der eine Leinwand
+  // sehen darf, die dieses Bild verwendet (Besitzer oder eingeladenes Konto).
+  if (!upload) {
+    const board = await db.doc.findFirst({
+      where: { kind: "BOARD", content: { contains: id }, OR: [{ ownerId: user.id }, { shares: { some: { userId: user.id } } }] },
+      select: { id: true },
+    });
+    if (board) upload = await db.upload.findFirst({ where: { id, kind: "board" } });
+  }
   if (!upload) throw notFound();
   const data = await readUpload(upload.id, upload.ext).catch(() => null);
   if (!data) throw notFound();

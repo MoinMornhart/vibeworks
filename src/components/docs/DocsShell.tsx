@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, BookOpen, ChevronDown, ChevronRight, FolderInput, P
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Modal } from "@/components/ui/Modal";
 import type { DocDetail, DocTreeItem } from "@/lib/docs";
+import type { DocRole } from "@/lib/docs/access";
 import { docIcon } from "@/lib/docs/kinds";
 import { api, errorMessage } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ import { confirmDialog } from "@/lib/client/dialogs";
 
 const EXPANDED_KEY = "vw.docs.expanded";
 
-export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc: DocDetail | null }) {
+export function DocsShell({ tree: initialTree, doc, role = "OWNER" }: { tree: DocTreeItem[]; doc: DocDetail | null; role?: DocRole }) {
   const t = useT("docs");
   const tc = useT("common");
   const f = useFormat();
@@ -231,7 +232,7 @@ export function DocsShell({ tree: initialTree, doc }: { tree: DocTreeItem[]; doc
         </button>
         {error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
         {doc ? (
-          <DocEditor key={doc.id} doc={doc} tree={tree} onSaved={onSaved} onCreateChild={() => void create(doc.id)} />
+          <DocEditor key={doc.id} doc={doc} role={role} tree={tree} onSaved={onSaved} onCreateChild={() => void create(doc.id)} />
         ) : tree.length === 0 ? (
           <div className="glass flex flex-col items-center px-6 py-16 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/15 text-accent-ink"><BookOpen size={30} /></span>

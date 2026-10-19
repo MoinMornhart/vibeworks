@@ -61,16 +61,39 @@ const BOARDS_LIMIT = 200;
  * auf dem Server zu einem kleinen Abbild verdichtet – an den Browser gehen nur
  * Rahmen und Farben, kein Text, keine Striche, keine Bild-Kennungen.
  */
-export async function loadBoards(ownerId: string) {
+const boardSelect = { id: true, title: true, icon: true, kind: true, pinned: true, content: true, updatedAt: true } satisfies Prisma.DocSelect;
+type BoardRow = Prisma.DocGetPayload<{ select: typeof boardSelect }>;
+
+/** Eine Zeile der Übersicht: Abbild statt Inhalt, dazu wem sie gehört. */
+function boardItem(d: BoardRow, extra: { mine: boolean; role?: "EDITOR" | "VIEWER"; ownerName?: string }) {
+  const { content, ...rest } = d;
+  return { ...rest, updatedAt: d.updatedAt.toISOString(), preview: boardPreview(parseBoard(content)), ...extra };
+}
+export type BoardOverviewItem = ReturnType<typeof boardItem>;
+
+export async function loadBoards(ownerId: string): Promise<BoardOverviewItem[]> {
   const rows = await db.doc.findMany({
     where: { ownerId, kind: "BOARD" },
-    select: { id: true, title: true, icon: true, kind: true, pinned: true, content: true, updatedAt: true },
+    select: boardSelect,
     orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
     take: BOARDS_LIMIT,
   });
-  return rows.map(({ content, ...d }) => ({ ...d, updatedAt: d.updatedAt.toISOString(), preview: boardPreview(parseBoard(content)) }));
+  return rows.map((d) => boardItem(d, { mine: true }));
 }
-export type BoardOverviewItem = Awaited<ReturnType<typeof loadBoards>>[number];
+
+/** Leinwände, die andere mit mir geteilt haben (#211) – mit Besitzername und meiner Rolle. */
+export async function loadSharedBoards(userId: string): Promise<BoardOverviewItem[]> {
+  const rows = await db.docAccess.findMany({
+    where: { userId, doc: { kind: "BOARD" } },
+    select: { role: true, doc: { select: { ...boardSelect, owner: { select: { username: true, displayName: true } } } } },
+    orderBy: { doc: { updatedAt: "desc" } },
+    take: BOARDS_LIMIT,
+  });
+  return rows.map(({ role, doc }) => {
+    const { owner, ...board } = doc;
+    return boardItem(board, { mine: false, role, ownerName: owner.displayName || owner.username });
+  });
+}
 
 export async function findOwnDoc(ownerId: string, id: string) {
   return db.doc.findFirst({ where: { id, ownerId } });

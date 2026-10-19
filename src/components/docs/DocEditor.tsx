@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { BoardCanvas } from "./BoardCanvas";
+import { ShareDocPanel } from "./ShareDocPanel";
 import { boardId } from "@/lib/docs/boardLogic";
+import type { DocRole } from "@/lib/docs/access";
 import { docIcon } from "@/lib/docs/kinds";
 import type { DocDetail, DocTreeItem } from "@/lib/docs";
 import { api, errorMessage } from "@/lib/client/api";
@@ -46,11 +48,13 @@ function prefixLines(value: string, start: number, end: number, prefix: string) 
 
 export function DocEditor({
   doc,
+  role = "OWNER",
   tree,
   onSaved,
   onCreateChild,
 }: {
   doc: DocDetail;
+  role?: DocRole;
   tree: DocTreeItem[];
   onSaved: (item: DocTreeItem) => void;
   onCreateChild: () => void;
@@ -59,6 +63,9 @@ export function DocEditor({
   const f = useFormat();
   // Eine Leinwand speichert JSON statt Markdown – Kopf, Automatik und Baum sind dieselben.
   const isBoard = doc.kind === "BOARD";
+  // Eingeladene Betrachter sehen nur; Bearbeiter und Besitzer dürfen ändern (#211)
+  const canEdit = role !== "VIEWER";
+  const isOwner = role === "OWNER";
   const [title, setTitle] = useState(doc.title);
   const [icon, setIcon] = useState(doc.icon);
   const [content, setContent] = useState(doc.content);
@@ -119,6 +126,7 @@ export function DocEditor({
   };
 
   const change = (patch: Partial<typeof latest.current>) => {
+    if (!canEdit) return; // Betrachter ändern nichts
     if (patch.title !== undefined) setTitle(patch.title);
     if (patch.icon !== undefined) setIcon(patch.icon);
     if (patch.content !== undefined) setContent(patch.content);
@@ -229,7 +237,7 @@ export function DocEditor({
 
       <div className="flex items-start gap-3">
         <div className="relative">
-          <button type="button" onClick={() => setEmojiOpen((o) => !o)} className="flex h-12 w-12 items-center justify-center rounded-xl text-3xl hover:bg-fg/10" aria-label={t("editor.chooseIcon")} title={t("editor.chooseIcon")}>
+          <button type="button" onClick={() => canEdit && setEmojiOpen((o) => !o)} disabled={!canEdit} className="flex h-12 w-12 items-center justify-center rounded-xl text-3xl hover:bg-fg/10 disabled:cursor-default disabled:hover:bg-transparent" aria-label={t("editor.chooseIcon")} title={t("editor.chooseIcon")}>
             {docIcon({ icon, kind: doc.kind })}
           </button>
           {emojiOpen && (
@@ -246,15 +254,24 @@ export function DocEditor({
           value={title}
           onChange={(e) => change({ title: e.target.value })}
           placeholder={t("editor.untitled")}
+          readOnly={!canEdit}
           maxLength={200}
           aria-label={t("editor.titleLabel")}
         />
+        {/* Teilen gehört dem Besitzer; Eingeladene sehen ihr Recht als Hinweis (#211) */}
+        {isOwner ? (
+          <div className="shrink-0 self-center"><ShareDocPanel docId={doc.id} /></div>
+        ) : (
+          <span className="shrink-0 self-center rounded-md border bg-bg/40 px-2 py-1 text-xs text-muted">
+            {t(canEdit ? "boards.canEdit" : "boards.canView")}
+          </span>
+        )}
       </div>
 
       <div className={cn("mt-4 flex flex-wrap items-center gap-2 border-y py-2", isBoard && "hidden")}>
         <div className="flex flex-wrap gap-0.5" role="toolbar" aria-label={t("editor.toolbar")}>
           {tools.map((tool) => (
-            <button key={tool.k} type="button" className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg disabled:opacity-40" onClick={() => format(tool.k)} title={tool.label} aria-label={tool.label} disabled={mode === "preview"}>
+            <button key={tool.k} type="button" className="rounded-md p-1.5 text-muted hover:bg-fg/10 hover:text-fg disabled:opacity-40" onClick={() => format(tool.k)} title={tool.label} aria-label={tool.label} disabled={!canEdit || mode === "preview"}>
               <tool.icon size={16} />
             </button>
           ))}
@@ -283,7 +300,7 @@ export function DocEditor({
 
       {isBoard ? (
         <div className="mt-4 flex-1">
-          <BoardCanvas value={content} onChange={(v) => change({ content: v })} docId={doc.id} clientId={clientId.current} onRemote={applyRemote} />
+          <BoardCanvas value={content} onChange={(v) => change({ content: v })} canEdit={canEdit} docId={doc.id} clientId={clientId.current} onRemote={applyRemote} />
         </div>
       ) : (
       <div className={cn("mt-4 grid flex-1 gap-5", mode === "split" && "lg:grid-cols-2")}>
@@ -293,6 +310,7 @@ export function DocEditor({
             className="min-h-[55vh] w-full resize-y rounded-xl border bg-bg/30 p-4 font-mono text-[0.8125rem] leading-relaxed outline-none focus:border-accent"
             value={content}
             onChange={(e) => change({ content: e.target.value })}
+            readOnly={!canEdit}
             onKeyDown={(e) => {
               if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
                 e.preventDefault();

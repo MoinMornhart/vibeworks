@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, Pin, Plus, Search, Shapes } from "lucide-react";
@@ -64,7 +64,38 @@ function Preview({ preview }: { preview: BoardPreview }) {
   );
 }
 
-export function BoardsOverview({ boards }: { boards: BoardOverviewItem[] }) {
+function Grid({ boards }: { boards: BoardOverviewItem[] }) {
+  const t = useT("docs");
+  const f = useFormat();
+  return (
+    <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {boards.map((b) => (
+        <li key={b.id}>
+          <Link href={`/docs/${b.id}`} className="lift block overflow-hidden rounded-xl border bg-bg/20" data-board-card={b.id}>
+            <div className="border-b bg-bg/30 p-2">
+              <Preview preview={b.preview} />
+            </div>
+            <div className="flex items-center gap-3 p-3">
+              <span className="text-2xl" aria-hidden>{docIcon(b)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5 truncate font-medium">
+                  {b.pinned && <Pin size={13} className="shrink-0 text-accent-ink" aria-label={t("boards.pinned")} />}
+                  <span className="truncate">{b.title}</span>
+                </span>
+                <span className="block text-xs text-muted" suppressHydrationWarning>
+                  {t("editor.board.items", { n: b.preview.count })} · {f.ago(b.updatedAt)}
+                  {!b.mine && b.ownerName ? ` · ${t("boards.from", { name: b.ownerName })} · ${t(b.role === "EDITOR" ? "boards.canEdit" : "boards.canView")}` : ""}
+                </span>
+              </span>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function BoardsOverview({ boards, shared = [] }: { boards: BoardOverviewItem[]; shared?: BoardOverviewItem[] }) {
   const t = useT("docs");
   const f = useFormat();
   const router = useRouter();
@@ -72,10 +103,12 @@ export function BoardsOverview({ boards }: { boards: BoardOverviewItem[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const shown = useMemo(() => {
+  const filter = useCallback((list: BoardOverviewItem[]) => {
     const q = query.trim().toLocaleLowerCase();
-    return q ? boards.filter((b) => b.title.toLocaleLowerCase().includes(q)) : boards;
-  }, [boards, query]);
+    return q ? list.filter((b) => b.title.toLocaleLowerCase().includes(q)) : list;
+  }, [query]);
+  const shown = useMemo(() => filter(boards), [filter, boards]);
+  const shownShared = useMemo(() => filter(shared), [filter, shared]);
 
   async function create() {
     setBusy(true);
@@ -105,7 +138,7 @@ export function BoardsOverview({ boards }: { boards: BoardOverviewItem[] }) {
       </div>
       {error && <p role="alert" className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>}
 
-      {boards.length === 0 ? (
+      {boards.length === 0 && shared.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-3 py-8 text-center">
           <Shapes size={40} className="text-muted" aria-hidden />
           <p className="font-medium">{t("boards.emptyTitle")}</p>
@@ -118,32 +151,18 @@ export function BoardsOverview({ boards }: { boards: BoardOverviewItem[] }) {
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
             <input className="field pl-9" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("boards.search")} aria-label={t("boards.search")} />
           </label>
-          {shown.length === 0 ? (
+          {shown.length === 0 && shownShared.length === 0 ? (
             <p className="mt-6 text-sm text-muted">{t("boards.noMatch")}</p>
           ) : (
-            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {shown.map((b) => (
-                <li key={b.id}>
-                  <Link href={`/docs/${b.id}`} className="lift block overflow-hidden rounded-xl border bg-bg/20" data-board-card={b.id}>
-                    <div className="border-b bg-bg/30 p-2">
-                      <Preview preview={b.preview} />
-                    </div>
-                    <div className="flex items-center gap-3 p-3">
-                      <span className="text-2xl" aria-hidden>{docIcon(b)}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-1.5 truncate font-medium">
-                          {b.pinned && <Pin size={13} className="shrink-0 text-accent-ink" aria-label={t("boards.pinned")} />}
-                          <span className="truncate">{b.title}</span>
-                        </span>
-                        <span className="block text-xs text-muted" suppressHydrationWarning>
-                          {t("editor.board.items", { n: b.preview.count })} · {f.ago(b.updatedAt)}
-                        </span>
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              {shown.length > 0 && <Grid boards={shown} />}
+              {shownShared.length > 0 && (
+                <>
+                  <h2 className="mb-3 mt-8 text-xs font-semibold uppercase tracking-wider text-muted">{t("boards.sharedWithMe")}</h2>
+                  <Grid boards={shownShared} />
+                </>
+              )}
+            </>
           )}
         </>
       )}
