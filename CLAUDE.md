@@ -1,3 +1,5 @@
+Lies zuerst den Projektstand: @STAND.md
+
 # VibeWorks – Arbeitsweise für Claude
 
 Diese Datei legt fest, wie Claude (und andere KI-Agenten) in diesem Repository arbeiten.
