@@ -28,6 +28,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.6",
+    date: "2026-10-25",
+    title: "Sicherheitslücken geschlossen, Bausteine aufgefrischt",
+    titleEn: "Security holes closed, building blocks refreshed",
+    changes: [
+      {
+        type: "fix",
+        text: "undici 7.30.1, nodemailer 10.2.1 und fast-uri 3.1.9 schließen zehn bekannte Lücken – darunter zwei Wege, den Server mit präparierten Antworten lahmzulegen, und Adressfehler, über die eine E-Mail an falsche Empfänger gehen konnte. npm audit meldet für VibeWorks keine Lücke mehr",
+        en: "undici 7.30.1, nodemailer 10.2.1 and fast-uri 3.1.9 close ten known holes – including two ways to stall the server with crafted responses and address bugs that could send an email to the wrong recipients. npm audit no longer reports any hole for VibeWorks",
+      },
+      {
+        type: "fix",
+        text: "Die Windows-App baut mit Electron 44.9.3, das vor kompromittierten eMudhra-Zwischenzertifikaten schützt, dazu electron-builder 26.18.0 und electron-updater 6.8.11",
+        en: "The Windows app builds with Electron 44.9.3, which protects against compromised eMudhra intermediate certificates, plus electron-builder 26.18.0 and electron-updater 6.8.11",
+      },
+      {
+        type: "besser",
+        text: "Weitere Bausteine auf dem neuesten Stand: Next.js 16.4.3, lucide-react 1.61.0, dotenv 18.0.9, PGlite 0.5.11 und fallow 3.35.0 – reine Wartung, sichtbar ändert sich nichts",
+        en: "More building blocks up to date: Next.js 16.4.3, lucide-react 1.61.0, dotenv 18.0.9, PGlite 0.5.11 and fallow 3.35.0 – pure maintenance, nothing changes visibly",
+      },
+    ],
+  },
+  {
     version: "1.8.5",
     date: "2026-10-24",
     title: "Knopf für automatische Aufgaben wird jetzt angezeigt",
