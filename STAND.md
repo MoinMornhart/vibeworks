@@ -3,7 +3,7 @@
 ## Was es ist
 Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, Aufgaben, Notizen, Docs, Commits und KI-Anbindung (MCP) an einem Ort, läuft auf dem eigenen Proxmox-Server. Spiegelt Aufgaben als GitHub-Issues in die Projekt-Repos, betreibt den „VibeWorks Repo-Check“ in den Repos. Dazu Windows-App (`desktop/`) und Webseite/Doku (`site/`, GitHub Pages).
 
-## Aktueller Stand (Version 1.8.4 auf `main` und live)
+## Aktueller Stand (Version 1.8.5 auf `main`)
 - Projekte, Aufgabenboard, Heute-Ansicht, Review, Docs mit Baum/Markdown/Freigabe, Node-Editor, CI-Designer, Fehler-Eingang, Rechte je Projekt/Team, eigene Anmeldung (MFA/Passkeys), OAuth, MCP-Server für KIs.
 - 1.7.7–1.8.4 sind auf `main` und live:
   - Sicherheitslücken geschlossen + 14 Paket-Updates (#216), leichtere Projektseite, SSRF-Fix und die 4 Funde aus dem Selbst-Pentest.
@@ -11,11 +11,11 @@ Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, A
   - Knopf, um Bugs gesammelt als Aufgaben ins Board zu holen (1.8.1).
   - Leinwände teilen (1.8.3, PR #222): nur angemeldete Konten/Teams, Rechte Ansehen/Bearbeiten – Moinis Entscheidung, kein öffentlicher Link.
   - Repo-Check-Karte „Funde automatisch als Aufgaben“ (1.8.4, PR #223).
-- **Bekannter Fehler in 1.8.4:** Der Knopf aus 1.8.4 ist live **nicht sichtbar**. Die Projektseite gibt `RepoCheckPanel` die Berechtigung `canEditSettings` (`project.edit`) nicht mit, der Standardwert ist `false`, also ist der Block für alle ausgeblendet. Fix = 1.8.5 (lag als Commit `79a1f52` ungemergt auf `claude/fervent-gauss-csxl3r`), wird am 24.10. per PR auf `main` gebracht.
+- **1.8.5 (24.10., PR #225):** Der Knopf aus 1.8.4 war live **nicht sichtbar** – die Projektseite gab `RepoCheckPanel` die Berechtigung `canEditSettings` (`project.edit`) nicht mit, der Standardwert ist `false`. Jetzt durchgereicht (Fix aus `79a1f52`, neu auf `main` aufgesetzt). Lokal im Browser mit Besitzer/Bearbeiter/Betrachter geprüft; **live-Bestätigung durch Moini steht aus**. Der alte Branch `claude/fervent-gauss-csxl3r` ist damit überholt.
 - CI und Repo-Check am 2026-10-24 grün.
 
 ## Zuletzt gemacht
-- 2026-10-24: Übergabe der Cloud-Sitzung „VibeWorks“ (17.–24.10.) in diese Datei; 1.8.5-Fix aufgegriffen.
+- 2026-10-24: 1.8.5 Knopf „Funde automatisch als Aufgaben“ sichtbar (PR #225); Übergabe der Cloud-Sitzung „VibeWorks“ (17.–24.10.) in diese Datei.
 - 2026-10-24: Cloud-Start-Hook (`.claude/hooks/skills-cloud.sh`).
 - 2026-10-19: 1.8.4 Funde als Aufgaben; 1.8.3 Leinwände teilen. Issue-Runde ausgeschaltet.
 - 2026-10-18: 1.8.2 Leinwand live auf mehreren Geräten; 1.8.1 Fehler ins Aufgabenboard.
@@ -23,7 +23,7 @@ Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, A
 - 2026-10-05: 1.7.6 schneller bei vielen Aufgaben (/tasks 1592 kB → 421 kB, #214).
 
 ## Offen / Nächste Schritte
-- **Zuerst:** 1.8.5 (Knopf sichtbar) mergen und von Moini live bestätigen lassen.
+- **Zuerst:** Moini bestätigt, dass der Knopf live zu sehen ist (Projekt → Repo-Check; erscheint nur bei eingeschaltetem Repo-Check und GitHub-Repository).
 
 Offene GitHub-Issues (Stand 24.10.):
 - #224 Repo-Check: 2 shellcheck-Befunde in `.claude/hooks/skills-cloud.sh` (Zeile 81 SC1087, Zeile 86 SC2115) – kommt vom neuen Cloud-Hook.
