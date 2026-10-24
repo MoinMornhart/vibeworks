@@ -189,6 +189,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           canRun={can("git.sync")}
           canTask={can("tasks.edit")}
           canManage={isOwner}
+          canEditSettings={can("project.edit")}
           hasToken={Boolean(repoTokenHint || account)}
         />
       )}
