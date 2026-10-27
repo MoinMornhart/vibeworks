@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.7",
+    date: "2026-10-27",
+    title: "Neue Domain direkt im Admin-Dashboard übernehmen",
+    titleEn: "Adopt a new domain right in the admin dashboard",
+    changes: [
+      {
+        type: "neu",
+        text: "Hat sich die Adresse von VibeWorks geändert, etwa nach einem Domainwechsel? Einfach über die neue Adresse öffnen – unter Admin → Instanz steht dann „Du bist gerade über … hier“, und ein Klick übernimmt sie. Sie gilt sofort, ohne Neustart und ohne die .env anzufassen; die eigene Anmeldung bleibt erhalten. Übernommen wird nur die Adresse, über die man gerade drin ist – ein Tippfehler kann einen so nicht aussperren. Wer APP_URL in der .env ändert, hat weiter das letzte Wort",
+        en: "Has the address of VibeWorks changed, say after a domain move? Just open it via the new address – under Admin → Instance it then says “You are currently here via …”, and one click adopts it. It applies right away, with no restart and without touching .env; your own sign-in stays. Only the address you are currently using can be adopted – so a typo can’t lock you out. Changing APP_URL in .env still has the final say",
+        link: "/admin",
+      },
+    ],
+  },
+  {
     version: "1.8.6",
     date: "2026-10-25",
     title: "Sicherheitslücken geschlossen, Bausteine aufgefrischt",

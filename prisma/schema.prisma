@@ -100,6 +100,10 @@ model Settings {
   smtpFrom                  String?
   /// Zuletzt gestartete Version – für die Meldung „VibeWorks aktualisiert“
   lastVersion               String?
+  /// Im Admin-Dashboard übernommene Adresse (überschreibt APP_URL) – siehe src/lib/appUrlLogic.ts
+  appUrl                    String?
+  /// APP_URL aus der .env beim Übernehmen – ändert sich die .env, gilt wieder sie
+  appUrlEnv                 String?
   /// Discord-Anwendung der Instanz (#105) – Bot-Token und Client-Secret AES-256-GCM
   discordAppId              String?
   discordPublicKey          String?

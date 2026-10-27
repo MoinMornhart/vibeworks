@@ -3,7 +3,7 @@
 ## Was es ist
 Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, Aufgaben, Notizen, Docs, Commits und KI-Anbindung (MCP) an einem Ort, läuft auf dem eigenen Proxmox-Server. Spiegelt Aufgaben als GitHub-Issues in die Projekt-Repos, betreibt den „VibeWorks Repo-Check“ in den Repos. Dazu Windows-App (`desktop/`) und Webseite/Doku (`site/`, GitHub Pages).
 
-## Aktueller Stand (Version 1.8.6 auf `main`)
+## Aktueller Stand (Version 1.8.7 auf `main`)
 - Projekte, Aufgabenboard, Heute-Ansicht, Review, Docs mit Baum/Markdown/Freigabe, Node-Editor, CI-Designer, Fehler-Eingang, Rechte je Projekt/Team, eigene Anmeldung (MFA/Passkeys), OAuth, MCP-Server für KIs.
 - 1.7.7–1.8.4 sind auf `main` und live:
   - Sicherheitslücken geschlossen + 14 Paket-Updates (#216), leichtere Projektseite, SSRF-Fix und die 4 Funde aus dem Selbst-Pentest.
@@ -13,9 +13,11 @@ Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, A
   - Repo-Check-Karte „Funde automatisch als Aufgaben“ (1.8.4, PR #223).
 - **1.8.5 (24.10., PR #225):** Der Knopf aus 1.8.4 war live **nicht sichtbar** – die Projektseite gab `RepoCheckPanel` die Berechtigung `canEditSettings` (`project.edit`) nicht mit, der Standardwert ist `false`. Jetzt durchgereicht (Fix aus `79a1f52`, neu auf `main` aufgesetzt). Lokal im Browser mit Besitzer/Bearbeiter/Betrachter geprüft; **live-Bestätigung durch Moini steht aus**. Der alte Branch `claude/fervent-gauss-csxl3r` ist damit überholt.
 - **1.8.6 (25.10.):** Sicherheitslücken geschlossen (undici 7.30.1, nodemailer 10.2.1, fast-uri 3.1.9, electron 44.9.3 – `npm audit`: 0 im Hauptprojekt und in `desktop/`), Wartungs-Updates (#206) und die shellcheck-Funde im Cloud-Hook (#224).
+- **1.8.7 (27.10.):** Adresse (Domain) im Admin-Dashboard übernehmen – nur die, über die man gerade drin ist; gespeichert in `Settings.appUrl` samt `.env`-Wert beim Übernehmen. Ändert sich `APP_URL` in der `.env`, gilt beim nächsten Start wieder die `.env` und die übernommene Adresse wird gelöscht (Rettungsweg). Logik: `src/lib/appUrlLogic.ts`.
 - CI und Repo-Check am 2026-10-24 grün.
 
 ## Zuletzt gemacht
+- 2026-10-27: 1.8.7 Adresse im Admin-Dashboard übernehmen (Moinis Wunsch, Variante „aktuelle Adresse übernehmen“).
 - 2026-10-25: 1.8.6 Sicherheitslücken + Paket-Updates + shellcheck (#216, #217, #206, #224).
 - 2026-10-24: 1.8.5 Knopf „Funde automatisch als Aufgaben“ sichtbar (PR #225); Übergabe der Cloud-Sitzung „VibeWorks“ (17.–24.10.) in diese Datei.
 - 2026-10-24: Cloud-Start-Hook (`.claude/hooks/skills-cloud.sh`).
@@ -34,6 +36,7 @@ Offene GitHub-Issues (Stand 24.10.):
 - #211 Plan Leinwand („Notion-artig“) und **Anrufe** – Leinwand weitgehend umgesetzt; offen: Anrufe-Teil, Zuschneiden/Audio, Test des Teilens mit zwei Konten.
 - #205 Notion-artiges Dashboard (Ausgangsidee zu #211).
 - #124 Scheduler, 5 Erweiterungen, Community/Chats, kostenlose Repo-Prüfung (wöchentlich, fällig 20.10.).
+- Auf Moinis Server gibt es den Befehl `update` nicht (`update --domain` → „command not found“, 27.10.). Unklar, wie der Server `main` zieht und ob der Update-Knopf im Admin-Dashboard dort geht – bei Gelegenheit klären.
 - Geplante Aufgabe „Issue-Runde VibeWorks“ (zuletzt alle 2 Std.) am 19.10. **ausgeschaltet** (Guthaben sparen).
 - Offene Frage an Moini: Gilt die JoniMoni-Ausnahme aus `CLAUDE.md` weiter? (Bei PKmessenger entscheidet Moini Größeres und Sicherheit selbst.)
 
