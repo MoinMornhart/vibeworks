@@ -1,7 +1,17 @@
 import path from "node:path";
+import { effectiveAppUrl, type StoredAppUrl } from "./appUrlLogic";
 
 // Konfiguration wird zur Laufzeit gelesen (nicht beim Build eingebacken),
 // damit derselbe Build unter anderem Namen/anderer Adresse laufen kann.
+
+// Im Admin-Dashboard übernommene Adresse (siehe appUrlLogic.ts). Liegt auf
+// globalThis, damit Instrumentation und Routen im selben Prozess denselben Wert sehen.
+const appUrlStore = globalThis as unknown as { vwStoredAppUrl?: StoredAppUrl };
+
+/** Gespeicherte Adresse aus den Instanz-Einstellungen übernehmen (beim Start und nach jedem Lesen). */
+export function setStoredAppUrl(stored: StoredAppUrl | null): void {
+  appUrlStore.vwStoredAppUrl = stored ? { appUrl: stored.appUrl, appUrlEnv: stored.appUrlEnv } : undefined;
+}
 
 function num(value: string | undefined, fallback: number, min = 0): number {
   const n = Number.parseInt(value ?? "", 10);
@@ -19,10 +29,15 @@ export const config = {
   get appName() {
     return process.env.APP_NAME?.trim() || "VibeWorks";
   },
-  get appUrl() {
+  /** APP_URL aus der .env – Grundwert und Rettungsweg. */
+  get envAppUrl() {
     // Schlusssatz-Schrägstriche abschneiden: trifft "…/" und "…///", nicht "…/pfad".
     // https://regex101.com/?regex=%5C%2F%2B%24&testString=http%3A%2F%2Fa%2F%2F%2F
     return (process.env.APP_URL?.trim() || "http://localhost:3000").replace(/\/+$/, "");
+  },
+  /** Geltende Adresse: im Admin-Dashboard übernommen, sonst APP_URL. */
+  get appUrl() {
+    return effectiveAppUrl(this.envAppUrl, appUrlStore.vwStoredAppUrl);
   },
   get secret() {
     const s = process.env.APP_SECRET ?? "";

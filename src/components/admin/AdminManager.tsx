@@ -32,6 +32,7 @@ import { CloudDownload } from "lucide-react";
 import { UpdatePanel } from "./UpdatePanel";
 import { SmtpSection } from "./SmtpSection";
 import { DiscordAdminSection } from "./DiscordAdminSection";
+import { InstanceAddress } from "./InstanceAddress";
 import { InvitesSection } from "./InvitesSection";
 import { CommunityAdmin } from "./CommunityAdmin";
 import { RolesManager } from "@/components/roles/RolesManager";
@@ -324,14 +325,14 @@ export function AdminManager({
   initialSettings,
   initialUsers,
   build,
-  appUrl,
+  address,
   update,
 }: {
   meId: string;
   initialSettings: Settings;
   initialUsers: AdminUser[];
   build: PublicBuildInfo & { builtAt: string | null; source: string };
-  appUrl: string;
+  address: { appUrl: string; envUrl: string };
   update: Parameters<typeof UpdatePanel>[0]["initial"];
 }) {
   const t = useT("admin");
@@ -412,7 +413,7 @@ export function AdminManager({
           <dt className="text-muted">{t("instance.built")}</dt>
           <dd>{build.builtAt ? f.dateTime(build.builtAt) : "–"} <span className="text-muted">{t("instance.source", { source })}</span></dd>
           <dt className="text-muted">{t("instance.address")}</dt>
-          <dd className="break-all font-mono">{appUrl}</dd>
+          <InstanceAddress initial={address} />
         </dl>
       </AccountSection>
 

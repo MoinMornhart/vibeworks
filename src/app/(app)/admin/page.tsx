@@ -21,7 +21,7 @@ export default async function AdminPage() {
       initialSettings={{ mode: settings.mode, allowRegistration: settings.allowRegistration, allowPasswordReset: settings.allowPasswordReset, taskColumnLimit: settings.taskColumnLimit, wishLimit: settings.wishLimit }}
       initialUsers={users}
       build={{ ...publicBuildInfo(), builtAt: buildInfo().builtAt, source: buildInfo().source }}
-      appUrl={config.appUrl}
+      address={{ appUrl: config.appUrl, envUrl: config.envAppUrl }}
       update={{ available, installed: publicBuildInfo(), status, log }}
     />
   );
