@@ -41,6 +41,30 @@ export function reposToImport(repos: RemoteRepo[], linked: Iterable<string>, ski
   return out;
 }
 
+/** Letzter Pfadteil eines Schlüssels – der Repo-Name ohne Besitzer. */
+const nameOf = (key: string) => key.slice(key.lastIndexOf("/") + 1);
+const hostOf = (key: string) => key.slice(0, key.indexOf("/"));
+
+/**
+ * Umbenennung oder Umzug erkennen: Ein verknüpfter oder absichtlich
+ * entfernter Schlüssel taucht nicht mehr in der eigenen Liste auf, wohl aber
+ * genau ein gleichnamiges Repository auf demselben Rechner unter anderem
+ * Besitzer. Das ist nur ein Kandidat – ob es wirklich dasselbe Repository ist,
+ * bestätigt erst der Anbieter (die alte Adresse leitet auf die neue weiter).
+ */
+export function renameCandidates(repos: RemoteRepo[], keys: Iterable<string>): { oldKey: string; repo: RemoteRepo }[] {
+  const eligible = repos.filter((r) => !r.fork && !r.archived);
+  const remote = new Set(eligible.map((r) => repoKey(r.url)).filter((k): k is string => Boolean(k)));
+  const stale = [...new Set([...keys].map((k) => k.toLowerCase()))].filter((k) => !remote.has(k));
+  return stale.flatMap((oldKey) => {
+    const matches = eligible.filter((r) => {
+      const key = repoKey(r.url);
+      return key !== null && hostOf(key) === hostOf(oldKey) && nameOf(key) === nameOf(oldKey);
+    });
+    return matches.length === 1 ? [{ oldKey, repo: matches[0] }] : [];
+  });
+}
+
 export const countEligible = (repos: RemoteRepo[]) => repos.filter((r) => !r.fork && !r.archived).length;
 
 /** Kürzlich bearbeitet → „In Entwicklung“, sonst „Offen“. */
