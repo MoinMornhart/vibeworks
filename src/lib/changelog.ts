@@ -28,6 +28,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.8",
+    date: "2026-10-29",
+    title: "Kein doppeltes Projekt mehr nach neuem Benutzernamen",
+    titleEn: "No more duplicate projects after a username change",
+    changes: [
+      {
+        type: "fix",
+        text: "Nach einem neuen Benutzernamen bei GitHub (oder einem Umzug der Repositories) hat der automatische Import jedes Repository noch einmal als Projekt angelegt. Jetzt erkennt er, dass es dasselbe Repository ist – der Anbieter leitet die alte Adresse auf die neue weiter –, hängt das vorhandene Projekt um und räumt die schon entstandenen Kopien wieder weg. Kopien, in denen schon gearbeitet wurde (Notizen, eigene Aufgaben …), bleiben stehen",
+        en: "After a new GitHub username (or a move of the repositories) the automatic import created every repository a second time as a project. It now recognises the same repository – the provider redirects the old address to the new one –, moves the existing project over and removes the copies that had already appeared. Copies someone has already worked in (notes, own tasks …) stay",
+        link: "/projects",
+      },
+    ],
+  },
+  {
     version: "1.8.7",
     date: "2026-10-27",
     title: "Neue Domain direkt im Admin-Dashboard übernehmen",

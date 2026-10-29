@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accentFor, listUrl, parseRepoList, repoKey, reposToImport, statusFor, type RemoteRepo } from "./importLogic";
+import { accentFor, listUrl, parseRepoList, renameCandidates, repoKey, reposToImport, statusFor, type RemoteRepo } from "./importLogic";
 
 const repo = (url: string, extra: Partial<RemoteRepo> = {}): RemoteRepo => ({ url, name: url.split("/").pop()!, description: null, fork: false, archived: false, pushedAt: null, ...extra });
 
@@ -64,5 +64,24 @@ describe("parseRepoList", () => {
   it("Gitea, Unbrauchbares fällt weg", () => {
     expect(parseRepoList("gitea", [{ html_url: "https://codeberg.org/a/b", name: "b", updated_at: "y" }, { name: "ohne-url" }, null, "x"])).toHaveLength(1);
     expect(parseRepoList("gitea", { message: "kaputt" })).toEqual([]);
+  });
+});
+
+describe("renameCandidates", () => {
+  const list = [repo("https://github.com/MoinMornhart/vibeworks"), repo("https://github.com/MoinMornhart/clipforge"), repo("https://github.com/MoinMornhart/alt", { archived: true })];
+
+  it("findet Repositories, deren Besitzer sich geändert hat", () => {
+    const out = renameCandidates(list, ["github.com/morni-team/vibeworks", "github.com/oldname/ClipForge"]);
+    expect(out.map((c) => [c.oldKey, c.repo.url])).toEqual([
+      ["github.com/morni-team/vibeworks", "https://github.com/MoinMornhart/vibeworks"],
+      ["github.com/oldname/clipforge", "https://github.com/MoinMornhart/clipforge"],
+    ]);
+  });
+
+  it("lässt Aktuelles, Fremdes, Archiviertes und Mehrdeutiges in Ruhe", () => {
+    const twice = [...list, repo("https://github.com/zweiter/vibeworks")];
+    expect(renameCandidates(list, ["github.com/moinmornhart/vibeworks"])).toEqual([]);
+    expect(renameCandidates(list, ["gitlab.com/old/vibeworks", "github.com/old/sonstwas", "github.com/old/alt"])).toEqual([]);
+    expect(renameCandidates(twice, ["github.com/old/vibeworks"])).toEqual([]);
   });
 });

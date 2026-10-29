@@ -4,8 +4,8 @@ import { tk, translateMessage } from "@/lib/i18n/messages";
 import { logActivity } from "@/lib/activity";
 import { nextPosition, uniqueSlug } from "@/lib/projects";
 import { appLink, notifyUser } from "@/lib/notify";
-import { PROVIDER_LABEL, type GitProvider } from "./parse";
-import { authHeaders, GitError, request } from "./providers";
+import { parseRepoUrl, PROVIDER_LABEL, type GitProvider } from "./parse";
+import { apiBase, authHeaders, GitError, request } from "./providers";
 import { syncProjectRepository } from "./sync";
 import {
   accentFor,
@@ -17,6 +17,7 @@ import {
   PAGE_SIZE,
   parseRepoList,
   repoKey,
+  renameCandidates,
   reposToImport,
   statusFor,
   type RemoteRepo,
@@ -81,10 +82,14 @@ async function runImport(credentialId: string): Promise<ImportResult> {
     return fail(cred, err instanceof GitError ? err.message : tk("git", "errors.syncFailed"));
   }
 
+  // Erst Umbenennungen nachziehen – sonst sähe jedes Repository nach einem
+  // neuen Benutzernamen „neu“ aus und würde doppelt angelegt
+  const { skipRepos, relinked } = await followRenames(cred, provider, token, repos);
+
   const linked = (await db.project.findMany({ where: { ownerId: cred.userId, repoUrl: { not: null } }, select: { repoUrl: true } }))
     .map((p) => repoKey(p.repoUrl))
     .filter((k): k is string => Boolean(k));
-  const fresh = reposToImport(repos, linked, cred.skipRepos).slice(0, MAX_NEW_PER_RUN);
+  const fresh = reposToImport(repos, linked, skipRepos).slice(0, MAX_NEW_PER_RUN);
 
   const created: string[] = [];
   for (const repo of fresh) {
@@ -111,7 +116,8 @@ async function runImport(credentialId: string): Promise<ImportResult> {
   const found = countEligible(repos);
   await db.gitCredential.update({ where: { id: cred.id }, data: { importedAt: new Date(), importError: null, importFails: 0, importCount: found } });
 
-  // Commits der neuen Projekte gleich holen – nacheinander, im Hintergrund
+  // Commits der neuen und umgehängten Projekte gleich holen – nacheinander, im Hintergrund
+  created.push(...relinked);
   if (created.length) {
     void (async () => {
       const projects = await db.project.findMany({
@@ -123,7 +129,74 @@ async function runImport(credentialId: string): Promise<ImportResult> {
       }
     })();
   }
-  return { created: created.length, found, error: null };
+  return { created: created.length - relinked.length, found, error: null };
+}
+
+/** Bestätigt der Anbieter, dass die alte Adresse auf dieses Repository weiterleitet? */
+async function sameRepository(provider: Exclude<GitProvider, "git">, cred: Credential, oldKey: string, repoUrl: string, token: string): Promise<boolean> {
+  const old = parseRepoUrl(`${cred.baseUrl}/${oldKey.slice(oldKey.indexOf("/") + 1)}`);
+  if (!old) return false;
+  try {
+    const data = await request<Record<string, unknown>>("GET", apiBase(provider, old), authHeaders(provider, token));
+    const url = provider === "gitlab" ? data.web_url : data.html_url;
+    return typeof url === "string" && repoKey(url) === repoKey(repoUrl);
+  } catch {
+    return false; // alte Adresse gibt es nicht mehr – dann lieber nichts umhängen
+  }
+}
+
+/** Steckt in einem Projekt nichts Eigenes? Aufgaben aus Issues zählen nicht – die hat das Original auch. */
+async function untouched(projectId: string): Promise<boolean> {
+  const p = await db.project.findUnique({
+    where: { id: projectId },
+    select: {
+      _count: {
+        select: { notes: true, prompts: true, costs: true, timeEntries: true, codeMemos: true, members: true, teams: true, aiWorkflows: true, suggestions: true, uptimeChecks: true, tasks: { where: { issueNumber: null } } },
+      },
+    },
+  });
+  return Boolean(p) && Object.values(p!._count).every((n) => n === 0);
+}
+
+/**
+ * Umbenannte oder umgezogene Repositories nachziehen: verknüpfte Projekte auf die
+ * neue Adresse umhängen, „absichtlich entfernt“ mitnehmen und Kopien, die der
+ * Import vorher schon angelegt hat, wieder entfernen – aber nur unberührte.
+ */
+async function followRenames(cred: Credential, provider: Exclude<GitProvider, "git">, token: string, repos: RemoteRepo[]): Promise<{ skipRepos: string[]; relinked: string[] }> {
+  const owned = (await db.project.findMany({ where: { ownerId: cred.userId, repoUrl: { not: null } }, select: { id: true, name: true, repoUrl: true, createdAt: true } }))
+    .map((p) => ({ ...p, key: repoKey(p.repoUrl) }))
+    .filter((p): p is typeof p & { key: string } => Boolean(p.key));
+  let skipRepos = [...cred.skipRepos];
+  const relinked: string[] = [];
+
+  for (const { oldKey, repo } of renameCandidates(repos, [...owned.map((p) => p.key), ...skipRepos])) {
+    if (!(await sameRepository(provider, cred, oldKey, repo.url, token))) continue;
+    const newKey = repoKey(repo.url)!;
+    skipRepos = skipRepos.map((k) => (k.toLowerCase() === oldKey ? newKey : k));
+
+    const originals = owned.filter((p) => p.key === oldKey);
+    if (!originals.length) continue;
+    const firstOriginal = Math.min(...originals.map((p) => p.createdAt.getTime()));
+    const copies = owned.filter((p) => p.key === newKey && p.createdAt.getTime() > firstOriginal);
+    const kept = (await Promise.all(copies.map(async (c) => ((await untouched(c.id)) ? null : c)))).filter(Boolean);
+    // In einer Kopie wurde schon gearbeitet – dann nichts zusammenwerfen, das entscheidet der Mensch
+    if (kept.length) continue;
+    if (copies.length) await db.project.deleteMany({ where: { id: { in: copies.map((c) => c.id) } } });
+
+    await db.project.updateMany({ where: { id: { in: originals.map((p) => p.id) } }, data: { repoUrl: repo.url } });
+    await Promise.all(
+      originals.map((p) =>
+        logActivity({ projectId: p.id, userId: cred.userId, kind: "PROJECT_UPDATED", summary: `Repository umgezogen: ${oldKey} → ${newKey}`, meta: { from: oldKey, to: newKey, removedCopies: copies.length } }),
+      ),
+    );
+    relinked.push(...originals.map((p) => p.id));
+  }
+
+  if (skipRepos.some((k, i) => k !== cred.skipRepos[i])) {
+    await db.gitCredential.update({ where: { id: cred.id }, data: { skipRepos } });
+  }
+  return { skipRepos, relinked };
 }
 
 async function fail(cred: Credential, message: string): Promise<ImportResult> {
