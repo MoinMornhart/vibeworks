@@ -28,6 +28,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.9",
+    date: "2026-10-30",
+    title: "Bausteine aufgefrischt",
+    titleEn: "Building blocks refreshed",
+    changes: [
+      {
+        type: "besser",
+        text: "lucide-react 1.65.0, nodemailer 10.3.1, PGlite 0.5.13, fallow 3.37.0 und @types/node 26.6.6 – reine Wartung, sichtbar ändert sich nichts",
+        en: "lucide-react 1.65.0, nodemailer 10.3.1, PGlite 0.5.13, fallow 3.37.0 and @types/node 26.6.6 – pure maintenance, nothing changes visibly",
+      },
+    ],
+  },
+  {
     version: "1.8.8",
     date: "2026-10-29",
     title: "Kein doppeltes Projekt mehr nach neuem Benutzernamen",

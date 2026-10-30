@@ -3,7 +3,7 @@
 ## Was es ist
 Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, Aufgaben, Notizen, Docs, Commits und KI-Anbindung (MCP) an einem Ort, läuft auf dem eigenen Proxmox-Server. Spiegelt Aufgaben als GitHub-Issues in die Projekt-Repos, betreibt den „VibeWorks Repo-Check“ in den Repos. Dazu Windows-App (`desktop/`) und Webseite/Doku (`site/`, GitHub Pages).
 
-## Aktueller Stand (Version 1.8.8 auf `main`)
+## Aktueller Stand (Version 1.8.9 auf `main`)
 - Projekte, Aufgabenboard, Heute-Ansicht, Review, Docs mit Baum/Markdown/Freigabe, Node-Editor, CI-Designer, Fehler-Eingang, Rechte je Projekt/Team, eigene Anmeldung (MFA/Passkeys), OAuth, MCP-Server für KIs.
 - 1.7.7–1.8.4 sind auf `main` und live:
   - Sicherheitslücken geschlossen + 14 Paket-Updates (#216), leichtere Projektseite, SSRF-Fix und die 4 Funde aus dem Selbst-Pentest.
@@ -18,6 +18,7 @@ Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, A
 - CI und Repo-Check am 2026-10-24 grün.
 
 ## Zuletzt gemacht
+- 2026-10-30: 1.8.9 Paket-Updates (#206/#230, nur Minor/Patch). #230 war eine Kopie von #206 (aus einem doppelten Projekt) – geschlossen.
 - 2026-10-29: 1.8.8 doppelte Projekte nach Benutzernamen-Wechsel (Moini).
 - 2026-10-27: 1.8.7 Adresse im Admin-Dashboard übernehmen (Moinis Wunsch, Variante „aktuelle Adresse übernehmen“).
 - 2026-10-25: 1.8.6 Sicherheitslücken + Paket-Updates + shellcheck (#216, #217, #206, #224).
@@ -33,6 +34,9 @@ Selbst gehostetes Kontrollzentrum für Philips Vibe-Coding-Projekte: Projekte, A
 
 Offene GitHub-Issues (Stand 24.10.):
 - #224, #217, #216, #206: mit 1.8.6 erledigt. Der Windows-Installer ist noch 0.0.1 vom 11.09. – Electron 44.9.3 erreicht Nutzer erst, wenn die Version in `desktop/package.json` steigt (dann baut `desktop.yml` einen neuen Installer). **Entscheidung von Moini offen.**
+- #206: offen bleiben nur die Major-Sprünge **undici 8** (steckt im SSRF-Schutz, eigener geprüfter Schritt) und **electron 45** (Windows-App).
+- #227 (JoniMoni): BetterCI (`EZdev0/BetterCI`) testen/einbauen – Repo nicht abrufbar (privat oder gelöscht), nachgefragt.
+- #228 = neuer täglicher Durchgang von #212.
 - #214 „Vibeworks laggt“ (kritisch, JoniMoni) – 1.7.6 und 1.7.9 drin, Issue noch offen; ob Lag behoben: **unklar**, keine Rückmeldung.
 - #212 Issues sauber zwischen GitHub und VibeWorks syncen, Konten/Rechte („Arbeiter“, „Bughunter“) prüfen, kostenlose GitHub-App o. ä. (kritisch, täglich wiederkehrend).
 - #211 Plan Leinwand („Notion-artig“) und **Anrufe** – Leinwand weitgehend umgesetzt; offen: Anrufe-Teil, Zuschneiden/Audio, Test des Teilens mit zwei Konten.
@@ -49,7 +53,7 @@ Offene GitHub-Issues (Stand 24.10.):
 - Start lokal: `npm run dev`; Standard-Port 3000 (`.env.example`).
 - Deploy: Proxmox-LXC, Server holt `main` alle ~15 Minuten selbst – **was auf `main` ist, ist live**. Cloud-Sitzungen erreichen den Server nicht.
 - MCP: `src/app/api/mcp/route.ts`, Werkzeuge `src/lib/mcp/tools.ts`. Der VibeWorks-MCP ist in Cloud-Sitzungen nicht verbunden – dort läuft alles über GitHub.
-- Repo: seit 24.10. wieder `MoinMornhart/vibeworks` (von `Morni-Team/vibeworks` umgezogen, GitHub leitet weiter), öffentlich, Lizenz MIT. Lokal: `C:\Projekte\VibeWorks`.
+- Repo: seit 29.10. `pmornhart/vibeworks` (GitHub-Name geändert; vorher `MoinMornhart/vibeworks`, davor `Morni-Team/vibeworks` – GitHub leitet weiter), öffentlich, Lizenz MIT. Lokal: `C:\Projekte\VibeWorks`.
 - Ausführliche Arbeitsregeln stehen in `CLAUDE.md`; `JULES_MEMORY.md` gilt für Jules.
 
 ## Philips Vorgaben
